@@ -240,7 +240,9 @@ export const AICopilot = React.memo(function AICopilot({
   const handleUseAsReply = useCallback(
     (content: string) => {
       if (!email) return;
-      const htmlBody = content
+      // Strip common AI sign-offs that the app's signature will replace
+      const cleaned = stripSignOff(content);
+      const htmlBody = cleaned
         .split("\n\n")
         .map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`)
         .join("");
@@ -560,4 +562,32 @@ function escapeHtml(text: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+/** Strip common AI-generated sign-offs — the app adds the real signature */
+function stripSignOff(text: string): string {
+  // Remove trailing sign-off lines like "Best,", "Best regards,", "Thanks,", "Regards, Name", etc.
+  const lines = text.trimEnd().split("\n");
+  // Walk backwards from the end, removing sign-off lines
+  while (lines.length > 1) {
+    const last = lines[lines.length - 1].trim();
+    // Empty lines at the end
+    if (last === "") { lines.pop(); continue; }
+    // Common sign-offs (with or without comma, with or without a name after)
+    if (/^(best|best regards|kind regards|regards|sincerely|thanks|thank you|cheers|warm regards|with regards|respectfully|yours truly|yours sincerely|med vennlig hilsen|mvh|vennlig hilsen|mit freundlichen grüßen|freundliche grüße|mfg|liebe grüße)[,.]?\s*$/i.test(last)) {
+      lines.pop(); continue;
+    }
+    // A standalone name (short line, likely the AI's sign-off name like "Info" or "Edvin")
+    if (last.length < 30 && /^[A-Z][a-zA-ZÀ-ÿ\s.-]+$/.test(last) && !last.includes(" ") || /^[A-Z][a-z]+$/.test(last)) {
+      // Only remove if the line before it was a sign-off or empty
+      if (lines.length >= 2) {
+        const prev = lines[lines.length - 2].trim();
+        if (prev === "" || /^(best|regards|thanks|cheers|sincerely)[,.]?\s*$/i.test(prev)) {
+          lines.pop(); continue;
+        }
+      }
+    }
+    break;
+  }
+  return lines.join("\n").trimEnd();
 }
