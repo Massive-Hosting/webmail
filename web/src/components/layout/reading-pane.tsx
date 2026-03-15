@@ -12,6 +12,7 @@ import { updateEmails } from "@/api/mail.ts";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMessage } from "@/hooks/use-message.ts";
+import { Skeleton } from "@/components/ui/skeleton.tsx";
 
 const ComposePanel = lazy(() =>
   import("@/components/mail/compose/compose-dialog.tsx").then((m) => ({ default: m.ComposePanel }))
@@ -29,7 +30,7 @@ export const ReadingPane = React.memo(function ReadingPane() {
   // Show inline compose if active draft is in inline mode
   if (activeDraftId && activeDraft?.windowMode === "inline") {
     return (
-      <Suspense fallback={<div />}>
+      <Suspense fallback={<ComposeSkeleton />}>
         <ComposePanel draftId={activeDraftId} />
       </Suspense>
     );
@@ -159,4 +160,45 @@ function MarkAsReadEffect({ emailId }: { emailId: string }) {
   }, [emailId, email, markReadDelay, queryClient]);
 
   return null;
+}
+
+/** Loading skeleton shown while the compose panel chunk loads */
+function ComposeSkeleton() {
+  return (
+    <div className="compose-dialog compose-dialog--inline" style={{ pointerEvents: "none" }}>
+      {/* Title bar skeleton */}
+      <div className="compose-dialog__titlebar">
+        <Skeleton width={120} height={14} />
+        <div style={{ display: "flex", gap: 8 }}>
+          <Skeleton width={20} height={14} />
+          <Skeleton width={20} height={14} />
+          <Skeleton width={20} height={14} />
+        </div>
+      </div>
+      {/* To field skeleton */}
+      <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--color-border-secondary)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Skeleton width={24} height={14} />
+          <Skeleton width="40%" height={14} />
+        </div>
+      </div>
+      {/* Subject skeleton */}
+      <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--color-border-secondary)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Skeleton width={50} height={14} />
+          <Skeleton width="60%" height={14} />
+        </div>
+      </div>
+      {/* Body skeleton */}
+      <div style={{ padding: "16px 12px", flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+        <Skeleton width="100%" height={14} />
+        <Skeleton width="85%" height={14} />
+        <Skeleton width="70%" height={14} />
+      </div>
+      {/* Toolbar skeleton */}
+      <div style={{ padding: "8px 12px", borderTop: "1px solid var(--color-border-secondary)" }}>
+        <Skeleton width={80} height={32} />
+      </div>
+    </div>
+  );
 }

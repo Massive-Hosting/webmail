@@ -40,14 +40,14 @@
   --color-bg-warning: #F59E0B;
 
   --color-text-primary: #1C1917;
-  --color-text-secondary: #78716C;
-  --color-text-tertiary: #A8A29E;
+  --color-text-secondary: #57534E;
+  --color-text-tertiary: #78716C;
   --color-text-inverse: #FFFFFF;
   --color-text-accent: #2563EB;
   --color-text-danger: #DC2626;
 
-  --color-border-primary: #E7E5E4;
-  --color-border-secondary: #F0EEEC;
+  --color-border-primary: #D6D3D1;
+  --color-border-secondary: #E7E5E4;
   --color-border-focus: #3B82F6;
 
   --color-message-unread: #EFF6FF;
@@ -480,6 +480,15 @@ h1, h2, h3, h4, h5, h6 {
 
 .compose-editor-content u {
   text-decoration: underline;
+}
+
+/* ---- Compose quoted text styling ---- */
+.compose-editor-content .compose-quoted-text,
+.compose-editor-content div[style*="border-left"] {
+  border-left: 4px solid var(--color-border-primary) !important;
+  padding-left: 12px;
+  color: var(--color-text-secondary) !important;
+  font-size: 0.93em;
 }
 
 /* ---- Storage quota bar ---- */

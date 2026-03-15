@@ -235,21 +235,21 @@ function MessageContent({ email }: { email: Email }) {
 
               <div className="message-view__action-buttons">
                 <ActionButton
-                  icon={<Reply size={16} />}
+                  icon={<Reply size={18} />}
                   label={t("action.replyShortcut")}
                   onClick={() => openCompose({ mode: "reply", email, identity: defaultIdentity })}
                 />
                 <ActionButton
-                  icon={<ReplyAll size={16} />}
+                  icon={<ReplyAll size={18} />}
                   label={t("action.replyAllShortcut")}
                   onClick={() => openCompose({ mode: "reply-all", email, identity: defaultIdentity })}
                 />
                 <ActionButton
-                  icon={<Forward size={16} />}
+                  icon={<Forward size={18} />}
                   label={t("action.forwardShortcut")}
                   onClick={() => openCompose({ mode: "forward", email, identity: defaultIdentity })}
                 />
-                <ActionButton icon={<MoreHorizontal size={16} />} label={t("action.more")} />
+                <ActionButton icon={<MoreHorizontal size={18} />} label={t("action.more")} />
               </div>
             </div>
           </div>

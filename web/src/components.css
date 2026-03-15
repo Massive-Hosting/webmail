@@ -1175,6 +1175,14 @@
   text-decoration: underline;
 }
 
+.compose-dialog__cc-toggle-btn--active {
+  text-decoration: underline;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--color-bg-accent) 12%, transparent);
+  border-radius: 3px;
+  padding: 2px 5px !important;
+}
+
 .compose-dialog__subject-input {
   flex: 1;
   font-size: 14px;

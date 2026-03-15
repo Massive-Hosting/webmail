@@ -575,24 +575,32 @@ export const ComposePanel = React.memo(function ComposePanel({
             onChange={(to) => updateDraft(draftId, { to })}
           />
           <div className="compose-dialog__cc-toggles">
-            {!draft.showCc && (
-              <button
-                type="button"
-                className="compose-dialog__cc-toggle-btn"
-                onClick={() => updateDraft(draftId, { showCc: true })}
-              >
-                Cc
-              </button>
-            )}
-            {!draft.showBcc && (
-              <button
-                type="button"
-                className="compose-dialog__cc-toggle-btn"
-                onClick={() => updateDraft(draftId, { showBcc: true })}
-              >
-                Bcc
-              </button>
-            )}
+            <button
+              type="button"
+              className={`compose-dialog__cc-toggle-btn ${draft.showCc ? "compose-dialog__cc-toggle-btn--active" : ""}`}
+              onClick={() => {
+                if (draft.showCc && draft.cc.length === 0) {
+                  updateDraft(draftId, { showCc: false });
+                } else {
+                  updateDraft(draftId, { showCc: true });
+                }
+              }}
+            >
+              Cc
+            </button>
+            <button
+              type="button"
+              className={`compose-dialog__cc-toggle-btn ${draft.showBcc ? "compose-dialog__cc-toggle-btn--active" : ""}`}
+              onClick={() => {
+                if (draft.showBcc && draft.bcc.length === 0) {
+                  updateDraft(draftId, { showBcc: false });
+                } else {
+                  updateDraft(draftId, { showBcc: true });
+                }
+              }}
+            >
+              Bcc
+            </button>
           </div>
         </div>
 
