@@ -202,6 +202,7 @@ export const MessageList = React.memo(function MessageList({
       if (event.ctrlKey || event.metaKey) {
         toggleEmailSelection(email.id);
       } else if (event.shiftKey && lastClickedEmailId) {
+        event.preventDefault(); // Prevent browser text selection on shift+click
         const startIdx = emails.findIndex((e) => e.id === lastClickedEmailId);
         const endIdx = emails.findIndex((e) => e.id === email.id);
         if (startIdx !== -1 && endIdx !== -1) {
