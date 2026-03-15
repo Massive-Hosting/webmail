@@ -97,9 +97,9 @@ export const SmartReplyBar = React.memo(function SmartReplyBar({
             prefillBody: htmlBody,
           });
         }
-      } catch (err) {
-        if (err instanceof Error && err.name === "AbortError") return;
-        console.error("Smart reply failed:", err);
+      } catch (e) {
+        if (String(e) === "AbortError" || (e as Error)?.name === "AbortError") return;
+        console.error("Smart reply failed:", e);
       } finally {
         setLoadingTone(null);
         abortRef.current = null;
@@ -135,9 +135,9 @@ export const SmartReplyBar = React.memo(function SmartReplyBar({
         result += chunk;
         setSummaryText(result);
       }
-    } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") return;
-      console.error("Summarize failed:", err);
+    } catch (e) {
+      if (String(e) === "AbortError" || (e as Error)?.name === "AbortError") return;
+      console.error("Summarize failed:", e);
     } finally {
       setIsGenerating(false);
       abortRef.current = null;

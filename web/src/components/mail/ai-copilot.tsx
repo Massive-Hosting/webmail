@@ -91,17 +91,8 @@ export const AICopilot = React.memo(function AICopilot({
     }
   }, [open]);
 
-  // Listen for pre-filled prompts from smart reply buttons
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail?.message) {
-        handleSend(detail.message);
-      }
-    };
-    window.addEventListener("copilot-send", handler);
-    return () => window.removeEventListener("copilot-send", handler);
-  }, [handleSend]);
+  // Ref for copilot-send event handler (updated after handleSend is defined)
+  const handleSendRef = useRef<((msg?: string) => Promise<void>) | null>(null);
 
   const getEmailBodyText = useCallback((email: Email): string => {
     if (email.bodyValues) {
@@ -229,6 +220,19 @@ export const AICopilot = React.memo(function AICopilot({
     },
     [handleSend],
   );
+
+  // Listen for pre-filled prompts from smart reply buttons
+  handleSendRef.current = handleSend;
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.message && handleSendRef.current) {
+        handleSendRef.current(detail.message);
+      }
+    };
+    window.addEventListener("copilot-send", handler);
+    return () => window.removeEventListener("copilot-send", handler);
+  }, []);
 
   const handleUseAsReply = useCallback(
     (content: string) => {
