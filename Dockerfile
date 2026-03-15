@@ -12,7 +12,8 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -o /webmail ./cmd/webmail-api
+COPY --from=frontend /app/web/dist ./web/dist
+RUN CGO_ENABLED=0 go build -tags embedstatic -o /webmail ./cmd/webmail-api
 RUN CGO_ENABLED=0 go install github.com/pressly/goose/v3/cmd/goose@latest
 
 # Stage 3: Runtime
