@@ -127,10 +127,20 @@ export async function searchContacts(query: string): Promise<Contact[]> {
   return (getResult as { list: Contact[] }).list;
 }
 
-/** Create a new contact */
+/** Create a new contact — ensures addressBookIds is set */
 export async function createContact(
   contact: ContactCreate,
 ): Promise<string> {
+  // Ensure contact belongs to at least one address book (Stalwart requires this)
+  let contactData = { ...contact };
+  if (!contactData.addressBookIds || Object.keys(contactData.addressBookIds).length === 0) {
+    const addressBooks = await fetchAddressBooks();
+    const defaultBook = addressBooks.find((ab) => ab.isDefault) ?? addressBooks[0];
+    if (defaultBook) {
+      contactData = { ...contactData, addressBookIds: { [defaultBook.id]: true } };
+    }
+  }
+
   const request: JMAPRequest = {
     using: JMAP_USING,
     methodCalls: [
@@ -138,7 +148,7 @@ export async function createContact(
         "ContactCard/set",
         {
           create: {
-            new: contact,
+            new: contactData,
           },
         },
         "s0",
@@ -227,9 +237,17 @@ export async function deleteContact(contactId: string): Promise<void> {
 export async function batchCreateContacts(
   contacts: ContactCreate[],
 ): Promise<string[]> {
+  // Ensure all contacts have addressBookIds
+  const addressBooks = await fetchAddressBooks();
+  const defaultBook = addressBooks.find((ab) => ab.isDefault) ?? addressBooks[0];
+  const defaultBookIds = defaultBook ? { [defaultBook.id]: true } : {};
+
   const createMap: Record<string, ContactCreate> = {};
   for (let i = 0; i < contacts.length; i++) {
-    createMap[`import-${i}`] = contacts[i];
+    const c = contacts[i];
+    createMap[`import-${i}`] = (!c.addressBookIds || Object.keys(c.addressBookIds).length === 0)
+      ? { ...c, addressBookIds: defaultBookIds }
+      : c;
   }
 
   const request: JMAPRequest = {
