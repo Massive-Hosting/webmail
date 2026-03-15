@@ -1,25 +1,32 @@
 /** Notification settings */
 
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { Bell, Volume2 } from "lucide-react";
 import { useSettingsStore } from "@/stores/settings-store.ts";
+import { requestNotificationPermission } from "@/lib/notifications.ts";
 
 export const NotificationSettings = React.memo(function NotificationSettings() {
   const notifications = useSettingsStore((s) => s.notifications);
   const setNotifications = useSettingsStore((s) => s.setNotifications);
+  const [permissionState, setPermissionState] = useState<NotificationPermission>(
+    "Notification" in window ? Notification.permission : "denied",
+  );
 
-  const handleToggleEnabled = useCallback(() => {
+  const handleToggleEnabled = useCallback(async () => {
     if (!notifications.enabled) {
-      // Request permission when enabling
-      if ("Notification" in window && Notification.permission === "default") {
-        Notification.requestPermission();
+      // Turning ON — request permission first
+      const granted = await requestNotificationPermission();
+      // Refresh the cached permission state
+      setPermissionState(
+        "Notification" in window ? Notification.permission : "denied",
+      );
+      if (!granted && Notification.permission === "denied") {
+        // Permission denied — turn on the toggle anyway so the user sees the
+        // "blocked by browser" message, but notifications won't fire.
       }
     }
     setNotifications({ enabled: !notifications.enabled });
   }, [notifications.enabled, setNotifications]);
-
-  const notificationPermission =
-    "Notification" in window ? Notification.permission : "denied";
 
   return (
     <div className="p-6 space-y-6">
@@ -44,12 +51,13 @@ export const NotificationSettings = React.memo(function NotificationSettings() {
             >
               Show a browser notification when new mail arrives.
             </p>
-            {notificationPermission === "denied" && notifications.enabled && (
+            {permissionState === "denied" && notifications.enabled && (
               <p
                 className="text-xs mt-1"
                 style={{ color: "var(--color-text-danger)" }}
               >
-                Browser notifications are blocked. Allow them in your browser settings.
+                Notifications are blocked by your browser. Check your browser
+                settings to allow notifications for this site.
               </p>
             )}
           </div>

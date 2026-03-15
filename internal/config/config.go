@@ -39,7 +39,7 @@ func Load() (*Config, error) {
 		CoreAPIKey:         os.Getenv("WEBMAIL_API_KEY"),
 		SessionMaxAge:      envIntOr("WEBMAIL_SESSION_MAX_AGE", 86400),
 		MaxUploadSize:      envInt64Or("WEBMAIL_MAX_UPLOAD_SIZE", 25*1024*1024),
-		RateLimitPerMinute: envIntOr("WEBMAIL_RATE_LIMIT", 120),
+		RateLimitPerMinute: envIntOr("WEBMAIL_RATE_LIMIT", 1200),
 		ValkeyURL:          envOr("VALKEY_URL", "redis://127.0.0.1:6379/0"),
 		TemporalAddress:    envOr("TEMPORAL_ADDRESS", "localhost:7233"),
 		AIEnabled:          envBoolOr("AI_ENABLED", false),

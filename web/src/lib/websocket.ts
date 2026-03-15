@@ -11,6 +11,7 @@ import { useJMAPStateStore } from "@/stores/jmap-state-store.ts";
 import { fetchEmailChanges, fetchMailboxChanges } from "@/api/mail.ts";
 import type { EmailListItem } from "@/types/mail.ts";
 import type { Mailbox } from "@/types/mail.ts";
+import { showEmailNotification } from "@/lib/notifications.ts";
 
 /** Server → Client message types */
 export type WSServerMessage =
@@ -39,7 +40,7 @@ const BACKOFF_FACTOR = 2;
 const MAX_RETRIES_BEFORE_FALLBACK = 3;
 
 /** Minimum interval between processing state change events (ms) */
-const STATE_CHANGE_THROTTLE_MS = 2000;
+const STATE_CHANGE_THROTTLE_MS = 5000;
 
 export class WebSocketClient {
   private ws: WebSocket | null = null;
@@ -373,6 +374,9 @@ export class WebSocketClient {
             };
           },
         );
+
+        // Show desktop notification for the first new email
+        showEmailNotification(changes.created[0]);
       }
 
       // Invalidate single-email caches for changed/destroyed emails
