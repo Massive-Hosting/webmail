@@ -108,7 +108,7 @@ function SignatureEditor({ identity }: { identity: Identity }) {
       });
       if (!response.ok) throw new Error("Upload failed");
       const results = await response.json();
-      const blobId = results[0]?.blobId;
+      const blobId = Array.isArray(results) ? results[0]?.blobId : results.blobId;
       if (!blobId) throw new Error("No blobId");
 
       const imgTag = `<img src="/api/blob/${blobId}/inline" alt="Logo" style="max-height: 80px; max-width: 200px;">`;

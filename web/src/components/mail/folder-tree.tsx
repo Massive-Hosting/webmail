@@ -137,7 +137,7 @@ export const FolderTree = React.memo(function FolderTree() {
   }
 
   return (
-    <div className="py-1.5" role="tree" aria-label={t("folder.mailFolders")}>
+    <div className="py-1.5 flex flex-col gap-px" role="tree" aria-label={t("folder.mailFolders")}>
       {/* Standard folders */}
       {standardFolders.map((mailbox) => (
         <FolderItem
