@@ -148,12 +148,11 @@ pub fn run() {
             if let tauri::RunEvent::Exit = event {
                 // Kill the sidecar on exit.
                 let state = app.state::<Mutex<SidecarState>>();
-                if let Ok(mut state) = state.lock() {
-                    if let Some(ref mut child) = state.child {
-                        eprintln!("killing sidecar (pid {})", child.id());
-                        let _ = child.kill();
-                        let _ = child.wait();
-                    }
+                let mut guard = state.lock().unwrap();
+                if let Some(ref mut child) = guard.child {
+                    eprintln!("killing sidecar (pid {})", child.id());
+                    let _ = child.kill();
+                    let _ = child.wait();
                 }
             }
         });
