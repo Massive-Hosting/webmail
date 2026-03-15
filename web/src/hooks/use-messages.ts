@@ -197,6 +197,12 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
       queryClient.setQueryData(["emails", mailboxId, filter], data);
       return { prev };
     },
+    onSuccess: (_data, emailIds) => {
+      toast("Deleted", {
+        description: `${emailIds.length} message${emailIds.length !== 1 ? "s" : ""} permanently deleted`,
+        duration: 3000,
+      });
+    },
     onError: (_err, _params, context) => {
       if (context?.prev) {
         queryClient.setQueryData(["emails", mailboxId, filter], context.prev);

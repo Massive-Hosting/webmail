@@ -115,66 +115,55 @@ export const Toolbar = React.memo(function Toolbar({
           </button>
         )}
 
-        {/* Logo / App name */}
-        <div
-          className="font-semibold text-sm tracking-tight select-none"
-          style={{ color: "var(--color-text-accent)" }}
-        >
-          Webmail
-        </div>
+        {/* Compose */}
+        <Tooltip.Root>
+          <Tooltip.Trigger asChild>
+            <button
+              onClick={onCompose}
+              className="flex items-center gap-1.5 h-8 px-3.5 text-sm font-medium transition-all duration-150 shrink-0"
+              style={{
+                backgroundColor: "var(--color-bg-accent)",
+                color: "var(--color-text-inverse)",
+                borderRadius: "var(--radius-md)",
+                boxShadow: "0 1px 3px rgba(59, 130, 246, 0.15)",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--color-bg-accent-hover)";
+                e.currentTarget.style.boxShadow = "0 2px 6px rgba(59, 130, 246, 0.25)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--color-bg-accent)";
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(59, 130, 246, 0.15)";
+              }}
+            >
+              <PenSquare size={15} />
+              {!isMobile && <span>Compose</span>}
+            </button>
+          </Tooltip.Trigger>
+          <Tooltip.Content
+            className="text-xs px-2.5 py-1.5 animate-scale-in"
+            style={{
+              backgroundColor: "var(--color-bg-elevated)",
+              color: "var(--color-text-primary)",
+              boxShadow: "var(--shadow-md)",
+              border: "1px solid var(--color-border-primary)",
+              borderRadius: "var(--radius-sm)",
+              fontWeight: 500,
+            }}
+            sideOffset={6}
+          >
+            Compose (C)
+          </Tooltip.Content>
+        </Tooltip.Root>
 
         {/* Search bar */}
         <SearchBar onAdvancedSearch={onAdvancedSearch} />
 
-        {/* Separator */}
-        <div
-          className="h-5 w-px shrink-0"
-          style={{ backgroundColor: "var(--color-border-primary)" }}
-        />
+        {/* Spacer */}
+        <div className="flex-grow" />
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-0.5">
-          {/* Compose */}
-          <Tooltip.Root>
-            <Tooltip.Trigger asChild>
-              <button
-                onClick={onCompose}
-                className="flex items-center gap-1.5 h-8 px-3.5 text-sm font-medium transition-all duration-150"
-                style={{
-                  backgroundColor: "var(--color-bg-accent)",
-                  color: "var(--color-text-inverse)",
-                  borderRadius: "var(--radius-md)",
-                  boxShadow: "0 1px 3px rgba(59, 130, 246, 0.15)",
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = "var(--color-bg-accent-hover)";
-                  e.currentTarget.style.boxShadow = "0 2px 6px rgba(59, 130, 246, 0.25)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = "var(--color-bg-accent)";
-                  e.currentTarget.style.boxShadow = "0 1px 3px rgba(59, 130, 246, 0.15)";
-                }}
-              >
-                <PenSquare size={15} />
-                {!isMobile && <span>Compose</span>}
-              </button>
-            </Tooltip.Trigger>
-            <Tooltip.Content
-              className="text-xs px-2.5 py-1.5 animate-scale-in"
-              style={{
-                backgroundColor: "var(--color-bg-elevated)",
-                color: "var(--color-text-primary)",
-                boxShadow: "var(--shadow-md)",
-                border: "1px solid var(--color-border-primary)",
-                borderRadius: "var(--radius-sm)",
-                fontWeight: 500,
-              }}
-              sideOffset={6}
-            >
-              Compose (C)
-            </Tooltip.Content>
-          </Tooltip.Root>
-
+        {/* Right-aligned actions */}
+        <div className="flex items-center gap-0.5 shrink-0">
           {/* Theme toggle */}
           <ToolbarIconButton
             onClick={handleThemeToggle}
@@ -191,10 +180,16 @@ export const Toolbar = React.memo(function Toolbar({
             tooltipText="Settings"
           />
 
-          {/* Logout */}
+          {/* Separator */}
+          <div
+            className="h-5 w-px shrink-0 mx-1"
+            style={{ backgroundColor: "var(--color-border-primary)" }}
+          />
+
+          {/* Logout - subtle styling */}
           <ToolbarIconButton
             onClick={handleLogout}
-            icon={<LogOut size={17} />}
+            icon={<LogOut size={16} />}
             label="Log out"
             tooltipText="Log out"
           />

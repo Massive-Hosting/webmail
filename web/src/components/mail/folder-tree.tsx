@@ -62,11 +62,13 @@ export const FolderTree = React.memo(function FolderTree() {
   }, [newFolderName, createMailbox]);
 
   const handleMarkAllRead = useCallback(async (mailboxId: string) => {
+    const toastId = toast.loading("Marking all as read...");
     try {
       const ids = await queryEmailIds({
         filter: { inMailbox: mailboxId, notKeyword: "$seen" },
       });
       if (ids.length === 0) {
+        toast.dismiss(toastId);
         toast("All messages are already read");
         return;
       }
@@ -77,27 +79,29 @@ export const FolderTree = React.memo(function FolderTree() {
       await updateEmails(updates);
       queryClient.invalidateQueries({ queryKey: ["emails"] });
       queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
-      toast(`Marked ${ids.length} message${ids.length !== 1 ? "s" : ""} as read`);
+      toast.success(`Marked ${ids.length} message${ids.length !== 1 ? "s" : ""} as read`, { id: toastId });
     } catch {
-      toast.error("Failed to mark all as read");
+      toast.error("Failed to mark all as read", { id: toastId });
     }
   }, [queryClient]);
 
   const handleEmptyFolder = useCallback(async (mailboxId: string, folderName: string) => {
+    const toastId = toast.loading(`Emptying ${folderName}...`);
     try {
       const ids = await queryEmailIds({
         filter: { inMailbox: mailboxId },
       });
       if (ids.length === 0) {
+        toast.dismiss(toastId);
         toast(`${folderName} is already empty`);
         return;
       }
       await destroyEmails(ids);
       queryClient.invalidateQueries({ queryKey: ["emails"] });
       queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
-      toast(`Emptied ${folderName} (${ids.length} message${ids.length !== 1 ? "s" : ""})`);
+      toast.success(`Emptied ${folderName} (${ids.length} message${ids.length !== 1 ? "s" : ""})`, { id: toastId });
     } catch {
-      toast.error(`Failed to empty ${folderName}`);
+      toast.error(`Failed to empty ${folderName}`, { id: toastId });
     }
   }, [queryClient]);
 
