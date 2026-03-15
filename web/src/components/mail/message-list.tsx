@@ -543,6 +543,7 @@ function VirtualizedMessageList({
                   left: 0,
                   width: "100%",
                   height: rowHeight,
+                  overflow: "hidden",
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
@@ -574,6 +575,7 @@ function VirtualizedMessageList({
                   left: 0,
                   width: "100%",
                   height: rowHeight,
+                  overflow: "hidden",
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
