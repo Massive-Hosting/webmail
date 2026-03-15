@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"io/fs"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
+	webmail "webmail"
 	"webmail/internal/config"
 	"webmail/internal/db"
 	"webmail/internal/handler"
@@ -158,6 +161,48 @@ func main() {
 			r.Get("/ws", wsHandler.Upgrade)
 		})
 	})
+
+	// Serve embedded frontend static files (production builds).
+	if webmail.HasStaticFiles {
+		log.Info().Msg("serving embedded frontend static files")
+
+		// Strip the "web/dist" prefix so files are served at /.
+		distFS, err := fs.Sub(webmail.StaticFiles, "web/dist")
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to create sub filesystem for static files")
+		}
+
+		// Read index.html once for SPA fallback.
+		indexHTML, err := fs.ReadFile(distFS, "index.html")
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to read index.html from embedded files")
+		}
+
+		fileServer := http.FileServer(http.FS(distFS))
+
+		r.Get("/*", func(w http.ResponseWriter, r *http.Request) {
+			path := strings.TrimPrefix(r.URL.Path, "/")
+
+			// Try to serve the file directly.
+			f, err := distFS.(fs.ReadFileFS).ReadFile(path)
+			if err == nil && path != "" {
+				// Set cache headers based on path.
+				if strings.HasPrefix(path, "assets/") {
+					w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+				}
+				// Serve via the file server for correct content-type detection.
+				_ = f
+				fileServer.ServeHTTP(w, r)
+				return
+			}
+
+			// SPA fallback: serve index.html with no-cache.
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write(indexHTML)
+		})
+	}
 
 	// HTTP server.
 	srv := &http.Server{

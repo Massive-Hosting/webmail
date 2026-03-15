@@ -31,6 +31,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { usePGPStore } from "@/stores/pgp-store.ts";
 import { encryptMessage, signMessage } from "@/lib/pgp.ts";
 import { lookupPublicKeys } from "@/lib/pgp-lookup.ts";
+import { useSettingsStore } from "@/stores/settings-store.ts";
 
 // Re-export useCompose from its own module (keeps it out of the lazy-loaded chunk)
 export { useCompose } from "./use-compose.ts";
@@ -53,7 +54,10 @@ export const ComposePanel = React.memo(function ComposePanel({
   const { uploadFiles } = useAttachmentUpload(draftId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const undoSendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const undoSendToastIdRef = useRef<string | number | undefined>(undefined);
   const queryClient = useQueryClient();
+  const undoSendDelay = useSettingsStore((s) => s.undoSendDelay);
 
   const { findByRole } = useMailboxes();
 
@@ -175,43 +179,14 @@ export const ComposePanel = React.memo(function ComposePanel({
     }
   }, [draftId, findByRole, updateDraft, queryClient]);
 
-  const handleSend = useCallback(async () => {
+  /** Actually perform the send (called immediately or after undo delay) */
+  const executeSend = useCallback(async () => {
     const currentDraft = useComposeStore.getState().drafts.get(draftId);
     if (!currentDraft) return;
 
-    // Validate recipients
     const validTo = currentDraft.to.filter((r) => r.isValid);
     const validCc = currentDraft.cc.filter((r) => r.isValid);
     const validBcc = currentDraft.bcc.filter((r) => r.isValid);
-
-    if (validTo.length === 0 && validCc.length === 0 && validBcc.length === 0) {
-      toast.error("Please add at least one recipient.");
-      return;
-    }
-
-    // Warn if empty subject
-    if (!currentDraft.subject.trim()) {
-      const proceed = window.confirm("Send without a subject?");
-      if (!proceed) return;
-    }
-
-    // PGP encryption: resolve recipient keys if encrypting
-    if (pgpEncrypt && pgpIsUnlocked && pgpPrivateKey && pgpPassphrase) {
-      const allRecipientEmails = [
-        ...validTo.map((r) => r.email),
-        ...validCc.map((r) => r.email),
-        ...validBcc.map((r) => r.email),
-      ];
-      const foundKeys = await lookupPublicKeys(allRecipientEmails);
-      const missing = allRecipientEmails.filter(
-        (e) => !foundKeys.has(e.toLowerCase()),
-      );
-      if (missing.length > 0) {
-        setMissingKeyRecipients(missing);
-        setShowMissingKeyDialog(true);
-        return;
-      }
-    }
 
     const draftsMailbox = findByRole("drafts");
     const sentMailbox = findByRole("sent");
@@ -295,6 +270,98 @@ export const ComposePanel = React.memo(function ComposePanel({
       toast.error("Failed to send message. Please try again.");
     }
   }, [draftId, findByRole, closeDraft, updateDraft, queryClient, pgpSign, pgpEncrypt, pgpIsUnlocked, pgpPrivateKey, pgpPublicKey, pgpPassphrase]);
+
+  const handleSend = useCallback(async () => {
+    const currentDraft = useComposeStore.getState().drafts.get(draftId);
+    if (!currentDraft) return;
+
+    // Validate recipients
+    const validTo = currentDraft.to.filter((r) => r.isValid);
+    const validCc = currentDraft.cc.filter((r) => r.isValid);
+    const validBcc = currentDraft.bcc.filter((r) => r.isValid);
+
+    if (validTo.length === 0 && validCc.length === 0 && validBcc.length === 0) {
+      toast.error("Please add at least one recipient.");
+      return;
+    }
+
+    // Warn if empty subject
+    if (!currentDraft.subject.trim()) {
+      const proceed = window.confirm("Send without a subject?");
+      if (!proceed) return;
+    }
+
+    // PGP encryption: resolve recipient keys if encrypting
+    if (pgpEncrypt && pgpIsUnlocked && pgpPrivateKey && pgpPassphrase) {
+      const allRecipientEmails = [
+        ...validTo.map((r) => r.email),
+        ...validCc.map((r) => r.email),
+        ...validBcc.map((r) => r.email),
+      ];
+      const foundKeys = await lookupPublicKeys(allRecipientEmails);
+      const missing = allRecipientEmails.filter(
+        (e) => !foundKeys.has(e.toLowerCase()),
+      );
+      if (missing.length > 0) {
+        setMissingKeyRecipients(missing);
+        setShowMissingKeyDialog(true);
+        return;
+      }
+    }
+
+    // Undo send: if delay is configured, show countdown toast
+    if (undoSendDelay > 0) {
+      // Cancel any existing undo send timer
+      if (undoSendTimerRef.current) {
+        clearTimeout(undoSendTimerRef.current);
+        undoSendTimerRef.current = null;
+      }
+
+      let cancelled = false;
+
+      const toastId = toast("Sending...", {
+        duration: undoSendDelay * 1000 + 500,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            cancelled = true;
+            if (undoSendTimerRef.current) {
+              clearTimeout(undoSendTimerRef.current);
+              undoSendTimerRef.current = null;
+            }
+            toast.success("Send cancelled", { duration: 2000 });
+          },
+        },
+        onDismiss: () => {
+          // If dismissed without clicking undo and timer is still pending, do nothing
+          // (the timer will still fire and send)
+        },
+      });
+      undoSendToastIdRef.current = toastId;
+
+      undoSendTimerRef.current = setTimeout(() => {
+        undoSendTimerRef.current = null;
+        if (!cancelled) {
+          toast.dismiss(toastId);
+          executeSend();
+        }
+      }, undoSendDelay * 1000);
+
+      return;
+    }
+
+    // No delay: send immediately
+    await executeSend();
+  }, [draftId, executeSend, undoSendDelay, pgpEncrypt, pgpIsUnlocked, pgpPrivateKey, pgpPassphrase]);
+
+  // Clean up undo send timer on unmount
+  useEffect(() => {
+    return () => {
+      if (undoSendTimerRef.current) {
+        clearTimeout(undoSendTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleDiscard = useCallback(() => {
     const currentDraft = useComposeStore.getState().drafts.get(draftId);

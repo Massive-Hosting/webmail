@@ -39,6 +39,7 @@ import {
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { PGPStatusBar, EncryptedPlaceholder, usePGPMessage } from "@/components/mail/pgp-message.tsx";
 import { detectPGPContent } from "@/lib/pgp-detect.ts";
+import { InvitationCard } from "@/components/calendar/invitation-card.tsx";
 
 interface MessageViewProps {
   emailId: string;
@@ -139,6 +140,18 @@ function MessageContent({ email }: { email: Email }) {
   const attachments = email.attachments?.filter(
     (a) => a.disposition !== "inline",
   ) ?? [];
+
+  // Detect .ics / text/calendar attachments for invitation cards
+  const icsAttachments = useMemo(() => {
+    if (!email.attachments) return [];
+    return email.attachments.filter(
+      (a) =>
+        a.blobId &&
+        (a.type === "text/calendar" ||
+          a.type === "application/ics" ||
+          (a.name && a.name.toLowerCase().endsWith(".ics"))),
+    );
+  }, [email.attachments]);
 
   // PGP detection from body text
   const rawBodyText = bodyText ?? (bodyHtml ? "" : null);
@@ -311,6 +324,11 @@ function MessageContent({ email }: { email: Email }) {
             ))}
           </div>
         )}
+
+        {/* Calendar invitation cards */}
+        {icsAttachments.map((att) => (
+          <InvitationCard key={att.blobId} blobId={att.blobId!} />
+        ))}
 
         {/* PGP status bar */}
         {hasPGPContent && (

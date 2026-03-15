@@ -10,6 +10,7 @@ import type {
 } from "@/types/jmap.ts";
 import type { Email, EmailListItem, Mailbox, Thread, Identity } from "@/types/mail.ts";
 import type { Recipient, AttachmentState } from "@/stores/compose-store.ts";
+import { useJMAPStateStore } from "@/stores/jmap-state-store.ts";
 
 const JMAP_USING = [
   "urn:ietf:params:jmap:core",
@@ -73,7 +74,14 @@ export async function fetchMailboxes(): Promise<Mailbox[]> {
 
   const response = await jmapRequest(request);
   const [, result] = response.methodResponses[0];
-  return (result as { list: Mailbox[] }).list;
+  const getResult = result as { list: Mailbox[]; state?: string };
+
+  // Store the JMAP state for delta sync
+  if (getResult.state) {
+    useJMAPStateStore.getState().setMailboxState(getResult.state);
+  }
+
+  return getResult.list;
 }
 
 /** Query emails in a mailbox with pagination */
@@ -131,7 +139,12 @@ export async function fetchEmails(params: {
   const [, getResult] = response.methodResponses[1];
 
   const qr = queryResult as { total: number; position: number; ids: string[] };
-  const gr = getResult as { list: EmailListItem[] };
+  const gr = getResult as { list: EmailListItem[]; state?: string };
+
+  // Store the JMAP state for delta sync
+  if (gr.state) {
+    useJMAPStateStore.getState().setEmailState(gr.state);
+  }
 
   return {
     emails: gr.list,
