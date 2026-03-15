@@ -1,12 +1,8 @@
 {
-  "$schema": "https://raw.githubusercontent.com/nicbarker/tauri/v2/crates/tauri-cli/schema.json",
   "productName": "Webmail",
   "version": "0.1.0",
-  "identifier": "com.webmail.desktop",
-  "build": {
-    "frontendDist": "http://localhost:8095",
-    "devUrl": "http://localhost:5173"
-  },
+  "identifier": "com.massive-hosting.webmail",
+  "build": {},
   "app": {
     "withGlobalTauri": true,
     "windows": [],
@@ -23,13 +19,12 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ],
-    "resources": ["binaries/*"]
+    ]
   },
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/nicbarker/webmail/releases/latest/download/latest.json"
+        "https://github.com/Massive-Hosting/webmail/releases/latest/download/latest.json"
       ],
       "pubkey": "",
       "dialog": true
