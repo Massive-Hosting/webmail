@@ -31,10 +31,16 @@ export function useMailboxes() {
     refetchIntervalInBackground: false,
   });
 
-  /** Sorted mailboxes: standard folders first (by role), then custom by sortOrder */
+  /** Sorted mailboxes: standard folders first (by role), then custom by sortOrder. Deduplicated by id. */
   const sortedMailboxes = useMemo(() => {
     if (!query.data) return [];
-    const mailboxes = [...query.data];
+    // Deduplicate by id (can happen when WebSocket sync + mutation invalidation both add the same mailbox)
+    const seen = new Set<string>();
+    const mailboxes = query.data.filter((m) => {
+      if (seen.has(m.id)) return false;
+      seen.add(m.id);
+      return true;
+    });
     return mailboxes.sort((a, b) => {
       const aOrder = a.role ? (ROLE_ORDER[a.role] ?? 100) : 1000 + a.sortOrder;
       const bOrder = b.role ? (ROLE_ORDER[b.role] ?? 100) : 1000 + b.sortOrder;
@@ -68,10 +74,33 @@ export function useMailboxes() {
     return inbox?.unreadEmails ?? 0;
   }, [query.data]);
 
-  /** Create mailbox mutation */
+  /** Create mailbox mutation with optimistic update */
   const createMutation = useMutation({
     mutationFn: createMailbox,
-    onSuccess: () => {
+    onMutate: async (params) => {
+      await queryClient.cancelQueries({ queryKey: ["mailboxes"] });
+      const prev = queryClient.getQueryData<Mailbox[]>(["mailboxes"]);
+      // Optimistically add the new folder
+      if (prev) {
+        const optimistic: Mailbox = {
+          id: `temp-${Date.now()}`,
+          name: params.name,
+          parentId: params.parentId ?? null,
+          role: null,
+          sortOrder: 999,
+          totalEmails: 0,
+          unreadEmails: 0,
+        };
+        queryClient.setQueryData<Mailbox[]>(["mailboxes"], [...prev, optimistic]);
+      }
+      return { prev };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) {
+        queryClient.setQueryData(["mailboxes"], context.prev);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
     },
   });
