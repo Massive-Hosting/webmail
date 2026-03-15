@@ -49,6 +49,9 @@ export interface DraftState {
   lastSaved?: Date;
   saving: boolean;
   saveError?: string;
+  /** Pre-resolved mailbox IDs so auto-save doesn't depend on hook state */
+  draftsMailboxId?: string;
+  sentMailboxId?: string;
 }
 
 interface ComposeState {
@@ -70,6 +73,7 @@ interface ComposeState {
     updates: Partial<AttachmentState>,
   ) => void;
   minimizeDraft: (draftId: string) => void;
+  minimizeAllInlineDrafts: () => void;
   maximizeDraft: (draftId: string) => void;
   getDraft: (draftId: string) => DraftState | undefined;
 }
@@ -188,6 +192,25 @@ export const useComposeStore = create<ComposeState>((set, get) => ({
       // If this was active, clear active
       const activeDraftId =
         state.activeDraftId === draftId ? null : state.activeDraftId;
+      return { drafts: next, activeDraftId };
+    });
+  },
+
+  minimizeAllInlineDrafts: () => {
+    set((state) => {
+      let changed = false;
+      const next = new Map(state.drafts);
+      for (const [id, draft] of next) {
+        if (draft.windowMode === "inline") {
+          next.set(id, { ...draft, windowMode: "minimized" });
+          changed = true;
+        }
+      }
+      if (!changed) return state;
+      // Clear active draft if it was inline
+      const activeDraft = state.activeDraftId ? next.get(state.activeDraftId) : undefined;
+      const activeDraftId =
+        activeDraft?.windowMode === "minimized" ? null : state.activeDraftId;
       return { drafts: next, activeDraftId };
     });
   },

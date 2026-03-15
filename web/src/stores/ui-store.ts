@@ -1,6 +1,7 @@
 /** UI state store: panel layout, selections, active view */
 
 import { create } from "zustand";
+import { useComposeStore } from "@/stores/compose-store.ts";
 
 interface PanelLayout {
   sidebarWidth: number;
@@ -173,6 +174,8 @@ export const useUIStore = create<UIState>((set, get) => {
     },
 
     setSelectedMailbox: (id) => {
+      // Minimize any inline compose drafts so they don't block navigation
+      useComposeStore.getState().minimizeAllInlineDrafts();
       set({
         selectedMailboxId: id,
         selectedEmailId: null,

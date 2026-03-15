@@ -147,15 +147,25 @@ export const ComposePanel = React.memo(function ComposePanel({
     const currentDraft = useComposeStore.getState().drafts.get(draftId);
     if (!currentDraft || !currentDraft.isDirty) return;
 
-    const draftsMailbox = findByRole("drafts");
-    if (!draftsMailbox) return;
+    // Use pre-resolved draftsMailboxId, fall back to findByRole
+    const mailboxId = currentDraft.draftsMailboxId ?? findByRole("drafts")?.id;
+    if (!mailboxId) {
+      // Mailboxes not loaded yet — retry after a short delay
+      setTimeout(() => handleAutoSave(), 2000);
+      return;
+    }
+
+    // Persist the resolved ID for future saves
+    if (!currentDraft.draftsMailboxId) {
+      updateDraft(draftId, { draftsMailboxId: mailboxId });
+    }
 
     updateDraft(draftId, { saving: true });
 
     try {
       const emailId = await saveDraft({
         emailId: currentDraft.emailId,
-        mailboxId: draftsMailbox.id,
+        mailboxId,
         from: currentDraft.from,
         to: currentDraft.to.filter((r) => r.isValid),
         cc: currentDraft.cc.filter((r) => r.isValid),
@@ -197,8 +207,8 @@ export const ComposePanel = React.memo(function ComposePanel({
     const validCc = currentDraft.cc.filter((r) => r.isValid);
     const validBcc = currentDraft.bcc.filter((r) => r.isValid);
 
-    const draftsMailbox = findByRole("drafts");
-    const sentMailbox = findByRole("sent");
+    const draftsMailboxId = currentDraft.draftsMailboxId ?? findByRole("drafts")?.id;
+    const sentMailboxId = currentDraft.sentMailboxId ?? findByRole("sent")?.id;
 
     updateDraft(draftId, { saving: true });
 
@@ -263,8 +273,8 @@ export const ComposePanel = React.memo(function ComposePanel({
         inReplyTo: currentDraft.inReplyTo,
         references: currentDraft.references,
         draftEmailId: currentDraft.emailId,
-        draftsMailboxId: draftsMailbox?.id,
-        sentMailboxId: sentMailbox?.id,
+        draftsMailboxId,
+        sentMailboxId,
       });
 
       closeDraft(draftId);

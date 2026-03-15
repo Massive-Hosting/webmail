@@ -9,6 +9,7 @@ import {
   generateDraftId,
 } from "@/stores/compose-store.ts";
 import type { Email, Identity, EmailAddress } from "@/types/mail.ts";
+import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 
 interface OpenComposeOptions {
   mode: ComposeMode;
@@ -21,11 +22,16 @@ interface OpenComposeOptions {
 
 export function useCompose() {
   const openDraft = useComposeStore((s) => s.openDraft);
+  const { findByRole } = useMailboxes();
 
   const open = useCallback(
     (options: OpenComposeOptions) => {
       const draftId = generateDraftId();
       const { mode, email, identity, windowMode = "inline", prefillBody } = options;
+
+      // Pre-resolve mailbox IDs so auto-save always has them
+      const draftsMailboxId = findByRole("drafts")?.id;
+      const sentMailboxId = findByRole("sent")?.id;
 
       let subject = "";
       let bodyHTML = "";
@@ -159,11 +165,13 @@ ${originalBody}
         attachments,
         inReplyTo,
         references,
+        draftsMailboxId,
+        sentMailboxId,
       });
 
       return draftId;
     },
-    [openDraft],
+    [openDraft, findByRole],
   );
 
   return { open };
