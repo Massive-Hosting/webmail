@@ -16,6 +16,7 @@ import {
   FileText,
 } from "lucide-react";
 import { useSearchStore } from "@/stores/search-store.ts";
+import { useTranslation } from "react-i18next";
 
 interface SearchBarProps {
   onAdvancedSearch?: () => void;
@@ -23,10 +24,10 @@ interface SearchBarProps {
 
 /** Quick filter definitions */
 const QUICK_FILTERS = [
-  { label: "Unread", query: "is:unread", icon: Mail },
-  { label: "Starred", query: "has:star", icon: Star },
-  { label: "Has attachments", query: "has:attachment", icon: Paperclip },
-  { label: "This week", query: () => {
+  { labelKey: "search.unread", query: "is:unread", icon: Mail },
+  { labelKey: "search.starred", query: "has:star", icon: Star },
+  { labelKey: "search.hasAttachments", query: "has:attachment", icon: Paperclip },
+  { labelKey: "search.thisWeek", query: () => {
     const d = new Date();
     d.setDate(d.getDate() - 7);
     return `after:${d.toISOString().slice(0, 10)}`;
@@ -39,14 +40,15 @@ function getFilterQuery(filter: typeof QUICK_FILTERS[number]): string {
 
 /** Narrowing chip definitions — shown when the user types free text */
 const NARROW_OPTIONS = [
-  { label: "From", prefix: "from:", icon: User },
-  { label: "To", prefix: "to:", icon: AtSign },
-  { label: "Subject", prefix: "subject:", icon: FileText },
+  { labelKey: "search.from", prefix: "from:", icon: User },
+  { labelKey: "search.to", prefix: "to:", icon: AtSign },
+  { labelKey: "search.subject", prefix: "subject:", icon: FileText },
 ] as const;
 
 export const SearchBar = React.memo(function SearchBar({
   onAdvancedSearch,
 }: SearchBarProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [localQuery, setLocalQuery] = useState("");
@@ -210,7 +212,7 @@ export const SearchBar = React.memo(function SearchBar({
           onKeyDown={handleKeyDown}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          placeholder="Search messages... (/ to focus)"
+          placeholder={t("search.placeholder")}
           className="w-full h-8 pl-9 pr-20 text-sm outline-none"
           style={{
             backgroundColor: "var(--color-bg-tertiary)",
@@ -230,7 +232,7 @@ export const SearchBar = React.memo(function SearchBar({
               onClick={handleClear}
               className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150"
               style={{ color: "var(--color-text-tertiary)" }}
-              title="Clear search (Esc)"
+              title={t("search.clearSearchEsc")}
             >
               <X size={14} />
             </button>
@@ -240,7 +242,7 @@ export const SearchBar = React.memo(function SearchBar({
             onClick={onAdvancedSearch}
             className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150"
             style={{ color: "var(--color-text-tertiary)" }}
-            title="Advanced search"
+            title={t("search.advancedSearch")}
           >
             <SlidersHorizontal size={14} />
           </button>
@@ -271,7 +273,7 @@ export const SearchBar = React.memo(function SearchBar({
                     className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider"
                     style={{ color: "var(--color-text-tertiary)" }}
                   >
-                    Recent searches
+                    {t("search.recentSearches")}
                   </div>
                   {recentSearches.slice(0, 5).map((search) => (
                     <div
@@ -294,7 +296,7 @@ export const SearchBar = React.memo(function SearchBar({
                         onClick={() => removeRecentSearch(search)}
                         className="opacity-0 group-hover:opacity-100 p-0.5 rounded-md hover:bg-[var(--color-bg-secondary)] transition-all duration-150"
                         style={{ color: "var(--color-text-tertiary)" }}
-                        title="Remove"
+                        title={t("search.remove")}
                       >
                         <X size={12} />
                       </button>
@@ -314,7 +316,7 @@ export const SearchBar = React.memo(function SearchBar({
                   className="text-[11px] font-semibold uppercase tracking-wider mb-2"
                   style={{ color: "var(--color-text-tertiary)" }}
                 >
-                  Quick filters
+                  {t("search.quickFilters")}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {QUICK_FILTERS.map((filter) => {
@@ -343,7 +345,7 @@ export const SearchBar = React.memo(function SearchBar({
                         }}
                       >
                         <Icon size={12} />
-                        {filter.label}
+                        {t(filter.labelKey)}
                       </button>
                     );
                   })}
@@ -366,7 +368,7 @@ export const SearchBar = React.memo(function SearchBar({
                     onChange={(e) => setScopeToMailbox(e.target.checked)}
                     className="w-3 h-3"
                   />
-                  Current mailbox only
+                  {t("search.currentMailboxOnly")}
                 </label>
               </div>
             </>
@@ -385,7 +387,7 @@ export const SearchBar = React.memo(function SearchBar({
               >
                 <Search size={14} style={{ color: "var(--color-text-accent)" }} />
                 <span>
-                  Search for{" "}
+                  {t("search.searchFor")}{" "}
                   <span className="font-semibold" style={{ color: "var(--color-text-accent)" }}>
                     &ldquo;{localQuery.trim()}&rdquo;
                   </span>
@@ -403,7 +405,7 @@ export const SearchBar = React.memo(function SearchBar({
                     className="text-[11px] font-semibold uppercase tracking-wider mb-2"
                     style={{ color: "var(--color-text-tertiary)" }}
                   >
-                    Narrow your search
+                    {t("search.narrowYourSearch")}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {NARROW_OPTIONS.map((opt) => {
@@ -432,7 +434,7 @@ export const SearchBar = React.memo(function SearchBar({
                           }}
                         >
                           <Icon size={12} />
-                          {opt.label}: {localQuery.trim()}
+                          {t(opt.labelKey)}: {localQuery.trim()}
                         </button>
                       );
                     })}
@@ -450,7 +452,7 @@ export const SearchBar = React.memo(function SearchBar({
                     className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider"
                     style={{ color: "var(--color-text-tertiary)" }}
                   >
-                    Recent
+                    {t("search.recent")}
                   </div>
                   {filteredRecent.map((search) => (
                     <div
@@ -473,7 +475,7 @@ export const SearchBar = React.memo(function SearchBar({
                         onClick={() => removeRecentSearch(search)}
                         className="opacity-0 group-hover:opacity-100 p-0.5 rounded-md hover:bg-[var(--color-bg-secondary)] transition-all duration-150"
                         style={{ color: "var(--color-text-tertiary)" }}
-                        title="Remove"
+                        title={t("search.remove")}
                       >
                         <X size={12} />
                       </button>
@@ -498,7 +500,7 @@ export const SearchBar = React.memo(function SearchBar({
                     onChange={(e) => setScopeToMailbox(e.target.checked)}
                     className="w-3 h-3"
                   />
-                  Current mailbox only
+                  {t("search.currentMailboxOnly")}
                 </label>
               </div>
             </>

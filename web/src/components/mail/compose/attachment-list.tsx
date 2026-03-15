@@ -15,6 +15,8 @@ import {
 import { formatFileSize } from "@/lib/format.ts";
 import { useComposeStore, type AttachmentState } from "@/stores/compose-store.ts";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n/index.ts";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 const MAX_TOTAL_SIZE = 25 * 1024 * 1024;
@@ -115,13 +117,13 @@ export function useAttachmentUpload(draftId: string) {
       for (const file of Array.from(files)) {
         // Per-file size check
         if (file.size > MAX_FILE_SIZE) {
-          toast.error(`"${file.name}" exceeds the 25MB file size limit.`);
+          toast.error(i18n.t("attachment.exceedsFileSize", { name: file.name }));
           continue;
         }
 
         // Total size check
         if (runningTotal + file.size > MAX_TOTAL_SIZE) {
-          toast.error("Total attachment size would exceed 25MB limit.");
+          toast.error(i18n.t("attachment.exceedsTotalSize"));
           break;
         }
 
@@ -157,7 +159,7 @@ export function useAttachmentUpload(draftId: string) {
               status: "error",
               progress: 0,
             });
-            toast.error(`Failed to upload "${file.name}".`);
+            toast.error(i18n.t("attachment.failedToUpload", { name: file.name }));
           }
         });
       }
@@ -255,7 +257,7 @@ function AttachmentChip({
         onClick={onRemove}
         className="shrink-0 hover:opacity-70 ml-0.5"
         style={{ color: "var(--color-text-tertiary)" }}
-        title="Remove attachment"
+        title={i18n.t("attachment.removeAttachment")}
       >
         <X size={12} />
       </button>
@@ -340,7 +342,7 @@ export function DragDropZone({
               className="text-sm font-medium"
               style={{ color: "var(--color-bg-accent, #2563eb)" }}
             >
-              Drop files to attach
+              {i18n.t("attachment.dropToAttach")}
             </span>
           </div>
         </div>

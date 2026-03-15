@@ -6,9 +6,9 @@ import no from './locales/no.json';
 import de from './locales/de.json';
 
 export const LANGUAGES = [
-  { code: 'en', label: 'English' },
-  { code: 'no', label: 'Norsk (Bokm\u00e5l)' },
-  { code: 'de', label: 'Deutsch' },
+  { code: 'en', label: '\u{1F1EC}\u{1F1E7} English' },
+  { code: 'no', label: '\u{1F1F3}\u{1F1F4} Norsk' },
+  { code: 'de', label: '\u{1F1E9}\u{1F1EA} Deutsch' },
 ] as const;
 
 i18n

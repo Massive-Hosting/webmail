@@ -15,6 +15,7 @@ import {
   HardDrive,
   Shield,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { FilterRulesPanel } from "./filter-rules.tsx";
 import { PGPSettingsPanel } from "./pgp-settings.tsx";
 import { GeneralSettings } from "./general-settings.tsx";
@@ -35,6 +36,7 @@ export const SettingsDialog = React.memo(function SettingsDialog({
   onOpenChange,
   initialTab = "general",
 }: SettingsDialogProps) {
+  const { t } = useTranslation();
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -61,13 +63,13 @@ export const SettingsDialog = React.memo(function SettingsDialog({
               style={{ color: "var(--color-text-primary)" }}
             >
               <Settings size={20} />
-              Settings
+              {t("settingsDialog.title")}
             </Dialog.Title>
             <Dialog.Close asChild>
               <button
                 className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
                 style={{ color: "var(--color-text-secondary)" }}
-                aria-label="Close settings"
+                aria-label={t("settingsDialog.close")}
               >
                 <X size={18} />
               </button>
@@ -81,39 +83,39 @@ export const SettingsDialog = React.memo(function SettingsDialog({
                 borderRight: "1px solid var(--color-border-secondary)",
                 width: "180px",
               }}
-              aria-label="Settings sections"
+              aria-label={t("settingsDialog.sections")}
             >
               <TabTrigger value="general">
                 <Palette size={14} />
-                General
+                {t("settingsDialog.general")}
               </TabTrigger>
               <TabTrigger value="mail">
                 <Mail size={14} />
-                Mail
+                {t("settingsDialog.mail")}
               </TabTrigger>
               <TabTrigger value="signatures">
                 <PenLine size={14} />
-                Signatures
+                {t("settingsDialog.signatures")}
               </TabTrigger>
               <TabTrigger value="filters">
                 <Filter size={14} />
-                Filters
+                {t("settingsDialog.filters")}
               </TabTrigger>
               <TabTrigger value="shortcuts">
                 <Keyboard size={14} />
-                Shortcuts
+                {t("settingsDialog.shortcuts")}
               </TabTrigger>
               <TabTrigger value="notifications">
                 <Bell size={14} />
-                Notifications
+                {t("settingsDialog.notifications")}
               </TabTrigger>
               <TabTrigger value="storage">
                 <HardDrive size={14} />
-                Storage
+                {t("settingsDialog.storage")}
               </TabTrigger>
               <TabTrigger value="security">
                 <Shield size={14} />
-                Security
+                {t("settingsDialog.security")}
               </TabTrigger>
             </Tabs.List>
 

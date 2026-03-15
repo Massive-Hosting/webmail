@@ -36,6 +36,7 @@ import { useSettingsStore } from "@/stores/settings-store.ts";
 import { useAIEnabled } from "@/hooks/use-ai-enabled.ts";
 import { AIPanel } from "./ai-panel.tsx";
 import { useTranslation } from "react-i18next";
+import { useAuthStore } from "@/stores/auth-store.ts";
 
 // Re-export useCompose from its own module (keeps it out of the lazy-loaded chunk)
 export { useCompose } from "./use-compose.ts";
@@ -100,12 +101,15 @@ export const ComposePanel = React.memo(function ComposePanel({
   });
 
   // Set default identity on first render if not set
+  // Prefer the identity whose email matches the logged-in user's email
   useEffect(() => {
     if (draft && !draft.from && identities && identities.length > 0) {
-      updateDraft(draftId, { from: identities[0] });
+      const userEmail = useAuthStore.getState().email;
+      const matchingIdentity = identities.find((i) => i.email === userEmail) ?? identities[0];
+      updateDraft(draftId, { from: matchingIdentity });
       // If identity has signature and body is empty, insert signature
-      if (!draft.bodyHTML && identities[0].htmlSignature) {
-        const sig = `<p><br></p><p>-- </p>${identities[0].htmlSignature}`;
+      if (!draft.bodyHTML && matchingIdentity.htmlSignature) {
+        const sig = `<p><br></p><p>-- </p>${matchingIdentity.htmlSignature}`;
         updateDraft(draftId, { bodyHTML: sig, isDirty: false });
       }
     }

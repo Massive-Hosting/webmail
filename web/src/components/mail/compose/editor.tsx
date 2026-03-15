@@ -16,7 +16,8 @@ import TableHeader from "@tiptap/extension-table-header";
 import Placeholder from "@tiptap/extension-placeholder";
 import Typography from "@tiptap/extension-typography";
 import CharacterCount from "@tiptap/extension-character-count";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Bold,
   Italic,
@@ -49,8 +50,10 @@ export const ComposeEditor = React.memo(function ComposeEditor({
   content,
   onChange,
   onPasteImage,
-  placeholder = "Write your message...",
+  placeholder: placeholderProp,
 }: ComposeEditorProps) {
+  const { t } = useTranslation();
+  const placeholder = placeholderProp ?? t("compose.writeMessage");
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const linkInputRef = useRef<HTMLInputElement>(null);
@@ -180,7 +183,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
 
   const handleInsertImage = useCallback(() => {
     if (!editor) return;
-    const url = prompt("Image URL:");
+    const url = prompt(t("compose.imageUrl"));
     if (url) {
       editor.chain().focus().setImage({ src: url }).run();
     }
@@ -202,13 +205,13 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       >
         <ToolbarButton
           icon={<Undo size={15} />}
-          label="Undo"
+          label={t("editor.undo")}
           onClick={() => editor.chain().focus().undo().run()}
           disabled={!editor.can().undo()}
         />
         <ToolbarButton
           icon={<Redo size={15} />}
-          label="Redo"
+          label={t("editor.redo")}
           onClick={() => editor.chain().focus().redo().run()}
           disabled={!editor.can().redo()}
         />
@@ -217,25 +220,25 @@ export const ComposeEditor = React.memo(function ComposeEditor({
 
         <ToolbarButton
           icon={<Bold size={15} />}
-          label="Bold (Ctrl+B)"
+          label={t("editor.bold")}
           active={editor.isActive("bold")}
           onClick={() => editor.chain().focus().toggleBold().run()}
         />
         <ToolbarButton
           icon={<Italic size={15} />}
-          label="Italic (Ctrl+I)"
+          label={t("editor.italic")}
           active={editor.isActive("italic")}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         />
         <ToolbarButton
           icon={<UnderlineIcon size={15} />}
-          label="Underline (Ctrl+U)"
+          label={t("editor.underline")}
           active={editor.isActive("underline")}
           onClick={() => editor.chain().focus().toggleUnderline().run()}
         />
         <ToolbarButton
           icon={<Strikethrough size={15} />}
-          label="Strikethrough"
+          label={t("editor.strikethrough")}
           active={editor.isActive("strike")}
           onClick={() => editor.chain().focus().toggleStrike().run()}
         />
@@ -244,13 +247,13 @@ export const ComposeEditor = React.memo(function ComposeEditor({
 
         <ToolbarButton
           icon={<Heading1 size={15} />}
-          label="Heading 1"
+          label={t("editor.heading1")}
           active={editor.isActive("heading", { level: 1 })}
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
         />
         <ToolbarButton
           icon={<Heading2 size={15} />}
-          label="Heading 2"
+          label={t("editor.heading2")}
           active={editor.isActive("heading", { level: 2 })}
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         />
@@ -259,13 +262,13 @@ export const ComposeEditor = React.memo(function ComposeEditor({
 
         <ToolbarButton
           icon={<List size={15} />}
-          label="Bullet List"
+          label={t("editor.bulletList")}
           active={editor.isActive("bulletList")}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
         />
         <ToolbarButton
           icon={<ListOrdered size={15} />}
-          label="Numbered List"
+          label={t("editor.numberedList")}
           active={editor.isActive("orderedList")}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
         />
@@ -274,25 +277,25 @@ export const ComposeEditor = React.memo(function ComposeEditor({
 
         <ToolbarButton
           icon={<LinkIcon size={15} />}
-          label="Insert Link"
+          label={t("editor.insertLink")}
           active={editor.isActive("link")}
           onClick={openLinkDialog}
         />
         {editor.isActive("link") && (
           <ToolbarButton
             icon={<LinkOff size={15} />}
-            label="Remove Link"
+            label={t("editor.removeLink")}
             onClick={() => editor.chain().focus().unsetLink().run()}
           />
         )}
         <ToolbarButton
           icon={<ImageIcon size={15} />}
-          label="Insert Image"
+          label={t("editor.insertImage")}
           onClick={handleInsertImage}
         />
         <ToolbarButton
           icon={<Code size={15} />}
-          label="Code"
+          label={t("editor.code")}
           active={editor.isActive("code")}
           onClick={() => editor.chain().focus().toggleCode().run()}
         />
