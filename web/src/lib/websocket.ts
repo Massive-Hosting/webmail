@@ -38,6 +38,9 @@ const MAX_BACKOFF = 30000;
 const BACKOFF_FACTOR = 2;
 const MAX_RETRIES_BEFORE_FALLBACK = 3;
 
+/** Minimum interval between processing state change events (ms) */
+const STATE_CHANGE_THROTTLE_MS = 2000;
+
 export class WebSocketClient {
   private ws: WebSocket | null = null;
   private queryClient: QueryClient;
@@ -49,6 +52,11 @@ export class WebSocketClient {
   private _status: ConnectionStatus = "disconnected";
   private disposed = false;
   private visibilityHandler: (() => void) | null = null;
+
+  /** Throttle state: pending state change that's been coalesced */
+  private pendingStateChange: Record<string, string> | null = null;
+  private stateChangeTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastStateChangeProcessed = 0;
 
   constructor(queryClient: QueryClient) {
     this.queryClient = queryClient;
@@ -145,6 +153,11 @@ export class WebSocketClient {
   disconnect() {
     this.disposed = true;
     this.clearReconnectTimer();
+    if (this.stateChangeTimer) {
+      clearTimeout(this.stateChangeTimer);
+      this.stateChangeTimer = null;
+    }
+    this.pendingStateChange = null;
     this.closeQuietly();
     if (this.visibilityHandler) {
       document.removeEventListener("visibilitychange", this.visibilityHandler);
@@ -205,7 +218,7 @@ export class WebSocketClient {
         break;
 
       case "stateChange":
-        this.handleStateChange(msg.changed);
+        this.throttledStateChange(msg.changed);
         break;
 
       case "taskProgress":
@@ -224,6 +237,49 @@ export class WebSocketClient {
   private sendPong() {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: "pong" } satisfies WSClientMessage));
+    }
+  }
+
+  /**
+   * Throttle state change processing to avoid flooding the server with
+   * delta-sync requests when many changes arrive in rapid succession.
+   * Coalesces multiple state change events and processes them at most
+   * once per STATE_CHANGE_THROTTLE_MS.
+   */
+  private throttledStateChange(changed: Record<string, string>) {
+    // Coalesce: merge with any pending changes (latest state wins)
+    if (this.pendingStateChange) {
+      Object.assign(this.pendingStateChange, changed);
+    } else {
+      this.pendingStateChange = { ...changed };
+    }
+
+    const now = Date.now();
+    const elapsed = now - this.lastStateChangeProcessed;
+
+    if (elapsed >= STATE_CHANGE_THROTTLE_MS) {
+      // Enough time has passed — process immediately
+      this.flushStateChange();
+    } else if (!this.stateChangeTimer) {
+      // Schedule processing after the remaining throttle window
+      this.stateChangeTimer = setTimeout(() => {
+        this.flushStateChange();
+      }, STATE_CHANGE_THROTTLE_MS - elapsed);
+    }
+    // If timer is already scheduled, the pending changes will be picked up when it fires
+  }
+
+  private flushStateChange() {
+    if (this.stateChangeTimer) {
+      clearTimeout(this.stateChangeTimer);
+      this.stateChangeTimer = null;
+    }
+    const pending = this.pendingStateChange;
+    this.pendingStateChange = null;
+    this.lastStateChangeProcessed = Date.now();
+
+    if (pending) {
+      this.handleStateChange(pending);
     }
   }
 

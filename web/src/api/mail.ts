@@ -768,10 +768,24 @@ export async function sendEmail(params: SendEmailParams): Promise<void> {
     "create_email",
   ]);
 
+  // Resolve identity ID: use the one from the identity object, or fetch from server
+  let identityId = params.from?.id;
+  if (!identityId) {
+    // Fetch identities to get a valid ID
+    const identities = await fetchIdentities();
+    if (identities.length > 0) {
+      identityId = identities[0].id;
+    }
+  }
+
+  if (!identityId) {
+    throw new Error("No sending identity available. Please configure an identity.");
+  }
+
   // Create submission with onSuccessUpdateEmail to move to Sent
   const submissionObj: Record<string, unknown> = {
     emailId: "#sendEmail",
-    identityId: params.from?.id,
+    identityId,
   };
 
   // Move to Sent on success

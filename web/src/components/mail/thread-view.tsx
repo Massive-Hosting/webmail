@@ -44,21 +44,13 @@ function ThreadContent({
   emails: Email[];
   activeEmailId: string;
 }) {
-  // Expand most recent + unread messages by default
+  // Only expand the active/clicked message by default
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
-    const initial = new Set<string>();
-    // Always expand the most recent
-    if (emails.length > 0) {
-      initial.add(emails[emails.length - 1].id);
-    }
-    // Also expand unread messages
-    for (const email of emails) {
-      if (isUnread(email)) {
-        initial.add(email.id);
-      }
-    }
-    return initial;
+    return new Set<string>([activeEmailId]);
   });
+
+  // Whether the earlier (collapsed) messages summary is expanded
+  const [showEarlierMessages, setShowEarlierMessages] = useState(false);
 
   const [allExpanded, setAllExpanded] = useState(false);
 
@@ -76,15 +68,22 @@ function ThreadContent({
 
   const toggleAll = () => {
     if (allExpanded) {
-      setExpandedIds(new Set([emails[emails.length - 1].id]));
+      setExpandedIds(new Set([activeEmailId]));
       setAllExpanded(false);
+      setShowEarlierMessages(false);
     } else {
       setExpandedIds(new Set(emails.map((e) => e.id)));
       setAllExpanded(true);
+      setShowEarlierMessages(true);
     }
   };
 
   const subject = emails[0]?.subject || "(no subject)";
+
+  // Split emails into earlier (before active) and active + after
+  const activeIndex = emails.findIndex((e) => e.id === activeEmailId);
+  const earlierEmails = activeIndex > 0 ? emails.slice(0, activeIndex) : [];
+  const activeAndLater = activeIndex >= 0 ? emails.slice(activeIndex) : emails;
 
   return (
     <div className="thread-view">
@@ -119,9 +118,38 @@ function ThreadContent({
 
       {/* Thread messages with visual connector */}
       <div className="thread-view__messages">
-        {emails.map((email, index) => {
+        {/* Earlier messages: collapsed summary by default */}
+        {earlierEmails.length > 0 && !showEarlierMessages && (
+          <button
+            onClick={() => setShowEarlierMessages(true)}
+            className="thread-view__earlier-summary"
+          >
+            <ChevronDown size={14} className="thread-view__earlier-chevron" />
+            <span>
+              {earlierEmails.length} earlier {earlierEmails.length === 1 ? "message" : "messages"}
+            </span>
+          </button>
+        )}
+
+        {/* Render earlier messages only when expanded */}
+        {showEarlierMessages && earlierEmails.map((email, index) => {
           const isExpanded = expandedIds.has(email.id);
-          const isLast = index === emails.length - 1;
+          return (
+            <div key={email.id} className="thread-view__message-wrapper">
+              <div className="thread-view__connector" />
+              <ThreadMessage
+                email={email}
+                isExpanded={isExpanded}
+                onToggle={() => toggleEmail(email.id)}
+              />
+            </div>
+          );
+        })}
+
+        {/* Active message and later messages - always shown */}
+        {activeAndLater.map((email, index) => {
+          const isExpanded = expandedIds.has(email.id);
+          const isLast = index === activeAndLater.length - 1;
           return (
             <div key={email.id} className="thread-view__message-wrapper">
               {/* Visual thread line */}

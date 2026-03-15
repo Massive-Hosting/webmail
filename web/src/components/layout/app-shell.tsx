@@ -318,6 +318,12 @@ export function AppShell() {
         </a>
         <header role="banner">
           <Toolbar
+            onCompose={() => {
+              openCompose({
+                mode: "new",
+                identity: identities?.[0] ?? null,
+              });
+            }}
             onSettings={handleOpenSettings}
             onAdvancedSearch={handleOpenAdvancedSearch}
           />
@@ -376,6 +382,12 @@ export function AppShell() {
       </a>
       <header role="banner">
         <Toolbar
+          onCompose={() => {
+            openCompose({
+              mode: "new",
+              identity: identities?.[0] ?? null,
+            });
+          }}
           onSettings={handleOpenSettings}
           onAdvancedSearch={handleOpenAdvancedSearch}
         />
