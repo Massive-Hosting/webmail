@@ -21,6 +21,12 @@ type Config struct {
 	AllowedOrigins     []string
 	ValkeyURL          string
 	TemporalAddress    string
+
+	// AI assistant configuration.
+	AIEnabled   bool
+	AIAPIKey    string
+	AIModel     string
+	AIMaxTokens int
 }
 
 // Load reads configuration from environment variables with sensible defaults.
@@ -35,6 +41,10 @@ func Load() (*Config, error) {
 		RateLimitPerMinute: envIntOr("WEBMAIL_RATE_LIMIT", 120),
 		ValkeyURL:          envOr("VALKEY_URL", "redis://127.0.0.1:6379/0"),
 		TemporalAddress:    envOr("TEMPORAL_ADDRESS", "localhost:7233"),
+		AIEnabled:          envBoolOr("AI_ENABLED", false),
+		AIAPIKey:           os.Getenv("AI_API_KEY"),
+		AIModel:            envOr("AI_MODEL", "claude-sonnet-4-20250514"),
+		AIMaxTokens:        envIntOr("AI_MAX_TOKENS", 1024),
 	}
 
 	// Parse allowed origins.
@@ -81,6 +91,13 @@ func envIntOr(key string, fallback int) int {
 		if n, err := strconv.Atoi(v); err == nil {
 			return n
 		}
+	}
+	return fallback
+}
+
+func envBoolOr(key string, fallback bool) bool {
+	if v := os.Getenv(key); v != "" {
+		return v == "true" || v == "1" || v == "yes"
 	}
 	return fallback
 }

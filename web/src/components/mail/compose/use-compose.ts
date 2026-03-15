@@ -15,6 +15,8 @@ interface OpenComposeOptions {
   email?: Email | null;
   identity?: Identity | null;
   windowMode?: WindowMode;
+  /** Pre-fill the body with AI-generated text (inserted before quoted text in replies) */
+  prefillBody?: string;
 }
 
 export function useCompose() {
@@ -23,7 +25,7 @@ export function useCompose() {
   const open = useCallback(
     (options: OpenComposeOptions) => {
       const draftId = generateDraftId();
-      const { mode, email, identity, windowMode = "inline" } = options;
+      const { mode, email, identity, windowMode = "inline", prefillBody } = options;
 
       let subject = "";
       let bodyHTML = "";
@@ -118,6 +120,15 @@ ${originalBody}
               included: true,
             });
           }
+        }
+      }
+
+      // Insert AI-generated prefill body before quoted text
+      if (prefillBody) {
+        if (mode === "reply" || mode === "reply-all") {
+          bodyHTML = `${prefillBody}${bodyHTML}`;
+        } else {
+          bodyHTML = prefillBody;
         }
       }
 

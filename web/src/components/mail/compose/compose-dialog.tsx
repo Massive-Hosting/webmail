@@ -14,6 +14,7 @@ import {
   Lock,
   ShieldCheck,
   AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 import {
   useComposeStore,
@@ -32,6 +33,8 @@ import { usePGPStore } from "@/stores/pgp-store.ts";
 import { encryptMessage, signMessage } from "@/lib/pgp.ts";
 import { lookupPublicKeys } from "@/lib/pgp-lookup.ts";
 import { useSettingsStore } from "@/stores/settings-store.ts";
+import { useAIEnabled } from "@/hooks/use-ai-enabled.ts";
+import { AIPanel } from "./ai-panel.tsx";
 
 // Re-export useCompose from its own module (keeps it out of the lazy-loaded chunk)
 export { useCompose } from "./use-compose.ts";
@@ -74,6 +77,10 @@ export const ComposePanel = React.memo(function ComposePanel({
   const [pgpEncrypt, setPgpEncrypt] = useState(false);
   const [missingKeyRecipients, setMissingKeyRecipients] = useState<string[]>([]);
   const [showMissingKeyDialog, setShowMissingKeyDialog] = useState(false);
+
+  // AI assistant state
+  const aiEnabled = useAIEnabled();
+  const [showAIPanel, setShowAIPanel] = useState(false);
 
   // Set PGP defaults
   useEffect(() => {
@@ -613,6 +620,23 @@ export const ComposePanel = React.memo(function ComposePanel({
           />
         </div>
 
+        {/* AI Panel (above editor) */}
+        {showAIPanel && aiEnabled && (
+          <AIPanel
+            isReply={draft.composeMode === "reply" || draft.composeMode === "reply-all"}
+            originalEmailBody={draft.bodyHTML}
+            onInsert={(text) => {
+              // Convert plain text to HTML paragraphs and prepend to body
+              const htmlText = text
+                .split("\n\n")
+                .map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`)
+                .join("");
+              updateDraft(draftId, { bodyHTML: htmlText + draft.bodyHTML });
+            }}
+            onClose={() => setShowAIPanel(false)}
+          />
+        )}
+
         {/* Editor */}
         <div className="compose-dialog__editor">
           <ComposeEditor
@@ -662,6 +686,22 @@ export const ComposePanel = React.memo(function ComposePanel({
                 }
               }}
             />
+
+            {/* AI Assist button (only when AI is enabled) */}
+            {aiEnabled && (
+              <>
+                <div className="compose-dialog__separator" />
+                <button
+                  type="button"
+                  onClick={() => setShowAIPanel(!showAIPanel)}
+                  className={`compose-dialog__ai-btn ${showAIPanel ? "compose-dialog__ai-btn--active" : ""}`}
+                  title="AI Assist"
+                >
+                  <Sparkles size={14} />
+                  AI
+                </button>
+              </>
+            )}
 
             {/* PGP toggles (only when PGP is set up) */}
             {pgpIsSetUp && pgpIsUnlocked && (

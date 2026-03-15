@@ -101,6 +101,13 @@ func main() {
 	wsHandler := handler.NewWebSocketHandler(hub, progressRelay, log)
 	healthHandler := handler.NewHealthHandler(pool)
 
+	// AI handler (only if enabled).
+	var aiHandler *handler.AIHandler
+	if cfg.AIEnabled && cfg.AIAPIKey != "" {
+		aiHandler = handler.NewAIHandler(cfg, log)
+		log.Info().Str("model", cfg.AIModel).Msg("AI assistant enabled")
+	}
+
 	// Build router.
 	r := chi.NewRouter()
 
@@ -159,6 +166,14 @@ func main() {
 
 			// WebSocket.
 			r.Get("/ws", wsHandler.Upgrade)
+
+			// AI assistant (only registered when enabled).
+			if aiHandler != nil {
+				r.Get("/ai/status", aiHandler.Status)
+				r.Post("/ai/compose", aiHandler.Compose)
+				r.Post("/ai/reply", aiHandler.Reply)
+				r.Post("/ai/rewrite", aiHandler.Rewrite)
+			}
 		})
 	})
 

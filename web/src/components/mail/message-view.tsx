@@ -40,6 +40,8 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import { PGPStatusBar, EncryptedPlaceholder, usePGPMessage } from "@/components/mail/pgp-message.tsx";
 import { detectPGPContent } from "@/lib/pgp-detect.ts";
 import { InvitationCard } from "@/components/calendar/invitation-card.tsx";
+import { SmartReplyBar } from "@/components/mail/smart-reply-bar.tsx";
+import { useAIEnabled } from "@/hooks/use-ai-enabled.ts";
 
 interface MessageViewProps {
   emailId: string;
@@ -73,6 +75,7 @@ function MessageContent({ email }: { email: Email }) {
   const [showQuotedText, setShowQuotedText] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const { open: openCompose } = useCompose();
+  const aiEnabled = useAIEnabled();
   const { data: identities } = useQuery({
     queryKey: ["identities"],
     queryFn: fetchIdentities,
@@ -341,6 +344,11 @@ function MessageContent({ email }: { email: Email }) {
             </p>
           )}
         </div>
+
+        {/* Smart Reply Bar (AI-powered) */}
+        {aiEnabled && (
+          <SmartReplyBar email={email} />
+        )}
       </div>
     </Tooltip.Provider>
   );
