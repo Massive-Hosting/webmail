@@ -1,4 +1,4 @@
-/** Mailbox folder tree component */
+/** Mailbox folder tree component — premium design */
 
 import React, { useCallback, useState } from "react";
 import { useMailboxes } from "@/hooks/use-mailboxes.ts";
@@ -60,11 +60,11 @@ export const FolderTree = React.memo(function FolderTree() {
 
   if (isLoading) {
     return (
-      <div className="p-2 flex flex-col gap-1">
+      <div className="p-2 flex flex-col gap-0.5">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-2 px-2 py-1.5">
+          <div key={i} className="flex items-center gap-2.5 px-3 py-2">
             <Skeleton width={16} height={16} />
-            <Skeleton width={80 + Math.random() * 40} height={14} />
+            <Skeleton width={80 + Math.random() * 40} height={12} />
           </div>
         ))}
       </div>
@@ -82,7 +82,7 @@ export const FolderTree = React.memo(function FolderTree() {
   }
 
   return (
-    <div className="py-1" role="tree" aria-label="Mail folders">
+    <div className="py-1.5" role="tree" aria-label="Mail folders">
       {/* Standard folders */}
       {standardFolders.map((mailbox) => (
         <FolderItem
@@ -99,8 +99,8 @@ export const FolderTree = React.memo(function FolderTree() {
       {/* Separator */}
       {customFolders.length > 0 && (
         <div
-          className="mx-3 my-1"
-          style={{ borderTop: "1px solid var(--color-border-secondary)" }}
+          className="mx-3 my-1.5"
+          style={{ borderTop: "1px solid var(--color-border-primary)" }}
         />
       )}
 
@@ -121,7 +121,7 @@ export const FolderTree = React.memo(function FolderTree() {
 
       {/* Create folder */}
       {creatingFolder ? (
-        <div className="px-3 py-1">
+        <div className="px-3 py-1.5">
           <input
             type="text"
             value={newFolderName}
@@ -134,11 +134,13 @@ export const FolderTree = React.memo(function FolderTree() {
               if (!newFolderName.trim()) setCreatingFolder(false);
             }}
             autoFocus
-            className="w-full h-7 px-2 text-sm rounded outline-none"
+            className="w-full h-7 px-2 text-sm outline-none"
             style={{
               backgroundColor: "var(--color-bg-tertiary)",
               color: "var(--color-text-primary)",
               border: "1px solid var(--color-border-focus)",
+              borderRadius: "var(--radius-sm)",
+              boxShadow: "0 0 0 3px rgba(99, 102, 241, 0.08)",
             }}
             placeholder="Folder name..."
           />
@@ -146,8 +148,14 @@ export const FolderTree = React.memo(function FolderTree() {
       ) : (
         <button
           onClick={() => setCreatingFolder(true)}
-          className="flex items-center gap-2 w-full px-3 py-1.5 text-sm hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+          className="flex items-center gap-2.5 w-full px-3 py-1.5 text-sm transition-all duration-150 hover:bg-[var(--color-bg-tertiary)]"
           style={{ color: "var(--color-text-tertiary)" }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.color = "var(--color-text-secondary)";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.color = "var(--color-text-tertiary)";
+          }}
         >
           <FolderPlus size={16} />
           New folder
@@ -192,7 +200,7 @@ const FolderItem = React.memo(function FolderItem({
             e.preventDefault();
             setShowContext(true);
           }}
-          className="flex items-center gap-2 w-full px-3 py-1.5 text-sm transition-colors duration-150 group"
+          className="flex items-center gap-2.5 w-full px-3 py-1 text-sm transition-all duration-150 group"
           role="treeitem"
           aria-selected={isActive}
           aria-expanded={hasChildren ? isExpanded : undefined}
@@ -202,6 +210,10 @@ const FolderItem = React.memo(function FolderItem({
             height: "var(--density-sidebar-item)",
             backgroundColor: isActive ? "var(--color-message-selected)" : "transparent",
             color: isActive ? "var(--color-text-accent)" : "var(--color-text-primary)",
+            borderRadius: "var(--radius-sm)",
+            marginLeft: "4px",
+            marginRight: "4px",
+            width: "calc(100% - 8px)",
           }}
           onMouseOver={(e) => {
             if (!isActive) e.currentTarget.style.backgroundColor = "var(--color-message-hover)";
@@ -216,19 +228,27 @@ const FolderItem = React.memo(function FolderItem({
                 e.stopPropagation();
                 onToggleExpand?.();
               }}
-              className="shrink-0"
+              className="shrink-0 transition-transform duration-150"
+              style={{
+                transform: isExpanded ? "rotate(0deg)" : "rotate(0deg)",
+              }}
             >
               {isExpanded ? (
-                <ChevronDown size={14} />
+                <ChevronDown size={13} style={{ color: "var(--color-text-tertiary)" }} />
               ) : (
-                <ChevronRight size={14} />
+                <ChevronRight size={13} style={{ color: "var(--color-text-tertiary)" }} />
               )}
             </span>
           )}
-          <span className="shrink-0" style={{ color: isActive ? "var(--color-text-accent)" : "var(--color-text-secondary)" }}>
+          <span
+            className="shrink-0"
+            style={{
+              color: isActive ? "var(--color-text-accent)" : "var(--color-text-secondary)",
+            }}
+          >
             {icon}
           </span>
-          <span className={`truncate flex-1 text-left ${mailbox.unreadEmails > 0 ? "font-semibold" : ""}`}>
+          <span className={`truncate flex-1 text-left ${mailbox.unreadEmails > 0 ? "font-semibold" : "font-normal"}`}>
             {mailbox.name}
           </span>
           {mailbox.unreadEmails > 0 && (
@@ -239,17 +259,21 @@ const FolderItem = React.memo(function FolderItem({
 
       <DropdownMenu.Portal>
         <DropdownMenu.Content
-          className="min-w-[160px] rounded-md p-1 text-sm"
+          className="min-w-[160px] p-1 text-sm animate-scale-in"
           style={{
             backgroundColor: "var(--color-bg-elevated)",
             border: "1px solid var(--color-border-primary)",
             boxShadow: "var(--shadow-lg)",
+            borderRadius: "var(--radius-md)",
           }}
           sideOffset={5}
         >
           <DropdownMenu.Item
-            className="flex items-center px-2 py-1.5 rounded cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)]"
-            style={{ color: "var(--color-text-primary)" }}
+            className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+            style={{
+              color: "var(--color-text-primary)",
+              borderRadius: "var(--radius-sm)",
+            }}
             onSelect={() => {}}
           >
             Mark all as read
@@ -257,19 +281,25 @@ const FolderItem = React.memo(function FolderItem({
           {!isRoleFolder && (
             <>
               <DropdownMenu.Item
-                className="flex items-center px-2 py-1.5 rounded cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)]"
-                style={{ color: "var(--color-text-primary)" }}
+                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+                style={{
+                  color: "var(--color-text-primary)",
+                  borderRadius: "var(--radius-sm)",
+                }}
                 onSelect={() => {}}
               >
                 Rename
               </DropdownMenu.Item>
               <DropdownMenu.Separator
                 className="my-1"
-                style={{ borderTop: "1px solid var(--color-border-secondary)" }}
+                style={{ borderTop: "1px solid var(--color-border-primary)" }}
               />
               <DropdownMenu.Item
-                className="flex items-center px-2 py-1.5 rounded cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)]"
-                style={{ color: "var(--color-text-danger)" }}
+                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+                style={{
+                  color: "var(--color-text-danger)",
+                  borderRadius: "var(--radius-sm)",
+                }}
                 onSelect={() => onDelete(mailbox.id)}
               >
                 Delete folder
@@ -278,8 +308,11 @@ const FolderItem = React.memo(function FolderItem({
           )}
           {(mailbox.role === "trash" || mailbox.role === "junk") && (
             <DropdownMenu.Item
-              className="flex items-center px-2 py-1.5 rounded cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)]"
-              style={{ color: "var(--color-text-danger)" }}
+              className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+              style={{
+                color: "var(--color-text-danger)",
+                borderRadius: "var(--radius-sm)",
+              }}
               onSelect={() => {}}
             >
               Empty {mailbox.name}

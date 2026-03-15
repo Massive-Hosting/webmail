@@ -1,4 +1,4 @@
-/** Compose dialog - inline, pop-out, fullscreen, and minimized modes */
+/** Compose dialog - inline, pop-out, fullscreen, and minimized modes - premium design */
 
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import {
@@ -334,7 +334,6 @@ export const ComposePanel = React.memo(function ComposePanel({
         },
         onDismiss: () => {
           // If dismissed without clicking undo and timer is still pending, do nothing
-          // (the timer will still fire and send)
         },
       });
       undoSendToastIdRef.current = toastId;
@@ -395,11 +394,9 @@ export const ComposePanel = React.memo(function ComposePanel({
       // Swap signature: remove old, add new
       const oldIdentity = currentDraft.from;
       if (oldIdentity?.htmlSignature) {
-        // Try to remove old signature
         const sigSep = '<p>-- </p>';
         const oldSigIdx = bodyHTML.indexOf(sigSep);
         if (oldSigIdx !== -1) {
-          // Find where the old signature ends (before quoted text or end)
           const quotedIdx = bodyHTML.indexOf('<div style="border-left:');
           const fwdIdx = bodyHTML.indexOf('<div style="border-top:');
           const endIdx = Math.min(
@@ -414,7 +411,6 @@ export const ComposePanel = React.memo(function ComposePanel({
             bodyHTML.slice(endIdx);
         }
       } else if (identity.htmlSignature) {
-        // No old sig, add new one
         const quotedIdx = bodyHTML.indexOf('<div style="border-left:');
         const fwdIdx = bodyHTML.indexOf('<div style="border-top:');
         const insertIdx = Math.min(
@@ -464,47 +460,36 @@ export const ComposePanel = React.memo(function ComposePanel({
   const isFullscreen = draft.windowMode === "fullscreen";
   const isPopout = draft.windowMode === "popout";
 
+  const composeTitle = draft.composeMode === "reply"
+    ? "Reply"
+    : draft.composeMode === "reply-all"
+      ? "Reply All"
+      : draft.composeMode === "forward"
+        ? "Forward"
+        : "New Message";
+
   return (
     <DragDropZone draftId={draftId}>
       <div
-        className={`flex flex-col animate-slide-up ${
+        className={`compose-dialog ${
           isFullscreen
-            ? "fixed inset-0 z-50"
+            ? "compose-dialog--fullscreen"
             : isPopout
-              ? "fixed bottom-4 right-4 z-40 w-[560px] rounded-lg shadow-xl"
-              : "h-full"
+              ? "compose-dialog--popout"
+              : "compose-dialog--inline"
         }`}
         role="dialog"
         aria-labelledby={`compose-title-${draftId}`}
-        style={{
-          backgroundColor: "var(--color-bg-primary)",
-          border: isPopout ? "1px solid var(--color-border-primary)" : undefined,
-          maxHeight: isPopout ? "80vh" : undefined,
-        }}
       >
         {/* Title bar */}
-        <div
-          className="flex items-center justify-between px-4 py-2 shrink-0"
-          style={{
-            backgroundColor: "var(--color-bg-secondary)",
-            borderBottom: "1px solid var(--color-border-secondary)",
-          }}
-        >
+        <div className="compose-dialog__titlebar">
           <span
             id={`compose-title-${draftId}`}
-            className="text-sm font-medium"
-            style={{ color: "var(--color-text-primary)" }}
+            className="compose-dialog__title"
           >
-            {draft.composeMode === "reply"
-              ? "Reply"
-              : draft.composeMode === "reply-all"
-                ? "Reply All"
-                : draft.composeMode === "forward"
-                  ? "Forward"
-                  : "New Message"}
+            {composeTitle}
           </span>
-          <div className="flex items-center gap-1">
-            {/* Save status */}
+          <div className="compose-dialog__titlebar-actions">
             <SaveIndicator
               saving={draft.saving}
               lastSaved={draft.lastSaved}
@@ -513,8 +498,7 @@ export const ComposePanel = React.memo(function ComposePanel({
             <button
               type="button"
               onClick={() => minimizeDraft(draftId)}
-              className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
-              style={{ color: "var(--color-text-secondary)" }}
+              className="compose-dialog__window-btn"
               title="Minimize"
             >
               <Minus size={14} />
@@ -527,8 +511,7 @@ export const ComposePanel = React.memo(function ComposePanel({
                     windowMode: isPopout ? "inline" : "popout",
                   })
                 }
-                className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
-                style={{ color: "var(--color-text-secondary)" }}
+                className="compose-dialog__window-btn"
                 title={isPopout ? "Dock" : "Pop out"}
               >
                 <ExternalLink size={14} />
@@ -541,8 +524,7 @@ export const ComposePanel = React.memo(function ComposePanel({
                   windowMode: isFullscreen ? "inline" : "fullscreen",
                 })
               }
-              className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
-              style={{ color: "var(--color-text-secondary)" }}
+              className="compose-dialog__window-btn"
               title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
             >
               {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
@@ -550,8 +532,7 @@ export const ComposePanel = React.memo(function ComposePanel({
             <button
               type="button"
               onClick={handleDiscard}
-              className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
-              style={{ color: "var(--color-text-secondary)" }}
+              className="compose-dialog__window-btn compose-dialog__window-btn--close"
               title="Close"
             >
               <X size={14} />
@@ -561,21 +542,12 @@ export const ComposePanel = React.memo(function ComposePanel({
 
         {/* From identity dropdown */}
         {identities && identities.length > 1 && (
-          <div
-            className="flex items-center gap-2 px-4 py-1.5"
-            style={{ borderBottom: "1px solid var(--color-border-secondary)" }}
-          >
-            <label
-              className="text-xs font-medium shrink-0 w-8"
-              style={{ color: "var(--color-text-tertiary)" }}
-            >
-              From
-            </label>
+          <div className="compose-dialog__field">
+            <label className="compose-dialog__field-label">From</label>
             <select
               value={draft.from?.id ?? ""}
               onChange={(e) => handleIdentityChange(e.target.value)}
-              className="flex-1 text-sm bg-transparent outline-none cursor-pointer"
-              style={{ color: "var(--color-text-primary)" }}
+              className="compose-dialog__identity-select"
             >
               {identities.map((id) => (
                 <option key={id.id} value={id.id}>
@@ -595,23 +567,18 @@ export const ComposePanel = React.memo(function ComposePanel({
 
         {/* Show Cc/Bcc toggle */}
         {!draft.showCc && !draft.showBcc && (
-          <div
-            className="flex items-center gap-2 px-4 py-0.5"
-            style={{ borderBottom: "1px solid var(--color-border-secondary)" }}
-          >
-            <div className="w-8" />
+          <div className="compose-dialog__cc-toggle">
+            <div className="compose-dialog__field-label" />
             <button
               type="button"
-              className="text-xs"
-              style={{ color: "var(--color-text-accent)" }}
+              className="compose-dialog__cc-btn"
               onClick={() => updateDraft(draftId, { showCc: true })}
             >
               Cc
             </button>
             <button
               type="button"
-              className="text-xs"
-              style={{ color: "var(--color-text-accent)" }}
+              className="compose-dialog__cc-btn"
               onClick={() => updateDraft(draftId, { showBcc: true })}
             >
               Bcc
@@ -635,28 +602,19 @@ export const ComposePanel = React.memo(function ComposePanel({
         )}
 
         {/* Subject */}
-        <div
-          className="flex items-center gap-2 px-4 py-1.5"
-          style={{ borderBottom: "1px solid var(--color-border-secondary)" }}
-        >
-          <label
-            className="text-xs font-medium shrink-0 w-8"
-            style={{ color: "var(--color-text-tertiary)" }}
-          >
-            Subj
-          </label>
+        <div className="compose-dialog__field">
+          <label className="compose-dialog__field-label">Subject</label>
           <input
             type="text"
             value={draft.subject}
             onChange={(e) => updateDraft(draftId, { subject: e.target.value })}
             placeholder="Subject"
-            className="flex-1 text-sm bg-transparent outline-none"
-            style={{ color: "var(--color-text-primary)" }}
+            className="compose-dialog__subject-input"
           />
         </div>
 
         {/* Editor */}
-        <div className="flex-1 overflow-hidden">
+        <div className="compose-dialog__editor">
           <ComposeEditor
             content={draft.bodyHTML}
             onChange={(html) => updateDraft(draftId, { bodyHTML: html })}
@@ -668,30 +626,18 @@ export const ComposePanel = React.memo(function ComposePanel({
         <AttachmentList draftId={draftId} attachments={draft.attachments} />
 
         {/* Bottom toolbar */}
-        <div
-          className="flex items-center justify-between px-4 py-2 shrink-0"
-          style={{
-            backgroundColor: "var(--color-bg-secondary)",
-            borderTop: "1px solid var(--color-border-secondary)",
-          }}
-        >
-          <div className="flex items-center gap-2">
+        <div className="compose-dialog__toolbar">
+          <div className="compose-dialog__toolbar-left">
             <button
               type="button"
               onClick={handleSend}
               disabled={draft.saving}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded text-sm font-medium text-white transition-colors"
-              style={{
-                backgroundColor: draft.saving
-                  ? "var(--color-bg-accent-muted, #6b7280)"
-                  : "var(--color-bg-accent)",
-                opacity: draft.saving ? 0.7 : 1,
-              }}
+              className="compose-dialog__send-btn"
             >
               {draft.saving ? (
-                <Loader2 size={14} className="animate-spin" />
+                <Loader2 size={15} className="animate-spin" />
               ) : (
-                <Send size={14} />
+                <Send size={15} />
               )}
               Send
             </button>
@@ -699,8 +645,7 @@ export const ComposePanel = React.memo(function ComposePanel({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)]"
-              style={{ color: "var(--color-text-secondary)" }}
+              className="compose-dialog__attach-btn"
               title="Attach files"
             >
               <Paperclip size={16} />
@@ -721,18 +666,11 @@ export const ComposePanel = React.memo(function ComposePanel({
             {/* PGP toggles (only when PGP is set up) */}
             {pgpIsSetUp && pgpIsUnlocked && (
               <>
-                <div
-                  className="w-px h-5 mx-1"
-                  style={{ backgroundColor: "var(--color-border-secondary)" }}
-                />
+                <div className="compose-dialog__separator" />
                 <button
                   type="button"
                   onClick={() => setPgpSign(!pgpSign)}
-                  className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors"
-                  style={{
-                    color: pgpSign ? "#22c55e" : "var(--color-text-tertiary)",
-                    backgroundColor: pgpSign ? "rgba(34, 197, 94, 0.1)" : "transparent",
-                  }}
+                  className={`compose-dialog__pgp-btn ${pgpSign ? "compose-dialog__pgp-btn--sign-active" : ""}`}
                   title={pgpSign ? "Signing enabled" : "Signing disabled"}
                 >
                   <ShieldCheck size={14} />
@@ -741,11 +679,7 @@ export const ComposePanel = React.memo(function ComposePanel({
                 <button
                   type="button"
                   onClick={() => setPgpEncrypt(!pgpEncrypt)}
-                  className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors"
-                  style={{
-                    color: pgpEncrypt ? "#3b82f6" : "var(--color-text-tertiary)",
-                    backgroundColor: pgpEncrypt ? "rgba(59, 130, 246, 0.1)" : "transparent",
-                  }}
+                  className={`compose-dialog__pgp-btn ${pgpEncrypt ? "compose-dialog__pgp-btn--encrypt-active" : ""}`}
                   title={pgpEncrypt ? "Encryption enabled" : "Encryption disabled"}
                 >
                   <Lock size={14} />
@@ -755,7 +689,7 @@ export const ComposePanel = React.memo(function ComposePanel({
             )}
           </div>
 
-          <span className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+          <span className="compose-dialog__shortcut-hint">
             Ctrl+Enter to send
           </span>
         </div>
@@ -763,51 +697,27 @@ export const ComposePanel = React.memo(function ComposePanel({
 
       {/* Missing PGP key dialog */}
       {showMissingKeyDialog && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div
-            className="w-full max-w-sm rounded-lg p-5 flex flex-col gap-4"
-            style={{
-              backgroundColor: "var(--color-bg-elevated)",
-              border: "1px solid var(--color-border-primary)",
-              boxShadow: "var(--shadow-xl)",
-            }}
-          >
-            <h3
-              className="text-sm font-semibold flex items-center gap-2"
-              style={{ color: "var(--color-text-primary)" }}
-            >
+        <div className="compose-dialog__overlay">
+          <div className="compose-dialog__pgp-dialog">
+            <h3 className="compose-dialog__pgp-dialog-title">
               <AlertTriangle size={16} style={{ color: "#eab308" }} />
               Cannot encrypt to all recipients
             </h3>
-            <p
-              className="text-sm"
-              style={{ color: "var(--color-text-secondary)" }}
-            >
+            <p className="compose-dialog__pgp-dialog-desc">
               The following recipients do not have a PGP public key:
             </p>
-            <ul className="flex flex-col gap-1">
+            <ul className="compose-dialog__pgp-dialog-list">
               {missingKeyRecipients.map((email) => (
-                <li
-                  key={email}
-                  className="text-sm flex items-center gap-1.5"
-                  style={{ color: "var(--color-text-primary)" }}
-                >
+                <li key={email} className="compose-dialog__pgp-dialog-item">
                   <AlertTriangle size={12} style={{ color: "#eab308" }} />
                   {email}
                 </li>
               ))}
             </ul>
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="compose-dialog__pgp-dialog-actions">
               <button
                 onClick={() => setShowMissingKeyDialog(false)}
-                className="px-3 py-1.5 text-sm rounded-md"
-                style={{
-                  color: "var(--color-text-secondary)",
-                  backgroundColor: "var(--color-bg-tertiary)",
-                }}
+                className="compose-dialog__pgp-dialog-cancel"
               >
                 Cancel
               </button>
@@ -815,14 +725,9 @@ export const ComposePanel = React.memo(function ComposePanel({
                 onClick={() => {
                   setShowMissingKeyDialog(false);
                   setPgpEncrypt(false);
-                  // Re-trigger send without encryption
                   handleSend();
                 }}
-                className="px-3 py-1.5 text-sm font-medium rounded-md"
-                style={{
-                  color: "var(--color-text-primary)",
-                  backgroundColor: "var(--color-bg-tertiary)",
-                }}
+                className="compose-dialog__pgp-dialog-confirm"
               >
                 Send unencrypted
               </button>
@@ -855,23 +760,13 @@ function MinimizedBar({
     <button
       type="button"
       onClick={onMaximize}
-      className="flex items-center gap-2 px-3 py-2 rounded-t-lg text-sm w-[260px] hover:opacity-90 transition-opacity"
-      style={{
-        backgroundColor: "var(--color-bg-elevated)",
-        color: "var(--color-text-primary)",
-        border: "1px solid var(--color-border-primary)",
-        borderBottom: "none",
-        boxShadow: "var(--shadow-md)",
-      }}
+      className="compose-dialog__minimized"
     >
-      <span className="truncate flex-1 text-left font-medium">
+      <span className="compose-dialog__minimized-subject">
         {subject || "New Message"}
       </span>
       {toText && (
-        <span
-          className="truncate text-xs"
-          style={{ color: "var(--color-text-tertiary)", maxWidth: 80 }}
-        >
+        <span className="compose-dialog__minimized-to">
           {toText}
         </span>
       )}
@@ -881,8 +776,7 @@ function MinimizedBar({
           e.stopPropagation();
           onClose();
         }}
-        className="p-0.5 rounded hover:bg-[var(--color-bg-tertiary)]"
-        style={{ color: "var(--color-text-secondary)" }}
+        className="compose-dialog__minimized-close"
       >
         <X size={12} />
       </button>
@@ -903,14 +797,14 @@ function SaveIndicator({
 }) {
   if (saveError) {
     return (
-      <span className="text-xs mr-2" style={{ color: "var(--color-text-error, #dc2626)" }}>
+      <span className="compose-dialog__save-indicator compose-dialog__save-indicator--error">
         Save failed
       </span>
     );
   }
   if (saving) {
     return (
-      <span className="text-xs mr-2 flex items-center gap-1" style={{ color: "var(--color-text-tertiary)" }}>
+      <span className="compose-dialog__save-indicator compose-dialog__save-indicator--saving">
         <Loader2 size={10} className="animate-spin" />
         Saving...
       </span>
@@ -918,7 +812,7 @@ function SaveIndicator({
   }
   if (lastSaved) {
     return (
-      <span className="text-xs mr-2 flex items-center gap-1" style={{ color: "var(--color-text-tertiary)" }}>
+      <span className="compose-dialog__save-indicator compose-dialog__save-indicator--saved">
         <Check size={10} />
         Saved at {format(lastSaved, "h:mm a")}
       </span>

@@ -200,7 +200,16 @@ func validateStalwartCredentials(ctx context.Context, stalwartURL, email, passwo
 	}
 	req.SetBasicAuth(email, password)
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			// Preserve basic auth on redirects (Stalwart v0.15+ redirects /.well-known/jmap to /jmap/session).
+			if len(via) > 0 {
+				req.SetBasicAuth(email, password)
+			}
+			return nil
+		},
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("connecting to stalwart: %w", err)

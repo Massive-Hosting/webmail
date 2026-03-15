@@ -1,4 +1,4 @@
-/** Root application shell with three-pane layout, ARIA landmarks, and error states */
+/** Root application shell with three-pane layout, ARIA landmarks, and error states — premium design */
 
 import React, { useEffect, useCallback, useState, lazy, Suspense } from "react";
 import { Toolbar } from "./toolbar.tsx";
@@ -20,7 +20,7 @@ import { useSearch } from "@/hooks/use-search.ts";
 import { fetchIdentities } from "@/api/mail.ts";
 import { useQuery } from "@tanstack/react-query";
 import { Toaster, toast } from "sonner";
-import { WifiOff, RefreshCw } from "lucide-react";
+import { WifiOff, RefreshCw, ArrowLeft } from "lucide-react";
 
 // Lazy-loaded heavy components (code splitting)
 const ComposeContainer = lazy(() =>
@@ -269,6 +269,9 @@ export function AppShell() {
           backgroundColor: "var(--color-bg-elevated)",
           color: "var(--color-text-primary)",
           border: "1px solid var(--color-border-primary)",
+          borderRadius: "var(--radius-md)",
+          boxShadow: "var(--shadow-lg)",
+          fontSize: "13px",
         },
       }}
     />
@@ -341,9 +344,13 @@ export function AppShell() {
             <div className="flex flex-col h-full">
               <button
                 onClick={() => setMobileView("list")}
-                className="flex items-center gap-1 px-3 py-2 text-sm"
-                style={{ color: "var(--color-text-accent)" }}
+                className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors duration-150 hover:bg-[var(--color-bg-tertiary)]"
+                style={{
+                  color: "var(--color-text-accent)",
+                  borderBottom: "1px solid var(--color-border-primary)",
+                }}
               >
+                <ArrowLeft size={15} />
                 Back to list
               </button>
               <div className="flex-1 overflow-hidden">
@@ -440,7 +447,12 @@ export function AppShell() {
 
             {/* Reading pane */}
             {readingPaneVisible && (
-              <aside className="flex-1 overflow-hidden" role="complementary" aria-label="Message preview">
+              <aside
+                className="flex-1 overflow-hidden"
+                role="complementary"
+                aria-label="Message preview"
+                style={{ backgroundColor: "var(--color-bg-primary)" }}
+              >
                 <ReadingPane />
               </aside>
             )}

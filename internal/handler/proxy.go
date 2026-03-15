@@ -36,16 +36,20 @@ func NewProxyHandler(log zerolog.Logger) *ProxyHandler {
 }
 
 // Allowed JMAP capabilities.
-// NOTE: contacts and calendars removed — Stalwart doesn't support them yet.
-// They need to be enabled in Stalwart config before adding here.
 var allowedCapabilities = map[string]bool{
-	"urn:ietf:params:jmap:core":             true,
-	"urn:ietf:params:jmap:mail":             true,
-	"urn:ietf:params:jmap:submission":       true,
-	"urn:ietf:params:jmap:vacationresponse": true,
-	"urn:ietf:params:jmap:blob":             true,
-	"urn:ietf:params:jmap:sieve":            true,
-	"urn:ietf:params:jmap:quota":            true,
+	"urn:ietf:params:jmap:core":                  true,
+	"urn:ietf:params:jmap:mail":                  true,
+	"urn:ietf:params:jmap:submission":             true,
+	"urn:ietf:params:jmap:vacationresponse":       true,
+	"urn:ietf:params:jmap:contacts":               true,
+	"urn:ietf:params:jmap:contacts:parse":         true,
+	"urn:ietf:params:jmap:calendars":              true,
+	"urn:ietf:params:jmap:calendars:parse":        true,
+	"urn:ietf:params:jmap:blob":                   true,
+	"urn:ietf:params:jmap:sieve":                  true,
+	"urn:ietf:params:jmap:quota":                  true,
+	"urn:ietf:params:jmap:principals":             true,
+	"urn:ietf:params:jmap:principals:availability": true,
 }
 
 // Blocked capabilities.

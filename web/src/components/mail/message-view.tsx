@@ -1,4 +1,4 @@
-/** Full message view in reading pane */
+/** Full message view in reading pane - premium design */
 
 import React, { useMemo, useState, useRef, useCallback } from "react";
 import { useMessage } from "@/hooks/use-message.ts";
@@ -85,7 +85,6 @@ function MessageContent({ email }: { email: Email }) {
 
   // Get body content
   const bodyHtml = useMemo(() => {
-    // Try HTML body first
     if (email.htmlBody && email.bodyValues) {
       for (const part of email.htmlBody) {
         if (part.partId && email.bodyValues[part.partId]) {
@@ -171,64 +170,41 @@ function MessageContent({ email }: { email: Email }) {
 
   return (
     <Tooltip.Provider delayDuration={300}>
-      <div
-        className="flex flex-col h-full overflow-y-auto"
-        style={{ backgroundColor: "var(--color-bg-primary)" }}
-      >
-        {/* Header - sticky */}
-        <div
-          className="sticky top-0 z-10 px-6 pt-4 pb-3"
-          style={{
-            backgroundColor: "var(--color-bg-primary)",
-            borderBottom: "1px solid var(--color-border-secondary)",
-          }}
-        >
+      <div className="message-view">
+        {/* Header */}
+        <div className="message-view__header">
           {/* Subject */}
-          <h2
-            className="text-lg font-semibold mb-3"
-            style={{ color: "var(--color-text-primary)" }}
-          >
+          <h2 className="message-view__subject">
             {email.subject || "(no subject)"}
           </h2>
 
           {/* Sender row */}
-          <div className="flex items-start gap-3">
-            <Avatar address={sender} size={40} />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span
-                  className="font-medium text-sm"
-                  style={{ color: "var(--color-text-primary)" }}
-                >
+          <div className="message-view__sender-row">
+            <div className="message-view__avatar">
+              <Avatar address={sender} size={40} />
+            </div>
+            <div className="message-view__sender-info">
+              <div className="message-view__sender-name-line">
+                <span className="message-view__sender-name">
                   {formatAddress(sender)}
                 </span>
-                <span
-                  className="text-xs"
-                  style={{ color: "var(--color-text-tertiary)" }}
-                >
+                <span className="message-view__sender-email">
                   &lt;{sender.email}&gt;
                 </span>
               </div>
 
-              {/* Recipients */}
-              <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                <span
-                  className="text-xs"
-                  style={{ color: "var(--color-text-tertiary)" }}
-                >
-                  to
-                </span>
-                <span
-                  className="text-xs"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
-                  {visibleRecipients.map((a) => formatAddress(a)).join(", ")}
-                </span>
+              {/* Recipients as chips */}
+              <div className="message-view__recipients">
+                <span className="message-view__recipients-label">to</span>
+                {visibleRecipients.map((a, i) => (
+                  <span key={i} className="message-view__recipient-chip">
+                    {formatAddress(a)}
+                  </span>
+                ))}
                 {hiddenCount > 0 && !showAllRecipients && (
                   <button
                     onClick={() => setShowAllRecipients(true)}
-                    className="text-xs"
-                    style={{ color: "var(--color-text-accent)" }}
+                    className="message-view__recipients-more"
                   >
                     +{hiddenCount} more
                   </button>
@@ -237,31 +213,22 @@ function MessageContent({ email }: { email: Email }) {
             </div>
 
             {/* Date + actions */}
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="message-view__header-actions">
               <Tooltip.Root>
                 <Tooltip.Trigger asChild>
-                  <span
-                    className="text-xs"
-                    style={{ color: "var(--color-text-tertiary)" }}
-                  >
+                  <span className="message-view__date">
                     {formatRelativeDate(email.receivedAt)}
                   </span>
                 </Tooltip.Trigger>
                 <Tooltip.Content
-                  className="text-xs px-2 py-1 rounded"
-                  style={{
-                    backgroundColor: "var(--color-bg-elevated)",
-                    color: "var(--color-text-primary)",
-                    boxShadow: "var(--shadow-md)",
-                    border: "1px solid var(--color-border-primary)",
-                  }}
+                  className="tooltip-content"
                   sideOffset={5}
                 >
                   {formatFullDate(email.receivedAt)}
                 </Tooltip.Content>
               </Tooltip.Root>
 
-              <div className="flex items-center gap-0.5 ml-2">
+              <div className="message-view__action-buttons">
                 <ActionButton
                   icon={<Reply size={16} />}
                   label="Reply (R)"
@@ -285,42 +252,20 @@ function MessageContent({ email }: { email: Email }) {
 
         {/* External images bar */}
         {sanitized?.hasExternalImages && !showExternalImages && (
-          <div
-            className="flex items-center gap-2 px-6 py-2 text-sm"
-            style={{
-              backgroundColor: "var(--color-bg-tertiary)",
-              color: "var(--color-text-secondary)",
-              borderBottom: "1px solid var(--color-border-secondary)",
-            }}
-          >
-            <ImageOff size={16} />
-            <span>External images are hidden to protect your privacy.</span>
-            <button
-              onClick={handleLoadImages}
-              className="font-medium ml-1"
-              style={{ color: "var(--color-text-accent)" }}
-            >
-              Load external images
+          <div className="message-view__images-bar">
+            <ImageOff size={14} />
+            <span>External images are hidden for privacy.</span>
+            <button onClick={handleLoadImages} className="message-view__images-bar-action">
+              Load images
             </button>
           </div>
         )}
 
-        {/* Attachments */}
+        {/* Attachment cards */}
         {attachments.length > 0 && (
-          <div
-            className="flex items-center gap-2 px-6 py-2 overflow-x-auto"
-            style={{
-              backgroundColor: "var(--color-bg-secondary)",
-              borderBottom: "1px solid var(--color-border-secondary)",
-            }}
-          >
-            <Paperclip
-              size={14}
-              style={{ color: "var(--color-text-tertiary)" }}
-              className="shrink-0"
-            />
+          <div className="message-view__attachments">
             {attachments.map((att, i) => (
-              <AttachmentChip key={i} attachment={att} />
+              <AttachmentCard key={i} attachment={att} />
             ))}
           </div>
         )}
@@ -344,16 +289,10 @@ function MessageContent({ email }: { email: Email }) {
         )}
 
         {/* Body */}
-        <div ref={contentRef} className="flex-1 px-6 py-4">
+        <div ref={contentRef} className="message-view__body">
           {/* Show decrypted content if available */}
           {pgpMessage.isDecrypted && pgpMessage.decryptedText ? (
-            <pre
-              className="whitespace-pre-wrap text-sm font-sans"
-              style={{
-                color: "var(--color-text-primary)",
-                lineHeight: 1.6,
-              }}
-            >
+            <pre className="message-view__text-content">
               {pgpMessage.decryptedText}
             </pre>
           ) : sanitized ? (
@@ -364,24 +303,16 @@ function MessageContent({ email }: { email: Email }) {
           ) : processedText ? (
             <div>
               <pre
-                className="whitespace-pre-wrap text-sm font-sans"
-                style={{
-                  color: "var(--color-text-primary)",
-                  lineHeight: 1.6,
-                }}
+                className="message-view__text-content"
                 dangerouslySetInnerHTML={{
                   __html: linkifyText(processedText.body),
                 }}
               />
               {processedText.quoted && (
-                <div className="mt-3">
+                <div className="message-view__quoted-section">
                   <button
                     onClick={() => setShowQuotedText(!showQuotedText)}
-                    className="flex items-center gap-1 text-xs px-2 py-1 rounded"
-                    style={{
-                      color: "var(--color-text-tertiary)",
-                      backgroundColor: "var(--color-bg-tertiary)",
-                    }}
+                    className="message-view__quoted-toggle"
                   >
                     {showQuotedText ? (
                       <>
@@ -395,13 +326,7 @@ function MessageContent({ email }: { email: Email }) {
                   </button>
                   {showQuotedText && (
                     <pre
-                      className="whitespace-pre-wrap text-sm font-sans mt-2"
-                      style={{
-                        color: "var(--color-text-secondary)",
-                        lineHeight: 1.6,
-                        borderLeft: "3px solid var(--color-border-primary)",
-                        paddingLeft: "1em",
-                      }}
+                      className="message-view__quoted-text"
                       dangerouslySetInnerHTML={{
                         __html: linkifyText(processedText.quoted),
                       }}
@@ -411,10 +336,7 @@ function MessageContent({ email }: { email: Email }) {
               )}
             </div>
           ) : (
-            <p
-              className="text-sm"
-              style={{ color: "var(--color-text-tertiary)" }}
-            >
+            <p className="message-view__no-content">
               No content available.
             </p>
           )}
@@ -429,21 +351,14 @@ function ActionButton({ icon, label, onClick }: { icon: React.ReactNode; label: 
     <Tooltip.Root>
       <Tooltip.Trigger asChild>
         <button
-          className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
-          style={{ color: "var(--color-text-secondary)" }}
+          className="message-view__action-btn"
           onClick={onClick}
         >
           {icon}
         </button>
       </Tooltip.Trigger>
       <Tooltip.Content
-        className="text-xs px-2 py-1 rounded"
-        style={{
-          backgroundColor: "var(--color-bg-elevated)",
-          color: "var(--color-text-primary)",
-          boxShadow: "var(--shadow-md)",
-          border: "1px solid var(--color-border-primary)",
-        }}
+        className="tooltip-content"
         sideOffset={5}
       >
         {label}
@@ -452,54 +367,53 @@ function ActionButton({ icon, label, onClick }: { icon: React.ReactNode; label: 
   );
 }
 
-function AttachmentChip({ attachment }: { attachment: EmailBodyPart }) {
+function AttachmentCard({ attachment }: { attachment: EmailBodyPart }) {
   const icon = getFileIcon(attachment.type);
   return (
     <a
       href={`/api/blob/${attachment.blobId}`}
       download={attachment.name ?? "attachment"}
-      className="flex items-center gap-1.5 px-2 py-1 rounded text-xs shrink-0 hover:opacity-80 transition-opacity"
-      style={{
-        backgroundColor: "var(--color-bg-tertiary)",
-        color: "var(--color-text-primary)",
-        border: "1px solid var(--color-border-primary)",
-      }}
+      className="message-view__attachment-card"
     >
-      {icon}
-      <span className="max-w-[120px] truncate">{attachment.name ?? "attachment"}</span>
-      <span style={{ color: "var(--color-text-tertiary)" }}>
-        {formatFileSize(attachment.size)}
-      </span>
-      <Download size={12} style={{ color: "var(--color-text-tertiary)" }} />
+      <span className="message-view__attachment-icon">{icon}</span>
+      <div className="message-view__attachment-info">
+        <span className="message-view__attachment-name">{attachment.name ?? "attachment"}</span>
+        <span className="message-view__attachment-size">{formatFileSize(attachment.size)}</span>
+      </div>
+      <Download size={14} className="message-view__attachment-download" />
     </a>
   );
 }
 
 function getFileIcon(mimeType: string): React.ReactNode {
-  if (mimeType.startsWith("image/")) return <FileImage size={14} />;
-  if (mimeType.includes("pdf")) return <FileText size={14} />;
+  if (mimeType.startsWith("image/")) return <FileImage size={18} />;
+  if (mimeType.includes("pdf")) return <FileText size={18} />;
   if (mimeType.includes("zip") || mimeType.includes("archive"))
-    return <FileArchive size={14} />;
-  return <File size={14} />;
+    return <FileArchive size={18} />;
+  return <File size={18} />;
 }
 
 function MessageViewSkeleton() {
   return (
-    <div className="px-6 pt-4">
-      <Skeleton width="70%" height={24} className="mb-4" />
-      <div className="flex items-start gap-3">
-        <Skeleton width={40} height={40} rounded />
-        <div className="flex-1 flex flex-col gap-1.5">
-          <Skeleton width={180} height={14} />
-          <Skeleton width={120} height={12} />
+    <div className="message-view message-view--skeleton">
+      <div className="message-view__header">
+        <Skeleton width="70%" height={24} className="mb-4" />
+        <div className="flex items-start gap-3">
+          <Skeleton width={40} height={40} rounded />
+          <div className="flex-1 flex flex-col gap-2">
+            <Skeleton width={180} height={14} />
+            <Skeleton width={120} height={12} />
+          </div>
         </div>
       </div>
-      <div className="mt-6 flex flex-col gap-2">
-        <Skeleton width="100%" height={14} />
-        <Skeleton width="95%" height={14} />
-        <Skeleton width="80%" height={14} />
-        <Skeleton width="90%" height={14} />
-        <Skeleton width="60%" height={14} />
+      <div className="message-view__body">
+        <div className="flex flex-col gap-3">
+          <Skeleton width="100%" height={16} />
+          <Skeleton width="95%" height={16} />
+          <Skeleton width="80%" height={16} />
+          <Skeleton width="90%" height={16} />
+          <Skeleton width="60%" height={16} />
+        </div>
       </div>
     </div>
   );

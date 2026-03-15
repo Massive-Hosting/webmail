@@ -1,4 +1,4 @@
-/** Unread count badge */
+/** Unread count badge — refined indigo pill */
 
 import React from "react";
 
@@ -14,10 +14,11 @@ export const Badge = React.memo(function Badge({ count, className = "" }: BadgeP
 
   return (
     <span
-      className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold rounded-full ${className}`}
+      className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 text-[11px] font-semibold leading-none rounded-full ${className}`}
       style={{
         backgroundColor: "var(--color-bg-accent)",
         color: "var(--color-text-inverse)",
+        letterSpacing: "0.01em",
       }}
     >
       {display}

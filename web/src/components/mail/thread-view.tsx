@@ -1,4 +1,4 @@
-/** Thread view - stacked messages with expand/collapse */
+/** Thread view - stacked messages with expand/collapse and visual connectors */
 
 import React, { useState, useMemo } from "react";
 import { useThread } from "@/hooks/use-thread.ts";
@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { formatMessageDate, formatAddress } from "@/lib/format.ts";
 import { isUnread } from "@/types/mail.ts";
 import type { Email } from "@/types/mail.ts";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
 
 interface ThreadViewProps {
   threadId: string;
@@ -76,7 +76,6 @@ function ThreadContent({
 
   const toggleAll = () => {
     if (allExpanded) {
-      // Collapse all except most recent
       setExpandedIds(new Set([emails[emails.length - 1].id]));
       setAllExpanded(false);
     } else {
@@ -88,55 +87,53 @@ function ThreadContent({
   const subject = emails[0]?.subject || "(no subject)";
 
   return (
-    <div
-      className="flex flex-col h-full overflow-y-auto"
-      style={{ backgroundColor: "var(--color-bg-primary)" }}
-    >
+    <div className="thread-view">
       {/* Thread header */}
-      <div
-        className="sticky top-0 z-10 flex items-center justify-between px-6 py-3"
-        style={{
-          backgroundColor: "var(--color-bg-primary)",
-          borderBottom: "1px solid var(--color-border-secondary)",
-        }}
-      >
-        <div>
-          <h2
-            className="text-lg font-semibold"
-            style={{ color: "var(--color-text-primary)" }}
-          >
+      <div className="thread-view__header">
+        <div className="thread-view__header-content">
+          <h2 className="thread-view__subject">
             {subject}
           </h2>
-          <span
-            className="text-xs"
-            style={{ color: "var(--color-text-tertiary)" }}
-          >
-            {emails.length} messages in this conversation
-          </span>
+          <div className="thread-view__meta">
+            <MessageSquare size={14} />
+            <span>{emails.length} messages in this conversation</span>
+          </div>
         </div>
         <button
           onClick={toggleAll}
-          className="flex items-center gap-1 text-xs px-2 py-1 rounded"
-          style={{
-            color: "var(--color-text-accent)",
-            backgroundColor: "var(--color-bg-tertiary)",
-          }}
+          className="thread-view__expand-all-btn"
         >
-          {allExpanded ? "Collapse all" : "Expand all"}
+          {allExpanded ? (
+            <>
+              <ChevronUp size={14} />
+              Collapse all
+            </>
+          ) : (
+            <>
+              <ChevronDown size={14} />
+              Expand all
+            </>
+          )}
         </button>
       </div>
 
-      {/* Thread messages */}
-      <div className="flex-1">
-        {emails.map((email) => {
+      {/* Thread messages with visual connector */}
+      <div className="thread-view__messages">
+        {emails.map((email, index) => {
           const isExpanded = expandedIds.has(email.id);
+          const isLast = index === emails.length - 1;
           return (
-            <ThreadMessage
-              key={email.id}
-              email={email}
-              isExpanded={isExpanded}
-              onToggle={() => toggleEmail(email.id)}
-            />
+            <div key={email.id} className="thread-view__message-wrapper">
+              {/* Visual thread line */}
+              {!isLast && (
+                <div className="thread-view__connector" />
+              )}
+              <ThreadMessage
+                email={email}
+                isExpanded={isExpanded}
+                onToggle={() => toggleEmail(email.id)}
+              />
+            </div>
           );
         })}
       </div>
@@ -157,55 +154,39 @@ const ThreadMessage = React.memo(function ThreadMessage({
   const unread = isUnread(email);
 
   if (!isExpanded) {
-    // Collapsed state
+    // Collapsed card
     return (
       <button
         onClick={onToggle}
-        className="flex items-center gap-3 w-full px-6 py-3 text-left transition-colors duration-150 hover:bg-[var(--color-message-hover)]"
-        style={{
-          borderBottom: "1px solid var(--color-border-secondary)",
-        }}
+        className={`thread-view__collapsed ${unread ? "thread-view__collapsed--unread" : ""}`}
       >
+        <div className="thread-view__collapsed-dot">
+          {unread && <div className="thread-view__unread-dot" />}
+        </div>
         <Avatar address={sender} size={28} />
-        <span
-          className={`text-sm truncate flex-1 ${unread ? "font-semibold" : ""}`}
-          style={{ color: "var(--color-text-primary)" }}
-        >
+        <span className={`thread-view__collapsed-sender ${unread ? "font-medium" : ""}`}>
           {formatAddress(sender)}
         </span>
-        <span
-          className="text-xs truncate max-w-[200px]"
-          style={{ color: "var(--color-text-tertiary)" }}
-        >
+        <span className="thread-view__collapsed-preview">
           {email.preview}
         </span>
-        <span
-          className="text-xs shrink-0"
-          style={{ color: "var(--color-text-tertiary)" }}
-        >
+        <span className="thread-view__collapsed-date">
           {formatMessageDate(email.receivedAt)}
         </span>
-        <ChevronDown
-          size={14}
-          style={{ color: "var(--color-text-tertiary)" }}
-        />
+        <ChevronDown size={14} className="thread-view__collapsed-chevron" />
       </button>
     );
   }
 
   // Expanded state
   return (
-    <div
-      style={{ borderBottom: "1px solid var(--color-border-secondary)" }}
-    >
-      {/* Collapse handle */}
+    <div className="thread-view__expanded">
       <button
         onClick={onToggle}
-        className="flex items-center gap-1 px-6 pt-1 text-xs"
-        style={{ color: "var(--color-text-tertiary)" }}
+        className="thread-view__collapse-handle"
       >
         <ChevronUp size={12} />
-        Collapse
+        <span>Collapse</span>
       </button>
       <MessageView emailId={email.id} email={email} />
     </div>
@@ -214,15 +195,15 @@ const ThreadMessage = React.memo(function ThreadMessage({
 
 function ThreadSkeleton() {
   return (
-    <div className="px-6 pt-4">
-      <Skeleton width="60%" height={24} className="mb-3" />
-      <Skeleton width={100} height={12} className="mb-4" />
+    <div className="thread-view thread-view--skeleton">
+      <div className="thread-view__header">
+        <div>
+          <Skeleton width="60%" height={24} className="mb-2" />
+          <Skeleton width={140} height={14} />
+        </div>
+      </div>
       {Array.from({ length: 3 }).map((_, i) => (
-        <div
-          key={i}
-          className="flex items-center gap-3 py-3"
-          style={{ borderBottom: "1px solid var(--color-border-secondary)" }}
-        >
+        <div key={i} className="thread-view__skeleton-row">
           <Skeleton width={28} height={28} rounded />
           <Skeleton width={120} height={14} />
           <div className="flex-1" />

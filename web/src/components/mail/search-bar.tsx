@@ -1,4 +1,4 @@
-/** Search bar with suggestions dropdown and debounced search */
+/** Search bar with suggestions dropdown and debounced search — premium design */
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Search, X, SlidersHorizontal, Clock, Sparkles } from "lucide-react";
@@ -16,6 +16,7 @@ export const SearchBar = React.memo(function SearchBar({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [localQuery, setLocalQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const query = useSearchStore((s) => s.query);
@@ -91,11 +92,15 @@ export const SearchBar = React.memo(function SearchBar({
 
   const handleFocus = useCallback(() => {
     setShowSuggestions(true);
+    setIsFocused(true);
   }, []);
 
   const handleBlur = useCallback(() => {
     // Delay to allow click on suggestion
-    setTimeout(() => setShowSuggestions(false), 200);
+    setTimeout(() => {
+      setShowSuggestions(false);
+      setIsFocused(false);
+    }, 200);
   }, []);
 
   const handleSuggestionClick = useCallback(
@@ -133,9 +138,9 @@ export const SearchBar = React.memo(function SearchBar({
     <form onSubmit={handleSubmit} className="flex-1 max-w-xl relative">
       <div className="relative">
         <Search
-          size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-          style={{ color: "var(--color-text-tertiary)" }}
+          size={15}
+          className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors duration-150"
+          style={{ color: isFocused ? "var(--color-text-accent)" : "var(--color-text-tertiary)" }}
         />
         <input
           ref={inputRef}
@@ -147,31 +152,24 @@ export const SearchBar = React.memo(function SearchBar({
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder="Search messages... (/ to focus)"
-          className="w-full h-8 pl-9 pr-20 text-sm rounded-md outline-none transition-colors duration-150"
+          className="w-full h-8 pl-9 pr-20 text-sm outline-none"
           style={{
             backgroundColor: "var(--color-bg-tertiary)",
             color: "var(--color-text-primary)",
-            border: "1px solid transparent",
-          }}
-          onMouseOver={(e) => {
-            if (document.activeElement !== e.currentTarget) {
-              e.currentTarget.style.borderColor = "var(--color-border-secondary)";
-            }
-          }}
-          onMouseOut={(e) => {
-            if (document.activeElement !== e.currentTarget) {
-              e.currentTarget.style.borderColor = "transparent";
-            }
+            border: isFocused ? "1px solid var(--color-border-focus)" : "1px solid transparent",
+            borderRadius: "var(--radius-md)",
+            boxShadow: isFocused ? "0 0 0 3px rgba(99, 102, 241, 0.08)" : "none",
+            transition: "border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease",
           }}
         />
 
         {/* Right side buttons */}
-        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
           {localQuery && (
             <button
               type="button"
               onClick={handleClear}
-              className="p-1 rounded hover:bg-[var(--color-bg-secondary)] transition-colors"
+              className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150"
               style={{ color: "var(--color-text-tertiary)" }}
               title="Clear search (Esc)"
             >
@@ -181,7 +179,7 @@ export const SearchBar = React.memo(function SearchBar({
           <button
             type="button"
             onClick={onAdvancedSearch}
-            className="p-1 rounded hover:bg-[var(--color-bg-secondary)] transition-colors"
+            className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150"
             style={{ color: "var(--color-text-tertiary)" }}
             title="Advanced search"
           >
@@ -193,7 +191,7 @@ export const SearchBar = React.memo(function SearchBar({
       {/* Scope to mailbox toggle */}
       {isSearchActive && (
         <div className="absolute left-0 -bottom-6 flex items-center gap-2">
-          <label className="flex items-center gap-1 text-xs cursor-pointer" style={{ color: "var(--color-text-tertiary)" }}>
+          <label className="flex items-center gap-1.5 text-xs cursor-pointer" style={{ color: "var(--color-text-tertiary)" }}>
             <input
               type="checkbox"
               checked={scopeToMailbox}
@@ -209,11 +207,12 @@ export const SearchBar = React.memo(function SearchBar({
       {showDropdown && (
         <div
           ref={suggestionsRef}
-          className="absolute left-0 right-0 top-full mt-1 rounded-md overflow-hidden z-50"
+          className="absolute left-0 right-0 top-full mt-1.5 overflow-hidden z-50 animate-scale-in"
           style={{
             backgroundColor: "var(--color-bg-elevated)",
             border: "1px solid var(--color-border-primary)",
             boxShadow: "var(--shadow-lg)",
+            borderRadius: "var(--radius-md)",
             maxHeight: 320,
             overflowY: "auto",
           }}
@@ -222,7 +221,7 @@ export const SearchBar = React.memo(function SearchBar({
           {matchingHints.length > 0 && (
             <div>
               <div
-                className="px-3 py-1.5 text-xs font-medium"
+                className="px-3 py-2 text-[11px] font-medium uppercase tracking-wider"
                 style={{ color: "var(--color-text-tertiary)" }}
               >
                 Search operators
@@ -233,14 +232,14 @@ export const SearchBar = React.memo(function SearchBar({
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleSyntaxClick(hint.prefix)}
-                  className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
                   style={{ color: "var(--color-text-primary)" }}
                 >
-                  <Sparkles size={14} style={{ color: "var(--color-text-accent)" }} />
-                  <span className="font-mono text-xs" style={{ color: "var(--color-text-accent)" }}>
+                  <Sparkles size={13} style={{ color: "var(--color-text-accent)" }} />
+                  <span className="font-mono text-xs font-medium" style={{ color: "var(--color-text-accent)" }}>
                     {hint.prefix}
                   </span>
-                  <span style={{ color: "var(--color-text-secondary)" }}>
+                  <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
                     {hint.description}
                   </span>
                 </button>
@@ -252,7 +251,7 @@ export const SearchBar = React.memo(function SearchBar({
           {!localQuery && (
             <div>
               <div
-                className="px-3 py-1.5 text-xs font-medium"
+                className="px-3 py-2 text-[11px] font-medium uppercase tracking-wider"
                 style={{ color: "var(--color-text-tertiary)" }}
               >
                 Search operators
@@ -263,14 +262,14 @@ export const SearchBar = React.memo(function SearchBar({
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleSyntaxClick(hint.prefix)}
-                  className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
                   style={{ color: "var(--color-text-primary)" }}
                 >
-                  <Sparkles size={14} style={{ color: "var(--color-text-accent)" }} />
-                  <span className="font-mono text-xs" style={{ color: "var(--color-text-accent)" }}>
+                  <Sparkles size={13} style={{ color: "var(--color-text-accent)" }} />
+                  <span className="font-mono text-xs font-medium" style={{ color: "var(--color-text-accent)" }}>
                     {hint.prefix}
                   </span>
-                  <span style={{ color: "var(--color-text-secondary)" }}>
+                  <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
                     {hint.description}
                   </span>
                 </button>
@@ -282,10 +281,10 @@ export const SearchBar = React.memo(function SearchBar({
           {recentSearches.length > 0 && (
             <div>
               <div
-                className="px-3 py-1.5 text-xs font-medium flex items-center justify-between"
+                className="px-3 py-2 text-[11px] font-medium uppercase tracking-wider flex items-center justify-between"
                 style={{
                   color: "var(--color-text-tertiary)",
-                  borderTop: matchingHints.length > 0 || !localQuery ? "1px solid var(--color-border-secondary)" : undefined,
+                  borderTop: matchingHints.length > 0 || !localQuery ? "1px solid var(--color-border-primary)" : undefined,
                 }}
               >
                 Recent searches
@@ -293,9 +292,9 @@ export const SearchBar = React.memo(function SearchBar({
               {recentSearches.slice(0, 8).map((search) => (
                 <div
                   key={search}
-                  className="flex items-center gap-2 w-full px-3 py-1.5 text-sm hover:bg-[var(--color-bg-tertiary)] transition-colors group"
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-sm hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 group"
                 >
-                  <Clock size={14} style={{ color: "var(--color-text-tertiary)" }} />
+                  <Clock size={13} style={{ color: "var(--color-text-tertiary)" }} />
                   <button
                     type="button"
                     onMouseDown={(e) => e.preventDefault()}
@@ -309,7 +308,7 @@ export const SearchBar = React.memo(function SearchBar({
                     type="button"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => removeRecentSearch(search)}
-                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[var(--color-bg-secondary)] transition-all"
+                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded-md hover:bg-[var(--color-bg-secondary)] transition-all duration-150"
                     style={{ color: "var(--color-text-tertiary)" }}
                   >
                     <X size={12} />
@@ -322,7 +321,7 @@ export const SearchBar = React.memo(function SearchBar({
           {/* Advanced search link */}
           {onAdvancedSearch && (
             <div
-              style={{ borderTop: "1px solid var(--color-border-secondary)" }}
+              style={{ borderTop: "1px solid var(--color-border-primary)" }}
             >
               <button
                 type="button"
@@ -331,10 +330,10 @@ export const SearchBar = React.memo(function SearchBar({
                   setShowSuggestions(false);
                   onAdvancedSearch();
                 }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-left hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 font-medium"
                 style={{ color: "var(--color-text-accent)" }}
               >
-                <SlidersHorizontal size={14} />
+                <SlidersHorizontal size={13} />
                 Advanced search...
               </button>
             </div>
