@@ -559,5 +559,20 @@
   "ai.suggestTranslate": "Oversett til norsk",
   "ai.suggestDeadlines": "Finn frister",
   "ai.contextChanged": "Kontekst endret",
-  "ai.errorGenerating": "Noe gikk galt. Prøv igjen."
+  "ai.errorGenerating": "Noe gikk galt. Prøv igjen.",
+  "properties.title": "Meldingsdetaljer",
+  "properties.overview": "Oversikt",
+  "properties.rawHeaders": "Rå headere",
+  "properties.messageInfo": "Meldingsinfo",
+  "properties.participants": "Deltakere",
+  "properties.deliveryRoute": "Leveringsrute",
+  "properties.security": "Sikkerhet",
+  "properties.threading": "Tråding",
+  "properties.copyHeaders": "Kopier alle headere",
+  "properties.pass": "Bestått",
+  "properties.fail": "Feilet",
+  "properties.notPresent": "Ikke tilgjengelig",
+  "properties.date": "Dato",
+  "properties.size": "Størrelse",
+  "action.properties": "Meldingsdetaljer"
 }

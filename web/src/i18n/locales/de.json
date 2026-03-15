@@ -559,5 +559,20 @@
   "ai.suggestTranslate": "Ins Norwegische übersetzen",
   "ai.suggestDeadlines": "Fristen finden",
   "ai.contextChanged": "Kontext geändert",
-  "ai.errorGenerating": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
+  "ai.errorGenerating": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+  "properties.title": "Nachrichtendetails",
+  "properties.overview": "Übersicht",
+  "properties.rawHeaders": "Roh-Header",
+  "properties.messageInfo": "Nachrichteninfo",
+  "properties.participants": "Teilnehmer",
+  "properties.deliveryRoute": "Zustellungsroute",
+  "properties.security": "Sicherheit",
+  "properties.threading": "Threading",
+  "properties.copyHeaders": "Alle Header kopieren",
+  "properties.pass": "Bestanden",
+  "properties.fail": "Fehlgeschlagen",
+  "properties.notPresent": "Nicht vorhanden",
+  "properties.date": "Datum",
+  "properties.size": "Größe",
+  "action.properties": "Nachrichtendetails"
 }

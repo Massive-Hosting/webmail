@@ -22,6 +22,7 @@ interface MessageListItemProps {
   onMarkRead?: (emailIds: string[], seen: boolean) => void;
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
+  onProperties?: (email: EmailListItem) => void;
 }
 
 export const MessageListItem = React.memo(
@@ -38,6 +39,7 @@ export const MessageListItem = React.memo(
     onMarkRead,
     onArchive,
     onDelete,
+    onProperties,
   }: MessageListItemProps) {
     const { t } = useTranslation();
     const unread = isUnread(email);
@@ -135,6 +137,7 @@ export const MessageListItem = React.memo(
           onStar={onStar}
           onArchive={onArchive}
           onDelete={onDelete}
+          onProperties={onProperties}
         />
       </ContextMenu.Root>
     );
@@ -149,7 +152,8 @@ export const MessageListItem = React.memo(
     prev.onForward === next.onForward &&
     prev.onMarkRead === next.onMarkRead &&
     prev.onArchive === next.onArchive &&
-    prev.onDelete === next.onDelete,
+    prev.onDelete === next.onDelete &&
+    prev.onProperties === next.onProperties,
 );
 
 /* ================================================================
@@ -289,6 +293,7 @@ interface ThreadChildItemProps {
   onMarkRead?: (emailIds: string[], seen: boolean) => void;
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
+  onProperties?: (email: EmailListItem) => void;
 }
 
 export const ThreadChildItem = React.memo(
@@ -306,6 +311,7 @@ export const ThreadChildItem = React.memo(
     onMarkRead,
     onArchive,
     onDelete,
+    onProperties,
   }: ThreadChildItemProps) {
     const { t } = useTranslation();
     const unread = isUnread(email);
@@ -397,6 +403,7 @@ export const ThreadChildItem = React.memo(
           onStar={onStar}
           onArchive={onArchive}
           onDelete={onDelete}
+          onProperties={onProperties}
         />
       </ContextMenu.Root>
     );
@@ -412,7 +419,8 @@ export const ThreadChildItem = React.memo(
     prev.onForward === next.onForward &&
     prev.onMarkRead === next.onMarkRead &&
     prev.onArchive === next.onArchive &&
-    prev.onDelete === next.onDelete,
+    prev.onDelete === next.onDelete &&
+    prev.onProperties === next.onProperties,
 );
 
 /* ================================================================
@@ -430,6 +438,7 @@ function MessageContextMenu({
   onStar,
   onArchive,
   onDelete,
+  onProperties,
 }: {
   email: EmailListItem;
   unread: boolean;
@@ -441,6 +450,7 @@ function MessageContextMenu({
   onStar: (emailId: string, flagged: boolean) => void;
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
+  onProperties?: (email: EmailListItem) => void;
 }) {
   const { t } = useTranslation();
 

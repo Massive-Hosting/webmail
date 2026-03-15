@@ -1,6 +1,6 @@
 /** Message list pane container - premium toolbar and contextual empty states */
 
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { MessageList } from "@/components/mail/message-list.tsx";
 import { useUIStore } from "@/stores/ui-store.ts";
 import { useSearchStore } from "@/stores/search-store.ts";
@@ -10,6 +10,8 @@ import { useUnreadTitle } from "@/hooks/use-unread-title.ts";
 import { EmptyState } from "@/components/ui/empty-state.tsx";
 import type { EmailListItem } from "@/types/mail.ts";
 import { useCompose } from "@/components/mail/compose/use-compose.ts";
+import { EmailPropertiesDialog } from "@/components/mail/email-properties-dialog.tsx";
+import { useMessage } from "@/hooks/use-message.ts";
 import { fetchEmail, fetchIdentities } from "@/api/mail.ts";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -91,6 +93,14 @@ export const MailListPane = React.memo(function MailListPane({
     staleTime: 5 * 60 * 1000,
   });
   const defaultIdentity = identities?.[0] ?? null;
+
+  // Properties dialog state
+  const [propertiesEmailId, setPropertiesEmailId] = useState<string | null>(null);
+  const { email: propertiesEmail } = useMessage(propertiesEmailId);
+
+  const handleProperties = useCallback((emailItem: EmailListItem) => {
+    setPropertiesEmailId(emailItem.id);
+  }, []);
 
   // Determine which emails are in the current list
   const displayEmails = searchActive ? searchEmails : emails;
@@ -227,7 +237,7 @@ export const MailListPane = React.memo(function MailListPane({
         ) : (
           <MessageList
             emails={displayEmails}
-            threadCounts={searchActive ? {} : threadCounts}
+            threadCounts={searchActive || !conversationView ? {} : threadCounts}
             isLoading={displayLoading}
             isFetchingNextPage={displayFetchingNext}
             hasNextPage={displayHasNext}
@@ -239,9 +249,18 @@ export const MailListPane = React.memo(function MailListPane({
             onMarkRead={markRead}
             onArchive={handleArchive}
             onDelete={handleDelete}
+            onProperties={handleProperties}
           />
         )}
       </div>
+
+      {/* Email properties dialog */}
+      {propertiesEmailId && propertiesEmail && (
+        <EmailPropertiesDialog
+          email={propertiesEmail}
+          onClose={() => setPropertiesEmailId(null)}
+        />
+      )}
     </div>
   );
 });

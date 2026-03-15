@@ -19,9 +19,9 @@ import (
 
 // System prompts for each AI feature.
 const (
-	systemPromptCompose = "You are an email writing assistant helping the user compose emails. Write the email body only — no subject line. Include an appropriate greeting and sign-off unless told otherwise. The user's identity (name and email) will be provided in the context."
-	systemPromptReply   = "You are helping the user write a reply to an email they received. The user's identity and the original email are provided. Write the reply FROM the user TO the original sender. Write only the reply body with an appropriate greeting and sign-off."
-	systemPromptRewrite = "Rewrite the following text according to the instruction. Return only the rewritten text."
+	systemPromptCompose = "You are an email writing assistant. Write ONLY the email body — no subject line. Do NOT add any signature, sign-off, or closing (like 'Best regards, Name'). The application adds the signature automatically. Just write the message content and end it there."
+	systemPromptReply   = "You are helping the user write a reply to an email they received. The user's identity and the original email are provided. Write the reply FROM the user TO the original sender. Write ONLY the reply body with an appropriate greeting (like 'Hi Name,'). Do NOT add any signature, sign-off, or closing at the end (no 'Best regards', no name, no 'Thanks'). The application handles the signature automatically."
+	systemPromptRewrite = "Rewrite the following text according to the instruction. Return only the rewritten text. Do NOT add a signature or sign-off."
 )
 
 // AIHandler handles AI-powered email composition endpoints.

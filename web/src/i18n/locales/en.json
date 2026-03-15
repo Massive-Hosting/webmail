@@ -559,5 +559,20 @@
   "ai.suggestTranslate": "Translate to Norwegian",
   "ai.suggestDeadlines": "Find deadlines",
   "ai.contextChanged": "Context changed",
-  "ai.errorGenerating": "Something went wrong. Please try again."
+  "ai.errorGenerating": "Something went wrong. Please try again.",
+  "properties.title": "Message Details",
+  "properties.overview": "Overview",
+  "properties.rawHeaders": "Raw Headers",
+  "properties.messageInfo": "Message Info",
+  "properties.participants": "Participants",
+  "properties.deliveryRoute": "Delivery Route",
+  "properties.security": "Security",
+  "properties.threading": "Threading",
+  "properties.copyHeaders": "Copy all headers",
+  "properties.pass": "Pass",
+  "properties.fail": "Fail",
+  "properties.notPresent": "Not present",
+  "properties.date": "Date",
+  "properties.size": "Size",
+  "action.properties": "Message details"
 }

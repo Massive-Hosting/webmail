@@ -35,6 +35,7 @@ import {
   File,
   FileImage,
   FileArchive,
+  Info,
 } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { PGPStatusBar, EncryptedPlaceholder, usePGPMessage } from "@/components/mail/pgp-message.tsx";
@@ -43,6 +44,7 @@ import { InvitationCard } from "@/components/calendar/invitation-card.tsx";
 import { SmartReplyBar } from "@/components/mail/smart-reply-bar.tsx";
 import { useAIEnabled } from "@/hooks/use-ai-enabled.ts";
 import { useTranslation } from "react-i18next";
+import { EmailPropertiesDialog } from "@/components/mail/email-properties-dialog.tsx";
 
 interface MessageViewProps {
   emailId: string;
@@ -75,6 +77,7 @@ function MessageContent({ email }: { email: Email }) {
   const [showExternalImages, setShowExternalImages] = useState(false);
   const [showAllRecipients, setShowAllRecipients] = useState(false);
   const [showQuotedText, setShowQuotedText] = useState(false);
+  const [showProperties, setShowProperties] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const { open: openCompose } = useCompose();
   const aiEnabled = useAIEnabled();
@@ -249,6 +252,11 @@ function MessageContent({ email }: { email: Email }) {
                   label={t("action.forwardShortcut")}
                   onClick={() => openCompose({ mode: "forward", email, identity: defaultIdentity })}
                 />
+                <ActionButton
+                  icon={<Info size={18} />}
+                  label={t("action.properties")}
+                  onClick={() => setShowProperties(true)}
+                />
                 <ActionButton icon={<MoreHorizontal size={18} />} label={t("action.more")} />
               </div>
             </div>
@@ -352,6 +360,14 @@ function MessageContent({ email }: { email: Email }) {
           <SmartReplyBar email={email} />
         )}
       </div>
+
+      {/* Email properties dialog */}
+      {showProperties && (
+        <EmailPropertiesDialog
+          email={email}
+          onClose={() => setShowProperties(false)}
+        />
+      )}
     </Tooltip.Provider>
   );
 }

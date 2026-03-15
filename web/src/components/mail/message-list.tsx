@@ -1,7 +1,6 @@
-/** Virtualized message list with inline thread expansion (Outlook-style) */
+/** Message list with inline thread expansion (Outlook-style) */
 
 import React, { useRef, useCallback, useEffect, useMemo } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import type { EmailListItem } from "@/types/mail.ts";
 import { MessageListItem, ThreadHeaderItem, ThreadChildItem } from "./message-list-item.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
@@ -18,7 +17,6 @@ function getDensityRowHeight(): number {
   return parseInt(val, 10) || 72;
 }
 
-const OVERSCAN = 10;
 const DATE_GROUP_HEADER_HEIGHT = 28;
 
 /** A virtual row can be a standalone message, a thread header, a thread child, or a date group header */
@@ -42,6 +40,7 @@ interface MessageListProps {
   onMarkRead?: (emailIds: string[], seen: boolean) => void;
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
+  onProperties?: (email: EmailListItem) => void;
 }
 
 /** Component that fetches and renders thread children when a thread is expanded */
@@ -59,6 +58,7 @@ function ExpandedThreadChildren({
   onMarkRead,
   onArchive,
   onDelete,
+  onProperties,
 }: {
   threadId: string;
   parentEmail: EmailListItem;
@@ -73,6 +73,7 @@ function ExpandedThreadChildren({
   onMarkRead?: (emailIds: string[], seen: boolean) => void;
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
+  onProperties?: (email: EmailListItem) => void;
 }) {
   const { emails, isLoading } = useThreadMessages(threadId);
 
@@ -113,6 +114,7 @@ function ExpandedThreadChildren({
           onMarkRead={onMarkRead}
           onArchive={onArchive}
           onDelete={onDelete}
+          onProperties={onProperties}
         />
       ))}
     </>
@@ -133,6 +135,7 @@ export const MessageList = React.memo(function MessageList({
   onMarkRead,
   onArchive,
   onDelete,
+  onProperties,
 }: MessageListProps) {
   const { t, i18n } = useTranslation();
   const parentRef = useRef<HTMLDivElement>(null);
@@ -277,36 +280,66 @@ export const MessageList = React.memo(function MessageList({
     );
   }
 
-  // Render with simple overflow scroll instead of virtualizer when threads are expanded
-  // This avoids complexity of dynamic row heights with TanStack Virtual
-  const hasExpandedThreads = expandedThreads.size > 0;
+  return (
+    <div
+      ref={parentRef}
+      className="message-list"
+      style={{ contain: "layout style" }}
+      role="listbox"
+      aria-label={t("message.messages")}
+    >
+      {rows.map((row) => {
+        if (row.type === "date-group-header") {
+          return (
+            <div key={`group-${row.group}`} style={{ height: DATE_GROUP_HEADER_HEIGHT }}>
+              <DateGroupHeader label={row.label} />
+            </div>
+          );
+        }
 
-  if (hasExpandedThreads) {
-    return (
-      <div
-        ref={parentRef}
-        className="message-list"
-        style={{ contain: "layout style" }}
-        role="listbox"
-        aria-label={t("message.messages")}
-      >
-        {rows.map((row, rowIndex) => {
-          if (row.type === "date-group-header") {
-            return (
-              <div key={`group-${row.group}`} style={{ height: DATE_GROUP_HEADER_HEIGHT }}>
-                <DateGroupHeader label={row.label} />
-              </div>
-            );
-          }
+        if (row.type === "message") {
+          return (
+            <div key={row.email.id} style={{ height: rowHeight }}>
+              <MessageListItem
+                email={row.email}
+                isSelected={row.email.id === selectedEmailId}
+                isMultiSelected={selectedEmailIds.has(row.email.id)}
+                onClick={handleItemClick}
+                onStar={onStarEmail}
+                onMouseEnter={handleMouseEnter}
+                onReply={onReply}
+                onReplyAll={onReplyAll}
+                onForward={onForward}
+                onMarkRead={onMarkRead}
+                onArchive={onArchive}
+                onDelete={onDelete}
+                onProperties={onProperties}
+              />
+            </div>
+          );
+        }
 
-          if (row.type === "message") {
-            return (
-              <div key={row.email.id} style={{ height: rowHeight }}>
-                <MessageListItem
+        if (row.type === "thread-header") {
+          return (
+            <div key={`thread-${row.threadId}`}>
+              <div style={{ height: rowHeight }}>
+                <ThreadHeaderItem
                   email={row.email}
+                  messageCount={row.messageCount}
+                  isExpanded={row.isExpanded}
                   isSelected={row.email.id === selectedEmailId}
-                  isMultiSelected={selectedEmailIds.has(row.email.id)}
-                  onClick={handleItemClick}
+                  onClick={() => handleThreadHeaderClick(row.email, row.threadId)}
+                  onStar={onStarEmail}
+                  onMouseEnter={handleMouseEnter}
+                />
+              </div>
+              {row.isExpanded && (
+                <ExpandedThreadChildren
+                  threadId={row.threadId}
+                  parentEmail={row.email}
+                  rowHeight={rowHeight}
+                  onSelectMessage={handleThreadChildSelect}
+                  selectedEmailId={selectedEmailId}
                   onStar={onStarEmail}
                   onMouseEnter={handleMouseEnter}
                   onReply={onReply}
@@ -315,290 +348,23 @@ export const MessageList = React.memo(function MessageList({
                   onMarkRead={onMarkRead}
                   onArchive={onArchive}
                   onDelete={onDelete}
+                  onProperties={onProperties}
                 />
-              </div>
-            );
-          }
+              )}
+            </div>
+          );
+        }
 
-          if (row.type === "thread-header") {
-            return (
-              <div key={`thread-${row.threadId}`}>
-                <div style={{ height: rowHeight }}>
-                  <ThreadHeaderItem
-                    email={row.email}
-                    messageCount={row.messageCount}
-                    isExpanded={row.isExpanded}
-                    isSelected={row.email.id === selectedEmailId}
-                    onClick={() => handleThreadHeaderClick(row.email, row.threadId)}
-                    onStar={onStarEmail}
-                    onMouseEnter={handleMouseEnter}
-                  />
-                </div>
-                {row.isExpanded && (
-                  <ExpandedThreadChildren
-                    threadId={row.threadId}
-                    parentEmail={row.email}
-                    rowHeight={rowHeight}
-                    onSelectMessage={handleThreadChildSelect}
-                    selectedEmailId={selectedEmailId}
-                    onStar={onStarEmail}
-                    onMouseEnter={handleMouseEnter}
-                    onReply={onReply}
-                    onReplyAll={onReplyAll}
-                    onForward={onForward}
-                    onMarkRead={onMarkRead}
-                    onArchive={onArchive}
-                    onDelete={onDelete}
-                  />
-                )}
-              </div>
-            );
-          }
+        return null;
+      })}
 
-          return null;
-        })}
-
-        {/* Loading indicator for next page */}
-        {hasNextPage && (
-          <LoadMoreTrigger onFetchNextPage={onFetchNextPage} isFetchingNextPage={isFetchingNextPage} rowHeight={rowHeight} />
-        )}
-      </div>
-    );
-  }
-
-  // Default: virtualized list when no threads are expanded
-  return (
-    <VirtualizedMessageList
-      parentRef={parentRef}
-      rows={rows}
-      emails={emails}
-      rowHeight={rowHeight}
-      hasNextPage={hasNextPage}
-      isFetchingNextPage={isFetchingNextPage}
-      selectedEmailId={selectedEmailId}
-      selectedEmailIds={selectedEmailIds}
-      onFetchNextPage={onFetchNextPage}
-      onItemClick={handleItemClick}
-      onThreadHeaderClick={handleThreadHeaderClick}
-      onStarEmail={onStarEmail}
-      onMouseEnter={handleMouseEnter}
-      onReply={onReply}
-      onReplyAll={onReplyAll}
-      onForward={onForward}
-      onMarkRead={onMarkRead}
-      onArchive={onArchive}
-      onDelete={onDelete}
-      t={t}
-    />
-  );
-});
-
-/** Virtualized list for when no threads are expanded */
-function VirtualizedMessageList({
-  parentRef,
-  rows,
-  emails,
-  rowHeight,
-  hasNextPage,
-  isFetchingNextPage,
-  selectedEmailId,
-  selectedEmailIds,
-  onFetchNextPage,
-  onItemClick,
-  onThreadHeaderClick,
-  onStarEmail,
-  onMouseEnter,
-  onReply,
-  onReplyAll,
-  onForward,
-  onMarkRead,
-  onArchive,
-  onDelete,
-  t,
-}: {
-  parentRef: React.RefObject<HTMLDivElement | null>;
-  rows: VirtualRow[];
-  emails: EmailListItem[];
-  rowHeight: number;
-  hasNextPage: boolean;
-  isFetchingNextPage: boolean;
-  selectedEmailId: string | null;
-  selectedEmailIds: Set<string>;
-  onFetchNextPage: () => void;
-  onItemClick: (email: EmailListItem, event: React.MouseEvent) => void;
-  onThreadHeaderClick: (email: EmailListItem, threadId: string) => void;
-  onStarEmail: (emailId: string, flagged: boolean) => void;
-  onMouseEnter: (emailId: string) => void;
-  onReply?: (email: EmailListItem) => void;
-  onReplyAll?: (email: EmailListItem) => void;
-  onForward?: (email: EmailListItem) => void;
-  onMarkRead?: (emailIds: string[], seen: boolean) => void;
-  onArchive?: (emailIds: string[]) => void;
-  onDelete?: (emailIds: string[]) => void;
-  t: (key: string) => string;
-}) {
-  const rowCount = rows.length + (hasNextPage ? 1 : 0);
-
-  const virtualizer = useVirtualizer({
-    count: rowCount,
-    getScrollElement: () => parentRef.current,
-    estimateSize: (index) => {
-      if (index < rows.length && rows[index].type === "date-group-header") {
-        return DATE_GROUP_HEADER_HEIGHT;
-      }
-      return rowHeight;
-    },
-    overscan: OVERSCAN,
-  });
-
-  // Fetch next page when near bottom
-  useEffect(() => {
-    const items = virtualizer.getVirtualItems();
-    const lastItem = items[items.length - 1];
-    if (!lastItem) return;
-
-    if (
-      lastItem.index >= rows.length - 5 &&
-      hasNextPage &&
-      !isFetchingNextPage
-    ) {
-      onFetchNextPage();
-    }
-  }, [
-    virtualizer.getVirtualItems(),
-    rows.length,
-    hasNextPage,
-    isFetchingNextPage,
-    onFetchNextPage,
-  ]);
-
-  return (
-    <div
-      ref={parentRef}
-      className="message-list"
-      style={{ contain: "strict" }}
-      role="listbox"
-      aria-label={t("message.messages")}
-    >
-      <div
-        style={{
-          height: virtualizer.getTotalSize(),
-          width: "100%",
-          position: "relative",
-        }}
-      >
-        {virtualizer.getVirtualItems().map((virtualRow) => {
-          if (virtualRow.index >= rows.length) {
-            // Loading indicator for next page
-            return (
-              <div
-                key="loading"
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: rowHeight,
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
-                className="message-list-skeleton__row"
-              >
-                <div className="message-list-skeleton__dot-space" />
-                <Skeleton width={36} height={36} rounded />
-                <div className="message-list-skeleton__content">
-                  <Skeleton width={120} height={14} />
-                  <Skeleton width="80%" height={14} />
-                  <Skeleton width="60%" height={12} />
-                </div>
-              </div>
-            );
-          }
-
-          const row = rows[virtualRow.index];
-
-          if (row.type === "date-group-header") {
-            return (
-              <div
-                key={`group-${row.group}`}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: DATE_GROUP_HEADER_HEIGHT,
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
-              >
-                <DateGroupHeader label={row.label} />
-              </div>
-            );
-          }
-
-          if (row.type === "message") {
-            return (
-              <div
-                key={row.email.id}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: rowHeight,
-                  overflow: "hidden",
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
-              >
-                <MessageListItem
-                  email={row.email}
-                  isSelected={row.email.id === selectedEmailId}
-                  isMultiSelected={selectedEmailIds.has(row.email.id)}
-                  onClick={onItemClick}
-                  onStar={onStarEmail}
-                  onMouseEnter={onMouseEnter}
-                  onReply={onReply}
-                  onReplyAll={onReplyAll}
-                  onForward={onForward}
-                  onMarkRead={onMarkRead}
-                  onArchive={onArchive}
-                  onDelete={onDelete}
-                />
-              </div>
-            );
-          }
-
-          if (row.type === "thread-header") {
-            return (
-              <div
-                key={`thread-${row.threadId}`}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: rowHeight,
-                  overflow: "hidden",
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
-              >
-                <ThreadHeaderItem
-                  email={row.email}
-                  messageCount={row.messageCount}
-                  isExpanded={false}
-                  isSelected={row.email.id === selectedEmailId}
-                  onClick={() => onThreadHeaderClick(row.email, row.threadId)}
-                  onStar={onStarEmail}
-                  onMouseEnter={onMouseEnter}
-                />
-              </div>
-            );
-          }
-
-          return null;
-        })}
-      </div>
+      {/* Loading indicator for next page */}
+      {hasNextPage && (
+        <LoadMoreTrigger onFetchNextPage={onFetchNextPage} isFetchingNextPage={isFetchingNextPage} rowHeight={rowHeight} />
+      )}
     </div>
   );
-}
+});
 
 /** Date group separator shown between messages of different date groups */
 function DateGroupHeader({ label }: { label: string }) {

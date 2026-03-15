@@ -403,7 +403,7 @@ const FolderItem = React.memo(function FolderItem({
             width: "calc(100% - 8px)",
           }}
           onMouseOver={(e) => {
-            if (!isActive) e.currentTarget.style.backgroundColor = "var(--color-message-hover)";
+            if (!isActive) e.currentTarget.style.backgroundColor = "var(--color-bg-tertiary)";
           }}
           onMouseOut={(e) => {
             if (!isActive) e.currentTarget.style.backgroundColor = "transparent";

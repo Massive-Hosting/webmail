@@ -1085,3 +1085,70 @@ export async function sendEmail(params: SendEmailParams): Promise<void> {
     }
   }
 }
+
+// ---- Email headers (for properties dialog) ----
+
+/** Header property names to request from JMAP */
+const EMAIL_HEADER_PROPERTIES = [
+  "header:Received:asRaw",
+  "header:Authentication-Results:asRaw",
+  "header:Received-SPF:asRaw",
+  "header:DKIM-Signature:asRaw",
+  "header:ARC-Authentication-Results:asRaw",
+  "header:X-Mailer:asRaw",
+  "header:User-Agent:asRaw",
+  "header:Message-ID:asRaw",
+  "header:In-Reply-To:asRaw",
+  "header:References:asRaw",
+  "header:Return-Path:asRaw",
+  "header:X-Spam-Status:asRaw",
+  "header:Content-Type:asRaw",
+  "header:MIME-Version:asRaw",
+];
+
+export interface EmailHeadersResult {
+  /** Individual parsed header values (from header:Name:asRaw properties) */
+  headerValues: Record<string, string | null>;
+  /** Full raw headers array (from the "headers" property) */
+  rawHeaders: Array<{ name: string; value: string }>;
+}
+
+/** Fetch full email headers for the properties dialog */
+export async function fetchEmailHeaders(emailId: string): Promise<EmailHeadersResult> {
+  const request: JMAPRequest = {
+    using: JMAP_USING,
+    methodCalls: [
+      [
+        "Email/get",
+        {
+          ids: [emailId],
+          properties: ["headers", ...EMAIL_HEADER_PROPERTIES],
+        },
+        "h0",
+      ],
+    ],
+  };
+
+  const response = await jmapRequest(request);
+  const [, result] = response.methodResponses[0];
+  const list = (result as { list: Array<Record<string, unknown>> }).list;
+
+  if (list.length === 0) {
+    return { headerValues: {}, rawHeaders: [] };
+  }
+
+  const email = list[0];
+  const headerValues: Record<string, string | null> = {};
+
+  for (const prop of EMAIL_HEADER_PROPERTIES) {
+    // The key in the response is the property name, e.g. "header:Received:asRaw"
+    const val = email[prop];
+    // Extract just the header name for easier lookup
+    const headerName = prop.replace("header:", "").replace(":asRaw", "");
+    headerValues[headerName] = val != null ? String(val) : null;
+  }
+
+  const rawHeaders = (email.headers ?? []) as Array<{ name: string; value: string }>;
+
+  return { headerValues, rawHeaders };
+}
