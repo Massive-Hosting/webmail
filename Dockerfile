@@ -13,11 +13,13 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 go build -o /webmail ./cmd/webmail-api
+RUN CGO_ENABLED=0 go install github.com/pressly/goose/v3/cmd/goose@latest
 
 # Stage 3: Runtime
 FROM ubuntu:24.04
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=backend /webmail /usr/local/bin/webmail
+COPY --from=backend /go/bin/goose /bin/goose
 COPY --from=backend /app/migrations /migrations
 COPY --from=frontend /app/web/dist /web/dist
 EXPOSE 8095
