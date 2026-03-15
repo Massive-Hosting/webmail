@@ -24,9 +24,8 @@ async function handleResponse<T>(response: Response): Promise<T> {
     }
 
     if (response.status === 401) {
-      // Redirect to login on auth failure
-      const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
-      window.location.href = `/login?return=${returnUrl}`;
+      // Throw the error and let the app handle it via state.
+      // App.tsx checks getSession() and shows LoginPage when unauthenticated.
       throw new ApiError(401, "Unauthorized", body);
     }
 

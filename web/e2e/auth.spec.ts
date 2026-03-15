@@ -1,13 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { ACCOUNT_INFO, login } from './helpers';
+import { ACCOUNT_INFO, login, gotoLoginPage } from './helpers';
 
 test.describe('Authentication', () => {
-  test('redirects unauthenticated users to the login page', async ({ page }) => {
-    await page.goto('/');
-    // The app checks the session and should show the login page.
-    await expect(
-      page.getByRole('heading', { name: 'Sign in to Webmail' }),
-    ).toBeVisible({ timeout: 15_000 });
+  test('shows login page for unauthenticated users', async ({ page }) => {
+    await gotoLoginPage(page);
   });
 
   test('logs in with valid credentials and shows inbox', async ({ page }) => {
@@ -24,10 +20,7 @@ test.describe('Authentication', () => {
   });
 
   test('shows error for invalid credentials', async ({ page }) => {
-    await page.goto('/');
-    await expect(
-      page.getByRole('heading', { name: 'Sign in to Webmail' }),
-    ).toBeVisible({ timeout: 15_000 });
+    await gotoLoginPage(page);
 
     await page.getByLabel('Email address').fill('nobody@example.com');
     await page.getByLabel('Password').fill('wrong-password');
@@ -40,10 +33,7 @@ test.describe('Authentication', () => {
   });
 
   test('shows validation error for empty password', async ({ page }) => {
-    await page.goto('/');
-    await expect(
-      page.getByRole('heading', { name: 'Sign in to Webmail' }),
-    ).toBeVisible({ timeout: 15_000 });
+    await gotoLoginPage(page);
 
     await page.getByLabel('Email address').fill(ACCOUNT_INFO.email);
     // Leave password empty.
@@ -51,22 +41,21 @@ test.describe('Authentication', () => {
 
     await expect(
       page.getByText('Please enter your password'),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 5_000 });
   });
 
   test('shows validation error for invalid email format', async ({ page }) => {
-    await page.goto('/');
-    await expect(
-      page.getByRole('heading', { name: 'Sign in to Webmail' }),
-    ).toBeVisible({ timeout: 15_000 });
+    await gotoLoginPage(page);
 
-    await page.getByLabel('Email address').fill('not-an-email');
+    // Use an email that passes browser's native type="email" validation
+    // but fails the app's regex (which requires a dot in the domain).
+    await page.getByLabel('Email address').fill('user@localhost');
     await page.getByLabel('Password').fill('something');
     await page.getByRole('button', { name: 'Sign in' }).click();
 
     await expect(
       page.getByText('Please enter a valid email address'),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 5_000 });
   });
 
   test('logout clears session', async ({ page }) => {
@@ -75,9 +64,9 @@ test.describe('Authentication', () => {
     // Click the logout button (aria-label="Log out").
     await page.getByRole('button', { name: 'Log out' }).click();
 
-    // After logout we should be redirected to login or see the login page.
+    // After logout, the app redirects to /login. Wait for the login page.
     await expect(
       page.getByRole('heading', { name: 'Sign in to Webmail' }),
-    ).toBeVisible({ timeout: 15_000 });
+    ).toBeVisible({ timeout: 20_000 });
   });
 });

@@ -9,6 +9,7 @@ import (
 
 	"webmail/internal/middleware"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 )
 
@@ -107,6 +108,91 @@ func (h *ProxyHandler) JMAP(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	// Stream response back.
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
+	io.Copy(w, resp.Body) //nolint:errcheck
+}
+
+// BlobDownload handles GET /api/jmap/blob/{blobId}.
+// Proxies blob download requests to the Stalwart JMAP download endpoint.
+func (h *ProxyHandler) BlobDownload(w http.ResponseWriter, r *http.Request) {
+	sess := middleware.SessionFromContext(r.Context())
+	if sess == nil {
+		writeJSON(w, http.StatusUnauthorized, errorResponse{"unauthorized"})
+		return
+	}
+
+	blobID := chi.URLParam(r, "blobId")
+	if blobID == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"missing_blob_id"})
+		return
+	}
+
+	downloadURL := fmt.Sprintf("%s/jmap/download/%s/%s/",
+		sess.StalwartURL, sess.AccountID, blobID)
+
+	proxyReq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, downloadURL, nil)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"internal_error"})
+		return
+	}
+	proxyReq.SetBasicAuth(sess.Email, sess.Password)
+
+	resp, err := h.client.Do(proxyReq)
+	if err != nil {
+		h.log.Error().Err(err).Msg("stalwart blob download failed")
+		writeJSON(w, http.StatusBadGateway, errorResponse{"upstream_error"})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		writeJSON(w, resp.StatusCode, errorResponse{"blob_not_found"})
+		return
+	}
+
+	ct := resp.Header.Get("Content-Type")
+	if ct != "" {
+		w.Header().Set("Content-Type", ct)
+	}
+	if cl := resp.Header.Get("Content-Length"); cl != "" {
+		w.Header().Set("Content-Length", cl)
+	}
+
+	io.Copy(w, resp.Body) //nolint:errcheck
+}
+
+// BlobUpload handles POST /api/jmap/upload.
+// Proxies raw blob upload requests to the Stalwart JMAP upload endpoint.
+func (h *ProxyHandler) BlobUpload(w http.ResponseWriter, r *http.Request) {
+	sess := middleware.SessionFromContext(r.Context())
+	if sess == nil {
+		writeJSON(w, http.StatusUnauthorized, errorResponse{"unauthorized"})
+		return
+	}
+
+	uploadURL := fmt.Sprintf("%s/jmap/upload/%s/", sess.StalwartURL, sess.AccountID)
+
+	proxyReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost, uploadURL, r.Body)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"internal_error"})
+		return
+	}
+
+	ct := r.Header.Get("Content-Type")
+	if ct != "" {
+		proxyReq.Header.Set("Content-Type", ct)
+	}
+	proxyReq.SetBasicAuth(sess.Email, sess.Password)
+
+	resp, err := h.client.Do(proxyReq)
+	if err != nil {
+		h.log.Error().Err(err).Msg("stalwart blob upload failed")
+		writeJSON(w, http.StatusBadGateway, errorResponse{"upstream_error"})
+		return
+	}
+	defer resp.Body.Close()
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body) //nolint:errcheck

@@ -34,6 +34,7 @@ import { lookupPublicKeys } from "@/lib/pgp-lookup.ts";
 
 // Re-export useCompose from its own module (keeps it out of the lazy-loaded chunk)
 export { useCompose } from "./use-compose.ts";
+import { escapeHtml } from "./use-compose.ts";
 
 // ---- ComposePanel: the actual compose UI for a single draft ----
 

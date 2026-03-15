@@ -125,6 +125,8 @@ func main() {
 
 			// JMAP proxy.
 			r.Post("/jmap", proxyHandler.JMAP)
+			r.Get("/jmap/blob/{blobId}", proxyHandler.BlobDownload)
+			r.Post("/jmap/upload", proxyHandler.BlobUpload)
 
 			// Blob/attachment proxy.
 			r.Post("/blob/upload", blobHandler.Upload)
