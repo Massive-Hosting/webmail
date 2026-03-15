@@ -328,6 +328,30 @@
   overflow-y: auto;
 }
 
+/* ---- Date group headers ---- */
+.date-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px;
+  height: 28px;
+}
+
+.date-group-header__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.date-group-header__line {
+  flex: 1;
+  height: 1px;
+  background-color: var(--color-border-secondary);
+}
+
 .message-list-skeleton {
   display: flex;
   flex-direction: column;

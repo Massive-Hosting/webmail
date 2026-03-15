@@ -11,6 +11,7 @@ import { usePrefetchMessage } from "@/hooks/use-message.ts";
 import { useThreadMessages } from "@/hooks/use-thread-messages.ts";
 import { Inbox } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { getDateGroup, getDateGroupLabel } from "@/lib/format.ts";
 
 function getDensityRowHeight(): number {
   const val = getComputedStyle(document.documentElement).getPropertyValue("--density-row-height").trim();
@@ -18,12 +19,14 @@ function getDensityRowHeight(): number {
 }
 
 const OVERSCAN = 10;
+const DATE_GROUP_HEADER_HEIGHT = 28;
 
-/** A virtual row can be a standalone message, a thread header, or a thread child */
+/** A virtual row can be a standalone message, a thread header, a thread child, or a date group header */
 type VirtualRow =
   | { type: "message"; email: EmailListItem }
   | { type: "thread-header"; email: EmailListItem; threadId: string; messageCount: number; isExpanded: boolean }
-  | { type: "thread-child"; email: EmailListItem; threadId: string; isFirst: boolean; isLast: boolean };
+  | { type: "thread-child"; email: EmailListItem; threadId: string; isFirst: boolean; isLast: boolean }
+  | { type: "date-group-header"; group: string; label: string };
 
 interface MessageListProps {
   emails: EmailListItem[];
@@ -131,7 +134,7 @@ export const MessageList = React.memo(function MessageList({
   onArchive,
   onDelete,
 }: MessageListProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const parentRef = useRef<HTMLDivElement>(null);
   const selectedEmailId = useUIStore((s) => s.selectedEmailId);
   const selectedEmailIds = useUIStore((s) => s.selectedEmailIds);
@@ -144,11 +147,24 @@ export const MessageList = React.memo(function MessageList({
 
   const rowHeight = getDensityRowHeight();
 
+  const i18nLanguage = i18n.language;
+
   // Build the virtual rows: for each email, either show as standalone, thread header,
-  // or (if expanded) thread header + thread children placeholders
+  // or (if expanded) thread header + thread children placeholders.
+  // Insert date group header rows when the date group changes.
   const rows = useMemo(() => {
     const result: VirtualRow[] = [];
+    let lastGroup = "";
     for (const email of emails) {
+      const group = getDateGroup(email.receivedAt);
+      if (group !== lastGroup) {
+        result.push({
+          type: "date-group-header",
+          group,
+          label: getDateGroupLabel(group, t, i18nLanguage),
+        });
+        lastGroup = group;
+      }
       const count = threadCounts[email.threadId] ?? 1;
       if (count <= 1) {
         // Single message, not a thread
@@ -170,7 +186,7 @@ export const MessageList = React.memo(function MessageList({
       }
     }
     return result;
-  }, [emails, threadCounts, expandedThreads]);
+  }, [emails, threadCounts, expandedThreads, t, i18nLanguage]);
 
   // For the virtualizer, we need a count that includes expanded thread children.
   // We'll use a non-virtualized approach for expanded thread children to avoid
@@ -273,7 +289,15 @@ export const MessageList = React.memo(function MessageList({
         role="listbox"
         aria-label={t("message.messages")}
       >
-        {rows.map((row) => {
+        {rows.map((row, rowIndex) => {
+          if (row.type === "date-group-header") {
+            return (
+              <div key={`group-${row.group}`} style={{ height: DATE_GROUP_HEADER_HEIGHT }}>
+                <DateGroupHeader label={row.label} />
+              </div>
+            );
+          }
+
           if (row.type === "message") {
             return (
               <div key={row.email.id} style={{ height: rowHeight }}>
@@ -417,7 +441,12 @@ function VirtualizedMessageList({
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => rowHeight,
+    estimateSize: (index) => {
+      if (index < rows.length && rows[index].type === "date-group-header") {
+        return DATE_GROUP_HEADER_HEIGHT;
+      }
+      return rowHeight;
+    },
     overscan: OVERSCAN,
   });
 
@@ -486,6 +515,24 @@ function VirtualizedMessageList({
 
           const row = rows[virtualRow.index];
 
+          if (row.type === "date-group-header") {
+            return (
+              <div
+                key={`group-${row.group}`}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: DATE_GROUP_HEADER_HEIGHT,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                <DateGroupHeader label={row.label} />
+              </div>
+            );
+          }
+
           if (row.type === "message") {
             return (
               <div
@@ -546,6 +593,16 @@ function VirtualizedMessageList({
           return null;
         })}
       </div>
+    </div>
+  );
+}
+
+/** Date group separator shown between messages of different date groups */
+function DateGroupHeader({ label }: { label: string }) {
+  return (
+    <div className="date-group-header" role="separator" aria-label={label}>
+      <span className="date-group-header__label">{label}</span>
+      <div className="date-group-header__line" />
     </div>
   );
 }

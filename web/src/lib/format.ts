@@ -6,6 +6,7 @@ import {
   isThisYear,
   formatDistanceToNow,
 } from "date-fns";
+import type { TFunction } from "i18next";
 import type { EmailAddress } from "@/types/mail.ts";
 
 /** Smart date formatting: "2:30 PM" today, "Mar 12" this year, "Mar 12, 2025" older */
@@ -62,6 +63,66 @@ export function getInitials(addr: EmailAddress): string {
     return parts[0][0].toUpperCase();
   }
   return addr.email[0].toUpperCase();
+}
+
+/** Date group identifiers for message list grouping */
+export type DateGroup =
+  | "today"
+  | "yesterday"
+  | "thisWeek"
+  | "lastWeek"
+  | "thisMonth"
+  | "lastMonth"
+  | string; // older months like "February 2026"
+
+/** Determine which date group a message belongs to */
+export function getDateGroup(dateStr: string): DateGroup {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  // Monday-based week start
+  const dayOfWeek = today.getDay();
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const thisWeekStart = new Date(today);
+  thisWeekStart.setDate(today.getDate() - mondayOffset);
+  const lastWeekStart = new Date(thisWeekStart);
+  lastWeekStart.setDate(thisWeekStart.getDate() - 7);
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+  if (date >= today) return "today";
+  if (date >= yesterday) return "yesterday";
+  if (date >= thisWeekStart) return "thisWeek";
+  if (date >= lastWeekStart) return "lastWeek";
+  if (date >= thisMonthStart) return "thisMonth";
+  if (date >= lastMonthStart) return "lastMonth";
+  // For older: return month name + year as a stable key
+  return `older:${date.getFullYear()}-${date.getMonth()}`;
+}
+
+/** Well-known group keys (used to distinguish from older-month keys) */
+const KNOWN_GROUPS = new Set([
+  "today",
+  "yesterday",
+  "thisWeek",
+  "lastWeek",
+  "thisMonth",
+  "lastMonth",
+]);
+
+/** Convert a date group key into a user-visible label */
+export function getDateGroupLabel(group: DateGroup, t: TFunction, locale?: string): string {
+  if (KNOWN_GROUPS.has(group)) {
+    return t(`dateGroup.${group}`);
+  }
+  // older:YYYY-M  →  locale-aware month name + year
+  const parts = group.replace("older:", "").split("-");
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10);
+  const d = new Date(year, month, 1);
+  return d.toLocaleDateString(locale ?? "en", { month: "long", year: "numeric" });
 }
 
 /** Generate a consistent color for an avatar based on email */
