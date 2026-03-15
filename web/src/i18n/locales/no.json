@@ -543,5 +543,19 @@
   "listToolbar.showIndividual": "Vis individuelle meldinger",
   "contacts.namePlaceholder": "Fullt navn",
   "contacts.showNameDetails": "Vis for-/etternavn",
-  "contacts.hideNameDetails": "Skjul detaljer"
+  "contacts.hideNameDetails": "Skjul detaljer",
+  "ai.copilotTitle": "AI-assistent",
+  "ai.copilotContext": "Angående: {{subject}}",
+  "ai.copilotPlaceholder": "Spør hva som helst om denne e-posten...",
+  "ai.copilotWelcome": "Hva kan jeg hjelpe med?",
+  "ai.useAsReply": "Bruk som svar",
+  "ai.newConversation": "Ny samtale",
+  "ai.suggestExplain": "Forklar denne e-posten",
+  "ai.suggestSummarize": "Oppsummer hovedpunkter",
+  "ai.suggestActionItems": "Finn handlingspunkter",
+  "ai.suggestDraftReply": "Skriv et svar",
+  "ai.suggestTranslate": "Oversett til norsk",
+  "ai.suggestDeadlines": "Finn frister",
+  "ai.contextChanged": "Kontekst endret",
+  "ai.errorGenerating": "Noe gikk galt. Prøv igjen."
 }

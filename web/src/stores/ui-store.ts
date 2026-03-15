@@ -31,6 +31,8 @@ interface UIState extends PanelLayout {
   mobileView: "sidebar" | "list" | "message";
   /** Sort order: true = newest first */
   sortNewestFirst: boolean;
+  /** Whether the AI Copilot panel is open */
+  copilotOpen: boolean;
   /** Keyboard shortcut chord state */
   chordPrefix: string | null;
   /** Chord timeout ID */
@@ -53,6 +55,8 @@ interface UIState extends PanelLayout {
   collapseThread: (threadId: string) => void;
   setIsMobile: (isMobile: boolean) => void;
   setMobileView: (view: "sidebar" | "list" | "message") => void;
+  setCopilotOpen: (open: boolean) => void;
+  toggleCopilot: () => void;
   setChordPrefix: (prefix: string | null) => void;
   resetLayout: () => void;
 }
@@ -118,6 +122,7 @@ export const useUIStore = create<UIState>((set, get) => {
     selectedThreadId: null,
     selectedEmailIds: new Set(),
     expandedThreads: new Set(),
+    copilotOpen: false,
     sortNewestFirst: true,
     isMobile: false,
     mobileView: "list",
@@ -260,6 +265,9 @@ export const useUIStore = create<UIState>((set, get) => {
         return { expandedThreads: next };
       });
     },
+
+    setCopilotOpen: (open) => set({ copilotOpen: open }),
+    toggleCopilot: () => set((state) => ({ copilotOpen: !state.copilotOpen })),
 
     setIsMobile: (isMobile) => set({ isMobile }),
 

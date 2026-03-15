@@ -9,6 +9,7 @@ import {
   LogOut,
   ChevronDown,
   Globe,
+  Sparkles,
 } from "lucide-react";
 import { SearchBar } from "@/components/mail/search-bar.tsx";
 import { useTheme } from "@/hooks/use-theme.ts";
@@ -24,6 +25,9 @@ import { LANGUAGES } from "@/i18n/index.ts";
 interface ToolbarProps {
   onSettings?: () => void;
   onAdvancedSearch?: () => void;
+  aiEnabled?: boolean;
+  copilotOpen?: boolean;
+  onToggleCopilot?: () => void;
 }
 
 /** Reusable toolbar icon button with tooltip */
@@ -77,6 +81,9 @@ function ToolbarIconButton({
 export const Toolbar = React.memo(function Toolbar({
   onSettings,
   onAdvancedSearch,
+  aiEnabled,
+  copilotOpen,
+  onToggleCopilot,
 }: ToolbarProps) {
   const { theme, setTheme } = useTheme();
   const { t, i18n } = useTranslation();
@@ -140,6 +147,21 @@ export const Toolbar = React.memo(function Toolbar({
             label={t("toolbar.settings")}
             tooltipText={t("toolbar.settings")}
           />
+
+          {/* AI Copilot toggle */}
+          {aiEnabled && (
+            <ToolbarIconButton
+              onClick={onToggleCopilot}
+              icon={
+                <Sparkles
+                  size={19}
+                  style={copilotOpen ? { color: "var(--color-text-accent)" } : undefined}
+                />
+              }
+              label={t("ai.copilotTitle")}
+              tooltipText={t("ai.copilotTitle")}
+            />
+          )}
 
           {/* Separator */}
           <div

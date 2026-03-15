@@ -543,5 +543,19 @@
   "listToolbar.showIndividual": "Show individual messages",
   "contacts.namePlaceholder": "Full name",
   "contacts.showNameDetails": "Show first/last name",
-  "contacts.hideNameDetails": "Hide details"
+  "contacts.hideNameDetails": "Hide details",
+  "ai.copilotTitle": "AI Assistant",
+  "ai.copilotContext": "Regarding: {{subject}}",
+  "ai.copilotPlaceholder": "Ask anything about this email...",
+  "ai.copilotWelcome": "What can I help with?",
+  "ai.useAsReply": "Use as reply",
+  "ai.newConversation": "New conversation",
+  "ai.suggestExplain": "Explain this email",
+  "ai.suggestSummarize": "Summarize key points",
+  "ai.suggestActionItems": "Extract action items",
+  "ai.suggestDraftReply": "Draft a reply",
+  "ai.suggestTranslate": "Translate to Norwegian",
+  "ai.suggestDeadlines": "Find deadlines",
+  "ai.contextChanged": "Context changed",
+  "ai.errorGenerating": "Something went wrong. Please try again."
 }

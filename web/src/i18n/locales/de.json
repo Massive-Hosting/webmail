@@ -543,5 +543,19 @@
   "listToolbar.showIndividual": "Einzelne Nachrichten anzeigen",
   "contacts.namePlaceholder": "Vollständiger Name",
   "contacts.showNameDetails": "Vor-/Nachname anzeigen",
-  "contacts.hideNameDetails": "Details ausblenden"
+  "contacts.hideNameDetails": "Details ausblenden",
+  "ai.copilotTitle": "KI-Assistent",
+  "ai.copilotContext": "Betreff: {{subject}}",
+  "ai.copilotPlaceholder": "Fragen Sie etwas zu dieser E-Mail...",
+  "ai.copilotWelcome": "Wie kann ich helfen?",
+  "ai.useAsReply": "Als Antwort verwenden",
+  "ai.newConversation": "Neue Unterhaltung",
+  "ai.suggestExplain": "Diese E-Mail erklären",
+  "ai.suggestSummarize": "Kernpunkte zusammenfassen",
+  "ai.suggestActionItems": "Aufgaben extrahieren",
+  "ai.suggestDraftReply": "Antwort entwerfen",
+  "ai.suggestTranslate": "Ins Norwegische übersetzen",
+  "ai.suggestDeadlines": "Fristen finden",
+  "ai.contextChanged": "Kontext geändert",
+  "ai.errorGenerating": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
 }

@@ -1,6 +1,8 @@
 /** Root application shell with activity bar, three-pane layout, ARIA landmarks, and error states — premium design */
 
 import React, { useEffect, useCallback, useState, lazy, Suspense, useMemo } from "react";
+import { AICopilot } from "@/components/mail/ai-copilot.tsx";
+import { useAIEnabled } from "@/hooks/use-ai-enabled.ts";
 import { Toolbar } from "./toolbar.tsx";
 import { Sidebar } from "./sidebar.tsx";
 import { ActivityBar } from "./activity-bar.tsx";
@@ -49,6 +51,19 @@ export function AppShell() {
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  const aiEnabled = useAIEnabled();
+  const copilotOpen = useUIStore((s) => s.copilotOpen);
+  const toggleCopilot = useUIStore((s) => s.toggleCopilot);
+  const setCopilotOpen = useUIStore((s) => s.setCopilotOpen);
+
+  const handleToggleCopilot = useCallback(() => {
+    toggleCopilot();
+  }, [toggleCopilot]);
+
+  const handleCloseCopilot = useCallback(() => {
+    setCopilotOpen(false);
+  }, [setCopilotOpen]);
 
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const readingPaneVisible = useUIStore((s) => s.readingPaneVisible);
@@ -386,6 +401,9 @@ export function AppShell() {
           <Toolbar
             onSettings={handleOpenSettings}
             onAdvancedSearch={handleOpenAdvancedSearch}
+            aiEnabled={aiEnabled}
+            copilotOpen={copilotOpen}
+            onToggleCopilot={handleToggleCopilot}
           />
         </header>
         {mobileView === "sidebar" && (
@@ -483,6 +501,7 @@ export function AppShell() {
 
         {/* Mail view */}
         {activeView === "mail" && (
+          <>
           <main id="main-content" role="main" className="flex flex-col flex-1 overflow-hidden">
             {/* Action bar — spans full content width */}
             <ActionBar
@@ -549,6 +568,15 @@ export function AppShell() {
               )}
             </div>
           </main>
+
+          {/* AI Copilot panel */}
+          {aiEnabled && (
+            <AICopilot
+              open={copilotOpen}
+              onClose={handleCloseCopilot}
+            />
+          )}
+          </>
         )}
       </div>
 
