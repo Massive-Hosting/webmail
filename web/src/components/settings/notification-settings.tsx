@@ -4,8 +4,10 @@ import React, { useCallback, useState } from "react";
 import { Bell, Volume2 } from "lucide-react";
 import { useSettingsStore } from "@/stores/settings-store.ts";
 import { requestNotificationPermission } from "@/lib/notifications.ts";
+import { useTranslation } from "react-i18next";
 
 export const NotificationSettings = React.memo(function NotificationSettings() {
+  const { t } = useTranslation();
   const notifications = useSettingsStore((s) => s.notifications);
   const setNotifications = useSettingsStore((s) => s.setNotifications);
   const [permissionState, setPermissionState] = useState<NotificationPermission>(
@@ -43,21 +45,20 @@ export const NotificationSettings = React.memo(function NotificationSettings() {
               className="text-sm font-medium"
               style={{ color: "var(--color-text-primary)" }}
             >
-              Desktop notifications
+              {t("notifications.desktopTitle")}
             </h3>
             <p
               className="text-xs mt-0.5"
               style={{ color: "var(--color-text-tertiary)" }}
             >
-              Show a browser notification when new mail arrives.
+              {t("notifications.desktopDesc")}
             </p>
             {permissionState === "denied" && notifications.enabled && (
               <p
                 className="text-xs mt-1"
                 style={{ color: "var(--color-text-danger)" }}
               >
-                Notifications are blocked by your browser. Check your browser
-                settings to allow notifications for this site.
+                {t("notifications.blockedByBrowser")}
               </p>
             )}
           </div>
@@ -81,13 +82,13 @@ export const NotificationSettings = React.memo(function NotificationSettings() {
               className="text-sm font-medium"
               style={{ color: "var(--color-text-primary)" }}
             >
-              Notification sound
+              {t("notifications.soundTitle")}
             </h3>
             <p
               className="text-xs mt-0.5"
               style={{ color: "var(--color-text-tertiary)" }}
             >
-              Play a sound for new messages. (Coming soon)
+              {t("notifications.soundDesc")}
             </p>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 import { HardDrive, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import { destroyEmails, fetchEmails } from "@/api/mail.ts";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -15,6 +16,7 @@ function formatBytes(bytes: number): string {
 }
 
 export const StorageSettings = React.memo(function StorageSettings() {
+  const { t } = useTranslation();
   const { mailboxes, findByRole } = useMailboxes();
   const queryClient = useQueryClient();
   const [emptyingTrash, setEmptyingTrash] = useState(false);
@@ -42,7 +44,7 @@ export const StorageSettings = React.memo(function StorageSettings() {
         });
 
         if (result.emails.length === 0) {
-          toast.info(`${folderName} is already empty.`);
+          toast.info(t("storage.alreadyEmpty", { name: folderName }));
           setLoading(false);
           return;
         }
@@ -53,14 +55,14 @@ export const StorageSettings = React.memo(function StorageSettings() {
         queryClient.invalidateQueries({ queryKey: ["emails"] });
         queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
 
-        toast.success(`Emptied ${folderName} (${emailIds.length} messages removed).`);
+        toast.success(t("storage.emptied", { name: folderName, count: emailIds.length }));
       } catch {
-        toast.error(`Failed to empty ${folderName}.`);
+        toast.error(t("storage.failedToEmpty", { name: folderName }));
       } finally {
         setLoading(false);
       }
     },
-    [queryClient],
+    [queryClient, t],
   );
 
   return (
@@ -73,14 +75,14 @@ export const StorageSettings = React.memo(function StorageSettings() {
             className="text-sm font-semibold"
             style={{ color: "var(--color-text-primary)" }}
           >
-            Storage usage
+            {t("storage.title")}
           </h3>
         </div>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span style={{ color: "var(--color-text-secondary)" }}>
-              Total messages
+              {t("storage.totalMessages")}
             </span>
             <span
               className="font-medium"
@@ -104,7 +106,7 @@ export const StorageSettings = React.memo(function StorageSettings() {
                   {mailbox.name}
                 </span>
                 <span style={{ color: "var(--color-text-secondary)" }}>
-                  {mailbox.totalEmails.toLocaleString()} messages
+                  {t("storage.messageCount", { count: mailbox.totalEmails })}
                 </span>
               </div>
             ))}
@@ -120,7 +122,7 @@ export const StorageSettings = React.memo(function StorageSettings() {
           className="text-sm font-semibold"
           style={{ color: "var(--color-text-primary)" }}
         >
-          Quick actions
+          {t("storage.quickActions")}
         </h3>
 
         {/* Empty Trash */}
@@ -131,18 +133,18 @@ export const StorageSettings = React.memo(function StorageSettings() {
                 className="text-sm"
                 style={{ color: "var(--color-text-primary)" }}
               >
-                Trash
+                {t("storage.trash")}
               </span>
               <span
                 className="text-xs ml-2"
                 style={{ color: "var(--color-text-tertiary)" }}
               >
-                {trashCount} message{trashCount !== 1 ? "s" : ""}
+                {t("storage.messageCount", { count: trashCount })}
               </span>
             </div>
             <button
               onClick={() =>
-                handleEmptyFolder(trashMailbox.id, "Trash", setEmptyingTrash)
+                handleEmptyFolder(trashMailbox.id, t("storage.trash"), setEmptyingTrash)
               }
               disabled={emptyingTrash || trashCount === 0}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
@@ -160,7 +162,7 @@ export const StorageSettings = React.memo(function StorageSettings() {
               ) : (
                 <Trash2 size={12} />
               )}
-              Empty Trash
+              {t("storage.emptyTrash")}
             </button>
           </div>
         )}
@@ -173,18 +175,18 @@ export const StorageSettings = React.memo(function StorageSettings() {
                 className="text-sm"
                 style={{ color: "var(--color-text-primary)" }}
               >
-                Junk
+                {t("storage.junk")}
               </span>
               <span
                 className="text-xs ml-2"
                 style={{ color: "var(--color-text-tertiary)" }}
               >
-                {junkCount} message{junkCount !== 1 ? "s" : ""}
+                {t("storage.messageCount", { count: junkCount })}
               </span>
             </div>
             <button
               onClick={() =>
-                handleEmptyFolder(junkMailbox.id, "Junk", setEmptyingJunk)
+                handleEmptyFolder(junkMailbox.id, t("storage.junk"), setEmptyingJunk)
               }
               disabled={emptyingJunk || junkCount === 0}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
@@ -202,7 +204,7 @@ export const StorageSettings = React.memo(function StorageSettings() {
               ) : (
                 <AlertTriangle size={12} />
               )}
-              Empty Junk
+              {t("storage.emptyJunk")}
             </button>
           </div>
         )}

@@ -19,6 +19,7 @@ import { getContactDisplayName, getContactInitials } from "@/hooks/use-contacts.
 import { getAvatarColor } from "@/lib/format.ts";
 import { ContactForm } from "./contact-form.tsx";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface ContactDetailProps {
   contact: Contact;
@@ -35,6 +36,7 @@ export const ContactDetail = React.memo(function ContactDetail({
   onComposeEmail,
   onSave,
 }: ContactDetailProps) {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -45,7 +47,7 @@ export const ContactDetail = React.memo(function ContactDetail({
 
   const handleCopyPhone = useCallback((phone: string) => {
     navigator.clipboard.writeText(phone).then(() => {
-      toast.success("Phone number copied");
+      toast.success(t("contacts.phoneNumberCopied"));
     });
   }, []);
 
@@ -99,7 +101,7 @@ export const ContactDetail = React.memo(function ContactDetail({
             style={{ color: "var(--color-text-secondary)" }}
           >
             {contact.organization.title}
-            {contact.organization.name ? ` at ${contact.organization.name}` : ""}
+            {contact.organization.name ? ` ${t("contacts.atOrganization", { name: contact.organization.name })}` : ""}
           </p>
         )}
       </div>

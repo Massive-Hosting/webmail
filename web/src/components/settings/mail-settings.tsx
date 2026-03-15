@@ -10,8 +10,10 @@ import type {
   DefaultReplyMode,
   ExternalImages,
 } from "@/stores/settings-store.ts";
+import { useTranslation } from "react-i18next";
 
 export const MailSettings = React.memo(function MailSettings() {
+  const { t } = useTranslation();
   const conversationView = useSettingsStore((s) => s.conversationView);
   const readingPane = useSettingsStore((s) => s.readingPane);
   const autoAdvance = useSettingsStore((s) => s.autoAdvance);
@@ -32,13 +34,13 @@ export const MailSettings = React.memo(function MailSettings() {
     <div className="p-6 space-y-6">
       {/* Conversation view */}
       <SettingRow
-        title="Conversation view"
-        description="Group related messages into threads."
+        title={t("mailSettings.conversationView")}
+        description={t("mailSettings.conversationViewDesc")}
       >
         <ToggleButtons
           options={[
-            { value: true, label: "On" },
-            { value: false, label: "Off" },
+            { value: true, label: t("mailSettings.on") },
+            { value: false, label: t("mailSettings.off") },
           ]}
           value={conversationView}
           onChange={setConversationView}
@@ -47,14 +49,14 @@ export const MailSettings = React.memo(function MailSettings() {
 
       {/* Reading pane */}
       <SettingRow
-        title="Reading pane position"
-        description="Where to display the message preview."
+        title={t("mailSettings.readingPanePosition")}
+        description={t("mailSettings.readingPanePositionDesc")}
       >
         <ToggleButtons<ReadingPanePosition>
           options={[
-            { value: "right", label: "Right" },
-            { value: "bottom", label: "Bottom" },
-            { value: "off", label: "Off" },
+            { value: "right", label: t("mailSettings.right") },
+            { value: "bottom", label: t("mailSettings.bottom") },
+            { value: "off", label: t("mailSettings.off") },
           ]}
           value={readingPane}
           onChange={setReadingPane}
@@ -63,14 +65,14 @@ export const MailSettings = React.memo(function MailSettings() {
 
       {/* Auto-advance */}
       <SettingRow
-        title="After archive or delete"
-        description="What to show after acting on a message."
+        title={t("mailSettings.afterArchiveOrDelete")}
+        description={t("mailSettings.afterArchiveOrDeleteDesc")}
       >
         <ToggleButtons<AutoAdvance>
           options={[
-            { value: "next", label: "Next" },
-            { value: "previous", label: "Previous" },
-            { value: "list", label: "Return to list" },
+            { value: "next", label: t("mailSettings.next") },
+            { value: "previous", label: t("mailSettings.previous") },
+            { value: "list", label: t("mailSettings.returnToList") },
           ]}
           value={autoAdvance}
           onChange={setAutoAdvance}
@@ -79,14 +81,14 @@ export const MailSettings = React.memo(function MailSettings() {
 
       {/* Mark as read */}
       <SettingRow
-        title="Mark as read"
-        description="When to mark messages as read."
+        title={t("mailSettings.markAsRead")}
+        description={t("mailSettings.markAsReadDesc")}
       >
         <ToggleButtons<MarkReadDelay>
           options={[
-            { value: 0, label: "Immediately" },
-            { value: 2000, label: "After 2s" },
-            { value: -1, label: "Manually" },
+            { value: 0, label: t("mailSettings.immediately") },
+            { value: 2000, label: t("mailSettings.after2s") },
+            { value: -1, label: t("mailSettings.manually") },
           ]}
           value={markReadDelay}
           onChange={setMarkReadDelay}
@@ -95,12 +97,12 @@ export const MailSettings = React.memo(function MailSettings() {
 
       {/* Undo send */}
       <SettingRow
-        title="Undo send delay"
-        description="Grace period to cancel a sent message."
+        title={t("mailSettings.undoSendDelay")}
+        description={t("mailSettings.undoSendDelayDesc")}
       >
         <ToggleButtons<UndoSendDelay>
           options={[
-            { value: 0, label: "Off" },
+            { value: 0, label: t("mailSettings.off") },
             { value: 5, label: "5s" },
             { value: 10, label: "10s" },
             { value: 30, label: "30s" },
@@ -112,13 +114,13 @@ export const MailSettings = React.memo(function MailSettings() {
 
       {/* Default reply mode */}
       <SettingRow
-        title="Default reply mode"
-        description="Which reply action to use by default."
+        title={t("mailSettings.defaultReplyMode")}
+        description={t("mailSettings.defaultReplyModeDesc")}
       >
         <ToggleButtons<DefaultReplyMode>
           options={[
-            { value: "reply", label: "Reply" },
-            { value: "reply-all", label: "Reply All" },
+            { value: "reply", label: t("mailSettings.reply") },
+            { value: "reply-all", label: t("mailSettings.replyAll") },
           ]}
           value={defaultReplyMode}
           onChange={setDefaultReplyMode}
@@ -127,14 +129,14 @@ export const MailSettings = React.memo(function MailSettings() {
 
       {/* External images */}
       <SettingRow
-        title="External images"
-        description="Loading images from remote servers may reveal your IP address."
+        title={t("mailSettings.externalImages")}
+        description={t("mailSettings.externalImagesDesc")}
       >
         <ToggleButtons<ExternalImages>
           options={[
-            { value: "never", label: "Never" },
-            { value: "ask", label: "Ask" },
-            { value: "always", label: "Always" },
+            { value: "never", label: t("mailSettings.never") },
+            { value: "ask", label: t("mailSettings.ask") },
+            { value: "always", label: t("mailSettings.always") },
           ]}
           value={externalImages}
           onChange={setExternalImages}

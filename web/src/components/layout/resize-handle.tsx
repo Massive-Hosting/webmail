@@ -20,7 +20,7 @@ export const ResizeHandle = React.memo(function ResizeHandle({
   return (
     <div
       className="relative w-px shrink-0 cursor-col-resize group"
-      style={{ backgroundColor: "var(--color-border-primary)" }}
+      style={{ backgroundColor: "var(--color-border-primary)", zIndex: 10 }}
       onMouseDown={handleMouseDown}
       onDoubleClick={onDoubleClick}
     >

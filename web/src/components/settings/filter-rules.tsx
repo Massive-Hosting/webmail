@@ -540,15 +540,15 @@ function RuleEditorDialog({
                     }))
                   }
                   options={[
-                    { value: "all", label: "all" },
-                    { value: "any", label: "any" },
+                    { value: "all", label: t("filterRules.all") },
+                    { value: "any", label: t("filterRules.any") },
                   ]}
                 />
                 <span
                   className="text-sm"
                   style={{ color: "var(--color-text-primary)" }}
                 >
-                  of these conditions are met:
+                  {t("filterRules.conditionsMet")}
                 </span>
               </div>
 
@@ -587,7 +587,7 @@ function RuleEditorDialog({
                       }
                       className="flex-1 h-8 px-3 text-sm rounded-md outline-none min-w-0"
                       style={inputStyle}
-                      placeholder="Value"
+                      placeholder={t("filterRules.value")}
                     />
                     <button
                       type="button"
@@ -608,7 +608,7 @@ function RuleEditorDialog({
                 style={{ color: "var(--color-text-accent)" }}
               >
                 <Plus size={12} />
-                Add condition
+                {t("filterRules.addCondition")}
               </button>
             </div>
 
@@ -618,7 +618,7 @@ function RuleEditorDialog({
                 className="text-sm font-medium mb-2"
                 style={{ color: "var(--color-text-primary)" }}
               >
-                Do the following:
+                {t("filterRules.doTheFollowing")}
               </p>
 
               <div className="space-y-2">
@@ -649,13 +649,13 @@ function RuleEditorDialog({
                               updateAction(index, { value: v })
                             }
                             options={[
-                              { value: "", label: "Select mailbox..." },
+                              { value: "", label: t("filterRules.selectMailbox") },
                               ...sortedMailboxes.map((mb) => ({
                                 value: mb.name,
                                 label: mb.name,
                               })),
                             ]}
-                            placeholder="Select mailbox..."
+                            placeholder={t("filterRules.selectMailbox")}
                             className="flex-1"
                           />
                         ) : (
@@ -669,8 +669,8 @@ function RuleEditorDialog({
                             style={inputStyle}
                             placeholder={
                               action.type === "forward"
-                                ? "Email address"
-                                : "Value"
+                                ? t("filterRules.emailAddress")
+                                : t("filterRules.value")
                             }
                           />
                         )}
@@ -696,7 +696,7 @@ function RuleEditorDialog({
                 style={{ color: "var(--color-text-accent)" }}
               >
                 <Plus size={12} />
-                Add action
+                {t("filterRules.addAction")}
               </button>
             </div>
 
@@ -711,7 +711,7 @@ function RuleEditorDialog({
                   className="text-sm px-4 py-1.5 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
                   style={{ color: "var(--color-text-secondary)" }}
                 >
-                  Cancel
+                  {t("filterRules.cancel")}
                 </button>
               </Dialog.Close>
               <button
@@ -723,7 +723,7 @@ function RuleEditorDialog({
                 }}
               >
                 <Save size={14} />
-                Save
+                {t("filterRules.save")}
               </button>
             </div>
           </form>

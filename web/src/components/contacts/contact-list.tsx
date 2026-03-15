@@ -12,6 +12,7 @@ import {
   getContactSortLetter,
 } from "@/hooks/use-contacts.ts";
 import { getAvatarColor } from "@/lib/format.ts";
+import { useTranslation } from "react-i18next";
 
 const ROW_HEIGHT = 56;
 const SECTION_HEIGHT = 28;
@@ -46,6 +47,7 @@ export const ContactList = React.memo(function ContactList({
   onContextMenu,
   onNewContact,
 }: ContactListProps) {
+  const { t } = useTranslation();
   const parentRef = useRef<HTMLDivElement>(null);
 
   /** Build rows with section headers */
@@ -117,11 +119,11 @@ export const ContactList = React.memo(function ContactList({
         />
         <EmptyState
           icon={<Users size={48} strokeWidth={1.5} />}
-          title={searchQuery ? "No contacts found" : "Add your first contact"}
+          title={searchQuery ? t("contacts.noContactsFound") : t("contacts.addFirstContact")}
           description={
             searchQuery
-              ? "Try a different search term"
-              : "Click the + button to create a new contact"
+              ? t("contacts.tryDifferentSearch")
+              : t("contacts.clickPlusToCreate")
           }
           className="flex-1"
         />
@@ -142,7 +144,7 @@ export const ContactList = React.memo(function ContactList({
         className="px-3 py-1 text-xs"
         style={{ color: "var(--color-text-tertiary)" }}
       >
-        {contacts.length} contact{contacts.length !== 1 ? "s" : ""}
+        {t("contacts.contactCount", { count: contacts.length })}
       </div>
 
       {/* Virtualized list */}
@@ -220,6 +222,7 @@ function SearchHeader({
   onChange: (value: string) => void;
   onNewContact: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       className="flex items-center gap-2 px-3 py-2"
@@ -237,7 +240,7 @@ function SearchHeader({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Search contacts..."
+          placeholder={t("contacts.searchContacts")}
           className="flex-1 bg-transparent outline-none text-sm"
           style={{ color: "var(--color-text-primary)" }}
         />
@@ -246,7 +249,7 @@ function SearchHeader({
         onClick={onNewContact}
         className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
         style={{ color: "var(--color-text-secondary)" }}
-        title="New contact"
+        title={t("contacts.newContactBtn")}
       >
         <UserPlus size={16} />
       </button>

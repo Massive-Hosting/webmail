@@ -4,8 +4,10 @@ import React from "react";
 import { useSettingsStore } from "@/stores/settings-store.ts";
 import { SHORTCUT_HELP } from "@/lib/keyboard.ts";
 import { Kbd } from "@/components/ui/kbd.tsx";
+import { useTranslation } from "react-i18next";
 
 export const KeyboardSettings = React.memo(function KeyboardSettings() {
+  const { t } = useTranslation();
   const enabled = useSettingsStore((s) => s.keyboardShortcuts);
   const setEnabled = useSettingsStore((s) => s.setKeyboardShortcuts);
 
@@ -18,13 +20,13 @@ export const KeyboardSettings = React.memo(function KeyboardSettings() {
             className="text-sm font-medium"
             style={{ color: "var(--color-text-primary)" }}
           >
-            Keyboard shortcuts
+            {t("keyboard.title")}
           </h3>
           <p
             className="text-xs mt-0.5"
             style={{ color: "var(--color-text-tertiary)" }}
           >
-            Use single-key shortcuts for faster navigation and actions.
+            {t("keyboard.desc")}
           </p>
         </div>
         <button
@@ -59,7 +61,7 @@ export const KeyboardSettings = React.memo(function KeyboardSettings() {
           className="text-sm font-semibold mb-3"
           style={{ color: "var(--color-text-primary)" }}
         >
-          Shortcut reference
+          {t("keyboard.reference")}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {SHORTCUT_HELP.map((category) => (

@@ -16,8 +16,10 @@ import type { Contact, ContactCreate } from "@/types/contacts.ts";
 import { EmptyState } from "@/components/ui/empty-state.tsx";
 import { importVCards, exportVCards } from "./import-export.tsx";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 export const ContactsPage = React.memo(function ContactsPage() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
@@ -139,10 +141,10 @@ export const ContactsPage = React.memo(function ContactsPage() {
     try {
       const imported = await importVCards();
       if (imported > 0) {
-        toast.success(`Imported ${imported} contact${imported !== 1 ? "s" : ""}`);
+        toast.success(t("contacts.imported", { count: imported }));
       }
     } catch (err) {
-      toast.error("Import failed");
+      toast.error(t("contacts.importFailed"));
     }
   }, []);
 
@@ -175,14 +177,14 @@ export const ContactsPage = React.memo(function ContactsPage() {
             style={{ color: "var(--color-text-accent)" }}
           >
             <UserPlus size={14} />
-            New
+            {t("contacts.new")}
           </button>
           <div className="flex-1" />
           <button
             onClick={handleImport}
             className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
             style={{ color: "var(--color-text-tertiary)" }}
-            title="Import contacts"
+            title={t("contacts.importContacts")}
           >
             <Upload size={14} />
           </button>
@@ -190,7 +192,7 @@ export const ContactsPage = React.memo(function ContactsPage() {
             onClick={handleExport}
             className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
             style={{ color: "var(--color-text-tertiary)" }}
-            title="Export contacts"
+            title={t("contacts.exportContacts")}
           >
             <Download size={14} />
           </button>
@@ -247,8 +249,8 @@ export const ContactsPage = React.memo(function ContactsPage() {
         ) : (
           <EmptyState
             icon={<Users size={48} strokeWidth={1.5} />}
-            title="Select a contact"
-            description="Choose a contact from the list to view their details"
+            title={t("contacts.selectContact")}
+            description={t("contacts.selectContactDesc")}
             className="h-full"
           />
         )}
@@ -299,6 +301,7 @@ function ContextMenu({
   onDelete: (contact: Contact) => void;
   onCompose: (contact: Contact) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <>
       {/* Backdrop */}
@@ -314,12 +317,12 @@ function ContextMenu({
         }}
       >
         <ContextMenuItem
-          label="Edit contact"
+          label={t("contacts.editContact")}
           onClick={() => onEdit(contact)}
         />
         {contact.emails[0] && (
           <ContextMenuItem
-            label="Compose email"
+            label={t("contacts.composeEmail")}
             onClick={() => onCompose(contact)}
           />
         )}
@@ -328,7 +331,7 @@ function ContextMenu({
           style={{ borderTop: "1px solid var(--color-border-secondary)" }}
         />
         <ContextMenuItem
-          label="Delete contact"
+          label={t("contacts.deleteContact")}
           danger
           onClick={() => onDelete(contact)}
         />
