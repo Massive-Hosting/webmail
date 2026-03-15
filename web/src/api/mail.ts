@@ -836,8 +836,15 @@ export async function saveDraft(params: SaveDraftParams): Promise<string | undef
     notUpdated?: Record<string, unknown>;
   };
 
-  if (setResult.notCreated?.draft || setResult.notUpdated?.[params.emailId ?? ""]) {
-    throw new Error("Failed to save draft");
+  if (setResult.notCreated?.draft) {
+    const err = setResult.notCreated.draft as { type?: string; description?: string };
+    console.error("[saveDraft] notCreated error:", JSON.stringify(err));
+    throw new Error(err.description ?? err.type ?? "Failed to save draft");
+  }
+  if (setResult.notUpdated?.[params.emailId ?? ""]) {
+    const err = setResult.notUpdated[params.emailId ?? ""] as { type?: string; description?: string };
+    console.error("[saveDraft] notUpdated error:", JSON.stringify(err));
+    throw new Error(err.description ?? err.type ?? "Failed to save draft");
   }
 
   return setResult.created?.draft?.id ?? params.emailId;

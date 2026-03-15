@@ -33,6 +33,8 @@ interface UIState extends PanelLayout {
   sortNewestFirst: boolean;
   /** Whether the AI Copilot panel is open */
   copilotOpen: boolean;
+  /** Last clicked message ID (anchor for Shift+Click range selection) */
+  lastClickedEmailId: string | null;
   /** Keyboard shortcut chord state */
   chordPrefix: string | null;
   /** Chord timeout ID */
@@ -123,6 +125,7 @@ export const useUIStore = create<UIState>((set, get) => {
     selectedEmailIds: new Set(),
     expandedThreads: new Set(),
     copilotOpen: false,
+    lastClickedEmailId: null,
     sortNewestFirst: true,
     isMobile: false,
     mobileView: "list",
@@ -210,6 +213,7 @@ export const useUIStore = create<UIState>((set, get) => {
         selectedEmailId: id,
         selectedThreadId: threadId ?? null,
         selectedEmailIds: id ? new Set([id]) : new Set(),
+        lastClickedEmailId: id,
       });
       if (get().isMobile && id) {
         set({ mobileView: "message" });
@@ -224,7 +228,7 @@ export const useUIStore = create<UIState>((set, get) => {
         } else {
           next.add(id);
         }
-        return { selectedEmailIds: next };
+        return { selectedEmailIds: next, lastClickedEmailId: id };
       });
     },
 

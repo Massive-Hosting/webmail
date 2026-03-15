@@ -23,7 +23,7 @@ import {
 import { ComposeEditor, toEmailSafeHTML } from "./editor.tsx";
 import { RecipientInput } from "./recipient-input.tsx";
 import { AttachmentList, DragDropZone, useAttachmentUpload } from "./attachment-list.tsx";
-import { sendEmail, saveDraft, destroyDraft, fetchIdentities } from "@/api/mail.ts";
+import { sendEmail, saveDraft, destroyDraft, fetchIdentities, fetchMailboxes } from "@/api/mail.ts";
 import type { Email, Identity } from "@/types/mail.ts";
 import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 import { toast } from "sonner";
@@ -34,9 +34,9 @@ import { encryptMessage, signMessage } from "@/lib/pgp.ts";
 import { lookupPublicKeys } from "@/lib/pgp-lookup.ts";
 import { useSettingsStore } from "@/stores/settings-store.ts";
 import { useAIEnabled } from "@/hooks/use-ai-enabled.ts";
-import { AIPanel } from "./ai-panel.tsx";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/auth-store.ts";
+import { useUIStore } from "@/stores/ui-store.ts";
 import { StyledSelect } from "@/components/ui/styled-select.tsx";
 import { useConfirm } from "@/contexts/confirm-context.tsx";
 
@@ -84,9 +84,9 @@ export const ComposePanel = React.memo(function ComposePanel({
   const [missingKeyRecipients, setMissingKeyRecipients] = useState<string[]>([]);
   const [showMissingKeyDialog, setShowMissingKeyDialog] = useState(false);
 
-  // AI assistant state
+  // AI assistant — uses the copilot panel instead of an inline panel
   const aiEnabled = useAIEnabled();
-  const [showAIPanel, setShowAIPanel] = useState(false);
+  const toggleCopilot = useUIStore((s) => s.toggleCopilot);
 
   // Set PGP defaults
   useEffect(() => {
@@ -161,12 +161,23 @@ export const ComposePanel = React.memo(function ComposePanel({
     const currentDraft = useComposeStore.getState().drafts.get(draftId);
     if (!currentDraft || !currentDraft.isDirty) return;
 
-    // Use pre-resolved draftsMailboxId, fall back to findByRole
-    const mailboxId = currentDraft.draftsMailboxId ?? findByRole("drafts")?.id;
+    // Use pre-resolved draftsMailboxId, fall back to findByRole, then fetch as last resort
+    let mailboxId = currentDraft.draftsMailboxId ?? findByRole("drafts")?.id;
     if (!mailboxId) {
-      // Mailboxes not loaded yet — retry after a short delay
-      setTimeout(() => handleAutoSave(), 2000);
-      return;
+      // Mailboxes not loaded yet — try fetching them synchronously as a fallback
+      try {
+        console.warn("[compose] draftsMailboxId missing, fetching mailboxes as fallback");
+        const mailboxes = await fetchMailboxes();
+        const draftsBox = mailboxes.find((m) => m.role === "drafts");
+        mailboxId = draftsBox?.id;
+      } catch (fetchErr) {
+        console.error("[compose] Failed to fetch mailboxes for draft save:", fetchErr);
+      }
+      if (!mailboxId) {
+        console.error("[compose] Cannot save draft: no Drafts mailbox found");
+        setTimeout(() => handleAutoSave(), 2000);
+        return;
+      }
     }
 
     // Persist the resolved ID for future saves
@@ -671,23 +682,6 @@ export const ComposePanel = React.memo(function ComposePanel({
           />
         </div>
 
-        {/* AI Panel (above editor) */}
-        {showAIPanel && aiEnabled && (
-          <AIPanel
-            isReply={draft.composeMode === "reply" || draft.composeMode === "reply-all"}
-            originalEmailBody={draft.bodyHTML}
-            onInsert={(text) => {
-              // Convert plain text to HTML paragraphs and prepend to body
-              const htmlText = text
-                .split("\n\n")
-                .map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`)
-                .join("");
-              updateDraft(draftId, { bodyHTML: htmlText + draft.bodyHTML });
-            }}
-            onClose={() => setShowAIPanel(false)}
-          />
-        )}
-
         {/* Editor */}
         <div className="compose-dialog__editor">
           <ComposeEditor
@@ -737,14 +731,14 @@ export const ComposePanel = React.memo(function ComposePanel({
               }}
             />
 
-            {/* AI Assist button (only when AI is enabled) */}
+            {/* AI Assist button — opens the copilot panel */}
             {aiEnabled && (
               <>
                 <div className="compose-dialog__separator" />
                 <button
                   type="button"
-                  onClick={() => setShowAIPanel(!showAIPanel)}
-                  className={`compose-dialog__ai-btn ${showAIPanel ? "compose-dialog__ai-btn--active" : ""}`}
+                  onClick={toggleCopilot}
+                  className="compose-dialog__ai-btn"
                   title={t("ai.aiAssistTitle")}
                 >
                   <Sparkles size={14} />

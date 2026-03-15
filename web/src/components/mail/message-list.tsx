@@ -138,6 +138,7 @@ export const MessageList = React.memo(function MessageList({
   const parentRef = useRef<HTMLDivElement>(null);
   const selectedEmailId = useUIStore((s) => s.selectedEmailId);
   const selectedEmailIds = useUIStore((s) => s.selectedEmailIds);
+  const lastClickedEmailId = useUIStore((s) => s.lastClickedEmailId);
   const expandedThreads = useUIStore((s) => s.expandedThreads);
   const setSelectedEmail = useUIStore((s) => s.setSelectedEmail);
   const toggleEmailSelection = useUIStore((s) => s.toggleEmailSelection);
@@ -197,8 +198,8 @@ export const MessageList = React.memo(function MessageList({
     (email: EmailListItem, event: React.MouseEvent) => {
       if (event.ctrlKey || event.metaKey) {
         toggleEmailSelection(email.id);
-      } else if (event.shiftKey && selectedEmailId) {
-        const startIdx = emails.findIndex((e) => e.id === selectedEmailId);
+      } else if (event.shiftKey && lastClickedEmailId) {
+        const startIdx = emails.findIndex((e) => e.id === lastClickedEmailId);
         const endIdx = emails.findIndex((e) => e.id === email.id);
         if (startIdx !== -1 && endIdx !== -1) {
           const min = Math.min(startIdx, endIdx);
@@ -209,7 +210,7 @@ export const MessageList = React.memo(function MessageList({
         setSelectedEmail(email.id, email.threadId);
       }
     },
-    [selectedEmailId, emails, setSelectedEmail, toggleEmailSelection, selectEmailRange],
+    [lastClickedEmailId, emails, setSelectedEmail, toggleEmailSelection, selectEmailRange],
   );
 
   const handleThreadHeaderClick = useCallback(
