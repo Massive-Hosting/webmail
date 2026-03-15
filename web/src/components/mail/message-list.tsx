@@ -284,14 +284,13 @@ export const MessageList = React.memo(function MessageList({
     <div
       ref={parentRef}
       className="message-list"
-      style={{ contain: "layout style" }}
       role="listbox"
       aria-label={t("message.messages")}
     >
       {rows.map((row) => {
         if (row.type === "date-group-header") {
           return (
-            <div key={`group-${row.group}`} style={{ height: DATE_GROUP_HEADER_HEIGHT }}>
+            <div key={`group-${row.group}`}>
               <DateGroupHeader label={row.label} />
             </div>
           );
@@ -299,7 +298,7 @@ export const MessageList = React.memo(function MessageList({
 
         if (row.type === "message") {
           return (
-            <div key={row.email.id} style={{ height: rowHeight }}>
+            <div key={row.email.id}>
               <MessageListItem
                 email={row.email}
                 isSelected={row.email.id === selectedEmailId}
@@ -322,7 +321,7 @@ export const MessageList = React.memo(function MessageList({
         if (row.type === "thread-header") {
           return (
             <div key={`thread-${row.threadId}`}>
-              <div style={{ height: rowHeight }}>
+              <div>
                 <ThreadHeaderItem
                   email={row.email}
                   messageCount={row.messageCount}
@@ -403,7 +402,7 @@ function LoadMoreTrigger({
   }, [onFetchNextPage, isFetchingNextPage]);
 
   return (
-    <div ref={triggerRef} className="message-list-skeleton__row" style={{ height: rowHeight }}>
+    <div ref={triggerRef} className="message-list-skeleton__row">
       <div className="message-list-skeleton__dot-space" />
       <Skeleton width={36} height={36} rounded />
       <div className="message-list-skeleton__content">

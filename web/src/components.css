@@ -94,16 +94,12 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 12px;
-  height: var(--density-row-height, 72px);
-  max-height: var(--density-row-height, 72px);
+  padding: 8px 12px;
   cursor: pointer;
-  position: relative;
   overflow: hidden;
-  transition: background-color 150ms ease-in-out, box-shadow 150ms ease-out;
+  transition: background-color 150ms ease-in-out;
   background-color: transparent;
   border-bottom: 1px solid var(--color-border-secondary);
-  box-sizing: border-box;
 }
 
 .message-list-item:hover {

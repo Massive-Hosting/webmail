@@ -50,10 +50,12 @@ var blockedUploadTypes = map[string]bool{
 
 // Safe content types for inline display.
 var safeInlineTypes = map[string]bool{
-	"image/jpeg": true,
-	"image/png":  true,
-	"image/gif":  true,
-	"image/webp": true,
+	"image/jpeg":                true,
+	"image/png":                 true,
+	"image/gif":                 true,
+	"image/webp":                true,
+	"image/svg+xml":             true,
+	"application/octet-stream":  true, // Stalwart may return this for uploaded blobs
 }
 
 // Upload handles POST /api/blob/upload.

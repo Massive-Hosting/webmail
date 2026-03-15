@@ -797,12 +797,15 @@ export async function saveDraft(params: SaveDraftParams): Promise<string | undef
 
   if (params.emailId) {
     // Update existing draft
+    // When updating an existing draft, only send mutable properties.
+    // JMAP doesn't allow changing 'from' on an existing email.
+    const { from, ...mutableProps } = emailObj;
     methodCalls = [
       [
         "Email/set",
         {
           update: {
-            [params.emailId]: emailObj,
+            [params.emailId]: mutableProps,
           },
         },
         "s0",
