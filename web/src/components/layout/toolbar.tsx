@@ -124,6 +124,13 @@ export const Toolbar = React.memo(function Toolbar({
           borderBottom: "1px solid var(--color-border-primary)",
         }}
       >
+        {/* Logo */}
+        <img
+          src="/logo.png"
+          alt=""
+          style={{ height: 24, width: "auto", flexShrink: 0 }}
+        />
+
         {/* Search bar */}
         <SearchBar onAdvancedSearch={onAdvancedSearch} />
 
