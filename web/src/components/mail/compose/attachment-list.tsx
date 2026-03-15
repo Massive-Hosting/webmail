@@ -50,7 +50,9 @@ async function uploadBlob(
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             const result = JSON.parse(xhr.responseText);
-            resolve(result.blobId ?? null);
+            // Backend returns array [{blobId, type, size}] or object {blobId}
+            const blobId = Array.isArray(result) ? result[0]?.blobId : result.blobId;
+            resolve(blobId ?? null);
           } catch {
             resolve(null);
           }
