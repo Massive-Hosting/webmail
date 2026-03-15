@@ -388,9 +388,9 @@
 .action-bar {
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 0 8px;
-  height: 38px;
+  gap: 4px;
+  padding: 0 12px;
+  height: 42px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--color-border-primary);
   background-color: var(--color-bg-primary);
@@ -406,8 +406,8 @@
 .action-bar__btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 8px;
+  gap: 6px;
+  padding: 5px 10px;
   border-radius: var(--radius-sm);
   background: none;
   border: none;
@@ -423,6 +423,14 @@
 .action-bar__btn:hover:not(:disabled) {
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
+}
+
+.action-bar__separator {
+  width: 1px;
+  height: 18px;
+  background-color: var(--color-border-primary);
+  margin: 0 6px;
+  flex-shrink: 0;
 }
 
 .action-bar__btn:active:not(:disabled) {
