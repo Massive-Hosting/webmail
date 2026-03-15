@@ -1,10 +1,9 @@
 /** Vertical icon bar for app-level navigation (Mail, Contacts, Calendar, Settings) */
 
 import React from "react";
-import { Mail, Users, Calendar, Settings } from "lucide-react";
+import { Mail, Users, Calendar, Settings, PanelLeftClose, PanelLeft } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useUIStore } from "@/stores/ui-store.ts";
-import type { AppView } from "@/stores/ui-store.ts";
 
 interface ActivityBarProps {
   onSettings: () => void;
@@ -15,11 +14,20 @@ export const ActivityBar = React.memo(function ActivityBar({
 }: ActivityBarProps) {
   const activeView = useUIStore((s) => s.activeView);
   const setActiveView = useUIStore((s) => s.setActiveView);
+  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
   return (
     <Tooltip.Provider delayDuration={400}>
       <div className="activity-bar">
         <div className="activity-bar__top">
+          <ActivityBarIcon
+            icon={sidebarCollapsed ? <PanelLeft size={20} /> : <PanelLeftClose size={20} />}
+            label={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+            active={false}
+            onClick={toggleSidebar}
+          />
+          <div style={{ height: 8 }} />
           <ActivityBarIcon
             icon={<Mail size={20} />}
             label="Mail"

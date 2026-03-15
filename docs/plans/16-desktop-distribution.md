@@ -4,6 +4,17 @@
 
 Ship seamless, trustworthy desktop app distribution for Windows and macOS with automatic updates, code signing, and a frictionless install experience. Users should never have to manually download an update or dismiss a security warning.
 
+## Public Repo Advantage
+
+The webmail repo is **public on GitHub**. This is the key enabler for the entire distribution strategy:
+
+- **Unlimited free CI minutes** on macOS and Windows GitHub Actions runners
+- **GitHub Releases as free CDN** — unlimited downloads, global edge network, no bandwidth costs
+- **No local Mac or Windows machines needed** — all building, signing, notarizing, and packaging happens in CI
+- **Transparent build process** — anyone can inspect the workflow that produces the binaries
+
+This means the entire pipeline — from `git tag` to signed, notarized, downloadable binaries — is fully automated and costs nothing beyond the signing certificates.
+
 ## Distribution Channels
 
 ### macOS
@@ -142,6 +153,8 @@ This prevents MITM attacks even if the CDN is compromised.
 
 ## CI/CD Pipeline
 
+Since the repo is public, all CI minutes on macOS and Windows runners are **free and unlimited**. The entire build-sign-notarize-publish pipeline runs in GitHub Actions with zero cost.
+
 ### GitHub Actions Workflow
 
 ```yaml
@@ -154,7 +167,7 @@ on:
 
 jobs:
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-latest        # Free unlimited for public repos
     strategy:
       matrix:
         target: [aarch64-apple-darwin, x86_64-apple-darwin]
@@ -174,21 +187,25 @@ jobs:
           -o desktop/src-tauri/binaries/webmail-api-${{ matrix.target }} \
           ./cmd/webmail-api
 
-      # Build frontend (shared across archs)
+      # Build frontend
       - run: cd web && npm ci && npm run build
 
-      # Build Tauri app
+      # Build + sign + notarize Tauri app (all in one step)
+      # tauri-action handles: codesign → notarytool submit → staple → .dmg
       - uses: tauri-apps/tauri-action@v0
         with:
           projectPath: desktop
           args: --target ${{ matrix.target }}
         env:
+          # Apple code signing (signs the .app bundle)
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          # Apple notarization (submits to Apple, waits for approval, staples ticket)
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Tauri update signing (Ed25519, separate from Apple signing)
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
@@ -198,7 +215,7 @@ jobs:
           path: desktop/src-tauri/target/${{ matrix.target }}/release/bundle/
 
   build-windows:
-    runs-on: windows-latest
+    runs-on: windows-latest      # Free unlimited for public repos
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -217,12 +234,12 @@ jobs:
       # Build frontend
       - run: cd web && npm ci && npm run build
 
-      # Build Tauri app
+      # Build + EV-sign Tauri app
+      # EV signing uses cloud HSM (DigiCert KeyLocker) — no hardware token needed in CI
       - uses: tauri-apps/tauri-action@v0
         with:
           projectPath: desktop
         env:
-          # Windows EV signing via cloud HSM
           WINDOWS_SIGN_COMMAND: 'signtool sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /sha1 ${{ secrets.WINDOWS_CERT_THUMBPRINT }} "%1"'
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -236,20 +253,83 @@ jobs:
     needs: build-macos
     runs-on: macos-latest
     steps:
-      # Download both arch builds, create universal binary with lipo,
-      # re-sign, notarize, staple, create .dmg
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: macos-*
+          merge-multiple: true
+
+      # Combine arm64 + x86_64 into universal binary with lipo
+      # Re-sign the universal binary (required after lipo)
+      # Re-notarize the combined .app
+      # Staple the notarization ticket
+      # Create final .dmg with drag-to-Applications background image
 
   publish-release:
     needs: [create-universal-macos, build-windows]
     runs-on: ubuntu-latest
     steps:
-      # 1. Create GitHub Release with changelog
-      # 2. Upload .dmg, .msi, and .exe as release assets
-      # 3. Upload update bundles (.tar.gz, .msi.zip) + signatures to CDN
-      # 4. Update latest.json on CDN
-      # 5. Update Homebrew Cask formula
-      # 6. Update Winget manifest
+      - uses: actions/download-artifact@v4
+
+      # Create GitHub Release with auto-generated changelog from commits
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            macos-universal/*.dmg
+            windows-x64/*.msi
+            windows-x64/*.exe
+
+      # Generate latest.json for Tauri auto-updater
+      # Points at GitHub Release asset URLs (free CDN)
+      - name: Generate update manifest
+        run: |
+          cat > latest.json <<EOF
+          {
+            "version": "${GITHUB_REF_NAME#desktop-v}",
+            "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "platforms": {
+              "darwin-universal": {
+                "url": "https://github.com/${{ github.repository }}/releases/download/${GITHUB_REF_NAME}/webmail-universal.app.tar.gz",
+                "signature": "$(cat macos-universal/*.sig)"
+              },
+              "windows-x86_64": {
+                "url": "https://github.com/${{ github.repository }}/releases/download/${GITHUB_REF_NAME}/webmail-x64-setup.msi.zip",
+                "signature": "$(cat windows-x64/*.sig)"
+              }
+            }
+          }
+          EOF
+
+      # Upload latest.json as a release asset
+      # The Tauri updater endpoint points at this file's GitHub Release URL
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: latest.json
 ```
+
+### What happens when you push a tag
+
+```
+Developer (Linux):
+  git tag desktop-v1.2.0 && git push --tags
+
+GitHub Actions (automatic, free):
+  ├── macOS runner (arm64): Go build → Tauri build → codesign → notarize → .dmg
+  ├── macOS runner (x86_64): Go build → Tauri build → codesign → notarize → .dmg
+  ├── Windows runner: Go build → Tauri build → EV sign → .msi + .exe
+  │
+  ├── macOS runner: lipo → universal binary → re-sign → re-notarize → final .dmg
+  │
+  └── Linux runner: Create GitHub Release → upload all artifacts → generate latest.json
+
+Result (~15-20 minutes later):
+  ✓ GitHub Release with signed .dmg + .msi + .exe
+  ✓ latest.json for auto-updater (served from GitHub CDN)
+  ✓ Existing users get update notification within 4 hours
+  ✓ New users download from the release page
+```
+
+No manual steps. No local builds. No Mac or Windows machines needed.
 
 ### Release Process
 
@@ -283,20 +363,28 @@ No registration, no account creation, no email collection before download. The a
 
 ## Update Infrastructure
 
-### Option A: GitHub Releases as CDN (Simplest)
+### GitHub Releases as CDN (Primary — free)
 
-- Tauri's updater can point directly at GitHub Releases
-- `latest.json` is generated by the CI workflow and uploaded as a release asset
-- GitHub's CDN handles downloads globally
-- Free for public repos; included in GitHub plan for private repos
-- **Recommended for initial launch**
+Since the repo is public, GitHub Releases is the obvious choice:
 
-### Option B: Dedicated CDN (Scalable)
+- Tauri's updater points directly at the `latest.json` release asset URL
+- `latest.json` is generated automatically by the CI workflow (see CI section)
+- GitHub's CDN handles downloads globally with fast edge delivery
+- **Completely free** — no bandwidth limits for public repos
+- Download counts visible on the Releases page (built-in analytics)
+- Users can also browse all past releases and changelogs
 
-- Upload artifacts to S3/R2/GCS behind CloudFlare
-- More control over analytics, download counts, geographic distribution
-- Can add download tracking, A/B test landing pages
-- **Migrate to this when download volume justifies it**
+The auto-updater endpoint in `tauri.conf.json` points at:
+```
+https://github.com/{org}/{repo}/releases/latest/download/latest.json
+```
+GitHub automatically resolves `/latest/` to the most recent release.
+
+### Dedicated CDN (Future, if needed)
+
+- Migrate to S3/R2/GCS behind CloudFlare only if download volume or analytics needs outgrow GitHub Releases
+- More control over geographic distribution, A/B testing, detailed download metrics
+- Not needed at launch
 
 ## Versioning Strategy
 
@@ -316,13 +404,13 @@ Both are optional and should be opt-in with a clear privacy notice on first laun
 
 ## Cost Summary
 
-| Item | Cost | Frequency |
-|------|------|-----------|
-| Apple Developer Program | $99 | Annual |
-| Windows EV Code Signing (DigiCert) | ~$400 | Annual |
-| GitHub Actions (CI minutes) | ~$0-50/month | Per release |
-| CDN (GitHub Releases) | $0 | Included |
-| **Total** | **~$550/year** | |
+| Item | Cost | Frequency | Notes |
+|------|------|-----------|-------|
+| Apple Developer Program | $99 | Annual | Required for code signing + notarization |
+| Windows EV Code Signing (DigiCert) | ~$400 | Annual | Immediate SmartScreen bypass |
+| GitHub Actions CI minutes | **$0** | — | **Free unlimited for public repos** |
+| GitHub Releases CDN | **$0** | — | **Free unlimited for public repos** |
+| **Total** | **~$500/year** | | Just the signing certificates |
 
 ## Implementation Order
 

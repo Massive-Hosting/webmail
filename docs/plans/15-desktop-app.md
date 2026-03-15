@@ -200,7 +200,9 @@ That's it. Everything else works as-is.
 
 ## Build Pipeline
 
-### Local development
+### Local development (Linux)
+
+All Tauri Rust code, the bridge shim, and sidecar management are developed on Linux. No Mac or Windows machine needed for writing code.
 
 ```bash
 # Terminal 1: Go backend (as usual)
@@ -215,19 +217,24 @@ cd desktop && cargo tauri dev
 
 Tauri dev mode points the webview at `http://localhost:5173` (Vite), which proxies API calls to the Go backend. Hot reload works for both frontend and Tauri Rust code.
 
-### Production build
+### Production builds via CI (no local Mac/Windows needed)
 
-```bash
-# 1. Build the Go binary for target platform
-GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -tags embedstatic -o desktop/src-tauri/binaries/webmail-api-aarch64-apple-darwin ./cmd/webmail-api
+The webmail repo is **public on GitHub**, which means **unlimited free CI minutes** on macOS and Windows runners. All production builds — including code signing, Apple notarization, and installer packaging — happen entirely in CI. You never need to touch a Mac or Windows machine.
 
-# 2. Build the Tauri app (bundles Go binary as sidecar)
-cd desktop && cargo tauri build
+```
+git tag desktop-v1.0.0 && git push --tags
+  → GitHub Actions triggers
+  → macOS runner: builds Go (arm64 + amd64), builds Tauri, signs, notarizes, staples, creates .dmg
+  → Windows runner: builds Go (amd64), builds Tauri, signs with EV cert, creates .msi
+  → Linux runner: creates GitHub Release, uploads artifacts, updates latest.json
+  → Done. Signed, notarized binaries available for download.
 ```
 
+No local cross-compilation. Each platform builds natively on its own runner. See `16-desktop-distribution.md` for the full CI workflow.
+
 Output:
-- macOS: `.dmg` installer + `.app` bundle
-- Windows: `.msi` installer (NSIS) + portable `.exe`
+- macOS: `.dmg` installer + `.app` bundle (universal binary, signed + notarized)
+- Windows: `.msi` installer (NSIS, EV-signed) + portable `.exe`
 
 ## Tauri Plugins Used
 
