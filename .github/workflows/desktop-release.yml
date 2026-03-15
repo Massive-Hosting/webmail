@@ -35,7 +35,17 @@ jobs:
       - name: Install desktop dependencies
         run: cd desktop && npm ci
 
-      - name: Build Tauri app
+      # Build without signing when secrets are not configured.
+      - name: Build Tauri app (unsigned)
+        if: ${{ !secrets.APPLE_CERTIFICATE }}
+        uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: desktop
+          args: --target aarch64-apple-darwin
+
+      # Build with signing + notarization when secrets are configured.
+      - name: Build Tauri app (signed)
+        if: ${{ secrets.APPLE_CERTIFICATE }}
         uses: tauri-apps/tauri-action@v0
         with:
           projectPath: desktop
