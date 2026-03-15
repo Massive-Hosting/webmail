@@ -9,6 +9,7 @@ import { ThreadView } from "@/components/mail/thread-view.tsx";
 import { EmptyState } from "@/components/ui/empty-state.tsx";
 import { Mail } from "lucide-react";
 import { updateEmails } from "@/api/mail.ts";
+import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMessage } from "@/hooks/use-message.ts";
 
@@ -17,6 +18,7 @@ const ComposePanel = lazy(() =>
 );
 
 export const ReadingPane = React.memo(function ReadingPane() {
+  const { t } = useTranslation();
   const selectedEmailId = useUIStore((s) => s.selectedEmailId);
   const selectedThreadId = useUIStore((s) => s.selectedThreadId);
   const activeDraftId = useComposeStore((s) => s.activeDraftId);
@@ -42,8 +44,8 @@ export const ReadingPane = React.memo(function ReadingPane() {
               <Mail size={40} strokeWidth={1} />
             </div>
           }
-          title="Select a message to read"
-          description="Choose a message from the list to view its contents here."
+          title={t("readingPane.selectMessage")}
+          description={t("readingPane.selectMessageDesc")}
         />
       </div>
     );

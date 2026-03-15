@@ -7,6 +7,7 @@ import { Avatar } from "@/components/ui/avatar.tsx";
 import { formatMessageDate, formatAddress } from "@/lib/format.ts";
 import { Star, Paperclip } from "lucide-react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
+import { useTranslation } from "react-i18next";
 
 interface MessageListItemProps {
   email: EmailListItem;
@@ -38,6 +39,7 @@ export const MessageListItem = React.memo(
     onArchive,
     onDelete,
   }: MessageListItemProps) {
+    const { t } = useTranslation();
     const unread = isUnread(email);
     const flagged = isFlagged(email);
     const sender = email.from?.[0] ?? { name: null, email: "unknown" };
@@ -90,7 +92,7 @@ export const MessageListItem = React.memo(
 
               {/* Subject line */}
               <div className={`message-list-item__subject ${unread ? "message-list-item__subject--unread" : ""}`}>
-                {email.subject || "(no subject)"}
+                {email.subject || t("message.noSubject")}
               </div>
 
               {/* Preview text */}
@@ -110,7 +112,7 @@ export const MessageListItem = React.memo(
               <button
                 onClick={handleStarClick}
                 className={`message-list-item__star-btn ${flagged ? "message-list-item__star-btn--active" : ""}`}
-                aria-label={flagged ? "Remove star" : "Add star"}
+                aria-label={flagged ? t("action.removeStar") : t("action.addStar")}
               >
                 <Star
                   size={15}
@@ -138,21 +140,21 @@ export const MessageListItem = React.memo(
               style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
               onSelect={() => onReply?.(email)}
             >
-              Reply
+              {t("action.reply")}
             </ContextMenu.Item>
             <ContextMenu.Item
               className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
               style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
               onSelect={() => onReplyAll?.(email)}
             >
-              Reply All
+              {t("action.replyAll")}
             </ContextMenu.Item>
             <ContextMenu.Item
               className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
               style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
               onSelect={() => onForward?.(email)}
             >
-              Forward
+              {t("action.forward")}
             </ContextMenu.Item>
 
             <ContextMenu.Separator
@@ -165,14 +167,14 @@ export const MessageListItem = React.memo(
               style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
               onSelect={() => onMarkRead?.([email.id], unread)}
             >
-              {unread ? "Mark as read" : "Mark as unread"}
+              {unread ? t("action.markAsRead") : t("action.markAsUnread")}
             </ContextMenu.Item>
             <ContextMenu.Item
               className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
               style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
               onSelect={() => onStar(email.id, !flagged)}
             >
-              {flagged ? "Unstar" : "Star"}
+              {flagged ? t("action.unstar") : t("action.star")}
             </ContextMenu.Item>
 
             <ContextMenu.Separator
@@ -185,14 +187,14 @@ export const MessageListItem = React.memo(
               style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
               onSelect={() => onArchive?.([email.id])}
             >
-              Archive
+              {t("action.archive")}
             </ContextMenu.Item>
             <ContextMenu.Item
               className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
               style={{ color: "var(--color-text-danger)", borderRadius: "var(--radius-sm)" }}
               onSelect={() => onDelete?.([email.id])}
             >
-              Delete
+              {t("action.delete")}
             </ContextMenu.Item>
           </ContextMenu.Content>
         </ContextMenu.Portal>

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Sparkles, Loader2, X, Check, RotateCcw } from "lucide-react";
 import { composeWithAI, replyWithAI, type AITone } from "@/api/ai.ts";
+import { useTranslation } from "react-i18next";
 
 interface AIPanelProps {
   /** Whether the compose is a reply (includes original email context) */
@@ -15,18 +16,18 @@ interface AIPanelProps {
   onClose: () => void;
 }
 
-const TONES: { value: AITone; label: string }[] = [
-  { value: "professional", label: "Professional" },
-  { value: "friendly", label: "Friendly" },
-  { value: "concise", label: "Concise" },
-];
-
 export const AIPanel = React.memo(function AIPanel({
   isReply,
   originalEmailBody,
   onInsert,
   onClose,
 }: AIPanelProps) {
+  const { t } = useTranslation();
+  const TONES: { value: AITone; label: string }[] = [
+    { value: "professional", label: t("ai.professional") },
+    { value: "friendly", label: t("ai.friendly") },
+    { value: "concise", label: t("ai.concise") },
+  ];
   const [prompt, setPrompt] = useState("");
   const [tone, setTone] = useState<AITone>("professional");
   const [generatedText, setGeneratedText] = useState("");
@@ -112,13 +113,13 @@ export const AIPanel = React.memo(function AIPanel({
       <div className="ai-panel__header">
         <div className="ai-panel__header-title">
           <Sparkles size={14} />
-          <span>AI Assistant</span>
+          <span>{t("ai.assistant")}</span>
         </div>
         <button
           type="button"
           onClick={onClose}
           className="ai-panel__close-btn"
-          title="Close AI panel"
+          title={t("ai.closePanel")}
         >
           <X size={14} />
         </button>
@@ -133,8 +134,8 @@ export const AIPanel = React.memo(function AIPanel({
           onKeyDown={handleKeyDown}
           placeholder={
             isReply
-              ? "How should the reply sound? (optional — or just pick a tone)"
-              : "What would you like to write?"
+              ? t("ai.promptReply")
+              : t("ai.promptCompose")
           }
           className="ai-panel__prompt"
           rows={2}
@@ -143,7 +144,7 @@ export const AIPanel = React.memo(function AIPanel({
 
         {/* Tone selector */}
         <div className="ai-panel__tone-row">
-          <span className="ai-panel__tone-label">Tone:</span>
+          <span className="ai-panel__tone-label">{t("ai.tone")}</span>
           <div className="ai-panel__tone-options">
             {TONES.map((t) => (
               <button
@@ -170,7 +171,7 @@ export const AIPanel = React.memo(function AIPanel({
               className="ai-panel__cancel-btn"
             >
               <X size={14} />
-              Cancel
+              {t("compose.cancel")}
             </button>
           ) : (
             <button
@@ -180,7 +181,7 @@ export const AIPanel = React.memo(function AIPanel({
               className="ai-panel__generate-btn"
             >
               <Sparkles size={14} />
-              Generate
+              {t("ai.generate")}
             </button>
           )}
         </div>
@@ -199,7 +200,7 @@ export const AIPanel = React.memo(function AIPanel({
               {generatedText || (
                 <span className="ai-panel__result-placeholder">
                   <Loader2 size={14} className="animate-spin" />
-                  Generating...
+                  {t("ai.generating")}
                 </span>
               )}
             </div>
@@ -213,7 +214,7 @@ export const AIPanel = React.memo(function AIPanel({
                   className="ai-panel__insert-btn"
                 >
                   <Check size={14} />
-                  Insert into email
+                  {t("ai.insertIntoEmail")}
                 </button>
                 <button
                   type="button"
@@ -221,7 +222,7 @@ export const AIPanel = React.memo(function AIPanel({
                   className="ai-panel__discard-btn"
                 >
                   <RotateCcw size={14} />
-                  Discard
+                  {t("ai.discard")}
                 </button>
               </div>
             )}

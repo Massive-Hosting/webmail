@@ -23,6 +23,7 @@ import { fetchEmail, fetchIdentities } from "@/api/mail.ts";
 import { useQuery } from "@tanstack/react-query";
 import { Toaster, toast } from "sonner";
 import { WifiOff, ArrowLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { EmailListItem } from "@/types/mail.ts";
 
 // Lazy-loaded heavy components (code splitting)
@@ -43,6 +44,7 @@ const CalendarPage = lazy(() =>
 );
 
 export function AppShell() {
+  const { t } = useTranslation();
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -115,7 +117,7 @@ export function AppShell() {
   useEffect(() => {
     const handleOnline = () => {
       setIsOffline(false);
-      toast.success("You're back online.", { duration: 3000 });
+      toast.success(t("toast.backOnline"), { duration: 3000 });
     };
     const handleOffline = () => {
       setIsOffline(true);
@@ -344,7 +346,7 @@ export function AppShell() {
   const offlineBanner = isOffline && (
     <div className="offline-banner" role="alert" aria-live="assertive">
       <WifiOff size={14} className="inline mr-2 align-text-bottom" />
-      You're offline — showing cached data
+      {t("toast.offline")}
     </div>
   );
 
@@ -378,7 +380,7 @@ export function AppShell() {
       <div className="flex flex-col h-dvh" style={{ backgroundColor: "var(--color-bg-primary)" }}>
         {offlineBanner}
         <a href="#main-content" className="skip-nav">
-          Skip to content
+          {t("nav.skipToContent")}
         </a>
         <header role="banner">
           <Toolbar
@@ -387,7 +389,7 @@ export function AppShell() {
           />
         </header>
         {mobileView === "sidebar" && (
-          <nav role="navigation" aria-label="Mail folders">
+          <nav role="navigation" aria-label={t("folder.mailFolders")}>
             <Sidebar />
           </nav>
         )}
@@ -415,7 +417,7 @@ export function AppShell() {
                 }}
               >
                 <ArrowLeft size={15} />
-                Back to list
+                {t("nav.backToList")}
               </button>
               <div className="flex-1 overflow-hidden">
                 <ReadingPane />
@@ -436,7 +438,7 @@ export function AppShell() {
     <div className="flex flex-col h-dvh" style={{ backgroundColor: "var(--color-bg-primary)" }}>
       {offlineBanner}
       <a href="#main-content" className="skip-nav">
-        Skip to content
+        {t("nav.skipToContent")}
       </a>
       <header role="banner">
         <Toolbar
@@ -449,7 +451,7 @@ export function AppShell() {
         <ActivityBar onSettings={handleOpenSettings} />
 
         {/* Sidebar (folder tree — only visible for mail view) */}
-        <nav role="navigation" aria-label="Mail folders">
+        <nav role="navigation" aria-label={t("folder.mailFolders")}>
           <Sidebar />
         </nav>
 
@@ -539,7 +541,7 @@ export function AppShell() {
                 <aside
                   className="flex-1 overflow-hidden"
                   role="complementary"
-                  aria-label="Message preview"
+                  aria-label={t("readingPane.messagePreview")}
                   style={{ backgroundColor: "var(--color-bg-primary)" }}
                 >
                   <ReadingPane />

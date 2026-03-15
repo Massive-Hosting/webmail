@@ -5,6 +5,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { SHORTCUT_HELP } from "@/lib/keyboard.ts";
 import { Kbd } from "@/components/ui/kbd.tsx";
+import { useTranslation } from "react-i18next";
 
 interface KeyboardShortcutDialogProps {
   onClose: () => void;
@@ -13,6 +14,7 @@ interface KeyboardShortcutDialogProps {
 export const KeyboardShortcutDialog = React.memo(function KeyboardShortcutDialog({
   onClose,
 }: KeyboardShortcutDialogProps) {
+  const { t } = useTranslation();
   return (
     <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
@@ -33,7 +35,7 @@ export const KeyboardShortcutDialog = React.memo(function KeyboardShortcutDialog
               className="text-lg font-semibold"
               style={{ color: "var(--color-text-primary)" }}
             >
-              Keyboard Shortcuts
+              {t("shortcuts.title")}
             </Dialog.Title>
             <Dialog.Close asChild>
               <button

@@ -4,12 +4,15 @@ import React, { useState, useCallback } from "react";
 import { login } from "@/api/client.ts";
 import type { ApiError } from "@/api/client.ts";
 import { Mail, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { LANGUAGES } from "@/i18n/index.ts";
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
 }
 
 export function LoginPage({ onLoginSuccess }: LoginPageProps) {
+  const { t, i18n } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -27,12 +30,12 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
       setError(null);
 
       if (!validateEmail(email)) {
-        setError("Please enter a valid email address.");
+        setError(t("login.invalidEmail"));
         return;
       }
 
       if (!password) {
-        setError("Please enter your password.");
+        setError(t("login.enterPassword"));
         return;
       }
 
@@ -44,11 +47,11 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
       } catch (err) {
         const apiErr = err as ApiError;
         if (apiErr.status === 429) {
-          setError("Too many login attempts. Please try again in a few minutes.");
+          setError(t("login.rateLimited"));
         } else if (apiErr.status === 401) {
-          setError("Invalid email or password.");
+          setError(t("login.invalidCredentials"));
         } else {
-          setError("An error occurred. Please try again.");
+          setError(t("login.genericError"));
         }
       } finally {
         setIsSubmitting(false);
@@ -101,13 +104,13 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             className="text-xl font-semibold"
             style={{ color: "var(--color-text-primary)", letterSpacing: "-0.01em" }}
           >
-            Sign in to Webmail
+            {t("login.signIn")}
           </h1>
           <p
             className="text-sm mt-1.5"
             style={{ color: "var(--color-text-secondary)" }}
           >
-            Enter your credentials to continue
+            {t("login.subtitle")}
           </p>
         </div>
 
@@ -137,7 +140,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               className="block text-sm font-medium mb-2"
               style={{ color: "var(--color-text-primary)" }}
             >
-              Email address
+              {t("login.emailLabel")}
             </label>
             <input
               id="email"
@@ -146,7 +149,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={t("login.emailPlaceholder")}
               className="w-full h-10 px-3 text-sm outline-none"
               style={{
                 backgroundColor: "var(--color-bg-primary)",
@@ -173,7 +176,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               className="block text-sm font-medium mb-2"
               style={{ color: "var(--color-text-primary)" }}
             >
-              Password
+              {t("login.passwordLabel")}
             </label>
             <div className="relative">
               <input
@@ -182,7 +185,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder={t("login.passwordPlaceholder")}
                 className="w-full h-10 px-3 pr-10 text-sm outline-none"
                 style={{
                   backgroundColor: "var(--color-bg-primary)",
@@ -227,7 +230,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               className="text-sm"
               style={{ color: "var(--color-text-secondary)" }}
             >
-              Remember me
+              {t("login.rememberMe")}
             </label>
           </div>
 
@@ -265,10 +268,38 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             {isSubmitting ? (
               <Loader2 size={18} className="animate-spin" />
             ) : (
-              "Sign in"
+              t("login.signInButton")
             )}
           </button>
         </form>
+      </div>
+
+      {/* Language selector */}
+      <div
+        className="fixed bottom-4 right-4"
+        style={{ zIndex: 10 }}
+      >
+        <select
+          value={i18n.language}
+          onChange={(e) => {
+            i18n.changeLanguage(e.target.value);
+            localStorage.setItem("language", e.target.value);
+          }}
+          className="text-xs px-2 py-1.5 rounded-md outline-none cursor-pointer"
+          style={{
+            backgroundColor: "var(--color-bg-elevated)",
+            color: "var(--color-text-secondary)",
+            border: "1px solid var(--color-border-primary)",
+            borderRadius: "var(--radius-sm)",
+          }}
+          aria-label={t("login.language")}
+        >
+          {LANGUAGES.map((lang) => (
+            <option key={lang.code} value={lang.code}>
+              {lang.label}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );

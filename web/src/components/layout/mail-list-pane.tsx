@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   FolderOpen,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface MailListPaneProps {
   searchActive?: boolean;
@@ -43,6 +44,7 @@ export const MailListPane = React.memo(function MailListPane({
   searchHasNextPage = false,
   searchFetchNextPage,
 }: MailListPaneProps) {
+  const { t } = useTranslation();
   const selectedMailboxId = useUIStore((s) => s.selectedMailboxId);
   const { mailboxes, findByRole } = useMailboxes();
   const clearSearch = useSearchStore((s) => s.clearSearch);
@@ -127,14 +129,14 @@ export const MailListPane = React.memo(function MailListPane({
             </span>
             {displayTotal > 0 && (
               <span className="mail-list-pane__toolbar-count">
-                {displayTotal} result{displayTotal !== 1 ? "s" : ""}
+                {t("search.result", { count: displayTotal })}
               </span>
             )}
             <div className="flex-1" />
             <button
               onClick={clearSearch}
               className="mail-list-pane__close-btn"
-              title="Clear search"
+              title={t("search.clearSearch")}
             >
               <X size={16} />
             </button>
@@ -158,8 +160,8 @@ export const MailListPane = React.memo(function MailListPane({
         {searchActive && !displayLoading && displayEmails.length === 0 ? (
           <EmptyState
             icon={<Search size={48} strokeWidth={1} />}
-            title="No messages found"
-            description={`No results for "${searchQuery}". Try different keywords or use search operators like from:, to:, subject:, has:attachment.`}
+            title={t("search.noMessagesFound")}
+            description={t("search.noResultsFor", { query: searchQuery })}
             className="h-full"
           />
         ) : !searchActive && !displayLoading && displayEmails.length === 0 ? (
@@ -186,13 +188,14 @@ export const MailListPane = React.memo(function MailListPane({
 });
 
 function ContextualEmptyState({ mailboxRole }: { mailboxRole: string | null }) {
+  const { t } = useTranslation();
   switch (mailboxRole) {
     case "inbox":
       return (
         <EmptyState
           icon={<CheckCircle size={48} strokeWidth={1} />}
-          title="All caught up!"
-          description="No new messages in your inbox. Take a break or compose something new."
+          title={t("emptyState.allCaughtUp")}
+          description={t("emptyState.allCaughtUpDesc")}
           className="h-full"
         />
       );
@@ -200,8 +203,8 @@ function ContextualEmptyState({ mailboxRole }: { mailboxRole: string | null }) {
       return (
         <EmptyState
           icon={<FileEdit size={48} strokeWidth={1} />}
-          title="No drafts"
-          description="Messages you're composing will be saved here automatically."
+          title={t("emptyState.noDrafts")}
+          description={t("emptyState.noDraftsDesc")}
           className="h-full"
         />
       );
@@ -209,8 +212,8 @@ function ContextualEmptyState({ mailboxRole }: { mailboxRole: string | null }) {
       return (
         <EmptyState
           icon={<Trash2 size={48} strokeWidth={1} />}
-          title="Trash is empty"
-          description="Messages you delete will appear here for 30 days before permanent removal."
+          title={t("emptyState.trashEmpty")}
+          description={t("emptyState.trashEmptyDesc")}
           className="h-full"
         />
       );
@@ -218,8 +221,8 @@ function ContextualEmptyState({ mailboxRole }: { mailboxRole: string | null }) {
       return (
         <EmptyState
           icon={<AlertTriangle size={48} strokeWidth={1} />}
-          title="No junk mail"
-          description="Messages detected as spam will appear here."
+          title={t("emptyState.noJunk")}
+          description={t("emptyState.noJunkDesc")}
           className="h-full"
         />
       );
@@ -227,8 +230,8 @@ function ContextualEmptyState({ mailboxRole }: { mailboxRole: string | null }) {
       return (
         <EmptyState
           icon={<FolderOpen size={48} strokeWidth={1} />}
-          title="This folder is empty"
-          description="Messages moved to this folder will show up here."
+          title={t("emptyState.folderEmpty")}
+          description={t("emptyState.folderEmptyDesc")}
           className="h-full"
         />
       );

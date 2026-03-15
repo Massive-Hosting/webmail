@@ -4,8 +4,11 @@ import React from "react";
 import { Sun, Moon, Monitor, Minimize2, Maximize2 } from "lucide-react";
 import { useSettingsStore } from "@/stores/settings-store.ts";
 import type { ThemeMode, DensityMode, StartPage } from "@/stores/settings-store.ts";
+import { useTranslation } from "react-i18next";
+import { LANGUAGES } from "@/i18n/index.ts";
 
 export const GeneralSettings = React.memo(function GeneralSettings() {
+  const { t, i18n } = useTranslation();
   const theme = useSettingsStore((s) => s.theme);
   const density = useSettingsStore((s) => s.density);
   const startPage = useSettingsStore((s) => s.startPage);
@@ -16,26 +19,50 @@ export const GeneralSettings = React.memo(function GeneralSettings() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Language */}
+      <SettingSection title={t("settings.language")} description={t("settings.languageDesc")}>
+        <select
+          value={i18n.language}
+          onChange={(e) => {
+            i18n.changeLanguage(e.target.value);
+            localStorage.setItem("language", e.target.value);
+          }}
+          className="text-sm px-3 py-2 rounded-md outline-none cursor-pointer"
+          style={{
+            backgroundColor: "var(--color-bg-tertiary)",
+            color: "var(--color-text-primary)",
+            border: "1px solid var(--color-border-primary)",
+            borderRadius: "var(--radius-md)",
+          }}
+        >
+          {LANGUAGES.map((lang) => (
+            <option key={lang.code} value={lang.code}>
+              {lang.label}
+            </option>
+          ))}
+        </select>
+      </SettingSection>
+
       {/* Theme */}
-      <SettingSection title="Theme" description="Choose how the interface looks.">
+      <SettingSection title={t("settings.theme")} description={t("settings.themeDesc")}>
         <div className="flex gap-2">
           <ThemeButton
             mode="system"
-            label="System"
+            label={t("settings.system")}
             icon={<Monitor size={16} />}
             active={theme === "system"}
             onClick={() => setTheme("system")}
           />
           <ThemeButton
             mode="light"
-            label="Light"
+            label={t("settings.light")}
             icon={<Sun size={16} />}
             active={theme === "light"}
             onClick={() => setTheme("light")}
           />
           <ThemeButton
             mode="dark"
-            label="Dark"
+            label={t("settings.dark")}
             icon={<Moon size={16} />}
             active={theme === "dark"}
             onClick={() => setTheme("dark")}
@@ -44,18 +71,18 @@ export const GeneralSettings = React.memo(function GeneralSettings() {
       </SettingSection>
 
       {/* Density */}
-      <SettingSection title="Density" description="Adjust spacing and row heights.">
+      <SettingSection title={t("settings.density")} description={t("settings.densityDesc")}>
         <div className="flex gap-2">
           <DensityButton
             mode="comfortable"
-            label="Comfortable"
+            label={t("settings.comfortable")}
             icon={<Maximize2 size={16} />}
             active={density === "comfortable"}
             onClick={() => setDensity("comfortable")}
           />
           <DensityButton
             mode="compact"
-            label="Compact"
+            label={t("settings.compact")}
             icon={<Minimize2 size={16} />}
             active={density === "compact"}
             onClick={() => setDensity("compact")}
@@ -64,15 +91,15 @@ export const GeneralSettings = React.memo(function GeneralSettings() {
       </SettingSection>
 
       {/* Start page */}
-      <SettingSection title="Start page" description="What to show when you open the app.">
+      <SettingSection title={t("settings.startPage")} description={t("settings.startPageDesc")}>
         <div className="flex gap-2">
           <OptionButton
-            label="Inbox"
+            label={t("settings.inbox")}
             active={startPage === "inbox"}
             onClick={() => setStartPage("inbox")}
           />
           <OptionButton
-            label="Last viewed"
+            label={t("settings.lastViewed")}
             active={startPage === "last"}
             onClick={() => setStartPage("last")}
           />
@@ -86,7 +113,7 @@ export const GeneralSettings = React.memo(function GeneralSettings() {
           className="text-sm px-3 py-1.5 rounded-md transition-colors hover:bg-[var(--color-bg-tertiary)]"
           style={{ color: "var(--color-text-danger)" }}
         >
-          Restore defaults
+          {t("settings.restoreDefaults")}
         </button>
       </div>
     </div>

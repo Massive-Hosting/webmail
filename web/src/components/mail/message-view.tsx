@@ -42,6 +42,7 @@ import { detectPGPContent } from "@/lib/pgp-detect.ts";
 import { InvitationCard } from "@/components/calendar/invitation-card.tsx";
 import { SmartReplyBar } from "@/components/mail/smart-reply-bar.tsx";
 import { useAIEnabled } from "@/hooks/use-ai-enabled.ts";
+import { useTranslation } from "react-i18next";
 
 interface MessageViewProps {
   emailId: string;
@@ -70,6 +71,7 @@ export const MessageView = React.memo(function MessageView({
 
 /** Inner message content component */
 function MessageContent({ email }: { email: Email }) {
+  const { t } = useTranslation();
   const [showExternalImages, setShowExternalImages] = useState(false);
   const [showAllRecipients, setShowAllRecipients] = useState(false);
   const [showQuotedText, setShowQuotedText] = useState(false);
@@ -178,7 +180,7 @@ function MessageContent({ email }: { email: Email }) {
         <div className="message-view__header">
           {/* Subject */}
           <h2 className="message-view__subject">
-            {email.subject || "(no subject)"}
+            {email.subject || t("message.noSubject")}
           </h2>
 
           {/* Sender row */}
@@ -198,7 +200,7 @@ function MessageContent({ email }: { email: Email }) {
 
               {/* Recipients as chips */}
               <div className="message-view__recipients">
-                <span className="message-view__recipients-label">to</span>
+                <span className="message-view__recipients-label">{t("messageView.to")}</span>
                 {visibleRecipients.map((a, i) => (
                   <span key={i} className="message-view__recipient-chip">
                     {formatAddress(a)}
@@ -209,7 +211,7 @@ function MessageContent({ email }: { email: Email }) {
                     onClick={() => setShowAllRecipients(true)}
                     className="message-view__recipients-more"
                   >
-                    +{hiddenCount} more
+                    {t("messageView.more", { count: hiddenCount })}
                   </button>
                 )}
               </div>
@@ -234,20 +236,20 @@ function MessageContent({ email }: { email: Email }) {
               <div className="message-view__action-buttons">
                 <ActionButton
                   icon={<Reply size={16} />}
-                  label="Reply (R)"
+                  label={t("action.replyShortcut")}
                   onClick={() => openCompose({ mode: "reply", email, identity: defaultIdentity })}
                 />
                 <ActionButton
                   icon={<ReplyAll size={16} />}
-                  label="Reply All (A)"
+                  label={t("action.replyAllShortcut")}
                   onClick={() => openCompose({ mode: "reply-all", email, identity: defaultIdentity })}
                 />
                 <ActionButton
                   icon={<Forward size={16} />}
-                  label="Forward (F)"
+                  label={t("action.forwardShortcut")}
                   onClick={() => openCompose({ mode: "forward", email, identity: defaultIdentity })}
                 />
-                <ActionButton icon={<MoreHorizontal size={16} />} label="More" />
+                <ActionButton icon={<MoreHorizontal size={16} />} label={t("action.more")} />
               </div>
             </div>
           </div>
@@ -257,9 +259,9 @@ function MessageContent({ email }: { email: Email }) {
         {sanitized?.hasExternalImages && !showExternalImages && (
           <div className="message-view__images-bar">
             <ImageOff size={14} />
-            <span>External images are hidden for privacy.</span>
+            <span>{t("messageView.externalImagesHidden")}</span>
             <button onClick={handleLoadImages} className="message-view__images-bar-action">
-              Load images
+              {t("messageView.loadImages")}
             </button>
           </div>
         )}
@@ -319,11 +321,11 @@ function MessageContent({ email }: { email: Email }) {
                   >
                     {showQuotedText ? (
                       <>
-                        <ChevronUp size={12} /> Hide quoted text
+                        <ChevronUp size={12} /> {t("messageView.hideQuotedText")}
                       </>
                     ) : (
                       <>
-                        <ChevronDown size={12} /> Show quoted text
+                        <ChevronDown size={12} /> {t("messageView.showQuotedText")}
                       </>
                     )}
                   </button>
@@ -340,7 +342,7 @@ function MessageContent({ email }: { email: Email }) {
             </div>
           ) : (
             <p className="message-view__no-content">
-              No content available.
+              {t("message.noContent")}
             </p>
           )}
         </div>

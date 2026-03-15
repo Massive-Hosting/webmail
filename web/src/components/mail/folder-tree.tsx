@@ -256,6 +256,7 @@ const FolderItem = React.memo(function FolderItem({
   onEmptyFolder: (mailboxId: string, folderName: string) => void;
   onRename: (mailboxId: string, newName: string) => void;
 }) {
+  const { t } = useTranslation();
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(mailbox.name);
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -292,7 +293,7 @@ const FolderItem = React.memo(function FolderItem({
         }}
         onSelect={() => onMarkAllRead(mailbox.id)}
       >
-        Mark all as read
+        {t("folder.markAllAsRead")}
       </ContextMenu.Item>
       {!isRoleFolder && (
         <>
@@ -307,7 +308,7 @@ const FolderItem = React.memo(function FolderItem({
               setIsRenaming(true);
             }}
           >
-            Rename
+            {t("folder.rename")}
           </ContextMenu.Item>
           <ContextMenu.Separator
             className="my-1"
@@ -321,7 +322,7 @@ const FolderItem = React.memo(function FolderItem({
             }}
             onSelect={() => onDelete(mailbox.id)}
           >
-            Delete folder
+            {t("folder.deleteFolder")}
           </ContextMenu.Item>
         </>
       )}
@@ -334,7 +335,7 @@ const FolderItem = React.memo(function FolderItem({
           }}
           onSelect={() => onEmptyFolder(mailbox.id, mailbox.name)}
         >
-          Empty {mailbox.name}
+          {t("folder.empty", { name: mailbox.name })}
         </ContextMenu.Item>
       )}
     </ContextMenu.Content>

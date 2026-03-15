@@ -35,6 +35,7 @@ import { lookupPublicKeys } from "@/lib/pgp-lookup.ts";
 import { useSettingsStore } from "@/stores/settings-store.ts";
 import { useAIEnabled } from "@/hooks/use-ai-enabled.ts";
 import { AIPanel } from "./ai-panel.tsx";
+import { useTranslation } from "react-i18next";
 
 // Re-export useCompose from its own module (keeps it out of the lazy-loaded chunk)
 export { useCompose } from "./use-compose.ts";
@@ -49,6 +50,7 @@ interface ComposePanelProps {
 export const ComposePanel = React.memo(function ComposePanel({
   draftId,
 }: ComposePanelProps) {
+  const { t } = useTranslation();
   const draft = useComposeStore((s) => s.drafts.get(draftId));
   const updateDraft = useComposeStore((s) => s.updateDraft);
   const closeDraft = useComposeStore((s) => s.closeDraft);
@@ -181,7 +183,7 @@ export const ComposePanel = React.memo(function ComposePanel({
     } catch (err) {
       updateDraft(draftId, {
         saving: false,
-        saveError: "Failed to save draft",
+        saveError: t("compose.failedToSaveDraft"),
       });
     }
   }, [draftId, findByRole, updateDraft, queryClient]);
@@ -212,7 +214,7 @@ export const ComposePanel = React.memo(function ComposePanel({
           plainText = signed;
           finalHTML = `<pre style="white-space: pre-wrap; font-family: sans-serif;">${escapeHtml(signed)}</pre>`;
         } catch (err) {
-          toast.error("Failed to sign message. Sending unsigned.");
+          toast.error(t("compose.failedToSign"));
         }
       }
 
@@ -242,7 +244,7 @@ export const ComposePanel = React.memo(function ComposePanel({
           finalHTML = `<pre style="white-space: pre-wrap; font-family: monospace; font-size: 12px;">${escapeHtml(encrypted)}</pre>`;
         } catch (err) {
           updateDraft(draftId, { saving: false });
-          toast.error("Failed to encrypt message. Please try again.");
+          toast.error(t("compose.failedToEncrypt"));
           return;
         }
       }
@@ -267,16 +269,16 @@ export const ComposePanel = React.memo(function ComposePanel({
 
       closeDraft(draftId);
 
-      toast.success("Message sent", { duration: 3000 });
+      toast.success(t("compose.messageSent"), { duration: 3000 });
 
       // Refresh mailbox counts
       queryClient.invalidateQueries({ queryKey: ["emails"] });
       queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
     } catch (err) {
       updateDraft(draftId, { saving: false });
-      toast.error("Failed to send message. Please try again.");
+      toast.error(t("compose.failedToSend"));
     }
-  }, [draftId, findByRole, closeDraft, updateDraft, queryClient, pgpSign, pgpEncrypt, pgpIsUnlocked, pgpPrivateKey, pgpPublicKey, pgpPassphrase]);
+  }, [draftId, findByRole, closeDraft, updateDraft, queryClient, pgpSign, pgpEncrypt, pgpIsUnlocked, pgpPrivateKey, pgpPublicKey, pgpPassphrase, t]);
 
   const handleSend = useCallback(async () => {
     const currentDraft = useComposeStore.getState().drafts.get(draftId);
@@ -288,13 +290,13 @@ export const ComposePanel = React.memo(function ComposePanel({
     const validBcc = currentDraft.bcc.filter((r) => r.isValid);
 
     if (validTo.length === 0 && validCc.length === 0 && validBcc.length === 0) {
-      toast.error("Please add at least one recipient.");
+      toast.error(t("compose.addRecipient"));
       return;
     }
 
     // Warn if empty subject
     if (!currentDraft.subject.trim()) {
-      const proceed = window.confirm("Send without a subject?");
+      const proceed = window.confirm(t("compose.sendWithoutSubject"));
       if (!proceed) return;
     }
 
@@ -326,17 +328,17 @@ export const ComposePanel = React.memo(function ComposePanel({
 
       let cancelled = false;
 
-      const toastId = toast("Sending...", {
+      const toastId = toast(t("compose.sending"), {
         duration: undoSendDelay * 1000 + 500,
         action: {
-          label: "Undo",
+          label: t("compose.undo"),
           onClick: () => {
             cancelled = true;
             if (undoSendTimerRef.current) {
               clearTimeout(undoSendTimerRef.current);
               undoSendTimerRef.current = null;
             }
-            toast.success("Send cancelled", { duration: 2000 });
+            toast.success(t("compose.sendCancelled"), { duration: 2000 });
           },
         },
         onDismiss: () => {
@@ -372,7 +374,7 @@ export const ComposePanel = React.memo(function ComposePanel({
   const handleDiscard = useCallback(() => {
     const currentDraft = useComposeStore.getState().drafts.get(draftId);
     if (currentDraft?.isDirty) {
-      const proceed = window.confirm("Discard unsaved changes?");
+      const proceed = window.confirm(t("compose.discardChanges"));
       if (!proceed) return;
     }
 
@@ -468,12 +470,12 @@ export const ComposePanel = React.memo(function ComposePanel({
   const isPopout = draft.windowMode === "popout";
 
   const composeTitle = draft.composeMode === "reply"
-    ? "Reply"
+    ? t("compose.reply")
     : draft.composeMode === "reply-all"
-      ? "Reply All"
+      ? t("compose.replyAll")
       : draft.composeMode === "forward"
-        ? "Forward"
-        : "New Message";
+        ? t("compose.forward")
+        : t("compose.newMessage");
 
   return (
     <DragDropZone draftId={draftId}>
@@ -506,7 +508,7 @@ export const ComposePanel = React.memo(function ComposePanel({
               type="button"
               onClick={() => minimizeDraft(draftId)}
               className="compose-dialog__window-btn"
-              title="Minimize"
+              title={t("compose.minimize")}
             >
               <Minus size={14} />
             </button>
@@ -519,7 +521,7 @@ export const ComposePanel = React.memo(function ComposePanel({
                   })
                 }
                 className="compose-dialog__window-btn"
-                title={isPopout ? "Dock" : "Pop out"}
+                title={isPopout ? t("compose.dock") : t("compose.popOut")}
               >
                 <ExternalLink size={14} />
               </button>
@@ -532,7 +534,7 @@ export const ComposePanel = React.memo(function ComposePanel({
                 })
               }
               className="compose-dialog__window-btn"
-              title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+              title={isFullscreen ? t("compose.exitFullscreen") : t("compose.fullscreen")}
             >
               {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
             </button>
@@ -540,7 +542,7 @@ export const ComposePanel = React.memo(function ComposePanel({
               type="button"
               onClick={handleDiscard}
               className="compose-dialog__window-btn compose-dialog__window-btn--close"
-              title="Close"
+              title={t("compose.close")}
             >
               <X size={14} />
             </button>
@@ -550,7 +552,7 @@ export const ComposePanel = React.memo(function ComposePanel({
         {/* From identity dropdown */}
         {identities && identities.length > 1 && (
           <div className="compose-dialog__field">
-            <label className="compose-dialog__field-label">From</label>
+            <label className="compose-dialog__field-label">{t("compose.from")}</label>
             <select
               value={draft.from?.id ?? ""}
               onChange={(e) => handleIdentityChange(e.target.value)}
@@ -610,12 +612,12 @@ export const ComposePanel = React.memo(function ComposePanel({
 
         {/* Subject */}
         <div className="compose-dialog__field">
-          <label className="compose-dialog__field-label">Subject</label>
+          <label className="compose-dialog__field-label">{t("compose.subject")}</label>
           <input
             type="text"
             value={draft.subject}
             onChange={(e) => updateDraft(draftId, { subject: e.target.value })}
-            placeholder="Subject"
+            placeholder={t("compose.subject")}
             className="compose-dialog__subject-input"
           />
         </div>
@@ -663,14 +665,14 @@ export const ComposePanel = React.memo(function ComposePanel({
               ) : (
                 <Send size={15} />
               )}
-              Send
+              {t("compose.send")}
             </button>
 
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="compose-dialog__attach-btn"
-              title="Attach files"
+              title={t("compose.attachFiles")}
             >
               <Paperclip size={16} />
             </button>
@@ -695,10 +697,10 @@ export const ComposePanel = React.memo(function ComposePanel({
                   type="button"
                   onClick={() => setShowAIPanel(!showAIPanel)}
                   className={`compose-dialog__ai-btn ${showAIPanel ? "compose-dialog__ai-btn--active" : ""}`}
-                  title="AI Assist"
+                  title={t("ai.aiAssistTitle")}
                 >
                   <Sparkles size={14} />
-                  AI
+                  {t("ai.aiAssist")}
                 </button>
               </>
             )}
@@ -711,26 +713,26 @@ export const ComposePanel = React.memo(function ComposePanel({
                   type="button"
                   onClick={() => setPgpSign(!pgpSign)}
                   className={`compose-dialog__pgp-btn ${pgpSign ? "compose-dialog__pgp-btn--sign-active" : ""}`}
-                  title={pgpSign ? "Signing enabled" : "Signing disabled"}
+                  title={pgpSign ? t("compose.signingEnabled") : t("compose.signingDisabled")}
                 >
                   <ShieldCheck size={14} />
-                  Sign
+                  {t("compose.sign")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setPgpEncrypt(!pgpEncrypt)}
                   className={`compose-dialog__pgp-btn ${pgpEncrypt ? "compose-dialog__pgp-btn--encrypt-active" : ""}`}
-                  title={pgpEncrypt ? "Encryption enabled" : "Encryption disabled"}
+                  title={pgpEncrypt ? t("compose.encryptionEnabled") : t("compose.encryptionDisabled")}
                 >
                   <Lock size={14} />
-                  Encrypt
+                  {t("compose.encrypt")}
                 </button>
               </>
             )}
           </div>
 
           <span className="compose-dialog__shortcut-hint">
-            Ctrl+Enter to send
+            {t("compose.ctrlEnterToSend")}
           </span>
         </div>
       </div>
@@ -741,10 +743,10 @@ export const ComposePanel = React.memo(function ComposePanel({
           <div className="compose-dialog__pgp-dialog">
             <h3 className="compose-dialog__pgp-dialog-title">
               <AlertTriangle size={16} style={{ color: "#eab308" }} />
-              Cannot encrypt to all recipients
+              {t("compose.cannotEncrypt")}
             </h3>
             <p className="compose-dialog__pgp-dialog-desc">
-              The following recipients do not have a PGP public key:
+              {t("compose.missingPgpKeys")}
             </p>
             <ul className="compose-dialog__pgp-dialog-list">
               {missingKeyRecipients.map((email) => (
@@ -759,7 +761,7 @@ export const ComposePanel = React.memo(function ComposePanel({
                 onClick={() => setShowMissingKeyDialog(false)}
                 className="compose-dialog__pgp-dialog-cancel"
               >
-                Cancel
+                {t("compose.cancel")}
               </button>
               <button
                 onClick={() => {
@@ -769,7 +771,7 @@ export const ComposePanel = React.memo(function ComposePanel({
                 }}
                 className="compose-dialog__pgp-dialog-confirm"
               >
-                Send unencrypted
+                {t("compose.sendUnencrypted")}
               </button>
             </div>
           </div>
@@ -794,6 +796,7 @@ function MinimizedBar({
   onMaximize: () => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const toText = to.map((r) => r.name ?? r.email).join(", ");
 
   return (
@@ -803,7 +806,7 @@ function MinimizedBar({
       className="compose-dialog__minimized"
     >
       <span className="compose-dialog__minimized-subject">
-        {subject || "New Message"}
+        {subject || t("compose.newMessage")}
       </span>
       {toText && (
         <span className="compose-dialog__minimized-to">
@@ -835,10 +838,11 @@ function SaveIndicator({
   lastSaved?: Date;
   saveError?: string;
 }) {
+  const { t } = useTranslation();
   if (saveError) {
     return (
       <span className="compose-dialog__save-indicator compose-dialog__save-indicator--error">
-        Save failed
+        {t("compose.saveFailed")}
       </span>
     );
   }
@@ -846,7 +850,7 @@ function SaveIndicator({
     return (
       <span className="compose-dialog__save-indicator compose-dialog__save-indicator--saving">
         <Loader2 size={10} className="animate-spin" />
-        Saving...
+        {t("compose.saving")}
       </span>
     );
   }
@@ -854,7 +858,7 @@ function SaveIndicator({
     return (
       <span className="compose-dialog__save-indicator compose-dialog__save-indicator--saved">
         <Check size={10} />
-        Saved at {format(lastSaved, "h:mm a")}
+        {t("compose.savedAt", { time: format(lastSaved, "h:mm a") })}
       </span>
     );
   }

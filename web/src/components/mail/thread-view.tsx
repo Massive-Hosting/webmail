@@ -9,6 +9,7 @@ import { formatMessageDate, formatAddress } from "@/lib/format.ts";
 import { isUnread } from "@/types/mail.ts";
 import type { Email } from "@/types/mail.ts";
 import { ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface ThreadViewProps {
   threadId: string;
@@ -78,7 +79,8 @@ function ThreadContent({
     }
   };
 
-  const subject = emails[0]?.subject || "(no subject)";
+  const { t } = useTranslation();
+  const subject = emails[0]?.subject || t("message.noSubject");
 
   // Split emails into earlier (before active) and active + after
   const activeIndex = emails.findIndex((e) => e.id === activeEmailId);
@@ -95,7 +97,7 @@ function ThreadContent({
           </h2>
           <div className="thread-view__meta">
             <MessageSquare size={14} />
-            <span>{emails.length} messages in this conversation</span>
+            <span>{t("thread.messagesInConversation", { count: emails.length })}</span>
           </div>
         </div>
         <button
@@ -105,12 +107,12 @@ function ThreadContent({
           {allExpanded ? (
             <>
               <ChevronUp size={14} />
-              Collapse all
+              {t("thread.collapseAll")}
             </>
           ) : (
             <>
               <ChevronDown size={14} />
-              Expand all
+              {t("thread.expandAll")}
             </>
           )}
         </button>
@@ -126,7 +128,7 @@ function ThreadContent({
           >
             <ChevronDown size={14} className="thread-view__earlier-chevron" />
             <span>
-              {earlierEmails.length} earlier {earlierEmails.length === 1 ? "message" : "messages"}
+              {t("thread.earlierMessage", { count: earlierEmails.length })}
             </span>
           </button>
         )}
@@ -178,6 +180,7 @@ const ThreadMessage = React.memo(function ThreadMessage({
   isExpanded: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation();
   const sender = email.from?.[0] ?? { name: null, email: "unknown" };
   const unread = isUnread(email);
 
@@ -214,7 +217,7 @@ const ThreadMessage = React.memo(function ThreadMessage({
         className="thread-view__collapse-handle"
       >
         <ChevronUp size={12} />
-        <span>Collapse</span>
+        <span>{t("thread.collapse")}</span>
       </button>
       <MessageView emailId={email.id} email={email} />
     </div>

@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state.tsx";
 import { useUIStore } from "@/stores/ui-store.ts";
 import { usePrefetchMessage } from "@/hooks/use-message.ts";
 import { Inbox } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function getDensityRowHeight(): number {
   const val = getComputedStyle(document.documentElement).getPropertyValue("--density-row-height").trim();
@@ -46,6 +47,7 @@ export const MessageList = React.memo(function MessageList({
   onArchive,
   onDelete,
 }: MessageListProps) {
+  const { t } = useTranslation();
   const parentRef = useRef<HTMLDivElement>(null);
   const selectedEmailId = useUIStore((s) => s.selectedEmailId);
   const selectedEmailIds = useUIStore((s) => s.selectedEmailIds);
@@ -142,8 +144,8 @@ export const MessageList = React.memo(function MessageList({
     return (
       <EmptyState
         icon={<Inbox size={48} strokeWidth={1} />}
-        title="No messages"
-        description="This folder is empty. Messages that arrive here will show up in this list."
+        title={t("message.noMessages")}
+        description={t("message.emptyFolder")}
         className="h-full"
       />
     );
@@ -155,7 +157,7 @@ export const MessageList = React.memo(function MessageList({
       className="message-list"
       style={{ contain: "strict" }}
       role="listbox"
-      aria-label="Messages"
+      aria-label={t("message.messages")}
     >
       <div
         style={{

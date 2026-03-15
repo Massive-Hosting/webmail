@@ -4,24 +4,26 @@ import React, { useState, useCallback, useRef } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { replyWithAI, type AITone } from "@/api/ai.ts";
 import { useCompose } from "@/components/mail/compose/use-compose.ts";
+import { useTranslation } from "react-i18next";
 import type { Email } from "@/types/mail.ts";
 
 interface SmartReplyBarProps {
   email: Email;
 }
 
-const REPLY_OPTIONS: { tone: AITone; label: string }[] = [
-  { tone: "professional", label: "Reply professionally" },
-  { tone: "friendly", label: "Reply friendly" },
-  { tone: "concise", label: "Reply briefly" },
-];
-
 export const SmartReplyBar = React.memo(function SmartReplyBar({
   email,
 }: SmartReplyBarProps) {
+  const { t } = useTranslation();
   const [loadingTone, setLoadingTone] = useState<AITone | null>(null);
   const { open: openCompose } = useCompose();
   const abortRef = useRef<AbortController | null>(null);
+
+  const REPLY_OPTIONS: { tone: AITone; label: string }[] = [
+    { tone: "professional", label: t("ai.replyProfessionally") },
+    { tone: "friendly", label: t("ai.replyFriendly") },
+    { tone: "concise", label: t("ai.replyBriefly") },
+  ];
 
   const getEmailBodyText = useCallback((): string => {
     if (email.bodyValues) {
