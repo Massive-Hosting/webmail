@@ -755,8 +755,48 @@ interface SendEmailParams {
   sentMailboxId?: string;
 }
 
+/**
+ * Scan HTML for inline images using /api/blob/{blobId}/inline URLs and convert
+ * them to cid: references with corresponding inline attachments for JMAP.
+ */
+function processInlineImages(html: string): {
+  html: string;
+  inlineAttachments: Array<{
+    blobId: string;
+    type: string;
+    disposition: string;
+    cid: string;
+  }>;
+} {
+  const inlineAttachments: Array<{
+    blobId: string;
+    type: string;
+    disposition: string;
+    cid: string;
+  }> = [];
+
+  const processed = html.replace(
+    /src="\/api\/blob\/([^"]+?)\/inline"/g,
+    (_match, blobId: string) => {
+      const cid = `inline-${blobId}@webmail`;
+      inlineAttachments.push({
+        blobId,
+        type: "image/png",
+        disposition: "inline",
+        cid,
+      });
+      return `src="cid:${cid}"`;
+    },
+  );
+
+  return { html: processed, inlineAttachments };
+}
+
 /** Send an email via JMAP EmailSubmission/set */
 export async function sendEmail(params: SendEmailParams): Promise<void> {
+  // Process inline images: replace /api/blob/*/inline URLs with cid: references
+  const { html: processedHTML, inlineAttachments } = processInlineImages(params.bodyHTML);
+
   const emailObj: Record<string, unknown> = {
     from: params.from
       ? [{ name: params.from.name, email: params.from.email }]
@@ -772,7 +812,7 @@ export async function sendEmail(params: SendEmailParams): Promise<void> {
         : undefined,
     subject: params.subject,
     bodyValues: {
-      html: { value: params.bodyHTML, isEncodingProblem: false, isTruncated: false },
+      html: { value: processedHTML, isEncodingProblem: false, isTruncated: false },
       text: { value: params.bodyText, isEncodingProblem: false, isTruncated: false },
     },
     textBody: [{ partId: "text", type: "text/plain" }],
@@ -811,17 +851,26 @@ export async function sendEmail(params: SendEmailParams): Promise<void> {
     }
   }
 
-  // Attachments
+  // Attachments (regular file attachments + inline image attachments)
   const completedAttachments = params.attachments.filter(
     (a) => a.blobId && a.status === "complete",
   );
-  if (completedAttachments.length > 0) {
-    emailObj.attachments = completedAttachments.map((a) => ({
+  const allAttachments = [
+    ...completedAttachments.map((a) => ({
       blobId: a.blobId,
       type: a.type,
       name: a.name,
       size: a.size,
-    }));
+    })),
+    ...inlineAttachments.map((a) => ({
+      blobId: a.blobId,
+      type: a.type,
+      disposition: a.disposition,
+      cid: a.cid,
+    })),
+  ];
+  if (allAttachments.length > 0) {
+    emailObj.attachments = allAttachments;
   }
 
   // Build the method calls

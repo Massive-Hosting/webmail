@@ -666,7 +666,6 @@ export const ComposePanel = React.memo(function ComposePanel({
           <ComposeEditor
             content={draft.bodyHTML}
             onChange={(html) => updateDraft(draftId, { bodyHTML: html })}
-            onPasteImage={(file) => uploadFiles([file])}
           />
         </div>
 

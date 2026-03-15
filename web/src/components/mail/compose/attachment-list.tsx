@@ -307,9 +307,14 @@ export function DragDropZone({
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
-      e.preventDefault();
       dragCountRef.current = 0;
       setIsDragging(false);
+
+      // If the native event was already handled (e.g. by the editor's inline
+      // image drop handler), don't also attach the files.
+      if (e.defaultPrevented) return;
+
+      e.preventDefault();
 
       const files = e.dataTransfer.files;
       if (files.length > 0) {

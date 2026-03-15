@@ -16,6 +16,8 @@ import TableHeader from "@tiptap/extension-table-header";
 import Placeholder from "@tiptap/extension-placeholder";
 import Typography from "@tiptap/extension-typography";
 import CharacterCount from "@tiptap/extension-character-count";
+import { Extension } from "@tiptap/core";
+import { Plugin } from "@tiptap/pm/state";
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -39,17 +41,141 @@ import {
   LinkIcon as LinkOff,
 } from "lucide-react";
 
+/** Upload an image file to the blob endpoint and return the blobId */
+async function uploadImageBlob(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file, file.name);
+  const response = await fetch("/api/blob/upload", {
+    method: "POST",
+    credentials: "same-origin",
+    body: formData,
+  });
+  if (!response.ok) throw new Error("Upload failed");
+  const result = await response.json();
+  return result.blobId;
+}
+
+/** Create a placeholder element shown while an inline image uploads */
+function createPlaceholder(): HTMLElement {
+  const el = document.createElement("span");
+  el.contentEditable = "false";
+  el.className = "inline-image-placeholder";
+  el.style.cssText =
+    "display: inline-block; width: 120px; height: 80px; background: var(--color-bg-tertiary, #e5e7eb); border-radius: 4px; vertical-align: middle; position: relative;";
+  const spinner = document.createElement("span");
+  spinner.style.cssText =
+    "position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--color-text-tertiary, #9ca3af); font-size: 12px;";
+  spinner.textContent = "\u2026";
+  el.appendChild(spinner);
+  return el;
+}
+
+/**
+ * Tiptap extension that handles image drop and paste events.
+ * Dropped/pasted image files are uploaded to /api/blob/upload and inserted
+ * as <img src="/api/blob/{blobId}/inline"> nodes.
+ */
+const InlineImageUpload = Extension.create({
+  name: "inlineImageUpload",
+
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        props: {
+          handleDrop(view, event) {
+            const files = event.dataTransfer?.files;
+            if (!files || files.length === 0) return false;
+
+            const images = Array.from(files).filter((f) =>
+              f.type.startsWith("image/"),
+            );
+            if (images.length === 0) return false;
+
+            event.preventDefault();
+
+            // Determine drop position
+            const dropPos = view.posAtCoords({
+              left: event.clientX,
+              top: event.clientY,
+            });
+            const insertPos = dropPos?.pos ?? view.state.selection.to;
+
+            for (const image of images) {
+              // Insert placeholder
+              const placeholder = createPlaceholder();
+              const placeholderWidget =
+                view.state.schema.text(" ");
+              // We'll use a simpler approach: insert a temporary text node, then replace
+              // Actually, insert the image directly after upload; show nothing blocking
+
+              uploadImageBlob(image)
+                .then((blobId) => {
+                  const { schema } = view.state;
+                  const imgNode = schema.nodes.image.create({
+                    src: `/api/blob/${blobId}/inline`,
+                    alt: image.name,
+                  });
+                  const tr = view.state.tr.insert(
+                    Math.min(insertPos, view.state.doc.content.size),
+                    imgNode,
+                  );
+                  view.dispatch(tr);
+                })
+                .catch(() => {
+                  // Upload failed — silent (could add toast here)
+                });
+            }
+
+            return true;
+          },
+
+          handlePaste(view, event) {
+            const items = event.clipboardData?.items;
+            if (!items) return false;
+
+            const imageItems = Array.from(items).filter((i) =>
+              i.type.startsWith("image/"),
+            );
+            if (imageItems.length === 0) return false;
+
+            event.preventDefault();
+
+            for (const item of imageItems) {
+              const file = item.getAsFile();
+              if (!file) continue;
+
+              uploadImageBlob(file)
+                .then((blobId) => {
+                  const { schema } = view.state;
+                  const imgNode = schema.nodes.image.create({
+                    src: `/api/blob/${blobId}/inline`,
+                    alt: "Pasted image",
+                  });
+                  const tr = view.state.tr.replaceSelectionWith(imgNode);
+                  view.dispatch(tr);
+                })
+                .catch(() => {
+                  // Upload failed
+                });
+            }
+
+            return true;
+          },
+        },
+      }),
+    ];
+  },
+});
+
 interface ComposeEditorProps {
   content: string;
   onChange: (html: string) => void;
-  onPasteImage?: (file: File) => void;
   placeholder?: string;
 }
 
 export const ComposeEditor = React.memo(function ComposeEditor({
   content,
   onChange,
-  onPasteImage,
   placeholder: placeholderProp,
 }: ComposeEditorProps) {
   const { t } = useTranslation();
@@ -84,7 +210,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       }),
       Image.configure({
         inline: true,
-        allowBase64: true,
+        allowBase64: false,
       }),
       Table.configure({
         resizable: false,
@@ -97,6 +223,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       }),
       Typography,
       CharacterCount,
+      InlineImageUpload,
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -107,22 +234,6 @@ export const ComposeEditor = React.memo(function ComposeEditor({
         class: "compose-editor-content",
         style:
           "min-height: 200px; max-height: 60vh; overflow-y: auto; outline: none; padding: 12px 16px;",
-      },
-      handlePaste: (view, event) => {
-        const items = event.clipboardData?.items;
-        if (items) {
-          for (const item of items) {
-            if (item.type.startsWith("image/")) {
-              event.preventDefault();
-              const file = item.getAsFile();
-              if (file && onPasteImage) {
-                onPasteImage(file);
-              }
-              return true;
-            }
-          }
-        }
-        return false;
       },
       handleKeyDown: (_view, event) => {
         // Tab key indentation in lists
