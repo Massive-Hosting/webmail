@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicbarker/tauri/v2/crates/tauri-cli/schema.json",
+  "identifier": "default",
+  "description": "Default capabilities for the desktop app",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:allow-open",
+    "notification:default",
+    "dialog:default",
+    "global-shortcut:allow-register",
+    "global-shortcut:allow-unregister",
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled",
+    "updater:default",
+    "deep-link:default"
+  ]
+}

@@ -108,7 +108,7 @@ export const Toolbar = React.memo(function Toolbar({
           {/* Theme toggle */}
           <ToolbarIconButton
             onClick={handleThemeToggle}
-            icon={<ThemeIcon size={17} />}
+            icon={<ThemeIcon size={19} />}
             label={t("toolbar.themeClick", { theme })}
             tooltipText={t("toolbar.theme", { theme })}
           />
@@ -116,7 +116,7 @@ export const Toolbar = React.memo(function Toolbar({
           {/* Settings */}
           <ToolbarIconButton
             onClick={onSettings}
-            icon={<Settings size={17} />}
+            icon={<Settings size={19} />}
             label={t("toolbar.settings")}
             tooltipText={t("toolbar.settings")}
           />
@@ -130,7 +130,7 @@ export const Toolbar = React.memo(function Toolbar({
           {/* Logout - subtle styling */}
           <ToolbarIconButton
             onClick={handleLogout}
-            icon={<LogOut size={16} />}
+            icon={<LogOut size={18} />}
             label={t("toolbar.logOut")}
             tooltipText={t("toolbar.logOut")}
           />

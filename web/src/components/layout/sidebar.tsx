@@ -54,26 +54,7 @@ export const Sidebar = React.memo(function Sidebar() {
         )}
       </div>
 
-      {/* Collapse toggle */}
-      {!sidebarCollapsed && (
-        <button
-          onClick={toggleSidebar}
-          className="flex items-center justify-center h-9 shrink-0 transition-colors duration-150 hover:bg-[var(--color-bg-tertiary)]"
-          style={{
-            color: "var(--color-text-tertiary)",
-            borderTop: "1px solid var(--color-border-primary)",
-          }}
-          aria-label={t("nav.collapseSidebar")}
-          onMouseOver={(e) => {
-            e.currentTarget.style.color = "var(--color-text-secondary)";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.color = "var(--color-text-tertiary)";
-          }}
-        >
-          <ChevronLeft size={15} />
-        </button>
-      )}
+      {/* Collapse toggle removed — activity bar has the toggle */}
     </div>
   );
 });

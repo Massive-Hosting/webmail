@@ -132,7 +132,7 @@ export const ActionBar = React.memo(function ActionBar({
         <Tooltip.Root>
           <Tooltip.Trigger asChild>
             <button className="action-bar__btn action-bar__btn--primary" onClick={onNewMail}>
-              <Pencil size={16} />
+              <Pencil size={18} />
               <span className="action-bar__btn-label">{t("action.newMail")}</span>
             </button>
           </Tooltip.Trigger>
@@ -145,14 +145,14 @@ export const ActionBar = React.memo(function ActionBar({
 
         {/* Core actions — always visible */}
         <ActionBarButton
-          icon={<Trash2 size={16} />}
+          icon={<Trash2 size={18} />}
           label={t("action.delete")}
           tooltip={currentMailboxRole === "trash" ? t("action.deletePermanently") : t("action.delete")}
           onClick={handleDelete}
           disabled={!hasSelection}
         />
         <ActionBarButton
-          icon={<Archive size={16} />}
+          icon={<Archive size={18} />}
           label={t("action.archive")}
           tooltip={t("action.archive")}
           onClick={handleArchive}
@@ -168,7 +168,7 @@ export const ActionBar = React.memo(function ActionBar({
                   className="action-bar__btn"
                   disabled={!hasSelection}
                 >
-                  <FolderInput size={16} />
+                  <FolderInput size={18} />
                   <span className="action-bar__btn-label">{t("action.moveTo")}</span>
                 </button>
               </DropdownMenu.Trigger>
@@ -202,7 +202,7 @@ export const ActionBar = React.memo(function ActionBar({
         </DropdownMenu.Root>
 
         <ActionBarButton
-          icon={<AlertTriangle size={16} />}
+          icon={<AlertTriangle size={18} />}
           label={t("action.junk")}
           tooltip={t("action.markAsJunk")}
           onClick={handleJunk}
@@ -214,19 +214,19 @@ export const ActionBar = React.memo(function ActionBar({
           <>
             <div className="action-bar__separator" />
             <ActionBarButton
-              icon={<Reply size={16} />}
+              icon={<Reply size={18} />}
               label={t("action.reply")}
               tooltip={t("action.replyShortcut")}
               onClick={handleReply}
             />
             <ActionBarButton
-              icon={<ReplyAll size={16} />}
+              icon={<ReplyAll size={18} />}
               label={t("action.replyAll")}
               tooltip={t("action.replyAllShortcut")}
               onClick={handleReplyAll}
             />
             <ActionBarButton
-              icon={<Forward size={16} />}
+              icon={<Forward size={18} />}
               label={t("action.forward")}
               tooltip={t("action.forwardShortcut")}
               onClick={handleForward}
@@ -238,14 +238,14 @@ export const ActionBar = React.memo(function ActionBar({
 
         {/* Read/Unread + Star */}
         <ActionBarButton
-          icon={allRead ? <Mail size={16} /> : <MailOpen size={16} />}
+          icon={allRead ? <Mail size={18} /> : <MailOpen size={18} />}
           label={allRead ? t("action.unread") : t("action.read")}
           tooltip={allRead ? t("action.markAsUnread") : t("action.markAsRead")}
           onClick={handleToggleRead}
           disabled={!hasSelection}
         />
         <ActionBarButton
-          icon={<Star size={16} className={isStarred ? "action-bar__icon--starred" : ""} />}
+          icon={<Star size={18} className={isStarred ? "action-bar__icon--starred" : ""} />}
           label={isStarred ? t("action.unstar") : t("action.star")}
           tooltip={isStarred ? t("action.removeStar") : t("action.addStar")}
           onClick={handleToggleStar}
