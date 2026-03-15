@@ -43,7 +43,7 @@ export const SettingsDialog = React.memo(function SettingsDialog({
           style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
         />
         <Dialog.Content
-          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col animate-scale-in"
+          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg w-[700px] h-[80vh] overflow-hidden flex flex-col animate-scale-in"
           style={{
             backgroundColor: "var(--color-bg-elevated)",
             border: "1px solid var(--color-border-primary)",
@@ -157,10 +157,11 @@ function TabTrigger({
   return (
     <Tabs.Trigger
       value={value}
-      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-t-md transition-colors whitespace-nowrap data-[state=active]:border-b-2"
+      className="settings-tab flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-t-md transition-colors whitespace-nowrap"
       style={{
         color: "var(--color-text-secondary)",
-        borderColor: "transparent",
+        borderBottom: "2px solid transparent",
+        marginBottom: "-1px",
       }}
     >
       {children}

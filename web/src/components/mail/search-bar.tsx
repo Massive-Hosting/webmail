@@ -247,21 +247,6 @@ export const SearchBar = React.memo(function SearchBar({
         </div>
       </div>
 
-      {/* Scope to mailbox toggle */}
-      {isSearchActive && (
-        <div className="absolute left-0 -bottom-6 flex items-center gap-2">
-          <label className="flex items-center gap-1.5 text-xs cursor-pointer" style={{ color: "var(--color-text-tertiary)" }}>
-            <input
-              type="checkbox"
-              checked={scopeToMailbox}
-              onChange={(e) => setScopeToMailbox(e.target.checked)}
-              className="w-3 h-3"
-            />
-            Current mailbox only
-          </label>
-        </div>
-      )}
-
       {/* Suggestions dropdown */}
       {showDropdownFinal && (
         <div
@@ -363,6 +348,26 @@ export const SearchBar = React.memo(function SearchBar({
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Scope to mailbox toggle */}
+              <div
+                className="px-3 py-2 flex items-center"
+                style={{ borderTop: "1px solid var(--color-border-primary)" }}
+              >
+                <label
+                  className="flex items-center gap-1.5 text-xs cursor-pointer select-none"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  <input
+                    type="checkbox"
+                    checked={scopeToMailbox}
+                    onChange={(e) => setScopeToMailbox(e.target.checked)}
+                    className="w-3 h-3"
+                  />
+                  Current mailbox only
+                </label>
               </div>
             </>
           )}
@@ -476,6 +481,26 @@ export const SearchBar = React.memo(function SearchBar({
                   ))}
                 </div>
               )}
+
+              {/* Scope to mailbox toggle */}
+              <div
+                className="px-3 py-2 flex items-center"
+                style={{ borderTop: "1px solid var(--color-border-primary)" }}
+              >
+                <label
+                  className="flex items-center gap-1.5 text-xs cursor-pointer select-none"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  <input
+                    type="checkbox"
+                    checked={scopeToMailbox}
+                    onChange={(e) => setScopeToMailbox(e.target.checked)}
+                    className="w-3 h-3"
+                  />
+                  Current mailbox only
+                </label>
+              </div>
             </>
           )}
         </div>

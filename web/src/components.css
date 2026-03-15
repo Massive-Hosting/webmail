@@ -1933,3 +1933,15 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ---- Settings dialog tab active indicator ---- */
+.settings-tab[data-state="active"] {
+  color: var(--color-text-accent) !important;
+  border-bottom-color: var(--color-text-accent) !important;
+  font-weight: 600;
+}
+
+.settings-tab:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-tertiary);
+}
