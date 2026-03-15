@@ -199,16 +199,25 @@ export const MessageList = React.memo(function MessageList({
 
   const handleItemClick = useCallback(
     (email: EmailListItem, event: React.MouseEvent) => {
+      console.log("[click]", { shift: event.shiftKey, ctrl: event.ctrlKey, emailId: email.id, lastClickedEmailId, emailsCount: emails.length });
       if (event.ctrlKey || event.metaKey) {
         toggleEmailSelection(email.id);
-      } else if (event.shiftKey && lastClickedEmailId) {
-        event.preventDefault(); // Prevent browser text selection on shift+click
-        const startIdx = emails.findIndex((e) => e.id === lastClickedEmailId);
-        const endIdx = emails.findIndex((e) => e.id === email.id);
-        if (startIdx !== -1 && endIdx !== -1) {
-          const min = Math.min(startIdx, endIdx);
-          const max = Math.max(startIdx, endIdx);
-          selectEmailRange(emails.slice(min, max + 1).map((e) => e.id));
+      } else if (event.shiftKey) {
+        event.preventDefault();
+        if (lastClickedEmailId) {
+          const startIdx = emails.findIndex((e) => e.id === lastClickedEmailId);
+          const endIdx = emails.findIndex((e) => e.id === email.id);
+          console.log("[shift-click]", { startIdx, endIdx, lastClickedEmailId });
+          if (startIdx !== -1 && endIdx !== -1) {
+            const min = Math.min(startIdx, endIdx);
+            const max = Math.max(startIdx, endIdx);
+            const ids = emails.slice(min, max + 1).map((e) => e.id);
+            console.log("[shift-click] selecting range:", ids);
+            selectEmailRange(ids);
+          }
+        } else {
+          console.log("[shift-click] no lastClickedEmailId, falling back to normal select");
+          setSelectedEmail(email.id, email.threadId);
         }
       } else {
         setSelectedEmail(email.id, email.threadId);
