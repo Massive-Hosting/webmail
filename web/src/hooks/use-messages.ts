@@ -36,8 +36,11 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
       });
     },
     getNextPageParam: (lastPage) => {
+      // Stop if this page returned no emails (end of results)
+      if (lastPage.emails.length === 0) return undefined;
       const nextPosition = lastPage.position + lastPage.emails.length;
-      if (nextPosition >= lastPage.total) return undefined;
+      // Also stop if total is known and we've reached it
+      if (lastPage.total > 0 && nextPosition >= lastPage.total) return undefined;
       return nextPosition;
     },
     initialPageParam: 0,
