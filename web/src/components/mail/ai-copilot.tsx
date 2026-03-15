@@ -172,7 +172,7 @@ export const AICopilot = React.memo(function AICopilot({
         const userName = useAuthStore.getState().displayName || userEmail.split("@")[0];
         const contextPrompt = `YOU ARE HELPING: ${userName} <${userEmail}>\n\nTHEY RECEIVED THIS EMAIL:\nFrom: ${sender}\nSubject: ${email.subject}\n\n${bodyText}\n\nIMPORTANT: When drafting a reply, write it FROM ${userName} TO ${sender}. Do NOT confuse the sender and recipient.`;
         const systemPrompt =
-          "You are an email assistant. The user is viewing an email they received. When asked to draft a reply, write it FROM the user TO the original sender. NEVER add a signature, sign-off, closing, or name at the end of the reply. No 'Best regards', no 'Thanks', no name — the application adds the signature automatically. Just write the greeting and body content, then stop.";
+          "You are an email assistant. The user is viewing an email they received. When asked to draft a reply, write it FROM the user TO the original sender. You may end with a natural closing line, but do NOT add a signature block (no name, no 'Best, Name', no 'Regards, Name'). The application appends the user's signature automatically. Be helpful, concise, and context-aware.";
 
         const fullPrompt = conversationContext
           ? `${contextPrompt}\n\n${conversationContext}\n\nUser: ${text}`
