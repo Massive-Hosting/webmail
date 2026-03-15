@@ -3,6 +3,64 @@
    Message list, reading pane, thread view, compose, folder tree
    ================================================================ */
 
+/* ---- Activity Bar (left icon rail) ---- */
+.activity-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 48px;
+  height: 100%;
+  flex-shrink: 0;
+  background-color: var(--color-bg-secondary);
+  border-right: 1px solid var(--color-border-primary);
+}
+
+.activity-bar__top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 0;
+  flex: 1;
+}
+
+.activity-bar__bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid var(--color-border-primary);
+}
+
+.activity-bar__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-text-tertiary);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.activity-bar__icon:hover {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.activity-bar__icon--active {
+  background-color: var(--color-message-selected);
+  color: var(--color-text-accent);
+}
+
+.activity-bar__icon--active:hover {
+  background-color: var(--color-message-selected);
+  color: var(--color-text-accent);
+}
+
 /* ---- Shared tooltip ---- */
 .tooltip-content {
   font-size: 12px;
@@ -268,13 +326,16 @@
 }
 
 .action-bar__btn--primary {
-  color: var(--color-text-accent);
+  background-color: var(--color-bg-accent);
+  color: var(--color-text-inverse);
   font-weight: 600;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.15);
 }
 
 .action-bar__btn--primary:hover:not(:disabled) {
-  background-color: color-mix(in srgb, var(--color-bg-accent) 12%, transparent);
-  color: var(--color-text-accent);
+  background-color: var(--color-bg-accent-hover);
+  color: var(--color-text-inverse);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25);
 }
 
 .action-bar__separator {

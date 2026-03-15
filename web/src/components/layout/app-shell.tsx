@@ -1,11 +1,13 @@
-/** Root application shell with three-pane layout, ARIA landmarks, and error states — premium design */
+/** Root application shell with activity bar, three-pane layout, ARIA landmarks, and error states — premium design */
 
-import React, { useEffect, useCallback, useState, lazy, Suspense } from "react";
+import React, { useEffect, useCallback, useState, lazy, Suspense, useMemo } from "react";
 import { Toolbar } from "./toolbar.tsx";
 import { Sidebar } from "./sidebar.tsx";
+import { ActivityBar } from "./activity-bar.tsx";
 import { MailListPane } from "./mail-list-pane.tsx";
 import { ReadingPane } from "./reading-pane.tsx";
 import { ResizeHandle } from "./resize-handle.tsx";
+import { ActionBar } from "@/components/mail/action-bar.tsx";
 import { KeyboardShortcutDialog } from "@/components/mail/keyboard-shortcut-dialog.tsx";
 import { useCompose } from "@/components/mail/compose/use-compose.ts";
 import { TaskTray } from "@/components/ui/task-tray.tsx";
@@ -17,10 +19,11 @@ import { useKeyboardShortcuts } from "@/hooks/use-keyboard.ts";
 import { useMessages } from "@/hooks/use-messages.ts";
 import { useMessage } from "@/hooks/use-message.ts";
 import { useSearch } from "@/hooks/use-search.ts";
-import { fetchIdentities } from "@/api/mail.ts";
+import { fetchEmail, fetchIdentities } from "@/api/mail.ts";
 import { useQuery } from "@tanstack/react-query";
 import { Toaster, toast } from "sonner";
-import { WifiOff, RefreshCw, ArrowLeft } from "lucide-react";
+import { WifiOff, ArrowLeft } from "lucide-react";
+import type { EmailListItem } from "@/types/mail.ts";
 
 // Lazy-loaded heavy components (code splitting)
 const ComposeContainer = lazy(() =>
@@ -53,6 +56,7 @@ export function AppShell() {
   const activeView = useUIStore((s) => s.activeView);
   const selectedMailboxId = useUIStore((s) => s.selectedMailboxId);
   const selectedEmailId = useUIStore((s) => s.selectedEmailId);
+  const selectedEmailIds = useUIStore((s) => s.selectedEmailIds);
 
   const setMessageListWidth = useUIStore((s) => s.setMessageListWidth);
   const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
@@ -70,7 +74,7 @@ export function AppShell() {
   const searchQuery = useSearchStore((s) => s.query);
   const clearSearch = useSearchStore((s) => s.clearSearch);
 
-  const { findByRole, sortedMailboxes } = useMailboxes();
+  const { findByRole, sortedMailboxes, mailboxes } = useMailboxes();
   const { emails, starEmail, markRead, moveEmails } = useMessages(selectedMailboxId);
   const { email: selectedEmail } = useMessage(selectedEmailId);
   const { open: openCompose } = useCompose();
@@ -84,6 +88,8 @@ export function AppShell() {
     queryFn: fetchIdentities,
     staleTime: 5 * 60 * 1000,
   });
+
+  const defaultIdentity = identities?.[0] ?? null;
 
   // Auto-select inbox on first load
   useEffect(() => {
@@ -211,7 +217,7 @@ export function AppShell() {
           onCompose: () => {
             openCompose({
               mode: "new",
-              identity: identities?.[0] ?? null,
+              identity: defaultIdentity,
             });
           },
           onReply: () => {
@@ -219,7 +225,7 @@ export function AppShell() {
               openCompose({
                 mode: "reply",
                 email: selectedEmail,
-                identity: identities?.[0] ?? null,
+                identity: defaultIdentity,
               });
             }
           },
@@ -228,7 +234,7 @@ export function AppShell() {
               openCompose({
                 mode: "reply-all",
                 email: selectedEmail,
-                identity: identities?.[0] ?? null,
+                identity: defaultIdentity,
               });
             }
           },
@@ -237,7 +243,7 @@ export function AppShell() {
               openCompose({
                 mode: "forward",
                 email: selectedEmail,
-                identity: identities?.[0] ?? null,
+                identity: defaultIdentity,
               });
             }
           },
@@ -259,6 +265,64 @@ export function AppShell() {
   const handleOpenAdvancedSearch = useCallback(() => {
     setShowAdvancedSearch(true);
   }, []);
+
+  // Action bar callbacks
+  const currentMailbox = mailboxes.find((m) => m.id === selectedMailboxId);
+  const archiveMailbox = findByRole("archive");
+  const trashMailbox = findByRole("trash");
+  const junkMailbox = findByRole("junk");
+
+  const displayEmails = isSearchActive ? search.emails : emails;
+
+  const selectedEmails = useMemo(() => {
+    if (selectedEmailIds.size === 0) return [];
+    return displayEmails.filter((e) => selectedEmailIds.has(e.id));
+  }, [displayEmails, selectedEmailIds]);
+
+  const hasReadingPaneMessage = !!selectedEmailId && selectedEmailIds.size === 1;
+
+  const handleNewMail = useCallback(() => {
+    openCompose({ mode: "new", identity: defaultIdentity });
+  }, [openCompose, defaultIdentity]);
+
+  const handleReply = useCallback(async (emailItem: EmailListItem) => {
+    const fullEmail = await fetchEmail(emailItem.id);
+    if (fullEmail) openCompose({ mode: "reply", email: fullEmail, identity: defaultIdentity });
+  }, [openCompose, defaultIdentity]);
+
+  const handleReplyAll = useCallback(async (emailItem: EmailListItem) => {
+    const fullEmail = await fetchEmail(emailItem.id);
+    if (fullEmail) openCompose({ mode: "reply-all", email: fullEmail, identity: defaultIdentity });
+  }, [openCompose, defaultIdentity]);
+
+  const handleForward = useCallback(async (emailItem: EmailListItem) => {
+    const fullEmail = await fetchEmail(emailItem.id);
+    if (fullEmail) openCompose({ mode: "forward", email: fullEmail, identity: defaultIdentity });
+  }, [openCompose, defaultIdentity]);
+
+  const handleArchive = useCallback((emailIds: string[]) => {
+    if (archiveMailbox && selectedMailboxId) {
+      moveEmails(emailIds, selectedMailboxId, archiveMailbox.id);
+    }
+  }, [archiveMailbox, selectedMailboxId, moveEmails]);
+
+  const handleDelete = useCallback((emailIds: string[]) => {
+    if (trashMailbox && selectedMailboxId) {
+      moveEmails(emailIds, selectedMailboxId, trashMailbox.id);
+    }
+  }, [trashMailbox, selectedMailboxId, moveEmails]);
+
+  const handleJunk = useCallback((emailIds: string[]) => {
+    if (junkMailbox && selectedMailboxId) {
+      moveEmails(emailIds, selectedMailboxId, junkMailbox.id);
+    }
+  }, [junkMailbox, selectedMailboxId, moveEmails]);
+
+  const handleMoveToFolder = useCallback((emailIds: string[], targetMailboxId: string) => {
+    if (selectedMailboxId) {
+      moveEmails(emailIds, selectedMailboxId, targetMailboxId);
+    }
+  }, [selectedMailboxId, moveEmails]);
 
   // Shared content
   const toasterConfig = (
@@ -318,12 +382,6 @@ export function AppShell() {
         </a>
         <header role="banner">
           <Toolbar
-            onCompose={() => {
-              openCompose({
-                mode: "new",
-                identity: identities?.[0] ?? null,
-              });
-            }}
             onSettings={handleOpenSettings}
             onAdvancedSearch={handleOpenAdvancedSearch}
           />
@@ -373,7 +431,7 @@ export function AppShell() {
     );
   }
 
-  // Desktop three-pane layout
+  // Desktop layout with activity bar
   return (
     <div className="flex flex-col h-dvh" style={{ backgroundColor: "var(--color-bg-primary)" }}>
       {offlineBanner}
@@ -382,18 +440,15 @@ export function AppShell() {
       </a>
       <header role="banner">
         <Toolbar
-          onCompose={() => {
-            openCompose({
-              mode: "new",
-              identity: identities?.[0] ?? null,
-            });
-          }}
           onSettings={handleOpenSettings}
           onAdvancedSearch={handleOpenAdvancedSearch}
         />
       </header>
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
+        {/* Activity bar (icon rail) */}
+        <ActivityBar onSettings={handleOpenSettings} />
+
+        {/* Sidebar (folder tree — only visible for mail view) */}
         <nav role="navigation" aria-label="Mail folders">
           <Sidebar />
         </nav>
@@ -426,48 +481,71 @@ export function AppShell() {
 
         {/* Mail view */}
         {activeView === "mail" && (
-          <main id="main-content" role="main" className="flex flex-1 overflow-hidden">
-            {/* Message list */}
-            <div
-              className="shrink-0 overflow-hidden"
-              style={{
-                width: readingPaneVisible ? messageListWidth : undefined,
-                flex: readingPaneVisible ? undefined : 1,
-              }}
-            >
-              <MailListPane
-                searchActive={isSearchActive}
-                searchQuery={searchQuery}
-                searchEmails={search.emails}
-                searchTotal={search.total}
-                searchIsLoading={search.isLoading}
-                searchIsFetchingNextPage={search.isFetchingNextPage}
-                searchHasNextPage={search.hasNextPage}
-                searchFetchNextPage={search.fetchNextPage}
-              />
-            </div>
+          <main id="main-content" role="main" className="flex flex-col flex-1 overflow-hidden">
+            {/* Action bar — spans full content width */}
+            <ActionBar
+              selectedEmailIds={selectedEmailIds}
+              selectedEmails={selectedEmails}
+              hasReadingPaneMessage={hasReadingPaneMessage}
+              currentMailboxId={selectedMailboxId}
+              currentMailboxRole={currentMailbox?.role ?? null}
+              mailboxes={sortedMailboxes}
+              onNewMail={handleNewMail}
+              onDelete={handleDelete}
+              onArchive={handleArchive}
+              onMoveToFolder={handleMoveToFolder}
+              onJunk={handleJunk}
+              onReply={handleReply}
+              onReplyAll={handleReplyAll}
+              onForward={handleForward}
+              onMarkRead={markRead}
+              onStar={starEmail}
+            />
 
-            {/* Message list / reading pane resize handle */}
-            {readingPaneVisible && (
-              <ResizeHandle
-                onResize={(delta) =>
-                  setMessageListWidth(useUIStore.getState().messageListWidth + delta)
-                }
-                onDoubleClick={resetLayout}
-              />
-            )}
-
-            {/* Reading pane */}
-            {readingPaneVisible && (
-              <aside
-                className="flex-1 overflow-hidden"
-                role="complementary"
-                aria-label="Message preview"
-                style={{ backgroundColor: "var(--color-bg-primary)" }}
+            {/* Message list + Reading pane row */}
+            <div className="flex flex-1 overflow-hidden">
+              {/* Message list */}
+              <div
+                className="shrink-0 overflow-hidden"
+                style={{
+                  width: readingPaneVisible ? messageListWidth : undefined,
+                  flex: readingPaneVisible ? undefined : 1,
+                }}
               >
-                <ReadingPane />
-              </aside>
-            )}
+                <MailListPane
+                  searchActive={isSearchActive}
+                  searchQuery={searchQuery}
+                  searchEmails={search.emails}
+                  searchTotal={search.total}
+                  searchIsLoading={search.isLoading}
+                  searchIsFetchingNextPage={search.isFetchingNextPage}
+                  searchHasNextPage={search.hasNextPage}
+                  searchFetchNextPage={search.fetchNextPage}
+                />
+              </div>
+
+              {/* Message list / reading pane resize handle */}
+              {readingPaneVisible && (
+                <ResizeHandle
+                  onResize={(delta) =>
+                    setMessageListWidth(useUIStore.getState().messageListWidth + delta)
+                  }
+                  onDoubleClick={resetLayout}
+                />
+              )}
+
+              {/* Reading pane */}
+              {readingPaneVisible && (
+                <aside
+                  className="flex-1 overflow-hidden"
+                  role="complementary"
+                  aria-label="Message preview"
+                  style={{ backgroundColor: "var(--color-bg-primary)" }}
+                >
+                  <ReadingPane />
+                </aside>
+              )}
+            </div>
           </main>
         )}
       </div>

@@ -1,8 +1,7 @@
 /** Message list pane container - premium toolbar and contextual empty states */
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import { MessageList } from "@/components/mail/message-list.tsx";
-import { ActionBar } from "@/components/mail/action-bar.tsx";
 import { useUIStore } from "@/stores/ui-store.ts";
 import { useSearchStore } from "@/stores/search-store.ts";
 import { useMessages } from "@/hooks/use-messages.ts";
@@ -45,9 +44,7 @@ export const MailListPane = React.memo(function MailListPane({
   searchFetchNextPage,
 }: MailListPaneProps) {
   const selectedMailboxId = useUIStore((s) => s.selectedMailboxId);
-  const selectedEmailIds = useUIStore((s) => s.selectedEmailIds);
-  const selectedEmailId = useUIStore((s) => s.selectedEmailId);
-  const { mailboxes, sortedMailboxes, findByRole } = useMailboxes();
+  const { mailboxes, findByRole } = useMailboxes();
   const clearSearch = useSearchStore((s) => s.clearSearch);
 
   const currentMailbox = mailboxes.find((m) => m.id === selectedMailboxId);
@@ -69,7 +66,6 @@ export const MailListPane = React.memo(function MailListPane({
 
   const archiveMailbox = findByRole("archive");
   const trashMailbox = findByRole("trash");
-  const junkMailbox = findByRole("junk");
 
   const { open: openCompose } = useCompose();
   const { data: identities } = useQuery({
@@ -79,21 +75,10 @@ export const MailListPane = React.memo(function MailListPane({
   });
   const defaultIdentity = identities?.[0] ?? null;
 
-  // Determine which emails are in the current list (for resolving selected items)
+  // Determine which emails are in the current list
   const displayEmails = searchActive ? searchEmails : emails;
 
-  const selectedEmails = useMemo(() => {
-    if (selectedEmailIds.size === 0) return [];
-    return displayEmails.filter((e) => selectedEmailIds.has(e.id));
-  }, [displayEmails, selectedEmailIds]);
-
-  const hasReadingPaneMessage = !!selectedEmailId && selectedEmailIds.size === 1;
-
-  // Action callbacks
-  const handleNewMail = useCallback(() => {
-    openCompose({ mode: "new", identity: defaultIdentity });
-  }, [openCompose, defaultIdentity]);
-
+  // Action callbacks for message list context menus
   const handleReply = useCallback(async (emailItem: EmailListItem) => {
     const fullEmail = await fetchEmail(emailItem.id);
     if (fullEmail) openCompose({ mode: "reply", email: fullEmail, identity: defaultIdentity });
@@ -121,18 +106,6 @@ export const MailListPane = React.memo(function MailListPane({
     }
   }, [trashMailbox, selectedMailboxId, moveEmails]);
 
-  const handleJunk = useCallback((emailIds: string[]) => {
-    if (junkMailbox && selectedMailboxId) {
-      moveEmails(emailIds, selectedMailboxId, junkMailbox.id);
-    }
-  }, [junkMailbox, selectedMailboxId, moveEmails]);
-
-  const handleMoveToFolder = useCallback((emailIds: string[], targetMailboxId: string) => {
-    if (selectedMailboxId) {
-      moveEmails(emailIds, selectedMailboxId, targetMailboxId);
-    }
-  }, [selectedMailboxId, moveEmails]);
-
   // Decide which data to show
   const displayTotal = searchActive ? searchTotal : total;
   const displayLoading = searchActive ? searchIsLoading : isLoading;
@@ -144,26 +117,6 @@ export const MailListPane = React.memo(function MailListPane({
 
   return (
     <div className="mail-list-pane">
-      {/* Action bar */}
-      <ActionBar
-        selectedEmailIds={selectedEmailIds}
-        selectedEmails={selectedEmails}
-        hasReadingPaneMessage={hasReadingPaneMessage}
-        currentMailboxId={selectedMailboxId}
-        currentMailboxRole={currentMailbox?.role ?? null}
-        mailboxes={sortedMailboxes}
-        onNewMail={handleNewMail}
-        onDelete={handleDelete}
-        onArchive={handleArchive}
-        onMoveToFolder={handleMoveToFolder}
-        onJunk={handleJunk}
-        onReply={handleReply}
-        onReplyAll={handleReplyAll}
-        onForward={handleForward}
-        onMarkRead={markRead}
-        onStar={starEmail}
-      />
-
       {/* List toolbar */}
       <div className={`mail-list-pane__toolbar ${searchActive ? "mail-list-pane__toolbar--search" : ""}`}>
         {searchActive ? (
