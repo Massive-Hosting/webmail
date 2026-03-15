@@ -4,6 +4,7 @@ import React from "react";
 import { Mail, Users, Calendar, Settings, PanelLeftClose, PanelLeft } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useUIStore } from "@/stores/ui-store.ts";
+import { useTranslation } from "react-i18next";
 
 interface ActivityBarProps {
   onSettings: () => void;
@@ -16,33 +17,27 @@ export const ActivityBar = React.memo(function ActivityBar({
   const setActiveView = useUIStore((s) => s.setActiveView);
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const { t } = useTranslation();
 
   return (
     <Tooltip.Provider delayDuration={400}>
       <div className="activity-bar">
         <div className="activity-bar__top">
           <ActivityBarIcon
-            icon={sidebarCollapsed ? <PanelLeft size={20} /> : <PanelLeftClose size={20} />}
-            label={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
-            active={false}
-            onClick={toggleSidebar}
-          />
-          <div style={{ height: 8 }} />
-          <ActivityBarIcon
             icon={<Mail size={20} />}
-            label="Mail"
+            label={t("nav.mail")}
             active={activeView === "mail"}
             onClick={() => setActiveView("mail")}
           />
           <ActivityBarIcon
             icon={<Users size={20} />}
-            label="Contacts"
+            label={t("nav.contacts")}
             active={activeView === "contacts"}
             onClick={() => setActiveView("contacts")}
           />
           <ActivityBarIcon
             icon={<Calendar size={20} />}
-            label="Calendar"
+            label={t("nav.calendar")}
             active={activeView === "calendar"}
             onClick={() => setActiveView("calendar")}
           />
@@ -50,9 +45,15 @@ export const ActivityBar = React.memo(function ActivityBar({
         <div className="activity-bar__bottom">
           <ActivityBarIcon
             icon={<Settings size={20} />}
-            label="Settings"
+            label={t("nav.settings")}
             active={false}
             onClick={onSettings}
+          />
+          <ActivityBarIcon
+            icon={sidebarCollapsed ? <PanelLeft size={20} /> : <PanelLeftClose size={20} />}
+            label={sidebarCollapsed ? t("nav.showSidebar") : t("nav.hideSidebar")}
+            active={false}
+            onClick={toggleSidebar}
           />
         </div>
       </div>

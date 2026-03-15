@@ -22,6 +22,7 @@ import * as ContextMenu from "@radix-ui/react-context-menu";
 import { queryEmailIds, updateEmails, destroyEmails } from "@/api/mail.ts";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 const ROLE_ICONS: Record<string, React.ReactNode> = {
   inbox: <Inbox size={16} />,
@@ -40,6 +41,7 @@ export const FolderTree = React.memo(function FolderTree() {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const toggleExpanded = useCallback((id: string) => {
     setExpandedFolders((prev) => {
@@ -62,14 +64,14 @@ export const FolderTree = React.memo(function FolderTree() {
   }, [newFolderName, createMailbox]);
 
   const handleMarkAllRead = useCallback(async (mailboxId: string) => {
-    const toastId = toast.loading("Marking all as read...");
+    const toastId = toast.loading(t("toast.markingAllRead"));
     try {
       const ids = await queryEmailIds({
         filter: { inMailbox: mailboxId, notKeyword: "$seen" },
       });
       if (ids.length === 0) {
         toast.dismiss(toastId);
-        toast("All messages are already read");
+        toast(t("toast.allAlreadyRead"));
         return;
       }
       const updates: Record<string, Record<string, unknown>> = {};
@@ -79,31 +81,31 @@ export const FolderTree = React.memo(function FolderTree() {
       await updateEmails(updates);
       queryClient.invalidateQueries({ queryKey: ["emails"] });
       queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
-      toast.success(`Marked ${ids.length} message${ids.length !== 1 ? "s" : ""} as read`, { id: toastId });
+      toast.success(t("toast.markedAsRead", { count: ids.length }), { id: toastId });
     } catch {
-      toast.error("Failed to mark all as read", { id: toastId });
+      toast.error(t("toast.failedMarkAllRead"), { id: toastId });
     }
-  }, [queryClient]);
+  }, [queryClient, t]);
 
   const handleEmptyFolder = useCallback(async (mailboxId: string, folderName: string) => {
-    const toastId = toast.loading(`Emptying ${folderName}...`);
+    const toastId = toast.loading(t("toast.emptying", { name: folderName }));
     try {
       const ids = await queryEmailIds({
         filter: { inMailbox: mailboxId },
       });
       if (ids.length === 0) {
         toast.dismiss(toastId);
-        toast(`${folderName} is already empty`);
+        toast(t("toast.alreadyEmpty", { name: folderName }));
         return;
       }
       await destroyEmails(ids);
       queryClient.invalidateQueries({ queryKey: ["emails"] });
       queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
-      toast.success(`Emptied ${folderName} (${ids.length} message${ids.length !== 1 ? "s" : ""})`, { id: toastId });
+      toast.success(t("toast.emptied", { name: folderName, count: ids.length }), { id: toastId });
     } catch {
-      toast.error(`Failed to empty ${folderName}`, { id: toastId });
+      toast.error(t("toast.failedToEmpty", { name: folderName }), { id: toastId });
     }
-  }, [queryClient]);
+  }, [queryClient, t]);
 
   const handleRenameMailbox = useCallback((mailboxId: string, newName: string) => {
     if (newName.trim()) {
@@ -135,7 +137,7 @@ export const FolderTree = React.memo(function FolderTree() {
   }
 
   return (
-    <div className="py-1.5" role="tree" aria-label="Mail folders">
+    <div className="py-1.5" role="tree" aria-label={t("folder.mailFolders")}>
       {/* Standard folders */}
       {standardFolders.map((mailbox) => (
         <FolderItem
@@ -201,7 +203,7 @@ export const FolderTree = React.memo(function FolderTree() {
               borderRadius: "var(--radius-sm)",
               boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.08)",
             }}
-            placeholder="Folder name..."
+            placeholder={t("folder.folderNamePlaceholder")}
           />
         </div>
       ) : (
@@ -217,7 +219,7 @@ export const FolderTree = React.memo(function FolderTree() {
           }}
         >
           <FolderPlus size={16} />
-          New folder
+          {t("folder.newFolder")}
         </button>
       )}
     </div>

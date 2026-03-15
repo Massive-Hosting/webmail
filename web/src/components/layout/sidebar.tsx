@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export const Sidebar = React.memo(function Sidebar() {
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
@@ -18,6 +19,7 @@ export const Sidebar = React.memo(function Sidebar() {
   const sidebarWidth = useUIStore((s) => s.sidebarWidth);
   const activeView = useUIStore((s) => s.activeView);
   const setActiveView = useUIStore((s) => s.setActiveView);
+  const { t } = useTranslation();
 
   const width = sidebarCollapsed ? 0 : sidebarWidth;
 
@@ -61,7 +63,7 @@ export const Sidebar = React.memo(function Sidebar() {
             color: "var(--color-text-tertiary)",
             borderTop: "1px solid var(--color-border-primary)",
           }}
-          aria-label="Collapse sidebar"
+          aria-label={t("nav.collapseSidebar")}
           onMouseOver={(e) => {
             e.currentTarget.style.color = "var(--color-text-secondary)";
           }}

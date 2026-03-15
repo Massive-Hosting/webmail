@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import { useTranslation } from "react-i18next";
 import type { EmailListItem } from "@/types/mail.ts";
 import type { Mailbox } from "@/types/mail.ts";
 
@@ -64,6 +65,7 @@ export const ActionBar = React.memo(function ActionBar({
   onMarkRead,
   onStar,
 }: ActionBarProps) {
+  const { t } = useTranslation();
   const selectionCount = selectedEmailIds.size;
   const hasSelection = selectionCount > 0;
   const isSingleSelected = selectionCount === 1;
@@ -131,11 +133,11 @@ export const ActionBar = React.memo(function ActionBar({
           <Tooltip.Trigger asChild>
             <button className="action-bar__btn action-bar__btn--primary" onClick={onNewMail}>
               <Pencil size={16} />
-              <span className="action-bar__btn-label">New mail</span>
+              <span className="action-bar__btn-label">{t("action.newMail")}</span>
             </button>
           </Tooltip.Trigger>
           <Tooltip.Content className="tooltip-content" sideOffset={5}>
-            New mail (C)
+            {t("action.newMailShortcut")}
           </Tooltip.Content>
         </Tooltip.Root>
 
@@ -144,15 +146,15 @@ export const ActionBar = React.memo(function ActionBar({
         {/* Core actions — always visible */}
         <ActionBarButton
           icon={<Trash2 size={16} />}
-          label="Delete"
-          tooltip={currentMailboxRole === "trash" ? "Delete permanently" : "Delete"}
+          label={t("action.delete")}
+          tooltip={currentMailboxRole === "trash" ? t("action.deletePermanently") : t("action.delete")}
           onClick={handleDelete}
           disabled={!hasSelection}
         />
         <ActionBarButton
           icon={<Archive size={16} />}
-          label="Archive"
-          tooltip="Archive"
+          label={t("action.archive")}
+          tooltip={t("action.archive")}
           onClick={handleArchive}
           disabled={!hasSelection}
         />
@@ -167,12 +169,12 @@ export const ActionBar = React.memo(function ActionBar({
                   disabled={!hasSelection}
                 >
                   <FolderInput size={16} />
-                  <span className="action-bar__btn-label">Move to</span>
+                  <span className="action-bar__btn-label">{t("action.moveTo")}</span>
                 </button>
               </DropdownMenu.Trigger>
             </Tooltip.Trigger>
             <Tooltip.Content className="tooltip-content" sideOffset={5}>
-              Move to folder
+              {t("action.moveToFolder")}
             </Tooltip.Content>
           </Tooltip.Root>
           <DropdownMenu.Portal>
@@ -192,7 +194,7 @@ export const ActionBar = React.memo(function ActionBar({
               ))}
               {moveTargets.length === 0 && (
                 <DropdownMenu.Item className="action-bar__dropdown-item" disabled>
-                  No folders available
+                  {t("action.noFoldersAvailable")}
                 </DropdownMenu.Item>
               )}
             </DropdownMenu.Content>
@@ -201,8 +203,8 @@ export const ActionBar = React.memo(function ActionBar({
 
         <ActionBarButton
           icon={<AlertTriangle size={16} />}
-          label="Junk"
-          tooltip="Mark as junk"
+          label={t("action.junk")}
+          tooltip={t("action.markAsJunk")}
           onClick={handleJunk}
           disabled={!hasSelection}
         />
@@ -213,20 +215,20 @@ export const ActionBar = React.memo(function ActionBar({
             <div className="action-bar__separator" />
             <ActionBarButton
               icon={<Reply size={16} />}
-              label="Reply"
-              tooltip="Reply (R)"
+              label={t("action.reply")}
+              tooltip={t("action.replyShortcut")}
               onClick={handleReply}
             />
             <ActionBarButton
               icon={<ReplyAll size={16} />}
-              label="Reply all"
-              tooltip="Reply All (A)"
+              label={t("action.replyAll")}
+              tooltip={t("action.replyAllShortcut")}
               onClick={handleReplyAll}
             />
             <ActionBarButton
               icon={<Forward size={16} />}
-              label="Forward"
-              tooltip="Forward (F)"
+              label={t("action.forward")}
+              tooltip={t("action.forwardShortcut")}
               onClick={handleForward}
             />
           </>
@@ -237,15 +239,15 @@ export const ActionBar = React.memo(function ActionBar({
         {/* Read/Unread + Star */}
         <ActionBarButton
           icon={allRead ? <Mail size={16} /> : <MailOpen size={16} />}
-          label={allRead ? "Unread" : "Read"}
-          tooltip={allRead ? "Mark as unread" : "Mark as read"}
+          label={allRead ? t("action.unread") : t("action.read")}
+          tooltip={allRead ? t("action.markAsUnread") : t("action.markAsRead")}
           onClick={handleToggleRead}
           disabled={!hasSelection}
         />
         <ActionBarButton
           icon={<Star size={16} className={isStarred ? "action-bar__icon--starred" : ""} />}
-          label={isStarred ? "Unstar" : "Star"}
-          tooltip={isStarred ? "Remove star" : "Add star"}
+          label={isStarred ? t("action.unstar") : t("action.star")}
+          tooltip={isStarred ? t("action.removeStar") : t("action.addStar")}
           onClick={handleToggleStar}
           disabled={!isSingleSelected}
         />
@@ -255,7 +257,7 @@ export const ActionBar = React.memo(function ActionBar({
           <>
             <div className="action-bar__separator" />
             <span className="action-bar__selection-count">
-              {selectionCount} selected
+              {t("action.selected", { count: selectionCount })}
             </span>
           </>
         )}

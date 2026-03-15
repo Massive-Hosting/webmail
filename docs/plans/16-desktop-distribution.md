@@ -4,17 +4,6 @@
 
 Ship seamless, trustworthy desktop app distribution for Windows and macOS with automatic updates, code signing, and a frictionless install experience. Users should never have to manually download an update or dismiss a security warning.
 
-## Public Repo Advantage
-
-The webmail repo is **public on GitHub**. This is the key enabler for the entire distribution strategy:
-
-- **Unlimited free CI minutes** on macOS and Windows GitHub Actions runners
-- **GitHub Releases as free CDN** — unlimited downloads, global edge network, no bandwidth costs
-- **No local Mac or Windows machines needed** — all building, signing, notarizing, and packaging happens in CI
-- **Transparent build process** — anyone can inspect the workflow that produces the binaries
-
-This means the entire pipeline — from `git tag` to signed, notarized, downloadable binaries — is fully automated and costs nothing beyond the signing certificates.
-
 ## Distribution Channels
 
 ### macOS

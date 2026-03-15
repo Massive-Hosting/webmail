@@ -13,6 +13,7 @@ import { useTheme } from "@/hooks/use-theme.ts";
 import { nextTheme } from "@/lib/theme.ts";
 import { logout } from "@/api/client.ts";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import { useTranslation } from "react-i18next";
 
 interface ToolbarProps {
   onSettings?: () => void;
@@ -72,6 +73,7 @@ export const Toolbar = React.memo(function Toolbar({
   onAdvancedSearch,
 }: ToolbarProps) {
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
 
   const handleThemeToggle = useCallback(() => {
     setTheme(nextTheme(theme));
@@ -107,16 +109,16 @@ export const Toolbar = React.memo(function Toolbar({
           <ToolbarIconButton
             onClick={handleThemeToggle}
             icon={<ThemeIcon size={17} />}
-            label={`Theme: ${theme}. Click to change.`}
-            tooltipText={`Theme: ${theme}`}
+            label={t("toolbar.themeClick", { theme })}
+            tooltipText={t("toolbar.theme", { theme })}
           />
 
           {/* Settings */}
           <ToolbarIconButton
             onClick={onSettings}
             icon={<Settings size={17} />}
-            label="Settings"
-            tooltipText="Settings"
+            label={t("toolbar.settings")}
+            tooltipText={t("toolbar.settings")}
           />
 
           {/* Separator */}
@@ -129,8 +131,8 @@ export const Toolbar = React.memo(function Toolbar({
           <ToolbarIconButton
             onClick={handleLogout}
             icon={<LogOut size={16} />}
-            label="Log out"
-            tooltipText="Log out"
+            label={t("toolbar.logOut")}
+            tooltipText={t("toolbar.logOut")}
           />
         </div>
       </div>
