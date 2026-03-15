@@ -23,7 +23,7 @@ export const GeneralSettings = React.memo(function GeneralSettings() {
       {/* Language */}
       <SettingSection title={t("settings.language")} description={t("settings.languageDesc")}>
         <StyledSelect
-          value={i18n.language}
+          value={i18n.language?.split("-")[0] ?? "en"}
           onValueChange={(v) => {
             i18n.changeLanguage(v);
             localStorage.setItem("language", v);

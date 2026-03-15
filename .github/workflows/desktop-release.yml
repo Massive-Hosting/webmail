@@ -30,6 +30,9 @@ jobs:
 
       - name: Build Tauri app
         run: cd desktop && npm run tauri build -- --target aarch64-apple-darwin
+        env:
+          # Ad-hoc sign (no certificate needed). Replace with real identity when certs are purchased.
+          APPLE_SIGNING_IDENTITY: '-'
 
       - uses: actions/upload-artifact@v4
         with:
