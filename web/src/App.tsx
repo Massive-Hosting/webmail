@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getSession } from "@/api/client.ts";
 import { AppShell } from "@/components/layout/app-shell.tsx";
+import { ConfirmProvider } from "@/contexts/confirm-context.tsx";
 import { LoginPage } from "@/components/login-page.tsx";
 import { useSettingsStore } from "@/stores/settings-store.ts";
 import { useAuthStore } from "@/stores/auth-store.ts";
@@ -60,7 +61,9 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AppShell />
+      <ConfirmProvider>
+        <AppShell />
+      </ConfirmProvider>
     </QueryClientProvider>
   );
 }

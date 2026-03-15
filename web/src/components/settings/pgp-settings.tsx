@@ -23,6 +23,7 @@ import { fetchIdentities } from "@/api/mail.ts";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { StyledSelect } from "@/components/ui/styled-select.tsx";
+import { useConfirm } from "@/contexts/confirm-context.tsx";
 
 export const PGPSettingsPanel = React.memo(function PGPSettingsPanel() {
   const { t } = useTranslation();
@@ -315,6 +316,7 @@ function AdvancedSettings({
   loading: boolean;
 }) {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const [copied, setCopied] = useState(false);
   const privateKeyArmored = usePGPStore((s) => s.privateKeyArmored);
 
@@ -337,9 +339,14 @@ function AdvancedSettings({
     URL.revokeObjectURL(url);
   }, [publicKeyArmored, email]);
 
-  const handleExportPrivateKey = useCallback(() => {
+  const handleExportPrivateKey = useCallback(async () => {
     if (!privateKeyArmored) return;
-    const proceed = window.confirm(t("pgp.exportWarning"));
+    const proceed = await confirm({
+      title: t("pgp.exportPrivateKeyTitle"),
+      description: t("pgp.exportWarning"),
+      confirmLabel: t("pgp.exportPrivateKeyConfirm"),
+      variant: "danger",
+    });
     if (!proceed) return;
 
     const blob = new Blob([privateKeyArmored], { type: "text/plain" });
@@ -349,15 +356,20 @@ function AdvancedSettings({
     a.download = `${email ?? "private"}-pgp-private.asc`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [privateKeyArmored, email, t]);
+  }, [privateKeyArmored, email, t, confirm]);
 
   const handleDelete = useCallback(async () => {
     if (!email) return;
-    const proceed = window.confirm(t("pgp.deleteConfirm"));
+    const proceed = await confirm({
+      title: t("pgp.deleteKeyTitle"),
+      description: t("pgp.deleteConfirm"),
+      confirmLabel: t("pgp.deleteKey"),
+      variant: "danger",
+    });
     if (!proceed) return;
     await onDelete(email);
     toast.success(t("pgp.keyDeleted"));
-  }, [email, onDelete, t]);
+  }, [email, onDelete, t, confirm]);
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString(undefined, {

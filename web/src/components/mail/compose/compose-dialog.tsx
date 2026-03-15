@@ -38,6 +38,7 @@ import { AIPanel } from "./ai-panel.tsx";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/auth-store.ts";
 import { StyledSelect } from "@/components/ui/styled-select.tsx";
+import { useConfirm } from "@/contexts/confirm-context.tsx";
 
 // Re-export useCompose from its own module (keeps it out of the lazy-loaded chunk)
 export { useCompose } from "./use-compose.ts";
@@ -53,6 +54,7 @@ export const ComposePanel = React.memo(function ComposePanel({
   draftId,
 }: ComposePanelProps) {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const draft = useComposeStore((s) => s.drafts.get(draftId));
   const updateDraft = useComposeStore((s) => s.updateDraft);
   const closeDraft = useComposeStore((s) => s.closeDraft);
@@ -320,7 +322,11 @@ export const ComposePanel = React.memo(function ComposePanel({
 
     // Warn if empty subject
     if (!currentDraft.subject.trim()) {
-      const proceed = window.confirm(t("compose.sendWithoutSubject"));
+      const proceed = await confirm({
+        title: t("compose.sendWithoutSubject"),
+        description: t("compose.sendWithoutSubjectDesc"),
+        confirmLabel: t("compose.sendAnyway"),
+      });
       if (!proceed) return;
     }
 
@@ -384,7 +390,7 @@ export const ComposePanel = React.memo(function ComposePanel({
 
     // No delay: send immediately
     await executeSend();
-  }, [draftId, executeSend, undoSendDelay, pgpEncrypt, pgpIsUnlocked, pgpPrivateKey, pgpPassphrase]);
+  }, [draftId, executeSend, undoSendDelay, pgpEncrypt, pgpIsUnlocked, pgpPrivateKey, pgpPassphrase, confirm, t]);
 
   // Clean up undo send timer on unmount
   useEffect(() => {
@@ -395,10 +401,15 @@ export const ComposePanel = React.memo(function ComposePanel({
     };
   }, []);
 
-  const handleDiscard = useCallback(() => {
+  const handleDiscard = useCallback(async () => {
     const currentDraft = useComposeStore.getState().drafts.get(draftId);
     if (currentDraft?.isDirty) {
-      const proceed = window.confirm(t("compose.discardChanges"));
+      const proceed = await confirm({
+        title: t("compose.discardChanges"),
+        description: t("compose.discardChangesDesc"),
+        confirmLabel: t("compose.discard"),
+        variant: "danger",
+      });
       if (!proceed) return;
     }
 
@@ -412,7 +423,7 @@ export const ComposePanel = React.memo(function ComposePanel({
     }
 
     closeDraft(draftId);
-  }, [draftId, closeDraft, queryClient]);
+  }, [draftId, closeDraft, queryClient, confirm, t]);
 
   const handleIdentityChange = useCallback(
     (identityId: string) => {
