@@ -59,6 +59,18 @@ export const SmartReplyBar = React.memo(function SmartReplyBar({
 
   const handleSmartReply = useCallback(
     async (tone: AITone) => {
+      // Open copilot with a pre-filled reply prompt
+      const toneLabel = tone === "professional" ? t("ai.replyProfessionally") : tone === "friendly" ? t("ai.replyFriendly") : t("ai.replyBriefly");
+      useUIStore.getState().setCopilotOpen(true);
+      // Small delay to let copilot mount, then trigger the message
+      setTimeout(() => {
+        const event = new CustomEvent("copilot-send", { detail: { message: `${toneLabel}` } });
+        window.dispatchEvent(event);
+      }, 400);
+      setLoadingTone(null);
+      return;
+
+      // Legacy direct reply code (kept for reference)
       setLoadingTone(tone);
 
       const controller = new AbortController();
@@ -74,7 +86,6 @@ export const SmartReplyBar = React.memo(function SmartReplyBar({
         }
 
         if (result) {
-          // Convert plain text to simple HTML paragraphs
           const htmlBody = result
             .split("\n\n")
             .map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`)

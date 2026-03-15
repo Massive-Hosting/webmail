@@ -91,6 +91,18 @@ export const AICopilot = React.memo(function AICopilot({
     }
   }, [open]);
 
+  // Listen for pre-filled prompts from smart reply buttons
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.message) {
+        handleSend(detail.message);
+      }
+    };
+    window.addEventListener("copilot-send", handler);
+    return () => window.removeEventListener("copilot-send", handler);
+  }, [handleSend]);
+
   const getEmailBodyText = useCallback((email: Email): string => {
     if (email.bodyValues) {
       if (email.textBody) {
@@ -425,10 +437,8 @@ export const AICopilot = React.memo(function AICopilot({
               }
 
               const isUser = item.role === "user";
-              const showUseAsReply =
-                !isUser &&
-                item.content.length > 100 &&
-                looksLikeEmailDraft(item.content);
+              // Show "Use as reply" on all AI messages that have meaningful content
+              const showUseAsReply = !isUser && item.content.length > 30;
 
               return (
                 <div
@@ -441,11 +451,12 @@ export const AICopilot = React.memo(function AICopilot({
                       fontSize: 14,
                       lineHeight: 1.5,
                       backgroundColor: isUser
-                        ? "var(--color-bg-accent, var(--color-text-accent))"
-                        : "var(--color-bg-secondary)",
+                        ? "var(--color-bg-accent)"
+                        : "var(--color-bg-tertiary)",
                       color: isUser
                         ? "#fff"
                         : "var(--color-text-primary)",
+                      border: isUser ? "none" : "1px solid var(--color-border-primary)",
                       wordBreak: "break-word",
                     }}
                   >
@@ -493,9 +504,12 @@ export const AICopilot = React.memo(function AICopilot({
               <input
                 ref={inputRef}
                 type="text"
-                className="flex-1 bg-transparent text-sm outline-none"
+                className="flex-1 bg-transparent text-sm"
                 style={{
                   color: "var(--color-text-primary)",
+                  outline: "none",
+                  border: "none",
+                  boxShadow: "none",
                 }}
                 placeholder={t("ai.copilotPlaceholder")}
                 value={input}

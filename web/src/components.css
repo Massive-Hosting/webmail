@@ -2152,7 +2152,7 @@
 
 /* AI Response Card */
 .ai-response-card {
-  margin: 0 16px;
+  margin: 0 16px 8px 16px;
   border: 1px solid var(--color-border-secondary);
   border-radius: 8px;
   background-color: var(--color-bg-secondary);
