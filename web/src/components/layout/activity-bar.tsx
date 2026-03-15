@@ -22,6 +22,9 @@ export const ActivityBar = React.memo(function ActivityBar({
   return (
     <Tooltip.Provider delayDuration={400}>
       <div className="activity-bar">
+        <div className="activity-bar__logo">
+          <img src="/logo.png" alt="Massive Mail" className="activity-bar__logo-img" />
+        </div>
         <div className="activity-bar__top">
           <ActivityBarIcon
             icon={<Mail size={20} />}
