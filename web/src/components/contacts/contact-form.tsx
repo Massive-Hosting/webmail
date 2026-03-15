@@ -7,8 +7,7 @@ import { getContactDisplayName, getContactInitials } from "@/hooks/use-contacts.
 import { getAvatarColor } from "@/lib/format.ts";
 import { toast } from "sonner";
 import { StyledSelect } from "@/components/ui/styled-select.tsx";
-
-const LABELS = ["Work", "Home", "Other"];
+import { useTranslation } from "react-i18next";
 
 interface ContactFormProps {
   contact?: Contact | null;

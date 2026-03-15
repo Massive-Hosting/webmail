@@ -117,7 +117,7 @@ export const ContactDetail = React.memo(function ContactDetail({
           style={{ color: "var(--color-text-secondary)" }}
         >
           <Edit2 size={14} />
-          Edit
+          {t("contacts.edit")}
         </button>
         {primaryEmail && (
           <button
@@ -126,7 +126,7 @@ export const ContactDetail = React.memo(function ContactDetail({
             style={{ color: "var(--color-text-accent)" }}
           >
             <Mail size={14} />
-            Email
+            {t("contacts.email")}
           </button>
         )}
         <button
@@ -135,7 +135,7 @@ export const ContactDetail = React.memo(function ContactDetail({
           style={{ color: "var(--color-text-error, #dc2626)" }}
         >
           <Trash2 size={14} />
-          Delete
+          {t("contacts.delete")}
         </button>
       </div>
 
@@ -152,7 +152,7 @@ export const ContactDetail = React.memo(function ContactDetail({
             className="mb-2"
             style={{ color: "var(--color-text-error, #dc2626)" }}
           >
-            Delete this contact? This cannot be undone.
+            {t("contacts.deleteConfirm")}
           </p>
           <div className="flex gap-2">
             <button
@@ -160,7 +160,7 @@ export const ContactDetail = React.memo(function ContactDetail({
               className="px-3 py-1 text-xs font-medium rounded text-white"
               style={{ backgroundColor: "var(--color-text-error, #dc2626)" }}
             >
-              Delete
+              {t("contacts.delete")}
             </button>
             <button
               onClick={() => setShowDeleteConfirm(false)}
@@ -170,7 +170,7 @@ export const ContactDetail = React.memo(function ContactDetail({
                 backgroundColor: "var(--color-bg-tertiary)",
               }}
             >
-              Cancel
+              {t("contacts.cancel")}
             </button>
           </div>
         </div>
@@ -180,7 +180,7 @@ export const ContactDetail = React.memo(function ContactDetail({
       <div className="flex flex-col gap-1 px-6 py-4">
         {/* Emails */}
         {contact.emails.length > 0 && (
-          <DetailSection icon={<Mail size={16} />} label="Email">
+          <DetailSection icon={<Mail size={16} />} label={t("contacts.email")}>
             {contact.emails.map((email, i) => (
               <div key={i} className="flex items-center gap-2 group">
                 <button
@@ -208,14 +208,14 @@ export const ContactDetail = React.memo(function ContactDetail({
 
         {/* Phones */}
         {contact.phones.length > 0 && (
-          <DetailSection icon={<Phone size={16} />} label="Phone">
+          <DetailSection icon={<Phone size={16} />} label={t("contacts.phone")}>
             {contact.phones.map((phone, i) => (
               <div key={i} className="flex items-center gap-2 group">
                 <button
                   onClick={() => handleCopyPhone(phone.number)}
                   className="text-sm hover:underline flex items-center gap-1"
                   style={{ color: "var(--color-text-primary)" }}
-                  title="Click to copy"
+                  title={t("contacts.clickToCopy")}
                 >
                   {phone.number}
                   <Copy
@@ -242,7 +242,7 @@ export const ContactDetail = React.memo(function ContactDetail({
 
         {/* Addresses */}
         {contact.addresses.length > 0 && (
-          <DetailSection icon={<MapPin size={16} />} label="Address">
+          <DetailSection icon={<MapPin size={16} />} label={t("contacts.address")}>
             {contact.addresses.map((addr, i) => (
               <div key={i} className="flex flex-col">
                 <span
@@ -269,7 +269,7 @@ export const ContactDetail = React.memo(function ContactDetail({
         {/* Organization */}
         {contact.organization &&
           (contact.organization.name || contact.organization.department) && (
-            <DetailSection icon={<Building2 size={16} />} label="Organization">
+            <DetailSection icon={<Building2 size={16} />} label={t("contacts.organization")}>
               <div className="flex flex-col">
                 {contact.organization.name && (
                   <span
@@ -293,7 +293,7 @@ export const ContactDetail = React.memo(function ContactDetail({
 
         {/* Birthday */}
         {contact.birthday && (
-          <DetailSection icon={<Cake size={16} />} label="Birthday">
+          <DetailSection icon={<Cake size={16} />} label={t("contacts.birthday")}>
             <span
               className="text-sm"
               style={{ color: "var(--color-text-primary)" }}
@@ -305,7 +305,7 @@ export const ContactDetail = React.memo(function ContactDetail({
 
         {/* URLs */}
         {contact.urls.length > 0 && (
-          <DetailSection icon={<Globe size={16} />} label="URLs">
+          <DetailSection icon={<Globe size={16} />} label={t("contacts.urls")}>
             {contact.urls.map((url, i) => (
               <div key={i} className="flex items-center gap-2">
                 <a
@@ -336,7 +336,7 @@ export const ContactDetail = React.memo(function ContactDetail({
 
         {/* Notes */}
         {contact.notes && (
-          <DetailSection icon={<StickyNote size={16} />} label="Notes">
+          <DetailSection icon={<StickyNote size={16} />} label={t("contacts.notes")}>
             <p
               className="text-sm whitespace-pre-wrap"
               style={{ color: "var(--color-text-primary)" }}

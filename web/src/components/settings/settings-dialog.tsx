@@ -81,7 +81,7 @@ export const SettingsDialog = React.memo(function SettingsDialog({
               className="flex flex-col gap-0.5 py-2 px-2 shrink-0 overflow-y-auto"
               style={{
                 borderRight: "1px solid var(--color-border-secondary)",
-                width: "180px",
+                width: "210px",
               }}
               aria-label={t("settingsDialog.sections")}
             >
