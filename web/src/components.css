@@ -215,6 +215,150 @@
 }
 
 /* ================================================================
+   ACTION BAR
+   ================================================================ */
+
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px;
+  height: 38px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--color-border-primary);
+  background-color: var(--color-bg-primary);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.action-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.action-bar__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  transition: background-color 120ms ease, color 120ms ease;
+  flex-shrink: 0;
+}
+
+.action-bar__btn:hover:not(:disabled) {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.action-bar__btn:active:not(:disabled) {
+  background-color: var(--color-bg-quaternary, var(--color-bg-tertiary));
+}
+
+.action-bar__btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.action-bar__btn--primary {
+  color: var(--color-text-accent);
+  font-weight: 600;
+}
+
+.action-bar__btn--primary:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-bg-accent) 12%, transparent);
+  color: var(--color-text-accent);
+}
+
+.action-bar__separator {
+  width: 1px;
+  height: 18px;
+  background-color: var(--color-border-primary);
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+
+.action-bar__selection-count {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+  padding: 2px 8px;
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-full);
+}
+
+.action-bar__icon--starred {
+  color: var(--color-star, #f59e0b);
+  fill: var(--color-star, #f59e0b);
+}
+
+/* "Move to" dropdown */
+.action-bar__dropdown {
+  min-width: 180px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px;
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  animation: action-bar-dropdown-in 120ms ease-out;
+}
+
+@keyframes action-bar-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.action-bar__dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  outline: none;
+  transition: background-color 100ms ease;
+}
+
+.action-bar__dropdown-item:hover,
+.action-bar__dropdown-item[data-highlighted] {
+  background-color: var(--color-bg-tertiary);
+}
+
+.action-bar__dropdown-item[data-disabled] {
+  color: var(--color-text-tertiary);
+  cursor: default;
+}
+
+/* Responsive: hide labels on narrow screens */
+@media (max-width: 640px) {
+  .action-bar__btn-label {
+    display: none;
+  }
+
+  .action-bar__btn {
+    padding: 4px 6px;
+  }
+}
+
+/* ================================================================
    MAIL LIST PANE
    ================================================================ */
 
@@ -279,49 +423,6 @@
 .mail-list-pane__close-btn:hover {
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
-}
-
-.mail-list-pane__batch-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.mail-list-pane__batch-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  background: var(--color-bg-tertiary);
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  transition: all 150ms ease-in-out;
-}
-
-.mail-list-pane__batch-btn:hover {
-  background: var(--color-bg-accent);
-  color: var(--color-text-inverse);
-}
-
-.mail-list-pane__batch-btn-label {
-  display: none;
-}
-
-@media (min-width: 640px) {
-  .mail-list-pane__batch-btn-label {
-    display: inline;
-  }
-}
-
-.mail-list-pane__selection-count {
-  font-size: 11px;
-  color: var(--color-text-tertiary);
-  margin-left: 4px;
-  white-space: nowrap;
 }
 
 .mail-list-pane__content {

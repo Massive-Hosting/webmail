@@ -1,7 +1,8 @@
 /** Message list pane container - premium toolbar and contextual empty states */
 
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { MessageList } from "@/components/mail/message-list.tsx";
+import { ActionBar } from "@/components/mail/action-bar.tsx";
 import { useUIStore } from "@/stores/ui-store.ts";
 import { useSearchStore } from "@/stores/search-store.ts";
 import { useMessages } from "@/hooks/use-messages.ts";
@@ -13,19 +14,14 @@ import { useCompose } from "@/components/mail/compose/use-compose.ts";
 import { fetchEmail, fetchIdentities } from "@/api/mail.ts";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Archive,
-  Trash2,
-  MailOpen,
-  MailX,
   Search,
   X,
-  Inbox,
-  FileEdit,
   CheckCircle,
-  FolderOpen,
+  FileEdit,
+  Trash2,
   AlertTriangle,
+  FolderOpen,
 } from "lucide-react";
-import * as Tooltip from "@radix-ui/react-tooltip";
 
 interface MailListPaneProps {
   searchActive?: boolean;
@@ -50,7 +46,8 @@ export const MailListPane = React.memo(function MailListPane({
 }: MailListPaneProps) {
   const selectedMailboxId = useUIStore((s) => s.selectedMailboxId);
   const selectedEmailIds = useUIStore((s) => s.selectedEmailIds);
-  const { mailboxes, findByRole } = useMailboxes();
+  const selectedEmailId = useUIStore((s) => s.selectedEmailId);
+  const { mailboxes, sortedMailboxes, findByRole } = useMailboxes();
   const clearSearch = useSearchStore((s) => s.clearSearch);
 
   const currentMailbox = mailboxes.find((m) => m.id === selectedMailboxId);
@@ -70,9 +67,9 @@ export const MailListPane = React.memo(function MailListPane({
 
   useUnreadTitle(currentMailbox?.unreadEmails ?? 0, mailboxName);
 
-  const hasSelection = selectedEmailIds.size > 1;
   const archiveMailbox = findByRole("archive");
   const trashMailbox = findByRole("trash");
+  const junkMailbox = findByRole("junk");
 
   const { open: openCompose } = useCompose();
   const { data: identities } = useQuery({
@@ -81,6 +78,21 @@ export const MailListPane = React.memo(function MailListPane({
     staleTime: 5 * 60 * 1000,
   });
   const defaultIdentity = identities?.[0] ?? null;
+
+  // Determine which emails are in the current list (for resolving selected items)
+  const displayEmails = searchActive ? searchEmails : emails;
+
+  const selectedEmails = useMemo(() => {
+    if (selectedEmailIds.size === 0) return [];
+    return displayEmails.filter((e) => selectedEmailIds.has(e.id));
+  }, [displayEmails, selectedEmailIds]);
+
+  const hasReadingPaneMessage = !!selectedEmailId && selectedEmailIds.size === 1;
+
+  // Action callbacks
+  const handleNewMail = useCallback(() => {
+    openCompose({ mode: "new", identity: defaultIdentity });
+  }, [openCompose, defaultIdentity]);
 
   const handleReply = useCallback(async (emailItem: EmailListItem) => {
     const fullEmail = await fetchEmail(emailItem.id);
@@ -109,8 +121,19 @@ export const MailListPane = React.memo(function MailListPane({
     }
   }, [trashMailbox, selectedMailboxId, moveEmails]);
 
+  const handleJunk = useCallback((emailIds: string[]) => {
+    if (junkMailbox && selectedMailboxId) {
+      moveEmails(emailIds, selectedMailboxId, junkMailbox.id);
+    }
+  }, [junkMailbox, selectedMailboxId, moveEmails]);
+
+  const handleMoveToFolder = useCallback((emailIds: string[], targetMailboxId: string) => {
+    if (selectedMailboxId) {
+      moveEmails(emailIds, selectedMailboxId, targetMailboxId);
+    }
+  }, [selectedMailboxId, moveEmails]);
+
   // Decide which data to show
-  const displayEmails = searchActive ? searchEmails : emails;
   const displayTotal = searchActive ? searchTotal : total;
   const displayLoading = searchActive ? searchIsLoading : isLoading;
   const displayFetchingNext = searchActive ? searchIsFetchingNextPage : isFetchingNextPage;
@@ -120,154 +143,94 @@ export const MailListPane = React.memo(function MailListPane({
     : fetchNextPage;
 
   return (
-    <Tooltip.Provider delayDuration={300}>
-      <div className="mail-list-pane">
-        {/* List toolbar */}
-        <div className={`mail-list-pane__toolbar ${searchActive ? "mail-list-pane__toolbar--search" : ""}`}>
-          {searchActive ? (
-            <>
-              <Search size={14} className="mail-list-pane__search-icon" />
-              <span className="mail-list-pane__toolbar-title">
-                {searchQuery}
+    <div className="mail-list-pane">
+      {/* Action bar */}
+      <ActionBar
+        selectedEmailIds={selectedEmailIds}
+        selectedEmails={selectedEmails}
+        hasReadingPaneMessage={hasReadingPaneMessage}
+        currentMailboxId={selectedMailboxId}
+        currentMailboxRole={currentMailbox?.role ?? null}
+        mailboxes={sortedMailboxes}
+        onNewMail={handleNewMail}
+        onDelete={handleDelete}
+        onArchive={handleArchive}
+        onMoveToFolder={handleMoveToFolder}
+        onJunk={handleJunk}
+        onReply={handleReply}
+        onReplyAll={handleReplyAll}
+        onForward={handleForward}
+        onMarkRead={markRead}
+        onStar={starEmail}
+      />
+
+      {/* List toolbar */}
+      <div className={`mail-list-pane__toolbar ${searchActive ? "mail-list-pane__toolbar--search" : ""}`}>
+        {searchActive ? (
+          <>
+            <Search size={14} className="mail-list-pane__search-icon" />
+            <span className="mail-list-pane__toolbar-title">
+              {searchQuery}
+            </span>
+            {displayTotal > 0 && (
+              <span className="mail-list-pane__toolbar-count">
+                {displayTotal} result{displayTotal !== 1 ? "s" : ""}
               </span>
-              {displayTotal > 0 && (
-                <span className="mail-list-pane__toolbar-count">
-                  {displayTotal} result{displayTotal !== 1 ? "s" : ""}
-                </span>
-              )}
-              <div className="flex-1" />
-              <button
-                onClick={clearSearch}
-                className="mail-list-pane__close-btn"
-                title="Clear search"
-              >
-                <X size={16} />
-              </button>
-            </>
-          ) : (
-            <>
-              <span className="mail-list-pane__toolbar-title">
-                {mailboxName}
+            )}
+            <div className="flex-1" />
+            <button
+              onClick={clearSearch}
+              className="mail-list-pane__close-btn"
+              title="Clear search"
+            >
+              <X size={16} />
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="mail-list-pane__toolbar-title">
+              {mailboxName}
+            </span>
+            {total > 0 && (
+              <span className="mail-list-pane__toolbar-count">
+                {total}
               </span>
-              {total > 0 && (
-                <span className="mail-list-pane__toolbar-count">
-                  {total}
-                </span>
-              )}
-
-              <div className="flex-1" />
-
-              {/* Batch action pills (visible when multi-selected) */}
-              {hasSelection && (
-                <div className="mail-list-pane__batch-actions">
-                  <BatchActionButton
-                    icon={<Archive size={14} />}
-                    label="Archive"
-                    onClick={() => {
-                      if (archiveMailbox && selectedMailboxId) {
-                        moveEmails(
-                          Array.from(selectedEmailIds),
-                          selectedMailboxId,
-                          archiveMailbox.id,
-                        );
-                      }
-                    }}
-                  />
-                  <BatchActionButton
-                    icon={<Trash2 size={14} />}
-                    label="Delete"
-                    onClick={() => {
-                      if (trashMailbox && selectedMailboxId) {
-                        moveEmails(
-                          Array.from(selectedEmailIds),
-                          selectedMailboxId,
-                          trashMailbox.id,
-                        );
-                      }
-                    }}
-                  />
-                  <BatchActionButton
-                    icon={<MailOpen size={14} />}
-                    label="Read"
-                    onClick={() => markRead(Array.from(selectedEmailIds), true)}
-                  />
-                  <BatchActionButton
-                    icon={<MailX size={14} />}
-                    label="Unread"
-                    onClick={() => markRead(Array.from(selectedEmailIds), false)}
-                  />
-                  <span className="mail-list-pane__selection-count">
-                    {selectedEmailIds.size} selected
-                  </span>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Message list */}
-        <div className="mail-list-pane__content">
-          {searchActive && !displayLoading && displayEmails.length === 0 ? (
-            <EmptyState
-              icon={<Search size={48} strokeWidth={1} />}
-              title="No messages found"
-              description={`No results for "${searchQuery}". Try different keywords or use search operators like from:, to:, subject:, has:attachment.`}
-              className="h-full"
-            />
-          ) : !searchActive && !displayLoading && displayEmails.length === 0 ? (
-            <ContextualEmptyState mailboxRole={currentMailbox?.role ?? null} />
-          ) : (
-            <MessageList
-              emails={displayEmails}
-              isLoading={displayLoading}
-              isFetchingNextPage={displayFetchingNext}
-              hasNextPage={displayHasNext}
-              onFetchNextPage={displayFetchNext}
-              onStarEmail={starEmail}
-              onReply={handleReply}
-              onReplyAll={handleReplyAll}
-              onForward={handleForward}
-              onMarkRead={markRead}
-              onArchive={handleArchive}
-              onDelete={handleDelete}
-            />
-          )}
-        </div>
+            )}
+          </>
+        )}
       </div>
-    </Tooltip.Provider>
+
+      {/* Message list */}
+      <div className="mail-list-pane__content">
+        {searchActive && !displayLoading && displayEmails.length === 0 ? (
+          <EmptyState
+            icon={<Search size={48} strokeWidth={1} />}
+            title="No messages found"
+            description={`No results for "${searchQuery}". Try different keywords or use search operators like from:, to:, subject:, has:attachment.`}
+            className="h-full"
+          />
+        ) : !searchActive && !displayLoading && displayEmails.length === 0 ? (
+          <ContextualEmptyState mailboxRole={currentMailbox?.role ?? null} />
+        ) : (
+          <MessageList
+            emails={displayEmails}
+            isLoading={displayLoading}
+            isFetchingNextPage={displayFetchingNext}
+            hasNextPage={displayHasNext}
+            onFetchNextPage={displayFetchNext}
+            onStarEmail={starEmail}
+            onReply={handleReply}
+            onReplyAll={handleReplyAll}
+            onForward={handleForward}
+            onMarkRead={markRead}
+            onArchive={handleArchive}
+            onDelete={handleDelete}
+          />
+        )}
+      </div>
+    </div>
   );
 });
-
-/** Batch action pill button */
-function BatchActionButton({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <Tooltip.Root>
-      <Tooltip.Trigger asChild>
-        <button
-          onClick={onClick}
-          className="mail-list-pane__batch-btn"
-        >
-          {icon}
-          <span className="mail-list-pane__batch-btn-label">{label}</span>
-        </button>
-      </Tooltip.Trigger>
-      <Tooltip.Content
-        className="tooltip-content"
-        sideOffset={5}
-      >
-        {label}
-      </Tooltip.Content>
-    </Tooltip.Root>
-  );
-}
 
 function ContextualEmptyState({ mailboxRole }: { mailboxRole: string | null }) {
   switch (mailboxRole) {
