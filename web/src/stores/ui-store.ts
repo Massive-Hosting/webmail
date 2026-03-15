@@ -29,6 +29,8 @@ interface UIState extends PanelLayout {
   isMobile: boolean;
   /** Active view for mobile navigation */
   mobileView: "sidebar" | "list" | "message";
+  /** Sort order: true = newest first */
+  sortNewestFirst: boolean;
   /** Keyboard shortcut chord state */
   chordPrefix: string | null;
   /** Chord timeout ID */
@@ -36,6 +38,7 @@ interface UIState extends PanelLayout {
 
   // Actions
   setActiveView: (view: AppView) => void;
+  toggleSort: () => void;
   setSidebarWidth: (width: number) => void;
   setMessageListWidth: (width: number) => void;
   toggleSidebar: () => void;
@@ -115,12 +118,17 @@ export const useUIStore = create<UIState>((set, get) => {
     selectedThreadId: null,
     selectedEmailIds: new Set(),
     expandedThreads: new Set(),
+    sortNewestFirst: true,
     isMobile: false,
     mobileView: "list",
     chordPrefix: null,
     chordTimeout: null,
 
     setActiveView: (view) => set({ activeView: view }),
+
+    toggleSort: () => {
+      set((state) => ({ sortNewestFirst: !state.sortNewestFirst }));
+    },
 
     setSidebarWidth: (width) => {
       const clamped = Math.max(200, Math.min(360, width));

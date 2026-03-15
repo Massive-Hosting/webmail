@@ -7,15 +7,19 @@ import type { JMAPFilter } from "@/types/jmap.ts";
 import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { useWebSocket } from "@/hooks/use-websocket.ts";
+import { useUIStore } from "@/stores/ui-store.ts";
+import { useSettingsStore } from "@/stores/settings-store.ts";
 
 const PAGE_SIZE = 50;
 
 export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
   const queryClient = useQueryClient();
   const { isConnected } = useWebSocket();
+  const sortNewestFirst = useUIStore((s) => s.sortNewestFirst);
+  const conversationView = useSettingsStore((s) => s.conversationView);
 
   const query = useInfiniteQuery({
-    queryKey: ["emails", mailboxId, filter],
+    queryKey: ["emails", mailboxId, filter, sortNewestFirst, conversationView],
     queryFn: async ({ pageParam = 0 }) => {
       if (!mailboxId) {
         return { emails: [] as EmailListItem[], total: 0, position: 0, threadCounts: {} as Record<string, number> };
@@ -25,6 +29,8 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
         position: pageParam as number,
         limit: PAGE_SIZE,
         filter,
+        sort: [{ property: "receivedAt", isAscending: !sortNewestFirst }],
+        collapseThreads: conversationView,
       });
     },
     getNextPageParam: (lastPage) => {

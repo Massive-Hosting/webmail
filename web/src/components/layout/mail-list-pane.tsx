@@ -20,8 +20,14 @@ import {
   Trash2,
   AlertTriangle,
   FolderOpen,
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
+  Layers,
+  List,
 } from "lucide-react";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import { useTranslation } from "react-i18next";
+import { useSettingsStore } from "@/stores/settings-store.ts";
 
 interface MailListPaneProps {
   searchActive?: boolean;
@@ -46,8 +52,16 @@ export const MailListPane = React.memo(function MailListPane({
 }: MailListPaneProps) {
   const { t } = useTranslation();
   const selectedMailboxId = useUIStore((s) => s.selectedMailboxId);
+  const sortNewestFirst = useUIStore((s) => s.sortNewestFirst);
+  const toggleSort = useUIStore((s) => s.toggleSort);
+  const conversationView = useSettingsStore((s) => s.conversationView);
+  const setConversationView = useSettingsStore((s) => s.setConversationView);
   const { mailboxes, findByRole } = useMailboxes();
   const clearSearch = useSearchStore((s) => s.clearSearch);
+
+  const handleToggleConversation = useCallback(() => {
+    setConversationView(!conversationView);
+  }, [conversationView, setConversationView]);
 
   const currentMailbox = mailboxes.find((m) => m.id === selectedMailboxId);
   const mailboxName = currentMailbox?.name ?? "Inbox";
@@ -152,6 +166,49 @@ export const MailListPane = React.memo(function MailListPane({
                 {total}
               </span>
             )}
+            <div className="flex-1" />
+            <Tooltip.Provider delayDuration={400}>
+              <div className="mail-list-pane__toolbar-actions">
+                <div className="mail-list-pane__toolbar-separator" />
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild>
+                    <button
+                      onClick={toggleSort}
+                      className="mail-list-pane__toolbar-icon-btn"
+                      aria-label={sortNewestFirst ? t("listToolbar.newestFirst") : t("listToolbar.oldestFirst")}
+                    >
+                      {sortNewestFirst
+                        ? <ArrowDownWideNarrow size={16} />
+                        : <ArrowUpNarrowWide size={16} />
+                      }
+                    </button>
+                  </Tooltip.Trigger>
+                  <Tooltip.Content
+                    className="mail-list-pane__tooltip"
+                    sideOffset={6}
+                  >
+                    {sortNewestFirst ? t("listToolbar.newestFirst") : t("listToolbar.oldestFirst")}
+                  </Tooltip.Content>
+                </Tooltip.Root>
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild>
+                    <button
+                      onClick={handleToggleConversation}
+                      className={`mail-list-pane__toolbar-icon-btn ${conversationView ? "mail-list-pane__toolbar-icon-btn--active" : ""}`}
+                      aria-label={conversationView ? t("listToolbar.groupByConversation") : t("listToolbar.showIndividual")}
+                    >
+                      {conversationView ? <Layers size={16} /> : <List size={16} />}
+                    </button>
+                  </Tooltip.Trigger>
+                  <Tooltip.Content
+                    className="mail-list-pane__tooltip"
+                    sideOffset={6}
+                  >
+                    {conversationView ? t("listToolbar.groupByConversation") : t("listToolbar.showIndividual")}
+                  </Tooltip.Content>
+                </Tooltip.Root>
+              </div>
+            </Tooltip.Provider>
           </>
         )}
       </div>

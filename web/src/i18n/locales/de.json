@@ -518,5 +518,9 @@
   "advancedSearch.cancel": "Abbrechen",
   "advancedSearch.search": "Suchen",
   "signatures.displayName": "Anzeigename",
-  "signatures.displayNameHint": "Der Name, der Empfängern angezeigt wird, wenn Sie von dieser Adresse senden"
+  "signatures.displayNameHint": "Der Name, der Empfängern angezeigt wird, wenn Sie von dieser Adresse senden",
+  "listToolbar.newestFirst": "Neueste zuerst",
+  "listToolbar.oldestFirst": "Älteste zuerst",
+  "listToolbar.groupByConversation": "Nach Konversation gruppieren",
+  "listToolbar.showIndividual": "Einzelne Nachrichten anzeigen"
 }

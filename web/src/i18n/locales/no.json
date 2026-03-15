@@ -518,5 +518,9 @@
   "advancedSearch.cancel": "Avbryt",
   "advancedSearch.search": "Søk",
   "signatures.displayName": "Visningsnavn",
-  "signatures.displayNameHint": "Navnet som vises for mottakere når du sender e-post fra denne adressen"
+  "signatures.displayNameHint": "Navnet som vises for mottakere når du sender e-post fra denne adressen",
+  "listToolbar.newestFirst": "Nyeste først",
+  "listToolbar.oldestFirst": "Eldste først",
+  "listToolbar.groupByConversation": "Grupper etter samtale",
+  "listToolbar.showIndividual": "Vis individuelle meldinger"
 }

@@ -91,6 +91,7 @@ export async function fetchEmails(params: {
   limit?: number;
   sort?: JMAPSort[];
   filter?: JMAPFilter;
+  collapseThreads?: boolean;
 }): Promise<{ emails: EmailListItem[]; total: number; position: number; threadCounts: Record<string, number> }> {
   const {
     mailboxId,
@@ -98,6 +99,7 @@ export async function fetchEmails(params: {
     limit = 50,
     sort = [{ property: "receivedAt", isAscending: false }],
     filter,
+    collapseThreads = true,
   } = params;
 
   const queryFilter: JMAPFilter = {
@@ -113,7 +115,7 @@ export async function fetchEmails(params: {
         {
           filter: queryFilter,
           sort,
-          collapseThreads: true,
+          collapseThreads,
           position,
           limit,
         },
