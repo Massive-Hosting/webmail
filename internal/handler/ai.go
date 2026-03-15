@@ -19,8 +19,8 @@ import (
 
 // System prompts for each AI feature.
 const (
-	systemPromptCompose = "You are an email writing assistant. Write the email body only, no subject line, no greeting/signature unless asked."
-	systemPromptReply   = "You are replying to the email below. Write only the reply body."
+	systemPromptCompose = "You are an email writing assistant helping the user compose emails. Write the email body only — no subject line. Include an appropriate greeting and sign-off unless told otherwise. The user's identity (name and email) will be provided in the context."
+	systemPromptReply   = "You are helping the user write a reply to an email they received. The user's identity and the original email are provided. Write the reply FROM the user TO the original sender. Write only the reply body with an appropriate greeting and sign-off."
 	systemPromptRewrite = "Rewrite the following text according to the instruction. Return only the rewritten text."
 )
 

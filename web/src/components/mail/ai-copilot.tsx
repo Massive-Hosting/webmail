@@ -6,6 +6,7 @@ import { composeWithAI } from "@/api/ai.ts";
 import { useCompose } from "@/components/mail/compose/use-compose.ts";
 import { useMessage } from "@/hooks/use-message.ts";
 import { useUIStore } from "@/stores/ui-store.ts";
+import { useAuthStore } from "@/stores/auth-store.ts";
 import { useTranslation } from "react-i18next";
 import type { Email } from "@/types/mail.ts";
 
@@ -167,9 +168,11 @@ export const AICopilot = React.memo(function AICopilot({
           )
           .join("\n\n");
 
-        const contextPrompt = `Email from: ${sender}\nSubject: ${email.subject}\n\n${bodyText}`;
+        const userEmail = useAuthStore.getState().email;
+        const userName = useAuthStore.getState().displayName || userEmail.split("@")[0];
+        const contextPrompt = `YOU ARE HELPING: ${userName} <${userEmail}>\n\nTHEY RECEIVED THIS EMAIL:\nFrom: ${sender}\nSubject: ${email.subject}\n\n${bodyText}\n\nIMPORTANT: When drafting a reply, write it FROM ${userName} TO ${sender}. Do NOT confuse the sender and recipient. Do NOT include any signature — the signature will be added automatically.`;
         const systemPrompt =
-          "You are an email assistant. The user is viewing an email and asking questions or requesting actions. Be helpful, concise, and context-aware. When asked to draft a reply, write the full email body.";
+          "You are an email assistant. The user is viewing an email they received. When asked to draft a reply, write it FROM the user TO the original sender. Never confuse who sent the email and who is replying. Do not add a signature block — it is handled separately. Be helpful, concise, and context-aware.";
 
         const fullPrompt = conversationContext
           ? `${contextPrompt}\n\n${conversationContext}\n\nUser: ${text}`
