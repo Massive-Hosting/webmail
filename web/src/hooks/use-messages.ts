@@ -18,8 +18,10 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
   const sortNewestFirst = useUIStore((s) => s.sortNewestFirst);
   const conversationView = useSettingsStore((s) => s.conversationView);
 
+  const queryKey = ["emails", mailboxId, filter, sortNewestFirst, conversationView] as const;
+
   const query = useInfiniteQuery({
-    queryKey: ["emails", mailboxId, filter, sortNewestFirst, conversationView],
+    queryKey,
     queryFn: async ({ pageParam = 0 }) => {
       if (!mailboxId) {
         return { emails: [] as EmailListItem[], total: 0, position: 0, threadCounts: {} as Record<string, number> };
@@ -78,10 +80,10 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
       });
     },
     onMutate: async (params) => {
-      await queryClient.cancelQueries({ queryKey: ["emails", mailboxId] });
-      const prev = queryClient.getQueryData(["emails", mailboxId, filter]);
+      await queryClient.cancelQueries({ queryKey });
+      const prev = queryClient.getQueryData(queryKey);
       queryClient.setQueryData(
-        ["emails", mailboxId, filter],
+        queryKey,
         optimisticUpdateEmail(query.data, params.emailId, (email) => {
           const keywords = { ...email.keywords };
           if (params.flagged) {
@@ -96,12 +98,12 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
     },
     onError: (_err, _params, context) => {
       if (context?.prev) {
-        queryClient.setQueryData(["emails", mailboxId, filter], context.prev);
+        queryClient.setQueryData(queryKey, context.prev);
       }
       toast.error("Failed to update message");
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["emails", mailboxId] });
+      queryClient.invalidateQueries({ queryKey: ["emails"] });
     },
   });
 
@@ -117,8 +119,8 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
       await updateEmails(updates);
     },
     onMutate: async (params) => {
-      await queryClient.cancelQueries({ queryKey: ["emails", mailboxId] });
-      const prev = queryClient.getQueryData(["emails", mailboxId, filter]);
+      await queryClient.cancelQueries({ queryKey });
+      const prev = queryClient.getQueryData(queryKey);
       let data = query.data;
       for (const emailId of params.emailIds) {
         data = optimisticUpdateEmail(data, emailId, (email) => {
@@ -131,17 +133,17 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
           return { ...email, keywords };
         });
       }
-      queryClient.setQueryData(["emails", mailboxId, filter], data);
+      queryClient.setQueryData(queryKey, data);
       return { prev };
     },
     onError: (_err, _params, context) => {
       if (context?.prev) {
-        queryClient.setQueryData(["emails", mailboxId, filter], context.prev);
+        queryClient.setQueryData(queryKey, context.prev);
       }
       toast.error("Failed to update message");
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["emails", mailboxId] });
+      queryClient.invalidateQueries({ queryKey: ["emails"] });
       queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
     },
   });
@@ -163,14 +165,14 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
       await updateEmails(updates);
     },
     onMutate: async (params) => {
-      await queryClient.cancelQueries({ queryKey: ["emails", mailboxId] });
-      const prev = queryClient.getQueryData(["emails", mailboxId, filter]);
+      await queryClient.cancelQueries({ queryKey });
+      const prev = queryClient.getQueryData(queryKey);
       // Remove from current list optimistically
       let data = query.data;
       for (const emailId of params.emailIds) {
         data = optimisticRemoveEmail(data, emailId);
       }
-      queryClient.setQueryData(["emails", mailboxId, filter], data);
+      queryClient.setQueryData(queryKey, data);
       return { prev, params };
     },
     onSuccess: (_data, params) => {
@@ -190,7 +192,7 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
     },
     onError: (_err, _params, context) => {
       if (context?.prev) {
-        queryClient.setQueryData(["emails", mailboxId, filter], context.prev);
+        queryClient.setQueryData(queryKey, context.prev);
       }
       toast.error("Failed to move messages");
     },
@@ -206,13 +208,13 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
       await destroyEmails(emailIds);
     },
     onMutate: async (emailIds) => {
-      await queryClient.cancelQueries({ queryKey: ["emails", mailboxId] });
-      const prev = queryClient.getQueryData(["emails", mailboxId, filter]);
+      await queryClient.cancelQueries({ queryKey });
+      const prev = queryClient.getQueryData(queryKey);
       let data = query.data;
       for (const emailId of emailIds) {
         data = optimisticRemoveEmail(data, emailId);
       }
-      queryClient.setQueryData(["emails", mailboxId, filter], data);
+      queryClient.setQueryData(queryKey, data);
       return { prev };
     },
     onSuccess: (_data, emailIds) => {
@@ -223,7 +225,7 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
     },
     onError: (_err, _params, context) => {
       if (context?.prev) {
-        queryClient.setQueryData(["emails", mailboxId, filter], context.prev);
+        queryClient.setQueryData(queryKey, context.prev);
       }
       toast.error("Failed to delete messages");
     },
