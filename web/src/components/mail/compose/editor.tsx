@@ -301,7 +301,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
         />
         <ToolbarButton
           icon={<Quote size={15} />}
-          label="Blockquote"
+          label={t("editor.blockquote")}
           active={editor.isActive("blockquote")}
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
         />
@@ -310,19 +310,19 @@ export const ComposeEditor = React.memo(function ComposeEditor({
 
         <ToolbarButton
           icon={<AlignLeft size={15} />}
-          label="Align Left"
+          label={t("editor.alignLeft")}
           active={editor.isActive({ textAlign: "left" })}
           onClick={() => editor.chain().focus().setTextAlign("left").run()}
         />
         <ToolbarButton
           icon={<AlignCenter size={15} />}
-          label="Align Center"
+          label={t("editor.alignCenter")}
           active={editor.isActive({ textAlign: "center" })}
           onClick={() => editor.chain().focus().setTextAlign("center").run()}
         />
         <ToolbarButton
           icon={<AlignRight size={15} />}
-          label="Align Right"
+          label={t("editor.alignRight")}
           active={editor.isActive({ textAlign: "right" })}
           onClick={() => editor.chain().focus().setTextAlign("right").run()}
         />
@@ -368,7 +368,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
               color: "white",
             }}
           >
-            Apply
+            {t("compose.apply")}
           </button>
           <button
             onClick={() => {
@@ -378,7 +378,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
             className="text-xs px-2 py-1"
             style={{ color: "var(--color-text-secondary)" }}
           >
-            Cancel
+            {t("compose.cancel")}
           </button>
         </div>
       )}

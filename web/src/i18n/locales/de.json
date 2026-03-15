@@ -225,9 +225,9 @@
   "search.recent": "Kürzlich",
 
   "attachment.removeAttachment": "Anhang entfernen",
-  "attachment.exceedsFileSize": "„{{name}}" überschreitet die Dateigrößenbeschränkung von 25 MB.",
+  "attachment.exceedsFileSize": "{{name}} überschreitet die Dateigrößenbeschränkung von 25 MB.",
   "attachment.exceedsTotalSize": "Die Gesamtgröße der Anhänge würde 25 MB überschreiten.",
-  "attachment.failedToUpload": "„{{name}}" konnte nicht hochgeladen werden.",
+  "attachment.failedToUpload": "{{name}} konnte nicht hochgeladen werden.",
   "attachment.dropToAttach": "Dateien hier ablegen zum Anhängen",
 
   "compose.addRecipients": "Empfänger hinzufügen...",
@@ -411,7 +411,7 @@
   "filterRules.noRulesDesc": "Erstellen Sie eine Regel, um eingehende E-Mails automatisch zu organisieren.",
   "filterRules.loading": "Filterregeln werden geladen...",
   "filterRules.createRule": "Regel erstellen",
-  "filterRules.editRule": "Regel bearbeiten: „{{name}}"",
+  "filterRules.editRule": "Regel bearbeiten: {{name}}",
   "filterRules.ruleName": "Regelname",
   "filterRules.ruleNamePlaceholder": "z. B. Newsletter ins Archiv",
   "filterRules.when": "Wenn",

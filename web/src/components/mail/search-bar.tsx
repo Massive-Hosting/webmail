@@ -323,7 +323,7 @@ export const SearchBar = React.memo(function SearchBar({
                     const Icon = filter.icon;
                     return (
                       <button
-                        key={filter.label}
+                        key={filter.labelKey}
                         type="button"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => handleQuickFilterClick(filter)}
