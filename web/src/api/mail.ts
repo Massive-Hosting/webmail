@@ -725,9 +725,23 @@ export async function sendEmail(params: SendEmailParams): Promise<void> {
     );
   }
 
-  // Set mailbox to Drafts temporarily (submission will move it)
+  // Every email must belong to at least one mailbox (Stalwart requirement).
+  // Prefer Drafts (submission will move it to Sent), fall back to Sent.
   if (params.draftsMailboxId) {
     emailObj.mailboxIds = { [params.draftsMailboxId]: true };
+  } else if (params.sentMailboxId) {
+    emailObj.mailboxIds = { [params.sentMailboxId]: true };
+  } else {
+    // Last resort: fetch mailboxes and pick Drafts or Sent
+    const mailboxes = await fetchMailboxes();
+    const drafts = mailboxes.find((m) => m.role === "drafts");
+    const sent = mailboxes.find((m) => m.role === "sent");
+    const fallback = drafts ?? sent ?? mailboxes[0];
+    if (fallback) {
+      emailObj.mailboxIds = { [fallback.id]: true };
+    } else {
+      throw new Error("No mailbox available to create the email in.");
+    }
   }
 
   // Attachments
