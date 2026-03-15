@@ -28,7 +28,7 @@ pub fn run() {
                 "main",
                 tauri::WebviewUrl::External(APP_URL.parse().unwrap()),
             )
-            .title("Webmail")
+            .title("Massive Mail")
             .inner_size(1200.0, 800.0)
             .min_inner_size(800.0, 500.0)
             .visible(true)

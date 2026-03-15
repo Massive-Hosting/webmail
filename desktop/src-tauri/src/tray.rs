@@ -13,7 +13,7 @@ pub fn setup<R: Runtime>(app: &mut tauri::App<R>) -> Result<(), Box<dyn std::err
 
     TrayIconBuilder::new()
         .menu(&menu)
-        .tooltip("Webmail")
+        .tooltip("Massive Mail")
         .on_menu_event(|app: &tauri::AppHandle<R>, event| match event.id.as_ref() {
             "inbox" => {
                 if let Some(window) = app.get_webview_window("main") {
