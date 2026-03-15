@@ -13,15 +13,19 @@ interface ContactFormProps {
   contact?: Contact | null;
   onSave: (data: Partial<Contact>) => void;
   onCancel: () => void;
+  initialEmail?: string;
+  initialName?: string;
 }
 
 export const ContactForm = React.memo(function ContactForm({
   contact,
   onSave,
   onCancel,
+  initialEmail,
+  initialName,
 }: ContactFormProps) {
   const { t } = useTranslation();
-  const [fullName, setFullName] = useState(contact?.name.full ?? "");
+  const [fullName, setFullName] = useState(contact?.name.full ?? initialName ?? "");
   const [givenName, setGivenName] = useState(contact?.name.given ?? "");
   const [surname, setSurname] = useState(contact?.name.surname ?? "");
   const [prefix, setPrefix] = useState(contact?.name.prefix ?? "");
@@ -31,7 +35,7 @@ export const ContactForm = React.memo(function ContactForm({
     !!(contact?.name.prefix || contact?.name.suffix)
   );
   const [emails, setEmails] = useState<ContactEmail[]>(
-    contact?.emails.length ? [...contact.emails] : [{ address: "" }],
+    contact?.emails.length ? [...contact.emails] : [{ address: initialEmail ?? "" }],
   );
   const [phones, setPhones] = useState<ContactPhone[]>(
     contact?.phones.length ? [...contact.phones] : [],

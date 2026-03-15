@@ -328,7 +328,7 @@ export const RecipientInput = React.memo(function RecipientInput({
           onBlur={handleBlur}
           onPaste={handlePaste}
           placeholder={recipients.length === 0 ? placeholder : ""}
-          className="flex-1 min-w-[120px] text-sm outline-none bg-transparent py-1"
+          className="flex-1 min-w-[120px] text-sm outline-none bg-transparent py-1 pl-2"
           style={{ color: "var(--color-text-primary)" }}
           autoComplete="off"
         />

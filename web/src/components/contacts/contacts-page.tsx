@@ -1,6 +1,6 @@
 /** Contacts page - two-pane layout with groups sidebar, list, and detail */
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { UserPlus, Upload, Download, Users } from "lucide-react";
 import { ContactList } from "./contact-list.tsx";
 import { ContactDetail } from "./contact-detail.tsx";
@@ -25,6 +25,8 @@ export const ContactsPage = React.memo(function ContactsPage() {
   const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [initialEmail, setInitialEmail] = useState<string | undefined>(undefined);
+  const [initialName, setInitialName] = useState<string | undefined>(undefined);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -39,6 +41,20 @@ export const ContactsPage = React.memo(function ContactsPage() {
     updateAddressBook,
     deleteAddressBook,
   } = useAddressBooks();
+
+  // Check for pending "Add to contact" from recipient chip context menu
+  useEffect(() => {
+    const email = sessionStorage.getItem("newContactEmail");
+    if (email) {
+      const name = sessionStorage.getItem("newContactName");
+      setInitialEmail(email);
+      if (name) setInitialName(name);
+      setIsCreating(true);
+      setSelectedContactId(null);
+      sessionStorage.removeItem("newContactEmail");
+      sessionStorage.removeItem("newContactName");
+    }
+  }, []);
 
   const selectedContact = useMemo(
     () => contacts.find((c) => c.id === selectedContactId) ?? null,
@@ -74,6 +90,8 @@ export const ContactsPage = React.memo(function ContactsPage() {
   }, []);
 
   const handleNewContact = useCallback(() => {
+    setInitialEmail(undefined);
+    setInitialName(undefined);
     setIsCreating(true);
     setSelectedContactId(null);
   }, []);
@@ -237,6 +255,8 @@ export const ContactsPage = React.memo(function ContactsPage() {
           <ContactForm
             onSave={handleCreateSave}
             onCancel={() => setIsCreating(false)}
+            initialEmail={initialEmail}
+            initialName={initialName}
           />
         ) : selectedContact ? (
           <ContactDetail
