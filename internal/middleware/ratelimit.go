@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -68,6 +69,14 @@ func (rl *RateLimiter) RetryAfter(key string) int {
 func (rl *RateLimiter) Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Skip rate limiting for health checks and static assets
+			path := r.URL.Path
+			if path == "/healthz" || path == "/readyz" || path == "/metrics" ||
+				strings.HasPrefix(path, "/assets/") || path == "/theme-init.js" || path == "/favicon.svg" {
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			sess := SessionFromContext(r.Context())
 			key := r.RemoteAddr
 			if sess != nil {
