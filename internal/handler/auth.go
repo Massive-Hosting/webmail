@@ -19,30 +19,27 @@ import (
 
 // AuthHandler handles authentication endpoints.
 type AuthHandler struct {
-	sessions    *session.Manager
-	queries     *db.Queries
-	coreClient  *hosting.CoreAPIClient
+	store        *session.Store
+	queries      *db.Queries
+	coreClient   *hosting.CoreAPIClient
 	loginLimiter *middleware.LoginRateLimiter
-	log         zerolog.Logger
-	maxAge      int
+	log          zerolog.Logger
 }
 
 // NewAuthHandler creates a new authentication handler.
 func NewAuthHandler(
-	sessions *session.Manager,
+	store *session.Store,
 	queries *db.Queries,
 	coreClient *hosting.CoreAPIClient,
 	loginLimiter *middleware.LoginRateLimiter,
 	log zerolog.Logger,
-	maxAge int,
 ) *AuthHandler {
 	return &AuthHandler{
-		sessions:    sessions,
-		queries:     queries,
-		coreClient:  coreClient,
+		store:        store,
+		queries:      queries,
+		coreClient:   coreClient,
 		loginLimiter: loginLimiter,
-		log:         log,
-		maxAge:      maxAge,
+		log:          log,
 	}
 }
 
@@ -141,8 +138,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Create session.
-	now := time.Now()
+	// Create session in Valkey.
 	sess := &session.SessionData{
 		Email:         req.Email,
 		Password:      req.Password,
@@ -150,15 +146,16 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		StalwartURL:   sc.StalwartURL,
 		StalwartToken: sc.StalwartToken,
 		UAHash:        session.HashUserAgent(r.UserAgent()),
-		IssuedAt:      now,
-		ExpiresAt:     now.Add(time.Duration(h.maxAge) * time.Second),
 	}
 
-	if err := h.sessions.SetCookie(w, sess); err != nil {
-		h.log.Error().Err(err).Msg("failed to set session cookie")
+	token, err := h.store.Create(ctx, sess)
+	if err != nil {
+		h.log.Error().Err(err).Msg("failed to create session in valkey")
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"internal_error"})
 		return
 	}
+
+	session.SetCookie(w, token, h.store.MaxAge())
 
 	h.log.Info().Str("email", req.Email).Msg("user logged in")
 	writeJSON(w, http.StatusOK, loginResponse{
@@ -169,7 +166,12 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 // Logout handles POST /api/auth/logout.
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	h.sessions.ClearCookie(w)
+	if token, err := session.TokenFromRequest(r); err == nil {
+		if delErr := h.store.Delete(r.Context(), token); delErr != nil {
+			h.log.Error().Err(delErr).Msg("failed to delete session from valkey")
+		}
+	}
+	session.ClearCookie(w)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -181,13 +183,7 @@ func (h *AuthHandler) Session(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Sliding window: refresh session expiry.
-	now := time.Now()
-	sess.IssuedAt = now
-	sess.ExpiresAt = now.Add(time.Duration(h.maxAge) * time.Second)
-	if err := h.sessions.SetCookie(w, sess); err != nil {
-		h.log.Error().Err(err).Msg("failed to refresh session cookie")
-	}
+	// Sliding window TTL refresh is already done by Store.Get in the middleware.
 
 	writeJSON(w, http.StatusOK, sessionResponse{
 		Email:     sess.Email,

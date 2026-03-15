@@ -1,27 +1,25 @@
 package session
 
 import (
-	"crypto/rand"
+	"context"
 	"testing"
-	"time"
+
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 )
 
-func testKey(t *testing.T) []byte {
+func newTestStore(t *testing.T) (*Store, *miniredis.Miniredis) {
 	t.Helper()
-	key := make([]byte, 32)
-	if _, err := rand.Read(key); err != nil {
-		t.Fatal(err)
-	}
-	return key
+	mr := miniredis.RunT(t)
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	t.Cleanup(func() { rdb.Close() })
+	return NewStore(rdb, 3600), mr
 }
 
-func TestEncryptDecryptRoundTrip(t *testing.T) {
-	mgr, err := NewManager(testKey(t), 3600)
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestCreateAndGet(t *testing.T) {
+	store, _ := newTestStore(t)
+	ctx := context.Background()
 
-	now := time.Now()
 	original := &SessionData{
 		Email:         "user@example.com",
 		Password:      "secret-password-123",
@@ -29,162 +27,122 @@ func TestEncryptDecryptRoundTrip(t *testing.T) {
 		StalwartURL:   "https://stalwart.example.com",
 		StalwartToken: "admin-token-xyz",
 		UAHash:        HashUserAgent("Mozilla/5.0"),
-		IssuedAt:      now.Truncate(time.Millisecond),
-		ExpiresAt:     now.Add(time.Hour).Truncate(time.Millisecond),
 	}
 
-	encrypted, err := mgr.Encrypt(original)
+	token, err := store.Create(ctx, original)
 	if err != nil {
-		t.Fatalf("encrypt failed: %v", err)
+		t.Fatalf("create failed: %v", err)
+	}
+	if len(token) != 64 {
+		t.Fatalf("expected 64-char hex token, got %d chars", len(token))
 	}
 
-	if encrypted == "" {
-		t.Fatal("encrypted string is empty")
-	}
-
-	decrypted, err := mgr.Decrypt(encrypted)
+	retrieved, err := store.Get(ctx, token)
 	if err != nil {
-		t.Fatalf("decrypt failed: %v", err)
+		t.Fatalf("get failed: %v", err)
 	}
 
-	if decrypted.Email != original.Email {
-		t.Errorf("email mismatch: got %q, want %q", decrypted.Email, original.Email)
+	if retrieved.Email != original.Email {
+		t.Errorf("email mismatch: got %q, want %q", retrieved.Email, original.Email)
 	}
-	if decrypted.Password != original.Password {
-		t.Errorf("password mismatch: got %q, want %q", decrypted.Password, original.Password)
+	if retrieved.Password != original.Password {
+		t.Errorf("password mismatch: got %q, want %q", retrieved.Password, original.Password)
 	}
-	if decrypted.AccountID != original.AccountID {
-		t.Errorf("accountID mismatch: got %q, want %q", decrypted.AccountID, original.AccountID)
+	if retrieved.AccountID != original.AccountID {
+		t.Errorf("accountID mismatch: got %q, want %q", retrieved.AccountID, original.AccountID)
 	}
-	if decrypted.StalwartURL != original.StalwartURL {
-		t.Errorf("stalwartURL mismatch: got %q, want %q", decrypted.StalwartURL, original.StalwartURL)
+	if retrieved.StalwartURL != original.StalwartURL {
+		t.Errorf("stalwartURL mismatch: got %q, want %q", retrieved.StalwartURL, original.StalwartURL)
 	}
-	if decrypted.StalwartToken != original.StalwartToken {
-		t.Errorf("stalwartToken mismatch: got %q, want %q", decrypted.StalwartToken, original.StalwartToken)
+	if retrieved.StalwartToken != original.StalwartToken {
+		t.Errorf("stalwartToken mismatch: got %q, want %q", retrieved.StalwartToken, original.StalwartToken)
 	}
-	if decrypted.UAHash != original.UAHash {
-		t.Errorf("uaHash mismatch: got %q, want %q", decrypted.UAHash, original.UAHash)
+	if retrieved.UAHash != original.UAHash {
+		t.Errorf("uaHash mismatch: got %q, want %q", retrieved.UAHash, original.UAHash)
 	}
 }
 
-func TestDecryptExpiredSession(t *testing.T) {
-	mgr, err := NewManager(testKey(t), 3600)
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestGetNonexistentSession(t *testing.T) {
+	store, _ := newTestStore(t)
+	ctx := context.Background()
 
-	expired := &SessionData{
-		Email:     "user@example.com",
-		Password:  "secret",
-		AccountID: "abc123",
-		IssuedAt:  time.Now().Add(-2 * time.Hour),
-		ExpiresAt: time.Now().Add(-1 * time.Hour), // expired 1 hour ago
-	}
-
-	encrypted, err := mgr.Encrypt(expired)
-	if err != nil {
-		t.Fatalf("encrypt failed: %v", err)
-	}
-
-	_, err = mgr.Decrypt(encrypted)
+	_, err := store.Get(ctx, "nonexistent-token-0000000000000000000000000000000000000000000000000000")
 	if err == nil {
-		t.Fatal("expected error for expired session, got nil")
-	}
-	if err.Error() != "session expired" {
-		t.Errorf("unexpected error: %v", err)
+		t.Fatal("expected error for nonexistent session, got nil")
 	}
 }
 
-func TestDecryptTamperedData(t *testing.T) {
-	mgr, err := NewManager(testKey(t), 3600)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	valid := &SessionData{
-		Email:     "user@example.com",
-		Password:  "secret",
-		AccountID: "abc123",
-		IssuedAt:  time.Now(),
-		ExpiresAt: time.Now().Add(time.Hour),
-	}
-
-	encrypted, err := mgr.Encrypt(valid)
-	if err != nil {
-		t.Fatalf("encrypt failed: %v", err)
-	}
-
-	// Tamper with the encrypted data.
-	tampered := []byte(encrypted)
-	if len(tampered) > 10 {
-		tampered[10] ^= 0xFF
-	}
-
-	_, err = mgr.Decrypt(string(tampered))
-	if err == nil {
-		t.Fatal("expected error for tampered session, got nil")
-	}
-}
-
-func TestDecryptWrongKey(t *testing.T) {
-	key1 := testKey(t)
-	key2 := testKey(t)
-
-	mgr1, err := NewManager(key1, 3600)
-	if err != nil {
-		t.Fatal(err)
-	}
-	mgr2, err := NewManager(key2, 3600)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	valid := &SessionData{
-		Email:     "user@example.com",
-		Password:  "secret",
-		AccountID: "abc123",
-		IssuedAt:  time.Now(),
-		ExpiresAt: time.Now().Add(time.Hour),
-	}
-
-	encrypted, err := mgr1.Encrypt(valid)
-	if err != nil {
-		t.Fatalf("encrypt failed: %v", err)
-	}
-
-	_, err = mgr2.Decrypt(encrypted)
-	if err == nil {
-		t.Fatal("expected error decrypting with wrong key, got nil")
-	}
-}
-
-func TestNewManagerInvalidKeySize(t *testing.T) {
-	_, err := NewManager([]byte("too-short"), 3600)
-	if err == nil {
-		t.Fatal("expected error for invalid key size, got nil")
-	}
-}
-
-func TestUniqueNonces(t *testing.T) {
-	mgr, err := NewManager(testKey(t), 3600)
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestDeleteSession(t *testing.T) {
+	store, _ := newTestStore(t)
+	ctx := context.Background()
 
 	data := &SessionData{
 		Email:     "user@example.com",
 		Password:  "secret",
 		AccountID: "abc123",
-		IssuedAt:  time.Now(),
-		ExpiresAt: time.Now().Add(time.Hour),
 	}
 
-	// Encrypt the same data multiple times — ciphertexts should differ due to random nonces.
-	enc1, _ := mgr.Encrypt(data)
-	enc2, _ := mgr.Encrypt(data)
+	token, err := store.Create(ctx, data)
+	if err != nil {
+		t.Fatalf("create failed: %v", err)
+	}
 
-	if enc1 == enc2 {
-		t.Error("two encryptions of the same data produced identical ciphertexts (nonce reuse)")
+	// Verify session exists.
+	if _, err := store.Get(ctx, token); err != nil {
+		t.Fatalf("get before delete failed: %v", err)
+	}
+
+	// Delete.
+	if err := store.Delete(ctx, token); err != nil {
+		t.Fatalf("delete failed: %v", err)
+	}
+
+	// Verify session is gone.
+	_, err = store.Get(ctx, token)
+	if err == nil {
+		t.Fatal("expected error after delete, got nil")
+	}
+}
+
+func TestSessionExpiry(t *testing.T) {
+	store, mr := newTestStore(t)
+	ctx := context.Background()
+
+	data := &SessionData{
+		Email:     "user@example.com",
+		Password:  "secret",
+		AccountID: "abc123",
+	}
+
+	token, err := store.Create(ctx, data)
+	if err != nil {
+		t.Fatalf("create failed: %v", err)
+	}
+
+	// Fast-forward past TTL.
+	mr.FastForward(store.maxAge + 1)
+
+	_, err = store.Get(ctx, token)
+	if err == nil {
+		t.Fatal("expected error for expired session, got nil")
+	}
+}
+
+func TestUniqueTokens(t *testing.T) {
+	store, _ := newTestStore(t)
+	ctx := context.Background()
+
+	data := &SessionData{
+		Email:     "user@example.com",
+		Password:  "secret",
+		AccountID: "abc123",
+	}
+
+	token1, _ := store.Create(ctx, data)
+	token2, _ := store.Create(ctx, data)
+
+	if token1 == token2 {
+		t.Error("two sessions produced identical tokens")
 	}
 }
 
@@ -198,5 +156,12 @@ func TestHashUserAgent(t *testing.T) {
 	}
 	if ua1 == ua3 {
 		t.Error("different user agents produced same hash")
+	}
+}
+
+func TestMaxAge(t *testing.T) {
+	store, _ := newTestStore(t)
+	if store.MaxAge() != 3600 {
+		t.Errorf("MaxAge: got %d, want 3600", store.MaxAge())
 	}
 }

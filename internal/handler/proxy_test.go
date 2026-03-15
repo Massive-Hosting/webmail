@@ -22,8 +22,6 @@ func makeTestSession() *session.SessionData {
 		Password:    "password123",
 		AccountID:   "acc-12345",
 		StalwartURL: "", // will be set to mock server URL
-		IssuedAt:    time.Now(),
-		ExpiresAt:   time.Now().Add(time.Hour),
 	}
 }
 
@@ -254,8 +252,6 @@ func TestStalwartIntegration(t *testing.T) {
 		Password:    "test1234",
 		AccountID:   accountID,
 		StalwartURL: stalwartURL,
-		IssuedAt:    time.Now(),
-		ExpiresAt:   time.Now().Add(time.Hour),
 	}
 	req = req.WithContext(withSession(req.Context(), sess))
 

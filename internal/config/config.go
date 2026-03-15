@@ -45,19 +45,18 @@ func Load() (*Config, error) {
 		}
 	}
 
-	// Parse secret encryption key (hex-encoded 32 bytes).
-	keyHex := os.Getenv("SECRET_ENCRYPTION_KEY")
-	if keyHex == "" {
-		return nil, errors.New("SECRET_ENCRYPTION_KEY is required")
+	// Parse secret encryption key (hex-encoded 32 bytes) — optional,
+	// no longer required for sessions (now backed by Valkey).
+	if keyHex := os.Getenv("SECRET_ENCRYPTION_KEY"); keyHex != "" {
+		key, err := hex.DecodeString(keyHex)
+		if err != nil {
+			return nil, errors.New("SECRET_ENCRYPTION_KEY must be valid hex")
+		}
+		if len(key) != 32 {
+			return nil, errors.New("SECRET_ENCRYPTION_KEY must be exactly 32 bytes (64 hex characters)")
+		}
+		cfg.SecretEncryptionKey = key
 	}
-	key, err := hex.DecodeString(keyHex)
-	if err != nil {
-		return nil, errors.New("SECRET_ENCRYPTION_KEY must be valid hex")
-	}
-	if len(key) != 32 {
-		return nil, errors.New("SECRET_ENCRYPTION_KEY must be exactly 32 bytes (64 hex characters)")
-	}
-	cfg.SecretEncryptionKey = key
 
 	// Validate required fields.
 	if cfg.CoreAPIURL == "" {

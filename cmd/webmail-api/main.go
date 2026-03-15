@@ -20,6 +20,7 @@ import (
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 )
 
@@ -58,11 +59,21 @@ func main() {
 		log.Warn().Msg("no DATABASE_URL configured, running without database")
 	}
 
-	// Initialize session encryption.
-	sessMgr, err := session.NewManager(cfg.SecretEncryptionKey, cfg.SessionMaxAge)
+	// Connect to Valkey/Redis.
+	redisOpts, err := redis.ParseURL(cfg.ValkeyURL)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to initialize session manager")
+		log.Fatal().Err(err).Str("url", cfg.ValkeyURL).Msg("failed to parse VALKEY_URL")
 	}
+	rdb := redis.NewClient(redisOpts)
+	defer rdb.Close()
+
+	if err := rdb.Ping(ctx).Err(); err != nil {
+		log.Fatal().Err(err).Msg("failed to connect to valkey")
+	}
+	log.Info().Str("url", cfg.ValkeyURL).Msg("valkey connected")
+
+	// Initialize session store backed by Valkey.
+	sessStore := session.NewStore(rdb, cfg.SessionMaxAge)
 
 	// Core API client.
 	coreClient := hosting.NewCoreAPIClient(cfg.CoreAPIURL, cfg.CoreAPIKey)
@@ -76,7 +87,7 @@ func main() {
 	loginLimiter := middleware.NewLoginRateLimiter()
 
 	// Handlers.
-	authHandler := handler.NewAuthHandler(sessMgr, queries, coreClient, loginLimiter, log, cfg.SessionMaxAge)
+	authHandler := handler.NewAuthHandler(sessStore, queries, coreClient, loginLimiter, log)
 	proxyHandler := handler.NewProxyHandler(log)
 	blobHandler := handler.NewBlobHandler(cfg.MaxUploadSize, log)
 	settingsHandler := handler.NewSettingsHandler(queries, log)
@@ -117,7 +128,7 @@ func main() {
 
 		// Authenticated endpoints.
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.Auth(sessMgr))
+			r.Use(middleware.Auth(sessStore))
 			r.Use(rateLimiter.Middleware())
 
 			r.Post("/auth/logout", authHandler.Logout)
