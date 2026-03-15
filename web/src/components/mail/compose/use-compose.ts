@@ -142,8 +142,18 @@ ${originalBody}
       if (identity?.htmlSignature) {
         const sigSeparator = '<p>-- </p>';
         if (mode === "reply" || mode === "reply-all" || mode === "forward") {
-          // Insert signature above quoted text
-          bodyHTML = `<p><br></p>${sigSeparator}${identity.htmlSignature}${bodyHTML}`;
+          // bodyHTML starts with <p><br></p><p><br></p><hr>...[quote]
+          // Find the HR/quote boundary and insert signature before it
+          const hrIdx = bodyHTML.indexOf("<hr");
+          const quoteIdx = bodyHTML.indexOf('<div class="compose-quoted-text');
+          const boundary = hrIdx !== -1 ? hrIdx : (quoteIdx !== -1 ? quoteIdx : -1);
+          if (boundary !== -1) {
+            const before = bodyHTML.slice(0, boundary);
+            const after = bodyHTML.slice(boundary);
+            bodyHTML = `${before}${sigSeparator}${identity.htmlSignature}<p><br></p>${after}`;
+          } else {
+            bodyHTML = `<p><br></p>${sigSeparator}${identity.htmlSignature}${bodyHTML}`;
+          }
         } else {
           bodyHTML = `<p><br></p>${sigSeparator}${identity.htmlSignature}`;
         }

@@ -168,6 +168,13 @@ interface ThreadHeaderItemProps {
   onClick: () => void;
   onStar: (emailId: string, flagged: boolean) => void;
   onMouseEnter?: (emailId: string) => void;
+  onReply?: (email: EmailListItem) => void;
+  onReplyAll?: (email: EmailListItem) => void;
+  onForward?: (email: EmailListItem) => void;
+  onMarkRead?: (emailIds: string[], seen: boolean) => void;
+  onArchive?: (emailIds: string[]) => void;
+  onDelete?: (emailIds: string[]) => void;
+  onProperties?: (email: EmailListItem) => void;
 }
 
 export const ThreadHeaderItem = React.memo(
@@ -179,6 +186,13 @@ export const ThreadHeaderItem = React.memo(
     onClick,
     onStar,
     onMouseEnter,
+    onReply,
+    onReplyAll,
+    onForward,
+    onMarkRead,
+    onArchive,
+    onDelete,
+    onProperties,
   }: ThreadHeaderItemProps) {
     const { t } = useTranslation();
     const unread = isUnread(email);
@@ -194,6 +208,8 @@ export const ThreadHeaderItem = React.memo(
     );
 
     return (
+      <ContextMenu.Root>
+        <ContextMenu.Trigger asChild>
       <div
         className={`message-list-item message-list-item--thread-header group ${isExpanded ? "message-list-item--thread-expanded" : ""}`}
         data-selected={isSelected || undefined}
@@ -265,6 +281,21 @@ export const ThreadHeaderItem = React.memo(
           </button>
         </div>
       </div>
+        </ContextMenu.Trigger>
+        <MessageContextMenu
+          email={email}
+          unread={unread}
+          flagged={flagged}
+          onReply={onReply}
+          onReplyAll={onReplyAll}
+          onForward={onForward}
+          onMarkRead={onMarkRead}
+          onStar={onStar}
+          onArchive={onArchive}
+          onDelete={onDelete}
+          onProperties={onProperties}
+        />
+      </ContextMenu.Root>
     );
   },
   (prev, next) =>

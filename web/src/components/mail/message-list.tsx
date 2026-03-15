@@ -331,6 +331,13 @@ export const MessageList = React.memo(function MessageList({
                   onClick={() => handleThreadHeaderClick(row.email, row.threadId)}
                   onStar={onStarEmail}
                   onMouseEnter={handleMouseEnter}
+                  onReply={onReply}
+                  onReplyAll={onReplyAll}
+                  onForward={onForward}
+                  onMarkRead={onMarkRead}
+                  onArchive={onArchive}
+                  onDelete={onDelete}
+                  onProperties={onProperties}
                 />
               </div>
               {row.isExpanded && (

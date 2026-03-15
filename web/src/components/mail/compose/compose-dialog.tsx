@@ -120,7 +120,7 @@ export const ComposePanel = React.memo(function ComposePanel({
           // Body has content (e.g. AI prefill or quoted text) but no signature.
           // Insert signature BEFORE the quoted text (look for the quote boundary).
           const sig = `<p><br></p>${sigSeparator}${matchingIdentity.htmlSignature}`;
-          const quoteMarkers = ['<div style="border-top:', '<div class="compose-quoted-text', '<blockquote', '---------- Forwarded message'];
+          const quoteMarkers = ['<hr', '<div style="border-top:', '<div class="compose-quoted-text', '<blockquote', '---------- Forwarded message'];
           let insertIdx = -1;
           for (const marker of quoteMarkers) {
             const idx = draft.bodyHTML.indexOf(marker);
