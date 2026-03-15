@@ -69,10 +69,9 @@ func (rl *RateLimiter) RetryAfter(key string) int {
 func (rl *RateLimiter) Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Skip rate limiting for health checks and static assets
+			// Skip rate limiting for non-API paths (health checks, static assets, SPA)
 			path := r.URL.Path
-			if path == "/healthz" || path == "/readyz" || path == "/metrics" ||
-				strings.HasPrefix(path, "/assets/") || path == "/theme-init.js" || path == "/favicon.svg" {
+			if !strings.HasPrefix(path, "/api/") {
 				next.ServeHTTP(w, r)
 				return
 			}
