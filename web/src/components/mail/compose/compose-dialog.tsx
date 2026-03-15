@@ -110,10 +110,17 @@ export const ComposePanel = React.memo(function ComposePanel({
       const userEmail = useAuthStore.getState().email;
       const matchingIdentity = identities.find((i) => i.email === userEmail) ?? identities[0];
       updateDraft(draftId, { from: matchingIdentity });
-      // If identity has signature and body is empty, insert signature
-      if (!draft.bodyHTML && matchingIdentity.htmlSignature) {
-        const sig = `<p><br></p><p>-- </p>${matchingIdentity.htmlSignature}`;
-        updateDraft(draftId, { bodyHTML: sig, isDirty: false });
+      // Insert signature if identity has one and body doesn't already contain one
+      if (matchingIdentity.htmlSignature) {
+        const sigSeparator = '<p>-- </p>';
+        if (!draft.bodyHTML) {
+          const sig = `<p><br></p>${sigSeparator}${matchingIdentity.htmlSignature}`;
+          updateDraft(draftId, { bodyHTML: sig, isDirty: false });
+        } else if (!draft.bodyHTML.includes(sigSeparator)) {
+          // Body has content (e.g. AI prefill) but no signature — append it
+          const sig = `<p><br></p>${sigSeparator}${matchingIdentity.htmlSignature}`;
+          updateDraft(draftId, { bodyHTML: draft.bodyHTML + sig, isDirty: false });
+        }
       }
     }
   }, [draft, identities, draftId, updateDraft]);

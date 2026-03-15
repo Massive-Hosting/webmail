@@ -434,6 +434,8 @@
   "signatures.saved": "Gespeichert",
   "signatures.saveSignature": "Signatur speichern",
   "signatures.failedToSave": "Speichern fehlgeschlagen",
+  "signatures.insertImage": "Bild einfügen",
+  "signatures.preview": "Vorschau",
   "keyboard.title": "Tastenkürzel",
   "keyboard.desc": "Verwenden Sie Einzeltastenkürzel für schnellere Navigation und Aktionen.",
   "keyboard.reference": "Tastenkürzel-Übersicht",

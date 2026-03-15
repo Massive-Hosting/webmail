@@ -434,6 +434,8 @@
   "signatures.saved": "Lagret",
   "signatures.saveSignature": "Lagre signatur",
   "signatures.failedToSave": "Kunne ikke lagre",
+  "signatures.insertImage": "Sett inn bilde",
+  "signatures.preview": "Forhåndsvisning",
   "keyboard.title": "Tastatursnarveier",
   "keyboard.desc": "Bruk enkelttastsnarveier for raskere navigering og handlinger.",
   "keyboard.reference": "Snarveioversikt",

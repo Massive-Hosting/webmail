@@ -434,6 +434,8 @@
   "signatures.saved": "Saved",
   "signatures.saveSignature": "Save signature",
   "signatures.failedToSave": "Failed to save",
+  "signatures.insertImage": "Insert image",
+  "signatures.preview": "Preview",
   "keyboard.title": "Keyboard shortcuts",
   "keyboard.desc": "Use single-key shortcuts for faster navigation and actions.",
   "keyboard.reference": "Shortcut reference",

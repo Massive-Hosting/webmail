@@ -1,10 +1,10 @@
 /** Signature settings — edit per-identity signatures via JMAP Identity/set */
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchIdentities, jmapRequest } from "@/api/mail.ts";
 import type { Identity } from "@/types/mail.ts";
-import { Loader2, Check, AlertCircle, PenLine } from "lucide-react";
+import { Loader2, Check, AlertCircle, PenLine, ImagePlus } from "lucide-react";
 import { StyledSelect } from "@/components/ui/styled-select.tsx";
 import { useTranslation } from "react-i18next";
 
@@ -92,6 +92,53 @@ function SignatureEditor({ identity }: { identity: Identity }) {
   const [textSig, setTextSig] = useState(identity.textSignature ?? "");
   const [mode, setMode] = useState<"html" | "text">("html");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [uploading, setUploading] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = useCallback(async (file: File) => {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file, file.name);
+      const response = await fetch("/api/blob/upload", {
+        method: "POST",
+        credentials: "same-origin",
+        body: formData,
+      });
+      if (!response.ok) throw new Error("Upload failed");
+      const results = await response.json();
+      const blobId = results[0]?.blobId;
+      if (!blobId) throw new Error("No blobId");
+
+      const imgTag = `<img src="/api/blob/${blobId}/inline" alt="Logo" style="max-height: 80px; max-width: 200px;">`;
+
+      // Insert at cursor in contentEditable, or append
+      if (editorRef.current) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0 && editorRef.current.contains(sel.anchorNode)) {
+          const range = sel.getRangeAt(0);
+          range.deleteContents();
+          const temp = document.createElement("div");
+          temp.innerHTML = imgTag;
+          const frag = document.createDocumentFragment();
+          while (temp.firstChild) frag.appendChild(temp.firstChild);
+          range.insertNode(frag);
+          range.collapse(false);
+        } else {
+          editorRef.current.innerHTML += imgTag;
+        }
+        setHtmlSig(editorRef.current.innerHTML);
+      } else {
+        setHtmlSig((prev) => prev + imgTag);
+      }
+    } catch {
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    } finally {
+      setUploading(false);
+    }
+  }, []);
 
   const saveMutation = useMutation({
     mutationFn: async ({
@@ -228,12 +275,43 @@ function SignatureEditor({ identity }: { identity: Identity }) {
               {t("signatures.plainText")}
             </button>
           </div>
+          {mode === "html" && (
+            <>
+              <button
+                onClick={() => imageInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-colors"
+                style={{
+                  backgroundColor: "var(--color-bg-primary)",
+                  color: "var(--color-text-secondary)",
+                  border: "1px solid var(--color-border-primary)",
+                  opacity: uploading ? 0.6 : 1,
+                }}
+                title={t("signatures.insertImage")}
+              >
+                {uploading ? <Loader2 size={12} className="animate-spin" /> : <ImagePlus size={12} />}
+                {t("signatures.insertImage")}
+              </button>
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload(file);
+                  e.target.value = "";
+                }}
+              />
+            </>
+          )}
         </div>
       </div>
 
       {/* Editor area */}
       {mode === "html" ? (
         <div
+          ref={editorRef}
           className="min-h-[120px] rounded-md p-3 text-sm outline-none"
           style={{
             backgroundColor: "var(--color-bg-primary)",
@@ -293,6 +371,35 @@ function SignatureEditor({ identity }: { identity: Identity }) {
           </span>
         )}
       </div>
+
+      {/* Live preview */}
+      {(htmlSig || textSig) && (
+        <div>
+          <label
+            className="text-xs font-medium block mb-1.5"
+            style={{ color: "var(--color-text-secondary)" }}
+          >
+            {t("signatures.preview")}
+          </label>
+          <div
+            className="rounded-md p-4 text-sm"
+            style={{
+              backgroundColor: "var(--color-bg-primary)",
+              border: "1px solid var(--color-border-primary)",
+              color: "var(--color-text-primary)",
+            }}
+          >
+            <div style={{ borderTop: "1px solid var(--color-border-secondary)", paddingTop: 12 }}>
+              <p style={{ margin: "0 0 4px 0", color: "var(--color-text-tertiary)", fontSize: 13 }}>-- </p>
+              {mode === "html" ? (
+                <div dangerouslySetInnerHTML={{ __html: htmlSig }} />
+              ) : (
+                <pre style={{ whiteSpace: "pre-wrap", fontFamily: "monospace", margin: 0, fontSize: 13 }}>{textSig}</pre>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
