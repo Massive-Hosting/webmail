@@ -64,10 +64,10 @@ async function uploadBlob(
     });
 
     xhr.open("POST", "/api/blob/upload");
-    xhr.setRequestHeader("X-File-Name", encodeURIComponent(file.name));
-    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
     xhr.withCredentials = true;
-    xhr.send(file);
+    const formData = new FormData();
+    formData.append("file", file, file.name);
+    xhr.send(formData);
 
     return await blobIdPromise;
   } catch (err) {
