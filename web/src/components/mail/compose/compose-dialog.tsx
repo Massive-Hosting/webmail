@@ -567,33 +567,34 @@ export const ComposePanel = React.memo(function ComposePanel({
           </div>
         )}
 
-        {/* Recipients */}
-        <RecipientInput
-          label="To"
-          recipients={draft.to}
-          onChange={(to) => updateDraft(draftId, { to })}
-        />
-
-        {/* Show Cc/Bcc toggle */}
-        {!draft.showCc && !draft.showBcc && (
-          <div className="compose-dialog__cc-toggle">
-            <div className="compose-dialog__field-label" />
-            <button
-              type="button"
-              className="compose-dialog__cc-btn"
-              onClick={() => updateDraft(draftId, { showCc: true })}
-            >
-              Cc
-            </button>
-            <button
-              type="button"
-              className="compose-dialog__cc-btn"
-              onClick={() => updateDraft(draftId, { showBcc: true })}
-            >
-              Bcc
-            </button>
+        {/* Recipients: To row with inline Cc/Bcc toggles */}
+        <div className="compose-dialog__to-row">
+          <RecipientInput
+            label="To"
+            recipients={draft.to}
+            onChange={(to) => updateDraft(draftId, { to })}
+          />
+          <div className="compose-dialog__cc-toggles">
+            {!draft.showCc && (
+              <button
+                type="button"
+                className="compose-dialog__cc-toggle-btn"
+                onClick={() => updateDraft(draftId, { showCc: true })}
+              >
+                Cc
+              </button>
+            )}
+            {!draft.showBcc && (
+              <button
+                type="button"
+                className="compose-dialog__cc-toggle-btn"
+                onClick={() => updateDraft(draftId, { showBcc: true })}
+              >
+                Bcc
+              </button>
+            )}
           </div>
-        )}
+        </div>
 
         {draft.showCc && (
           <RecipientInput
@@ -901,11 +902,6 @@ export function ComposeContainer() {
 
   return (
     <>
-      {/* Inline active draft (replaces reading pane) */}
-      {showActiveInline && activeDraft.windowMode === "inline" && (
-        <ComposePanel draftId={activeDraftId!} />
-      )}
-
       {/* Fullscreen drafts */}
       {fullscreenDrafts.map(([id]) => (
         <ComposePanel key={id} draftId={id} />
