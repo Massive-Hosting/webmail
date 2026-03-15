@@ -193,7 +193,6 @@
   "notifications.enableBanner": "Benachrichtigungen aktivieren, um über neue E-Mails informiert zu werden",
   "notifications.enable": "Aktivieren",
   "notifications.dismiss": "Ausblenden",
-
   "settingsDialog.title": "Einstellungen",
   "settingsDialog.close": "Einstellungen schließen",
   "settingsDialog.sections": "Einstellungsbereiche",
@@ -205,7 +204,6 @@
   "settingsDialog.notifications": "Benachrichtigungen",
   "settingsDialog.storage": "Speicher",
   "settingsDialog.security": "Sicherheit",
-
   "search.placeholder": "Nachrichten suchen... (/ für Fokus)",
   "search.clearSearchEsc": "Suche löschen (Esc)",
   "search.advancedSearch": "Erweiterte Suche",
@@ -223,18 +221,15 @@
   "search.to": "An",
   "search.subject": "Betreff",
   "search.recent": "Kürzlich",
-
   "attachment.removeAttachment": "Anhang entfernen",
   "attachment.exceedsFileSize": "{{name}} überschreitet die Dateigrößenbeschränkung von 25 MB.",
   "attachment.exceedsTotalSize": "Die Gesamtgröße der Anhänge würde 25 MB überschreiten.",
   "attachment.failedToUpload": "{{name}} konnte nicht hochgeladen werden.",
   "attachment.dropToAttach": "Dateien hier ablegen zum Anhängen",
-
   "compose.addRecipients": "Empfänger hinzufügen...",
   "compose.writeMessage": "Ihre Nachricht schreiben...",
   "compose.imageUrl": "Bild-URL:",
   "compose.apply": "Anwenden",
-
   "editor.undo": "Rückgängig",
   "editor.redo": "Wiederholen",
   "editor.bold": "Fett (Strg+B)",
@@ -253,7 +248,6 @@
   "editor.alignLeft": "Linksbündig",
   "editor.alignCenter": "Zentriert",
   "editor.alignRight": "Rechtsbündig",
-
   "contacts.new": "Neu",
   "contacts.importContacts": "Kontakte importieren",
   "contacts.exportContacts": "Kontakte exportieren",
@@ -318,7 +312,6 @@
   "contacts.newGroup": "Neue Gruppe",
   "contacts.groupName": "Gruppenname...",
   "contacts.allContacts": "Alle Kontakte",
-
   "calendar.newEvent": "Neuer Termin",
   "calendar.calendars": "Kalender",
   "calendar.previous": "Zurück",
@@ -342,7 +335,6 @@
   "calendar.repeats": "Wiederholt sich {{frequency}}",
   "calendar.todaysSchedule": "Heutiger Zeitplan",
   "calendar.noEventsToday": "Keine Termine heute",
-
   "calendar.reminderNone": "Keine",
   "calendar.reminderAtTime": "Zum Zeitpunkt des Termins",
   "calendar.reminder5min": "5 Minuten vorher",
@@ -355,7 +347,6 @@
   "calendar.weekly": "Wöchentlich",
   "calendar.monthly": "Monatlich",
   "calendar.yearly": "Jährlich",
-
   "invitation.meetingInvitation": "Besprechungseinladung",
   "invitation.calendarEvent": "Kalenderereignis",
   "invitation.untitledEvent": "Unbenannter Termin",
@@ -373,7 +364,6 @@
   "invitation.tentativeAccepted": "Vorläufig angenommen und zum Kalender hinzugefügt",
   "invitation.invitationDeclined": "Einladung abgelehnt",
   "invitation.failedToRespond": "Antwort fehlgeschlagen: {{message}}",
-
   "mailSettings.conversationView": "Konversationsansicht",
   "mailSettings.conversationViewDesc": "Zusammengehörige Nachrichten in Threads gruppieren.",
   "mailSettings.on": "An",
@@ -403,7 +393,6 @@
   "mailSettings.never": "Nie",
   "mailSettings.ask": "Fragen",
   "mailSettings.always": "Immer",
-
   "filterRules.title": "Filterregeln",
   "filterRules.newRule": "Neue Regel",
   "filterRules.description": "Filterregeln verarbeiten eingehende E-Mails automatisch. Zum Umsortieren ziehen – Regeln werden von oben nach unten ausgewertet.",
@@ -426,7 +415,6 @@
   "filterRules.addAction": "Aktion hinzufügen",
   "filterRules.cancel": "Abbrechen",
   "filterRules.save": "Speichern",
-
   "signatures.noIdentities": "Keine E-Mail-Identitäten gefunden.",
   "signatures.identity": "Identität",
   "signatures.signatureFor": "Signatur für {{email}}",
@@ -437,11 +425,9 @@
   "signatures.saved": "Gespeichert",
   "signatures.saveSignature": "Signatur speichern",
   "signatures.failedToSave": "Speichern fehlgeschlagen",
-
   "keyboard.title": "Tastenkürzel",
   "keyboard.desc": "Verwenden Sie Einzeltastenkürzel für schnellere Navigation und Aktionen.",
   "keyboard.reference": "Tastenkürzel-Übersicht",
-
   "storage.title": "Speichernutzung",
   "storage.totalMessages": "Nachrichten gesamt",
   "storage.messages": "Nachrichten",
@@ -455,7 +441,6 @@
   "storage.alreadyEmpty": "{{name}} ist bereits leer.",
   "storage.emptied": "{{name}} geleert ({{count}} Nachrichten entfernt).",
   "storage.failedToEmpty": "{{name}} konnte nicht geleert werden.",
-
   "pgp.digitallySignTitle": "E-Mails digital signieren",
   "pgp.digitallySignDesc": "Wenn Sie Ihre E-Mails signieren, können Empfänger überprüfen, ob die Nachricht wirklich von Ihnen stammt und nicht manipuliert wurde. Dies ist wie ein digitales Wachssiegel.",
   "pgp.enableSigning": "E-Mail-Signierung aktivieren",
@@ -499,7 +484,6 @@
   "pgp.passwordPrompt": "Geben Sie Ihr E-Mail-Passwort ein, um die E-Mail-Signierung zu aktivieren.\nIhr Passwort wird zum Schutz Ihres Signaturschlüssels verwendet und nicht gespeichert.",
   "pgp.exportWarning": "WARNUNG: Ihr privater Schlüssel ist äußerst sensibel. Jeder, der Zugang dazu hat, kann Ihre verschlüsselten E-Mails lesen und Ihre Signatur fälschen.\n\nExportieren Sie nur, wenn Sie den Schlüssel auf einem anderen Gerät importieren müssen. Bewahren Sie ihn sicher auf.\n\nFortfahren?",
   "pgp.deleteConfirm": "Sind Sie sicher, dass Sie Ihren PGP-Schlüssel löschen möchten? Dies kann nicht rückgängig gemacht werden. Sie können dann keine Nachrichten mehr entschlüsseln, die mit diesem Schlüssel verschlüsselt wurden.",
-
   "pgpMessage.encrypted": "Diese Nachricht ist verschlüsselt",
   "pgpMessage.needSetup": "Sie müssen die E-Mail-Signierung in den Einstellungen einrichten, um diese Nachricht zu entschlüsseln.",
   "pgpMessage.keyLocked": "Ihr PGP-Schlüssel ist gesperrt. Geben Sie Ihr Passwort ein, um ihn zu entsperren.",
@@ -513,7 +497,6 @@
   "pgpMessage.signedUnknown": "Signiert von {{email}} (Schlüssel nicht verifiziert)",
   "pgpMessage.signatureFailed": "Signaturüberprüfung fehlgeschlagen",
   "pgpMessage.signedNoKey": "Signiert, aber Schlüssel des Absenders nicht gefunden",
-
   "advancedSearch.title": "Erweiterte Suche",
   "advancedSearch.from": "Von",
   "advancedSearch.fromPlaceholder": "Absender-E-Mail oder Name",
@@ -533,5 +516,7 @@
   "advancedSearch.starred": "Markiert",
   "advancedSearch.reset": "Zurücksetzen",
   "advancedSearch.cancel": "Abbrechen",
-  "advancedSearch.search": "Suchen"
+  "advancedSearch.search": "Suchen",
+  "signatures.displayName": "Anzeigename",
+  "signatures.displayNameHint": "Der Name, der Empfängern angezeigt wird, wenn Sie von dieser Adresse senden"
 }

@@ -87,6 +87,7 @@ export const SignatureSettings = React.memo(function SignatureSettings() {
 function SignatureEditor({ identity }: { identity: Identity }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [displayName, setDisplayName] = useState(identity.name ?? "");
   const [htmlSig, setHtmlSig] = useState(identity.htmlSignature ?? "");
   const [textSig, setTextSig] = useState(identity.textSignature ?? "");
   const [mode, setMode] = useState<"html" | "text">("html");
@@ -94,9 +95,11 @@ function SignatureEditor({ identity }: { identity: Identity }) {
 
   const saveMutation = useMutation({
     mutationFn: async ({
+      name,
       htmlSignature,
       textSignature,
     }: {
+      name: string;
       htmlSignature: string;
       textSignature: string;
     }) => {
@@ -112,6 +115,7 @@ function SignatureEditor({ identity }: { identity: Identity }) {
             {
               update: {
                 [identity.id]: {
+                  name,
                   htmlSignature,
                   textSignature,
                 },
@@ -136,13 +140,45 @@ function SignatureEditor({ identity }: { identity: Identity }) {
   const handleSave = useCallback(() => {
     setSaveStatus("saving");
     saveMutation.mutate({
+      name: displayName,
       htmlSignature: htmlSig,
       textSignature: textSig,
     });
-  }, [htmlSig, textSig, saveMutation]);
+  }, [displayName, htmlSig, textSig, saveMutation]);
 
   return (
     <div className="space-y-3">
+      {/* Display name */}
+      <div>
+        <label
+          className="text-xs font-medium block mb-1.5"
+          style={{ color: "var(--color-text-secondary)" }}
+        >
+          {t("signatures.displayName")}
+        </label>
+        <input
+          type="text"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          placeholder={identity.email}
+          className="w-full h-9 px-3 text-sm rounded-md outline-none transition-colors"
+          style={{
+            backgroundColor: "var(--color-bg-primary)",
+            color: "var(--color-text-primary)",
+            border: "1px solid var(--color-border-primary)",
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = "var(--color-border-focus)";
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = "var(--color-border-primary)";
+          }}
+        />
+        <p className="text-xs mt-1" style={{ color: "var(--color-text-tertiary)" }}>
+          {t("signatures.displayNameHint")}
+        </p>
+      </div>
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <PenLine size={14} style={{ color: "var(--color-text-secondary)" }} />

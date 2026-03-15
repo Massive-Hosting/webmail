@@ -193,7 +193,6 @@
   "notifications.enableBanner": "Aktiver varsler for å bli varslet om nye e-poster",
   "notifications.enable": "Aktiver",
   "notifications.dismiss": "Avvis",
-
   "settingsDialog.title": "Innstillinger",
   "settingsDialog.close": "Lukk innstillinger",
   "settingsDialog.sections": "Innstillingsseksjoner",
@@ -205,7 +204,6 @@
   "settingsDialog.notifications": "Varsler",
   "settingsDialog.storage": "Lagring",
   "settingsDialog.security": "Sikkerhet",
-
   "search.placeholder": "Søk i meldinger... (/ for fokus)",
   "search.clearSearchEsc": "Tøm søk (Esc)",
   "search.advancedSearch": "Avansert søk",
@@ -223,18 +221,15 @@
   "search.to": "Til",
   "search.subject": "Emne",
   "search.recent": "Nylig",
-
   "attachment.removeAttachment": "Fjern vedlegg",
   "attachment.exceedsFileSize": "«{{name}}» overskrider filstørrelsesgrensen på 25 MB.",
   "attachment.exceedsTotalSize": "Totalt vedlegg ville overstige 25 MB-grensen.",
   "attachment.failedToUpload": "Kunne ikke laste opp «{{name}}».",
   "attachment.dropToAttach": "Slipp filer for å legge ved",
-
   "compose.addRecipients": "Legg til mottakere...",
   "compose.writeMessage": "Skriv meldingen din...",
   "compose.imageUrl": "Bilde-URL:",
   "compose.apply": "Bruk",
-
   "editor.undo": "Angre",
   "editor.redo": "Gjør om",
   "editor.bold": "Fet (Ctrl+B)",
@@ -253,7 +248,6 @@
   "editor.alignLeft": "Venstrejuster",
   "editor.alignCenter": "Sentrer",
   "editor.alignRight": "Høyrejuster",
-
   "contacts.new": "Ny",
   "contacts.importContacts": "Importer kontakter",
   "contacts.exportContacts": "Eksporter kontakter",
@@ -318,7 +312,6 @@
   "contacts.newGroup": "Ny gruppe",
   "contacts.groupName": "Gruppenavn...",
   "contacts.allContacts": "Alle kontakter",
-
   "calendar.newEvent": "Ny hendelse",
   "calendar.calendars": "Kalendere",
   "calendar.previous": "Forrige",
@@ -342,7 +335,6 @@
   "calendar.repeats": "Gjentas {{frequency}}",
   "calendar.todaysSchedule": "Dagens plan",
   "calendar.noEventsToday": "Ingen hendelser i dag",
-
   "calendar.reminderNone": "Ingen",
   "calendar.reminderAtTime": "Ved hendelsens start",
   "calendar.reminder5min": "5 minutter før",
@@ -355,7 +347,6 @@
   "calendar.weekly": "Ukentlig",
   "calendar.monthly": "Månedlig",
   "calendar.yearly": "Årlig",
-
   "invitation.meetingInvitation": "Møteinvitasjon",
   "invitation.calendarEvent": "Kalenderhendelse",
   "invitation.untitledEvent": "Hendelse uten tittel",
@@ -373,7 +364,6 @@
   "invitation.tentativeAccepted": "Foreløpig godtatt og lagt til i kalenderen",
   "invitation.invitationDeclined": "Invitasjon avslått",
   "invitation.failedToRespond": "Kunne ikke svare: {{message}}",
-
   "mailSettings.conversationView": "Samtalevisning",
   "mailSettings.conversationViewDesc": "Grupper relaterte meldinger i tråder.",
   "mailSettings.on": "På",
@@ -403,7 +393,6 @@
   "mailSettings.never": "Aldri",
   "mailSettings.ask": "Spør",
   "mailSettings.always": "Alltid",
-
   "filterRules.title": "Filterregler",
   "filterRules.newRule": "Ny regel",
   "filterRules.description": "Filterregler behandler innkommende e-post automatisk. Dra for å sortere – reglene evalueres ovenfra og ned.",
@@ -426,7 +415,6 @@
   "filterRules.addAction": "Legg til handling",
   "filterRules.cancel": "Avbryt",
   "filterRules.save": "Lagre",
-
   "signatures.noIdentities": "Ingen e-postidentiteter funnet.",
   "signatures.identity": "Identitet",
   "signatures.signatureFor": "Signatur for {{email}}",
@@ -437,11 +425,9 @@
   "signatures.saved": "Lagret",
   "signatures.saveSignature": "Lagre signatur",
   "signatures.failedToSave": "Kunne ikke lagre",
-
   "keyboard.title": "Tastatursnarveier",
   "keyboard.desc": "Bruk enkelttastsnarveier for raskere navigering og handlinger.",
   "keyboard.reference": "Snarveioversikt",
-
   "storage.title": "Lagringsbruk",
   "storage.totalMessages": "Totalt antall meldinger",
   "storage.messages": "meldinger",
@@ -455,7 +441,6 @@
   "storage.alreadyEmpty": "{{name}} er allerede tom.",
   "storage.emptied": "Tømte {{name}} ({{count}} meldinger fjernet).",
   "storage.failedToEmpty": "Kunne ikke tømme {{name}}.",
-
   "pgp.digitallySignTitle": "Signer e-postene dine digitalt",
   "pgp.digitallySignDesc": "Når du signerer e-postene dine, kan mottakere bekrefte at meldingen virkelig kom fra deg og ikke er endret. Dette er som et digitalt vokssegl.",
   "pgp.enableSigning": "Aktiver e-postsignering",
@@ -499,7 +484,6 @@
   "pgp.passwordPrompt": "Skriv inn e-postpassordet ditt for å aktivere e-postsignering.\nPassordet brukes til å beskytte signeringsnøkkelen og lagres ikke.",
   "pgp.exportWarning": "ADVARSEL: Din private nøkkel er svært sensitiv. Alle som har tilgang til den kan lese krypterte e-poster og forfalske signaturen din.\n\nEksporter bare hvis du trenger å importere den på en annen enhet. Oppbevar den trygt.\n\nFortsette?",
   "pgp.deleteConfirm": "Er du sikker på at du vil slette PGP-nøkkelen? Dette kan ikke angres. Du vil ikke lenger kunne dekryptere meldinger kryptert med denne nøkkelen.",
-
   "pgpMessage.encrypted": "Denne meldingen er kryptert",
   "pgpMessage.needSetup": "Du må konfigurere e-postsignering i Innstillinger for å dekryptere denne meldingen.",
   "pgpMessage.keyLocked": "PGP-nøkkelen din er låst. Skriv inn passordet for å låse den opp.",
@@ -513,7 +497,6 @@
   "pgpMessage.signedUnknown": "Signert av {{email}} (nøkkel ikke verifisert)",
   "pgpMessage.signatureFailed": "Signaturverifisering mislyktes",
   "pgpMessage.signedNoKey": "Signert, men avsenderens nøkkel ikke funnet",
-
   "advancedSearch.title": "Avansert søk",
   "advancedSearch.from": "Fra",
   "advancedSearch.fromPlaceholder": "Avsenders e-post eller navn",
@@ -533,5 +516,7 @@
   "advancedSearch.starred": "Stjernemerket",
   "advancedSearch.reset": "Tilbakestill",
   "advancedSearch.cancel": "Avbryt",
-  "advancedSearch.search": "Søk"
+  "advancedSearch.search": "Søk",
+  "signatures.displayName": "Visningsnavn",
+  "signatures.displayNameHint": "Navnet som vises for mottakere når du sender e-post fra denne adressen"
 }

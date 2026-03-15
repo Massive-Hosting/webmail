@@ -264,10 +264,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         }
       }
 
-      // Merge server prefs with defaults (server wins)
+      // Merge: server wins, but prefer localStorage for theme/density
+      // (user may have changed them locally before server sync)
+      const localTheme = localStorage.getItem("theme");
+      const localDensity = localStorage.getItem("density");
       const merged: Preferences = {
         ...DEFAULT_PREFERENCES,
         ...serverPrefs,
+        // If server has default value but localStorage has a user choice, prefer local
+        theme: serverPrefs.theme ?? (localTheme as Preferences["theme"]) ?? DEFAULT_PREFERENCES.theme,
+        density: serverPrefs.density ?? (localDensity as Preferences["density"]) ?? DEFAULT_PREFERENCES.density,
         notifications: {
           ...DEFAULT_PREFERENCES.notifications,
           ...(serverPrefs.notifications ?? {}),

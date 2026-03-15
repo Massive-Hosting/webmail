@@ -8,13 +8,11 @@
   "nav.collapseSidebar": "Collapse sidebar",
   "nav.skipToContent": "Skip to content",
   "nav.backToList": "Back to list",
-
   "toolbar.theme": "Theme: {{theme}}",
   "toolbar.themeClick": "Theme: {{theme}}. Click to change.",
   "toolbar.settings": "Settings",
   "toolbar.logOut": "Log out",
   "toolbar.userMenu": "User menu",
-
   "action.newMail": "New mail",
   "action.newMailShortcut": "New mail (C)",
   "action.delete": "Delete",
@@ -41,7 +39,6 @@
   "action.selected": "{{count}} selected",
   "action.noFoldersAvailable": "No folders available",
   "action.more": "More",
-
   "folder.newFolder": "New folder",
   "folder.folderNamePlaceholder": "Folder name...",
   "folder.markAllAsRead": "Mark all as read",
@@ -49,17 +46,14 @@
   "folder.deleteFolder": "Delete folder",
   "folder.empty": "Empty {{name}}",
   "folder.mailFolders": "Mail folders",
-
   "message.noMessages": "No messages",
   "message.emptyFolder": "This folder is empty. Messages that arrive here will show up in this list.",
   "message.noSubject": "(no subject)",
   "message.messages": "Messages",
   "message.noContent": "No content available.",
-
   "readingPane.selectMessage": "Select a message to read",
   "readingPane.selectMessageDesc": "Choose a message from the list to view its contents here.",
   "readingPane.messagePreview": "Message preview",
-
   "emptyState.allCaughtUp": "All caught up!",
   "emptyState.allCaughtUpDesc": "No new messages in your inbox. Take a break or compose something new.",
   "emptyState.noDrafts": "No drafts",
@@ -70,13 +64,11 @@
   "emptyState.noJunkDesc": "Messages detected as spam will appear here.",
   "emptyState.folderEmpty": "This folder is empty",
   "emptyState.folderEmptyDesc": "Messages moved to this folder will show up here.",
-
   "search.noMessagesFound": "No messages found",
   "search.noResultsFor": "No results for \"{{query}}\". Try different keywords or use search operators like from:, to:, subject:, has:attachment.",
   "search.result": "{{count}} result",
   "search.result_other": "{{count}} results",
   "search.clearSearch": "Clear search",
-
   "messageView.to": "to",
   "messageView.more": "+{{count}} more",
   "messageView.externalImagesHidden": "External images are hidden for privacy.",
@@ -84,14 +76,12 @@
   "messageView.showQuotedText": "Show quoted text",
   "messageView.hideQuotedText": "Hide quoted text",
   "messageView.attachment": "attachment",
-
   "thread.messagesInConversation": "{{count}} messages in this conversation",
   "thread.collapseAll": "Collapse all",
   "thread.expandAll": "Expand all",
   "thread.collapse": "Collapse",
   "thread.earlierMessage": "{{count}} earlier message",
   "thread.earlierMessage_other": "{{count}} earlier messages",
-
   "compose.newMessage": "New Message",
   "compose.reply": "Reply",
   "compose.replyAll": "Reply All",
@@ -134,10 +124,9 @@
   "compose.missingPgpKeys": "The following recipients do not have a PGP public key:",
   "compose.cancel": "Cancel",
   "compose.sendUnencrypted": "Send unencrypted",
-
   "ai.assistant": "AI Assistant",
   "ai.closePanel": "Close AI panel",
-  "ai.promptReply": "How should the reply sound? (optional \u2014 or just pick a tone)",
+  "ai.promptReply": "How should the reply sound? (optional — or just pick a tone)",
   "ai.promptCompose": "What would you like to write?",
   "ai.tone": "Tone:",
   "ai.professional": "Professional",
@@ -152,10 +141,8 @@
   "ai.replyProfessionally": "Reply professionally",
   "ai.replyFriendly": "Reply friendly",
   "ai.replyBriefly": "Reply briefly",
-
   "shortcuts.title": "Keyboard Shortcuts",
   "shortcuts.toggleHint": "Press <kbd>?</kbd> to toggle this dialog",
-
   "login.signIn": "Sign in to Webmail",
   "login.subtitle": "Enter your credentials to continue",
   "login.emailLabel": "Email address",
@@ -170,7 +157,6 @@
   "login.invalidCredentials": "Invalid email or password.",
   "login.genericError": "An error occurred. Please try again.",
   "login.language": "Language",
-
   "settings.theme": "Theme",
   "settings.themeDesc": "Choose how the interface looks.",
   "settings.system": "System",
@@ -187,9 +173,8 @@
   "settings.restoreDefaults": "Restore defaults",
   "settings.language": "Language",
   "settings.languageDesc": "Choose the display language for the interface.",
-
   "toast.backOnline": "You're back online.",
-  "toast.offline": "You're offline \u2014 showing cached data",
+  "toast.offline": "You're offline — showing cached data",
   "toast.markingAllRead": "Marking all as read...",
   "toast.allAlreadyRead": "All messages are already read",
   "toast.markedAsRead": "Marked {{count}} message as read",
@@ -200,7 +185,6 @@
   "toast.emptied": "Emptied {{name}} ({{count}} message)",
   "toast.emptied_other": "Emptied {{name}} ({{count}} messages)",
   "toast.failedToEmpty": "Failed to empty {{name}}",
-
   "notifications.desktopTitle": "Desktop notifications",
   "notifications.desktopDesc": "Show a browser notification when new mail arrives.",
   "notifications.blockedByBrowser": "Notifications are blocked by your browser. Check your browser settings to allow notifications for this site.",
@@ -209,7 +193,6 @@
   "notifications.enableBanner": "Enable notifications to get alerted about new emails",
   "notifications.enable": "Enable",
   "notifications.dismiss": "Dismiss",
-
   "settingsDialog.title": "Settings",
   "settingsDialog.close": "Close settings",
   "settingsDialog.sections": "Settings sections",
@@ -221,7 +204,6 @@
   "settingsDialog.notifications": "Notifications",
   "settingsDialog.storage": "Storage",
   "settingsDialog.security": "Security",
-
   "search.placeholder": "Search messages... (/ to focus)",
   "search.clearSearchEsc": "Clear search (Esc)",
   "search.advancedSearch": "Advanced search",
@@ -239,18 +221,15 @@
   "search.to": "To",
   "search.subject": "Subject",
   "search.recent": "Recent",
-
   "attachment.removeAttachment": "Remove attachment",
   "attachment.exceedsFileSize": "\"{{name}}\" exceeds the 25MB file size limit.",
   "attachment.exceedsTotalSize": "Total attachment size would exceed 25MB limit.",
   "attachment.failedToUpload": "Failed to upload \"{{name}}\".",
   "attachment.dropToAttach": "Drop files to attach",
-
   "compose.addRecipients": "Add recipients...",
   "compose.writeMessage": "Write your message...",
   "compose.imageUrl": "Image URL:",
   "compose.apply": "Apply",
-
   "editor.undo": "Undo",
   "editor.redo": "Redo",
   "editor.bold": "Bold (Ctrl+B)",
@@ -269,7 +248,6 @@
   "editor.alignLeft": "Align Left",
   "editor.alignCenter": "Align Center",
   "editor.alignRight": "Align Right",
-
   "contacts.new": "New",
   "contacts.importContacts": "Import contacts",
   "contacts.exportContacts": "Export contacts",
@@ -334,7 +312,6 @@
   "contacts.newGroup": "New group",
   "contacts.groupName": "Group name...",
   "contacts.allContacts": "All Contacts",
-
   "calendar.newEvent": "New Event",
   "calendar.calendars": "Calendars",
   "calendar.previous": "Previous",
@@ -358,7 +335,6 @@
   "calendar.repeats": "Repeats {{frequency}}",
   "calendar.todaysSchedule": "Today's Schedule",
   "calendar.noEventsToday": "No events today",
-
   "calendar.reminderNone": "None",
   "calendar.reminderAtTime": "At time of event",
   "calendar.reminder5min": "5 minutes before",
@@ -371,7 +347,6 @@
   "calendar.weekly": "Weekly",
   "calendar.monthly": "Monthly",
   "calendar.yearly": "Yearly",
-
   "invitation.meetingInvitation": "Meeting Invitation",
   "invitation.calendarEvent": "Calendar Event",
   "invitation.untitledEvent": "Untitled Event",
@@ -389,7 +364,6 @@
   "invitation.tentativeAccepted": "Tentatively accepted and added to calendar",
   "invitation.invitationDeclined": "Invitation declined",
   "invitation.failedToRespond": "Failed to respond: {{message}}",
-
   "mailSettings.conversationView": "Conversation view",
   "mailSettings.conversationViewDesc": "Group related messages into threads.",
   "mailSettings.on": "On",
@@ -419,7 +393,6 @@
   "mailSettings.never": "Never",
   "mailSettings.ask": "Ask",
   "mailSettings.always": "Always",
-
   "filterRules.title": "Filter Rules",
   "filterRules.newRule": "New Rule",
   "filterRules.description": "Filter rules automatically process incoming email. Drag to reorder — rules are evaluated top to bottom.",
@@ -442,7 +415,6 @@
   "filterRules.addAction": "Add action",
   "filterRules.cancel": "Cancel",
   "filterRules.save": "Save",
-
   "signatures.noIdentities": "No email identities found.",
   "signatures.identity": "Identity",
   "signatures.signatureFor": "Signature for {{email}}",
@@ -453,11 +425,9 @@
   "signatures.saved": "Saved",
   "signatures.saveSignature": "Save signature",
   "signatures.failedToSave": "Failed to save",
-
   "keyboard.title": "Keyboard shortcuts",
   "keyboard.desc": "Use single-key shortcuts for faster navigation and actions.",
   "keyboard.reference": "Shortcut reference",
-
   "storage.title": "Storage usage",
   "storage.totalMessages": "Total messages",
   "storage.messages": "messages",
@@ -471,7 +441,6 @@
   "storage.alreadyEmpty": "{{name}} is already empty.",
   "storage.emptied": "Emptied {{name}} ({{count}} messages removed).",
   "storage.failedToEmpty": "Failed to empty {{name}}.",
-
   "pgp.digitallySignTitle": "Digitally Sign Your Emails",
   "pgp.digitallySignDesc": "When you sign your emails, recipients can verify that the message really came from you and wasn't tampered with. This is like a digital wax seal.",
   "pgp.enableSigning": "Enable Email Signing",
@@ -515,7 +484,6 @@
   "pgp.passwordPrompt": "Enter your email password to enable email signing.\nYour password is used to protect your signing key and is not stored.",
   "pgp.exportWarning": "WARNING: Your private key is extremely sensitive. Anyone with access to it can read your encrypted emails and forge your signature.\n\nOnly export if you need to import it on another device. Keep it safe.\n\nContinue?",
   "pgp.deleteConfirm": "Are you sure you want to delete your PGP key? This cannot be undone. You will no longer be able to decrypt messages encrypted to this key.",
-
   "pgpMessage.encrypted": "This message is encrypted",
   "pgpMessage.needSetup": "You need to set up email signing in Settings to decrypt this message.",
   "pgpMessage.keyLocked": "Your PGP key is locked. Enter your password to unlock it.",
@@ -529,7 +497,6 @@
   "pgpMessage.signedUnknown": "Signed by {{email}} (key not verified)",
   "pgpMessage.signatureFailed": "Signature verification failed",
   "pgpMessage.signedNoKey": "Signed, but signer's key not found",
-
   "advancedSearch.title": "Advanced Search",
   "advancedSearch.from": "From",
   "advancedSearch.fromPlaceholder": "Sender email or name",
@@ -549,5 +516,7 @@
   "advancedSearch.starred": "Starred",
   "advancedSearch.reset": "Reset",
   "advancedSearch.cancel": "Cancel",
-  "advancedSearch.search": "Search"
+  "advancedSearch.search": "Search",
+  "signatures.displayName": "Display name",
+  "signatures.displayNameHint": "The name shown to recipients when you send email from this address"
 }
