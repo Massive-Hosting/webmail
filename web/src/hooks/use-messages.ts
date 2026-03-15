@@ -1,0 +1,278 @@
+/** Message list hook with pagination and infinite scroll */
+
+import { useInfiniteQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { fetchEmails, updateEmails, destroyEmails } from "@/api/mail.ts";
+import type { EmailListItem } from "@/types/mail.ts";
+import type { JMAPFilter } from "@/types/jmap.ts";
+import { useCallback, useMemo } from "react";
+import { toast } from "sonner";
+import { useWebSocket } from "@/hooks/use-websocket.ts";
+
+const PAGE_SIZE = 50;
+
+export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
+  const queryClient = useQueryClient();
+  const { isConnected } = useWebSocket();
+
+  const query = useInfiniteQuery({
+    queryKey: ["emails", mailboxId, filter],
+    queryFn: async ({ pageParam = 0 }) => {
+      if (!mailboxId) {
+        return { emails: [] as EmailListItem[], total: 0, position: 0 };
+      }
+      return fetchEmails({
+        mailboxId,
+        position: pageParam as number,
+        limit: PAGE_SIZE,
+        filter,
+      });
+    },
+    getNextPageParam: (lastPage) => {
+      const nextPosition = lastPage.position + lastPage.emails.length;
+      if (nextPosition >= lastPage.total) return undefined;
+      return nextPosition;
+    },
+    initialPageParam: 0,
+    enabled: !!mailboxId,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    // When WebSocket is connected, disable polling — we get push updates.
+    // When disconnected, fall back to 60s polling.
+    refetchInterval: isConnected ? false : 60000,
+    refetchIntervalInBackground: false,
+  });
+
+  /** Flattened list of all loaded emails */
+  const emails = useMemo(() => {
+    if (!query.data?.pages) return [];
+    return query.data.pages.flatMap((page) => page.emails);
+  }, [query.data]);
+
+  const total = query.data?.pages[0]?.total ?? 0;
+
+  /** Star/unstar email (optimistic) */
+  const starMutation = useMutation({
+    mutationFn: async (params: { emailId: string; flagged: boolean }) => {
+      await updateEmails({
+        [params.emailId]: {
+          [`keywords/$flagged`]: params.flagged ? true : null,
+        },
+      });
+    },
+    onMutate: async (params) => {
+      await queryClient.cancelQueries({ queryKey: ["emails", mailboxId] });
+      const prev = queryClient.getQueryData(["emails", mailboxId, filter]);
+      queryClient.setQueryData(
+        ["emails", mailboxId, filter],
+        optimisticUpdateEmail(query.data, params.emailId, (email) => {
+          const keywords = { ...email.keywords };
+          if (params.flagged) {
+            keywords["$flagged"] = true;
+          } else {
+            delete keywords["$flagged"];
+          }
+          return { ...email, keywords };
+        }),
+      );
+      return { prev };
+    },
+    onError: (_err, _params, context) => {
+      if (context?.prev) {
+        queryClient.setQueryData(["emails", mailboxId, filter], context.prev);
+      }
+      toast.error("Failed to update message");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["emails", mailboxId] });
+    },
+  });
+
+  /** Mark read/unread (optimistic) */
+  const markReadMutation = useMutation({
+    mutationFn: async (params: { emailIds: string[]; seen: boolean }) => {
+      const updates: Record<string, Record<string, unknown>> = {};
+      for (const id of params.emailIds) {
+        updates[id] = {
+          [`keywords/$seen`]: params.seen ? true : null,
+        };
+      }
+      await updateEmails(updates);
+    },
+    onMutate: async (params) => {
+      await queryClient.cancelQueries({ queryKey: ["emails", mailboxId] });
+      const prev = queryClient.getQueryData(["emails", mailboxId, filter]);
+      let data = query.data;
+      for (const emailId of params.emailIds) {
+        data = optimisticUpdateEmail(data, emailId, (email) => {
+          const keywords = { ...email.keywords };
+          if (params.seen) {
+            keywords["$seen"] = true;
+          } else {
+            delete keywords["$seen"];
+          }
+          return { ...email, keywords };
+        });
+      }
+      queryClient.setQueryData(["emails", mailboxId, filter], data);
+      return { prev };
+    },
+    onError: (_err, _params, context) => {
+      if (context?.prev) {
+        queryClient.setQueryData(["emails", mailboxId, filter], context.prev);
+      }
+      toast.error("Failed to update message");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["emails", mailboxId] });
+      queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
+    },
+  });
+
+  /** Move emails to a different mailbox (optimistic) */
+  const moveMutation = useMutation({
+    mutationFn: async (params: {
+      emailIds: string[];
+      fromMailboxId: string;
+      toMailboxId: string;
+    }) => {
+      const updates: Record<string, Record<string, unknown>> = {};
+      for (const id of params.emailIds) {
+        updates[id] = {
+          [`mailboxIds/${params.fromMailboxId}`]: null,
+          [`mailboxIds/${params.toMailboxId}`]: true,
+        };
+      }
+      await updateEmails(updates);
+    },
+    onMutate: async (params) => {
+      await queryClient.cancelQueries({ queryKey: ["emails", mailboxId] });
+      const prev = queryClient.getQueryData(["emails", mailboxId, filter]);
+      // Remove from current list optimistically
+      let data = query.data;
+      for (const emailId of params.emailIds) {
+        data = optimisticRemoveEmail(data, emailId);
+      }
+      queryClient.setQueryData(["emails", mailboxId, filter], data);
+      return { prev, params };
+    },
+    onSuccess: (_data, params) => {
+      toast("Messages moved", {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            moveMutation.mutate({
+              emailIds: params.emailIds,
+              fromMailboxId: params.toMailboxId,
+              toMailboxId: params.fromMailboxId,
+            });
+          },
+        },
+        duration: 5000,
+      });
+    },
+    onError: (_err, _params, context) => {
+      if (context?.prev) {
+        queryClient.setQueryData(["emails", mailboxId, filter], context.prev);
+      }
+      toast.error("Failed to move messages");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["emails"] });
+      queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
+    },
+  });
+
+  /** Permanently delete emails */
+  const destroyMutation = useMutation({
+    mutationFn: async (emailIds: string[]) => {
+      await destroyEmails(emailIds);
+    },
+    onMutate: async (emailIds) => {
+      await queryClient.cancelQueries({ queryKey: ["emails", mailboxId] });
+      const prev = queryClient.getQueryData(["emails", mailboxId, filter]);
+      let data = query.data;
+      for (const emailId of emailIds) {
+        data = optimisticRemoveEmail(data, emailId);
+      }
+      queryClient.setQueryData(["emails", mailboxId, filter], data);
+      return { prev };
+    },
+    onError: (_err, _params, context) => {
+      if (context?.prev) {
+        queryClient.setQueryData(["emails", mailboxId, filter], context.prev);
+      }
+      toast.error("Failed to delete messages");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["emails"] });
+      queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
+    },
+  });
+
+  return {
+    emails,
+    total,
+    isLoading: query.isLoading,
+    isFetchingNextPage: query.isFetchingNextPage,
+    hasNextPage: query.hasNextPage,
+    fetchNextPage: query.fetchNextPage,
+    error: query.error,
+    starEmail: useCallback(
+      (emailId: string, flagged: boolean) => starMutation.mutate({ emailId, flagged }),
+      [starMutation],
+    ),
+    markRead: useCallback(
+      (emailIds: string[], seen: boolean) => markReadMutation.mutate({ emailIds, seen }),
+      [markReadMutation],
+    ),
+    moveEmails: useCallback(
+      (emailIds: string[], fromMailboxId: string, toMailboxId: string) =>
+        moveMutation.mutate({ emailIds, fromMailboxId, toMailboxId }),
+      [moveMutation],
+    ),
+    destroyEmails: useCallback(
+      (emailIds: string[]) => destroyMutation.mutate(emailIds),
+      [destroyMutation],
+    ),
+  };
+}
+
+/** Optimistic update helper: update a single email in the paginated query data */
+function optimisticUpdateEmail(
+  data: ReturnType<typeof useInfiniteQueryData>,
+  emailId: string,
+  updater: (email: EmailListItem) => EmailListItem,
+) {
+  if (!data) return data;
+  return {
+    ...data,
+    pages: data.pages.map((page) => ({
+      ...page,
+      emails: page.emails.map((e) => (e.id === emailId ? updater(e) : e)),
+    })),
+  };
+}
+
+/** Optimistic remove helper */
+function optimisticRemoveEmail(
+  data: ReturnType<typeof useInfiniteQueryData>,
+  emailId: string,
+) {
+  if (!data) return data;
+  return {
+    ...data,
+    pages: data.pages.map((page) => ({
+      ...page,
+      emails: page.emails.filter((e) => e.id !== emailId),
+      total: Math.max(0, page.total - 1),
+    })),
+  };
+}
+
+/** Type helper for the paginated query data structure */
+function useInfiniteQueryData(): {
+  pages: { emails: EmailListItem[]; total: number; position: number }[];
+  pageParams: unknown[];
+} | undefined {
+  return undefined;
+}

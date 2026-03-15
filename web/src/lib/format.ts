@@ -1,0 +1,79 @@
+/** Date, size, and address formatting utilities */
+
+import {
+  format,
+  isToday,
+  isThisYear,
+  formatDistanceToNow,
+} from "date-fns";
+import type { EmailAddress } from "@/types/mail.ts";
+
+/** Smart date formatting: "2:30 PM" today, "Mar 12" this year, "Mar 12, 2025" older */
+export function formatMessageDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  if (isToday(date)) {
+    return format(date, "h:mm a");
+  }
+  if (isThisYear(date)) {
+    return format(date, "MMM d");
+  }
+  return format(date, "MMM d, yyyy");
+}
+
+/** Full date + time for tooltips */
+export function formatFullDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return format(date, "EEEE, MMMM d, yyyy 'at' h:mm a");
+}
+
+/** Relative date for tooltips */
+export function formatRelativeDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return formatDistanceToNow(date, { addSuffix: true });
+}
+
+/** Format file size: "1.2 KB", "3.4 MB" */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
+/** Format email address for display */
+export function formatAddress(addr: EmailAddress): string {
+  if (addr.name) return addr.name;
+  return addr.email;
+}
+
+/** Format list of addresses */
+export function formatAddressList(addrs: EmailAddress[] | null): string {
+  if (!addrs || addrs.length === 0) return "";
+  return addrs.map(formatAddress).join(", ");
+}
+
+/** Get initials from name or email for avatar */
+export function getInitials(addr: EmailAddress): string {
+  if (addr.name) {
+    const parts = addr.name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return parts[0][0].toUpperCase();
+  }
+  return addr.email[0].toUpperCase();
+}
+
+/** Generate a consistent color for an avatar based on email */
+export function getAvatarColor(email: string): string {
+  const colors = [
+    "#4f46e5", "#7c3aed", "#2563eb", "#0891b2",
+    "#059669", "#d97706", "#dc2626", "#db2777",
+    "#9333ea", "#0d9488", "#ea580c", "#4338ca",
+  ];
+  let hash = 0;
+  for (let i = 0; i < email.length; i++) {
+    hash = ((hash << 5) - hash + email.charCodeAt(i)) | 0;
+  }
+  return colors[Math.abs(hash) % colors.length];
+}

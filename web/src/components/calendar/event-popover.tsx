@@ -1,0 +1,218 @@
+/** Event detail popover */
+
+import React, { useCallback } from "react";
+import * as Popover from "@radix-ui/react-popover";
+import { X, Edit2, Trash2, MapPin, Clock, Calendar as CalendarIcon, Users } from "lucide-react";
+import type { CalendarEvent, Calendar } from "@/types/calendar.ts";
+import { format, parseISO, getEventEnd, getEventColor, formatEventTime } from "@/hooks/use-calendar.ts";
+
+interface EventPopoverProps {
+  event: CalendarEvent | null;
+  anchor: HTMLElement | null;
+  calendars: Calendar[];
+  onClose: () => void;
+  onEdit: (event: CalendarEvent) => void;
+  onDelete: (eventId: string) => void;
+}
+
+export const EventPopover = React.memo(function EventPopover({
+  event,
+  anchor,
+  calendars,
+  onClose,
+  onEdit,
+  onDelete,
+}: EventPopoverProps) {
+  if (!event || !anchor) return null;
+
+  const color = getEventColor(event, calendars);
+  const calendarId = Object.keys(event.calendarIds)[0];
+  const calendar = calendars.find((c) => c.id === calendarId);
+  const timeStr = formatEventTime(event);
+  const startDate = parseISO(event.start);
+
+  const participants = event.participants
+    ? Object.values(event.participants).filter((p) => p.roles?.attendee)
+    : [];
+
+  return (
+    <Popover.Root open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <Popover.Anchor virtualRef={{ current: anchor }} />
+      <Popover.Portal>
+        <Popover.Content
+          className="rounded-lg shadow-xl w-72 z-50 overflow-hidden"
+          style={{
+            backgroundColor: "var(--color-bg-elevated)",
+            border: "1px solid var(--color-border-primary)",
+          }}
+          sideOffset={8}
+          align="start"
+          onEscapeKeyDown={onClose}
+        >
+          {/* Color bar */}
+          <div className="h-1.5" style={{ backgroundColor: color }} />
+
+          <div className="p-4">
+            {/* Title and actions */}
+            <div className="flex items-start justify-between mb-3">
+              <h3
+                className="text-sm font-semibold flex-1 pr-2"
+                style={{ color: "var(--color-text-primary)" }}
+              >
+                {event.title}
+              </h3>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                  onClick={() => onEdit(event)}
+                  title="Edit event"
+                >
+                  <Edit2 size={14} />
+                </button>
+                <button
+                  className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
+                  style={{ color: "var(--color-text-error, #dc2626)" }}
+                  onClick={() => onDelete(event.id)}
+                  title="Delete event"
+                >
+                  <Trash2 size={14} />
+                </button>
+                <button
+                  className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                  onClick={onClose}
+                  title="Close"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+
+            {/* Details */}
+            <div className="flex flex-col gap-2 text-sm">
+              {/* Date and time */}
+              <div className="flex items-center gap-2">
+                <Clock
+                  size={13}
+                  style={{ color: "var(--color-text-tertiary)" }}
+                />
+                <span style={{ color: "var(--color-text-secondary)" }}>
+                  {format(startDate, "EEE, MMM d, yyyy")}
+                  {!event.showWithoutTime && (
+                    <>
+                      {" "}
+                      &middot; {timeStr}
+                    </>
+                  )}
+                </span>
+              </div>
+
+              {/* Location */}
+              {event.location && (
+                <div className="flex items-center gap-2">
+                  <MapPin
+                    size={13}
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  />
+                  <span style={{ color: "var(--color-text-secondary)" }}>
+                    {event.location}
+                  </span>
+                </div>
+              )}
+
+              {/* Calendar */}
+              {calendar && (
+                <div className="flex items-center gap-2">
+                  <CalendarIcon
+                    size={13}
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  />
+                  <span style={{ color: "var(--color-text-secondary)" }}>
+                    {calendar.name}
+                  </span>
+                </div>
+              )}
+
+              {/* Status */}
+              {event.status && event.status !== "confirmed" && (
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-xs px-1.5 py-0.5 rounded"
+                    style={{
+                      backgroundColor:
+                        event.status === "tentative"
+                          ? "#f59e0b20"
+                          : "#ef444420",
+                      color:
+                        event.status === "tentative"
+                          ? "#f59e0b"
+                          : "#ef4444",
+                    }}
+                  >
+                    {event.status}
+                  </span>
+                </div>
+              )}
+
+              {/* Recurrence */}
+              {event.recurrenceRules && event.recurrenceRules.length > 0 && (
+                <div
+                  className="text-xs"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                >
+                  Repeats {event.recurrenceRules[0].frequency}
+                  {event.recurrenceRules[0].interval && event.recurrenceRules[0].interval > 1
+                    ? ` every ${event.recurrenceRules[0].interval} ${event.recurrenceRules[0].frequency === "daily" ? "days" : event.recurrenceRules[0].frequency === "weekly" ? "weeks" : event.recurrenceRules[0].frequency === "monthly" ? "months" : "years"}`
+                    : ""}
+                </div>
+              )}
+
+              {/* Participants */}
+              {participants.length > 0 && (
+                <div className="flex items-start gap-2 mt-1">
+                  <Users
+                    size={13}
+                    className="mt-0.5 shrink-0"
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  />
+                  <div className="flex flex-col gap-0.5">
+                    {participants.map((p, i) => (
+                      <div
+                        key={i}
+                        className="text-xs"
+                        style={{ color: "var(--color-text-secondary)" }}
+                      >
+                        {p.name ?? p.email}
+                        {p.participationStatus &&
+                          p.participationStatus !== "needs-action" && (
+                            <span
+                              className="ml-1 opacity-60"
+                            >
+                              ({p.participationStatus})
+                            </span>
+                          )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              {event.description && (
+                <div
+                  className="text-xs mt-1 whitespace-pre-wrap"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                >
+                  {event.description.length > 200
+                    ? event.description.substring(0, 200) + "..."
+                    : event.description}
+                </div>
+              )}
+            </div>
+          </div>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+});

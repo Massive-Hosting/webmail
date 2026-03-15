@@ -1,0 +1,234 @@
+/** Thread view - stacked messages with expand/collapse */
+
+import React, { useState, useMemo } from "react";
+import { useThread } from "@/hooks/use-thread.ts";
+import { MessageView } from "./message-view.tsx";
+import { Avatar } from "@/components/ui/avatar.tsx";
+import { Skeleton } from "@/components/ui/skeleton.tsx";
+import { formatMessageDate, formatAddress } from "@/lib/format.ts";
+import { isUnread } from "@/types/mail.ts";
+import type { Email } from "@/types/mail.ts";
+import { ChevronDown, ChevronUp } from "lucide-react";
+
+interface ThreadViewProps {
+  threadId: string;
+  activeEmailId: string;
+}
+
+export const ThreadView = React.memo(function ThreadView({
+  threadId,
+  activeEmailId,
+}: ThreadViewProps) {
+  const { thread, emails, isLoading } = useThread(threadId);
+
+  if (isLoading) {
+    return <ThreadSkeleton />;
+  }
+
+  if (!thread || emails.length === 0) {
+    return null;
+  }
+
+  // Single message - no thread UI needed
+  if (emails.length === 1) {
+    return <MessageView emailId={emails[0].id} email={emails[0]} />;
+  }
+
+  return <ThreadContent emails={emails} activeEmailId={activeEmailId} />;
+});
+
+function ThreadContent({
+  emails,
+  activeEmailId,
+}: {
+  emails: Email[];
+  activeEmailId: string;
+}) {
+  // Expand most recent + unread messages by default
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
+    const initial = new Set<string>();
+    // Always expand the most recent
+    if (emails.length > 0) {
+      initial.add(emails[emails.length - 1].id);
+    }
+    // Also expand unread messages
+    for (const email of emails) {
+      if (isUnread(email)) {
+        initial.add(email.id);
+      }
+    }
+    return initial;
+  });
+
+  const [allExpanded, setAllExpanded] = useState(false);
+
+  const toggleEmail = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (allExpanded) {
+      // Collapse all except most recent
+      setExpandedIds(new Set([emails[emails.length - 1].id]));
+      setAllExpanded(false);
+    } else {
+      setExpandedIds(new Set(emails.map((e) => e.id)));
+      setAllExpanded(true);
+    }
+  };
+
+  const subject = emails[0]?.subject || "(no subject)";
+
+  return (
+    <div
+      className="flex flex-col h-full overflow-y-auto"
+      style={{ backgroundColor: "var(--color-bg-primary)" }}
+    >
+      {/* Thread header */}
+      <div
+        className="sticky top-0 z-10 flex items-center justify-between px-6 py-3"
+        style={{
+          backgroundColor: "var(--color-bg-primary)",
+          borderBottom: "1px solid var(--color-border-secondary)",
+        }}
+      >
+        <div>
+          <h2
+            className="text-lg font-semibold"
+            style={{ color: "var(--color-text-primary)" }}
+          >
+            {subject}
+          </h2>
+          <span
+            className="text-xs"
+            style={{ color: "var(--color-text-tertiary)" }}
+          >
+            {emails.length} messages in this conversation
+          </span>
+        </div>
+        <button
+          onClick={toggleAll}
+          className="flex items-center gap-1 text-xs px-2 py-1 rounded"
+          style={{
+            color: "var(--color-text-accent)",
+            backgroundColor: "var(--color-bg-tertiary)",
+          }}
+        >
+          {allExpanded ? "Collapse all" : "Expand all"}
+        </button>
+      </div>
+
+      {/* Thread messages */}
+      <div className="flex-1">
+        {emails.map((email) => {
+          const isExpanded = expandedIds.has(email.id);
+          return (
+            <ThreadMessage
+              key={email.id}
+              email={email}
+              isExpanded={isExpanded}
+              onToggle={() => toggleEmail(email.id)}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const ThreadMessage = React.memo(function ThreadMessage({
+  email,
+  isExpanded,
+  onToggle,
+}: {
+  email: Email;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const sender = email.from?.[0] ?? { name: null, email: "unknown" };
+  const unread = isUnread(email);
+
+  if (!isExpanded) {
+    // Collapsed state
+    return (
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-3 w-full px-6 py-3 text-left transition-colors duration-150 hover:bg-[var(--color-message-hover)]"
+        style={{
+          borderBottom: "1px solid var(--color-border-secondary)",
+        }}
+      >
+        <Avatar address={sender} size={28} />
+        <span
+          className={`text-sm truncate flex-1 ${unread ? "font-semibold" : ""}`}
+          style={{ color: "var(--color-text-primary)" }}
+        >
+          {formatAddress(sender)}
+        </span>
+        <span
+          className="text-xs truncate max-w-[200px]"
+          style={{ color: "var(--color-text-tertiary)" }}
+        >
+          {email.preview}
+        </span>
+        <span
+          className="text-xs shrink-0"
+          style={{ color: "var(--color-text-tertiary)" }}
+        >
+          {formatMessageDate(email.receivedAt)}
+        </span>
+        <ChevronDown
+          size={14}
+          style={{ color: "var(--color-text-tertiary)" }}
+        />
+      </button>
+    );
+  }
+
+  // Expanded state
+  return (
+    <div
+      style={{ borderBottom: "1px solid var(--color-border-secondary)" }}
+    >
+      {/* Collapse handle */}
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-1 px-6 pt-1 text-xs"
+        style={{ color: "var(--color-text-tertiary)" }}
+      >
+        <ChevronUp size={12} />
+        Collapse
+      </button>
+      <MessageView emailId={email.id} email={email} />
+    </div>
+  );
+});
+
+function ThreadSkeleton() {
+  return (
+    <div className="px-6 pt-4">
+      <Skeleton width="60%" height={24} className="mb-3" />
+      <Skeleton width={100} height={12} className="mb-4" />
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 py-3"
+          style={{ borderBottom: "1px solid var(--color-border-secondary)" }}
+        >
+          <Skeleton width={28} height={28} rounded />
+          <Skeleton width={120} height={14} />
+          <div className="flex-1" />
+          <Skeleton width={60} height={12} />
+        </div>
+      ))}
+    </div>
+  );
+}
