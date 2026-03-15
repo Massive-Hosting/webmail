@@ -40,6 +40,10 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      # Build frontend first (Go embeds web/dist via embedstatic tag).
+      - name: Build frontend
+        run: cd web && npm ci && npm run build
+
       # Build Go sidecar for target architecture.
       - name: Build Go sidecar
         run: |
@@ -48,10 +52,6 @@ jobs:
             -ldflags="-s -w" \
             -o desktop/src-tauri/binaries/webmail-api-${{ matrix.target }} \
             ./cmd/webmail-api
-
-      # Build frontend (needed for embedstatic).
-      - name: Build frontend
-        run: cd web && npm ci && npm run build
 
       # Build Tauri app. Signing/notarization only happens when secrets are available.
       - name: Build Tauri app
@@ -95,6 +95,10 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      # Build frontend first (Go embeds web/dist via embedstatic tag).
+      - name: Build frontend
+        run: cd web && npm ci && npm run build
+
       # Build Go sidecar.
       - name: Build Go sidecar
         shell: bash
@@ -103,10 +107,6 @@ jobs:
             -ldflags="-s -w" \
             -o desktop/src-tauri/binaries/webmail-api-x86_64-pc-windows-msvc.exe \
             ./cmd/webmail-api
-
-      # Build frontend.
-      - name: Build frontend
-        run: cd web && npm ci && npm run build
 
       # Build Tauri app. EV signing only when secrets are configured.
       - name: Build Tauri app
@@ -160,6 +160,10 @@ jobs:
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev
 
+      # Build frontend first (Go embeds web/dist via embedstatic tag).
+      - name: Build frontend
+        run: cd web && npm ci && npm run build
+
       # Build Go sidecar.
       - name: Build Go sidecar
         run: |
@@ -167,10 +171,6 @@ jobs:
             -ldflags="-s -w" \
             -o desktop/src-tauri/binaries/webmail-api-x86_64-unknown-linux-gnu \
             ./cmd/webmail-api
-
-      # Build frontend.
-      - name: Build frontend
-        run: cd web && npm ci && npm run build
 
       # Build Tauri app.
       - name: Build Tauri app
