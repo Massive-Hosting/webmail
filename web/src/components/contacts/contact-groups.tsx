@@ -3,6 +3,7 @@
 import React, { useState, useCallback } from "react";
 import { Users, Plus, Pencil, Trash2, Check, X } from "lucide-react";
 import type { AddressBook } from "@/types/contacts.ts";
+import { useTranslation } from "react-i18next";
 
 interface ContactGroupsProps {
   addressBooks: AddressBook[];
@@ -25,6 +26,7 @@ export const ContactGroups = React.memo(function ContactGroups({
   onRenameGroup,
   onDeleteGroup,
 }: ContactGroupsProps) {
+  const { t } = useTranslation();
   const [isCreating, setIsCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -58,13 +60,13 @@ export const ContactGroups = React.memo(function ContactGroups({
           className="text-xs font-semibold uppercase tracking-wider"
           style={{ color: "var(--color-text-tertiary)" }}
         >
-          Groups
+          {t("contacts.groups")}
         </span>
         <button
           onClick={() => setIsCreating(!isCreating)}
           className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
           style={{ color: "var(--color-text-tertiary)" }}
-          title="New group"
+          title={t("contacts.newGroup")}
         >
           <Plus size={14} />
         </button>
@@ -81,7 +83,7 @@ export const ContactGroups = React.memo(function ContactGroups({
               if (e.key === "Enter") handleCreate();
               if (e.key === "Escape") setIsCreating(false);
             }}
-            placeholder="Group name..."
+            placeholder={t("contacts.groupName")}
             autoFocus
             className="flex-1 text-xs px-2 py-1 rounded border outline-none bg-transparent"
             style={{
@@ -108,7 +110,7 @@ export const ContactGroups = React.memo(function ContactGroups({
 
       {/* All Contacts */}
       <GroupItem
-        label="All Contacts"
+        label={t("contacts.allContacts")}
         icon={<Users size={14} />}
         count={totalContacts}
         isActive={selectedGroupId === null}

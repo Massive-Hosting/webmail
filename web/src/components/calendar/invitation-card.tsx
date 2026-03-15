@@ -24,6 +24,7 @@ import { createCalendarEvent, deleteCalendarEvent } from "@/api/calendar.ts";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchCalendars } from "@/api/calendar.ts";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface InvitationCardProps {
   blobId: string;
@@ -46,6 +47,7 @@ async function fetchIcsContent(blobId: string): Promise<ParsedInvitation> {
 export const InvitationCard = React.memo(function InvitationCard({
   blobId,
 }: InvitationCardProps) {
+  const { t } = useTranslation();
   const { data: invitation, isLoading, error } = useQuery({
     queryKey: ["ics-invitation", blobId],
     queryFn: () => fetchIcsContent(blobId),
@@ -64,7 +66,7 @@ export const InvitationCard = React.memo(function InvitationCard({
         }}
       >
         <Loader2 size={16} className="animate-spin" />
-        Loading calendar invitation...
+        {t("invitation.loadingInvitation")}
       </div>
     );
   }
@@ -91,6 +93,7 @@ function RequestCard({
   event: ParsedVEvent;
   method: ParsedInvitation["method"];
 }) {
+  const { t } = useTranslation();
   const [respondedStatus, setRespondedStatus] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -133,14 +136,14 @@ function RequestCard({
       setRespondedStatus(status);
       queryClient.invalidateQueries({ queryKey: ["calendarEvents"] });
       const labels: Record<string, string> = {
-        accepted: "Event accepted and added to calendar",
-        tentative: "Tentatively accepted and added to calendar",
-        declined: "Invitation declined",
+        accepted: t("invitation.eventAccepted"),
+        tentative: t("invitation.tentativeAccepted"),
+        declined: t("invitation.invitationDeclined"),
       };
       toast.success(labels[status] ?? "Response sent");
     },
     onError: (error: Error) => {
-      toast.error(`Failed to respond: ${error.message}`);
+      toast.error(t("invitation.failedToRespond", { message: error.message }));
     },
   });
 
@@ -164,7 +167,7 @@ function RequestCard({
       >
         <CalendarDays size={16} />
         <span className="text-sm font-medium">
-          {method === "REQUEST" ? "Meeting Invitation" : "Calendar Event"}
+          {method === "REQUEST" ? t("invitation.meetingInvitation") : t("invitation.calendarEvent")}
         </span>
       </div>
 
@@ -175,7 +178,7 @@ function RequestCard({
           className="text-base font-semibold"
           style={{ color: "var(--color-text-primary)" }}
         >
-          {event.summary || "Untitled Event"}
+          {event.summary || t("invitation.untitledEvent")}
         </h3>
 
         {/* Date/Time */}
@@ -271,9 +274,9 @@ function RequestCard({
           }}
         >
           <Check size={14} style={{ color: "var(--color-text-accent)" }} />
-          {respondedStatus === "accepted" && "Accepted - added to your calendar"}
-          {respondedStatus === "tentative" && "Tentatively accepted - added to your calendar"}
-          {respondedStatus === "declined" && "Declined"}
+          {respondedStatus === "accepted" && t("invitation.accepted")}
+          {respondedStatus === "tentative" && t("invitation.tentativelyAccepted")}
+          {respondedStatus === "declined" && t("invitation.declined")}
         </div>
       ) : (
         <div
@@ -290,7 +293,7 @@ function RequestCard({
             }}
           >
             <Check size={14} />
-            Accept
+            {t("invitation.accept")}
           </button>
           <button
             onClick={() => acceptMutation.mutate("tentative")}
@@ -303,7 +306,7 @@ function RequestCard({
             }}
           >
             <HelpCircle size={14} />
-            Tentative
+            {t("invitation.tentative")}
           </button>
           <button
             onClick={() => acceptMutation.mutate("declined")}
@@ -316,7 +319,7 @@ function RequestCard({
             }}
           >
             <XCircle size={14} />
-            Decline
+            {t("invitation.decline")}
           </button>
           {acceptMutation.isPending && (
             <Loader2
@@ -333,6 +336,7 @@ function RequestCard({
 
 /** Card for a cancelled event (METHOD:CANCEL) */
 function CancellationCard({ event }: { event: ParsedVEvent }) {
+  const { t } = useTranslation();
   const [removed, setRemoved] = useState(false);
   const queryClient = useQueryClient();
 
@@ -358,7 +362,7 @@ function CancellationCard({ event }: { event: ParsedVEvent }) {
         }}
       >
         <XCircle size={16} />
-        <span className="text-sm font-medium">Event Cancelled</span>
+        <span className="text-sm font-medium">{t("invitation.eventCancelled")}</span>
       </div>
 
       {/* Body */}
@@ -370,7 +374,7 @@ function CancellationCard({ event }: { event: ParsedVEvent }) {
             textDecoration: "line-through",
           }}
         >
-          {event.summary || "Untitled Event"}
+          {event.summary || t("invitation.untitledEvent")}
         </h3>
 
         <div className="flex items-center gap-2">
@@ -417,8 +421,7 @@ function CancellationCard({ event }: { event: ParsedVEvent }) {
               className="text-sm"
               style={{ color: "var(--color-text-secondary)" }}
             >
-              Cancelled by{" "}
-              {event.organizer.name ?? event.organizer.email}
+              {t("invitation.cancelledBy", { name: event.organizer.name ?? event.organizer.email })}
             </span>
           </div>
         )}
@@ -427,7 +430,7 @@ function CancellationCard({ event }: { event: ParsedVEvent }) {
           className="text-sm font-medium mt-1"
           style={{ color: "#dc2626" }}
         >
-          This event has been cancelled.
+          {t("invitation.eventHasBeenCancelled")}
         </p>
       </div>
     </div>

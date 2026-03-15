@@ -28,8 +28,10 @@ import type {
 } from "@/types/calendar.ts";
 import { EmptyState } from "@/components/ui/empty-state.tsx";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 export const CalendarPage = React.memo(function CalendarPage() {
+  const { t } = useTranslation();
   const {
     viewMode,
     setViewMode,
@@ -220,9 +222,9 @@ export const CalendarPage = React.memo(function CalendarPage() {
   }, [setViewMode, goToToday, goPrev, goNext, handleNewEvent, handleClosePopover]);
 
   const viewButtons: Array<{ mode: CalendarViewMode; label: string }> = [
-    { mode: "month", label: "Month" },
-    { mode: "week", label: "Week" },
-    { mode: "day", label: "Day" },
+    { mode: "month", label: t("calendar.month") },
+    { mode: "week", label: t("calendar.week") },
+    { mode: "day", label: t("calendar.day") },
   ];
 
   return (
@@ -245,7 +247,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
             style={{ color: "var(--color-text-accent)" }}
           >
             <Plus size={14} />
-            New Event
+            {t("calendar.newEvent")}
           </button>
         </div>
 
@@ -254,7 +256,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
             className="text-[10px] font-medium uppercase tracking-wide px-2 py-1"
             style={{ color: "var(--color-text-tertiary)" }}
           >
-            Calendars
+            {t("calendar.calendars")}
           </div>
           {calendars.map((cal) => {
             const hidden = hiddenCalendarIds.has(cal.id);
@@ -312,7 +314,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
             onClick={goPrev}
             className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
             style={{ color: "var(--color-text-secondary)" }}
-            title="Previous"
+            title={t("calendar.previous")}
           >
             <ChevronLeft size={18} />
           </button>
@@ -320,7 +322,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
             onClick={goNext}
             className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
             style={{ color: "var(--color-text-secondary)" }}
-            title="Next"
+            title={t("calendar.next")}
           >
             <ChevronRight size={18} />
           </button>
@@ -332,7 +334,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
               border: "1px solid var(--color-border-secondary)",
             }}
           >
-            Today
+            {t("calendar.today")}
           </button>
 
           {/* Title */}

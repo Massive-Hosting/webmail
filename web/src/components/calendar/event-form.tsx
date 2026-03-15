@@ -15,6 +15,7 @@ import type {
 import { format, parseISO, minutesToDuration, parseDurationMinutes } from "@/hooks/use-calendar.ts";
 import { useContactSearch } from "@/hooks/use-contacts.ts";
 import { StyledSelect } from "@/components/ui/styled-select.tsx";
+import { useTranslation } from "react-i18next";
 
 interface EventFormProps {
   open: boolean;
@@ -27,22 +28,22 @@ interface EventFormProps {
   onDelete?: (eventId: string) => void;
 }
 
-const REMINDER_OPTIONS = [
-  { label: "None", value: "" },
-  { label: "At time of event", value: "PT0M" },
-  { label: "5 minutes before", value: "-PT5M" },
-  { label: "15 minutes before", value: "-PT15M" },
-  { label: "30 minutes before", value: "-PT30M" },
-  { label: "1 hour before", value: "-PT1H" },
-  { label: "1 day before", value: "-P1D" },
+const REMINDER_OPTION_KEYS = [
+  { key: "calendar.reminderNone", value: "" },
+  { key: "calendar.reminderAtTime", value: "PT0M" },
+  { key: "calendar.reminder5min", value: "-PT5M" },
+  { key: "calendar.reminder15min", value: "-PT15M" },
+  { key: "calendar.reminder30min", value: "-PT30M" },
+  { key: "calendar.reminder1hour", value: "-PT1H" },
+  { key: "calendar.reminder1day", value: "-P1D" },
 ];
 
-const RECURRENCE_OPTIONS = [
-  { label: "Does not repeat", value: "none" },
-  { label: "Daily", value: "daily" },
-  { label: "Weekly", value: "weekly" },
-  { label: "Monthly", value: "monthly" },
-  { label: "Yearly", value: "yearly" },
+const RECURRENCE_OPTION_KEYS = [
+  { key: "calendar.doesNotRepeat", value: "none" },
+  { key: "calendar.daily", value: "daily" },
+  { key: "calendar.weekly", value: "weekly" },
+  { key: "calendar.monthly", value: "monthly" },
+  { key: "calendar.yearly", value: "yearly" },
 ];
 
 const EVENT_COLORS = [
@@ -66,6 +67,7 @@ export const EventForm = React.memo(function EventForm({
   onSave,
   onDelete,
 }: EventFormProps) {
+  const { t } = useTranslation();
   const isEditing = !!event;
 
   // Form state
@@ -265,7 +267,7 @@ export const EventForm = React.memo(function EventForm({
               className="text-lg font-semibold"
               style={{ color: "var(--color-text-primary)" }}
             >
-              {isEditing ? "Edit Event" : "New Event"}
+              {isEditing ? t("calendar.editEvent") : t("calendar.newEvent")}
             </Dialog.Title>
             <Dialog.Close asChild>
               <button
@@ -283,7 +285,7 @@ export const EventForm = React.memo(function EventForm({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Event title"
+              placeholder={t("calendar.eventTitle")}
               required
               autoFocus
               className="w-full px-3 py-2 text-sm rounded-md outline-none"
@@ -301,7 +303,7 @@ export const EventForm = React.memo(function EventForm({
                   className="text-xs shrink-0"
                   style={{ color: "var(--color-text-tertiary)" }}
                 >
-                  Calendar
+                  {t("calendar.calendar")}
                 </span>
                 <StyledSelect
                   value={selectedCalendarId}
@@ -347,7 +349,7 @@ export const EventForm = React.memo(function EventForm({
                       className="text-xs"
                       style={{ color: "var(--color-text-tertiary)" }}
                     >
-                      to
+                      {t("calendar.to")}
                     </span>
                     <input
                       type="time"
@@ -371,7 +373,7 @@ export const EventForm = React.memo(function EventForm({
                   className="rounded"
                 />
                 <span style={{ color: "var(--color-text-secondary)" }}>
-                  All day
+                  {t("calendar.allDay")}
                 </span>
               </label>
             </div>
@@ -386,7 +388,7 @@ export const EventForm = React.memo(function EventForm({
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="Add location"
+                placeholder={t("calendar.addLocation")}
                 className="flex-1 px-2 py-1 text-sm rounded outline-none"
                 style={{
                   backgroundColor: "var(--color-bg-tertiary)",
@@ -405,7 +407,7 @@ export const EventForm = React.memo(function EventForm({
               <StyledSelect
                 value={recurrence}
                 onValueChange={setRecurrence}
-                options={RECURRENCE_OPTIONS}
+                options={RECURRENCE_OPTION_KEYS.map(o => ({ value: o.value, label: t(o.key) }))}
                 className="flex-1"
               />
             </div>
@@ -430,7 +432,7 @@ export const EventForm = React.memo(function EventForm({
                         }
                       }
                     }}
-                    placeholder="Add attendees"
+                    placeholder={t("calendar.addAttendees")}
                     className="w-full px-2 py-1 text-sm rounded outline-none"
                     style={{
                       backgroundColor: "var(--color-bg-tertiary)",
@@ -513,7 +515,7 @@ export const EventForm = React.memo(function EventForm({
               <StyledSelect
                 value={reminder}
                 onValueChange={setReminder}
-                options={REMINDER_OPTIONS}
+                options={REMINDER_OPTION_KEYS.map(o => ({ value: o.value, label: t(o.key) }))}
                 className="flex-1"
               />
             </div>
@@ -522,7 +524,7 @@ export const EventForm = React.memo(function EventForm({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add description"
+              placeholder={t("calendar.addDescription")}
               rows={3}
               className="w-full px-3 py-2 text-sm rounded-md outline-none resize-none"
               style={{
@@ -572,7 +574,7 @@ export const EventForm = React.memo(function EventForm({
                     onClick={handleDelete}
                   >
                     <Trash2 size={14} />
-                    Delete
+                    {t("calendar.deleteEvent")}
                   </button>
                 )}
               </div>
@@ -583,7 +585,7 @@ export const EventForm = React.memo(function EventForm({
                     className="px-4 py-1.5 text-sm rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
                     style={{ color: "var(--color-text-secondary)" }}
                   >
-                    Cancel
+                    {t("calendar.close")}
                   </button>
                 </Dialog.Close>
                 <button
@@ -594,7 +596,7 @@ export const EventForm = React.memo(function EventForm({
                     color: "#ffffff",
                   }}
                 >
-                  {isEditing ? "Save" : "Create"}
+                  {isEditing ? t("calendar.editEventBtn") : t("calendar.create")}
                 </button>
               </div>
             </div>

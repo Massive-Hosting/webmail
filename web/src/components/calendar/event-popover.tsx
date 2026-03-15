@@ -5,6 +5,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { X, Edit2, Trash2, MapPin, Clock, Calendar as CalendarIcon, Users } from "lucide-react";
 import type { CalendarEvent, Calendar } from "@/types/calendar.ts";
 import { format, parseISO, getEventEnd, getEventColor, formatEventTime } from "@/hooks/use-calendar.ts";
+import { useTranslation } from "react-i18next";
 
 interface EventPopoverProps {
   event: CalendarEvent | null;
@@ -23,6 +24,7 @@ export const EventPopover = React.memo(function EventPopover({
   onEdit,
   onDelete,
 }: EventPopoverProps) {
+  const { t } = useTranslation();
   if (!event || !anchor) return null;
 
   const color = getEventColor(event, calendars);
@@ -66,7 +68,7 @@ export const EventPopover = React.memo(function EventPopover({
                   className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
                   style={{ color: "var(--color-text-tertiary)" }}
                   onClick={() => onEdit(event)}
-                  title="Edit event"
+                  title={t("calendar.editEventBtn")}
                 >
                   <Edit2 size={14} />
                 </button>
@@ -74,7 +76,7 @@ export const EventPopover = React.memo(function EventPopover({
                   className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
                   style={{ color: "var(--color-text-error, #dc2626)" }}
                   onClick={() => onDelete(event.id)}
-                  title="Delete event"
+                  title={t("calendar.deleteEvent")}
                 >
                   <Trash2 size={14} />
                 </button>
@@ -82,7 +84,7 @@ export const EventPopover = React.memo(function EventPopover({
                   className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
                   style={{ color: "var(--color-text-tertiary)" }}
                   onClick={onClose}
-                  title="Close"
+                  title={t("calendar.close")}
                 >
                   <X size={14} />
                 </button>
@@ -161,7 +163,7 @@ export const EventPopover = React.memo(function EventPopover({
                   className="text-xs"
                   style={{ color: "var(--color-text-tertiary)" }}
                 >
-                  Repeats {event.recurrenceRules[0].frequency}
+                  {t("calendar.repeats", { frequency: event.recurrenceRules[0].frequency })}
                   {event.recurrenceRules[0].interval && event.recurrenceRules[0].interval > 1
                     ? ` every ${event.recurrenceRules[0].interval} ${event.recurrenceRules[0].frequency === "daily" ? "days" : event.recurrenceRules[0].frequency === "weekly" ? "weeks" : event.recurrenceRules[0].frequency === "monthly" ? "months" : "years"}`
                     : ""}

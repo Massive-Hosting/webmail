@@ -20,6 +20,7 @@ export const ContactForm = React.memo(function ContactForm({
   onSave,
   onCancel,
 }: ContactFormProps) {
+  const { t } = useTranslation();
   const [fullName, setFullName] = useState(contact?.name.full ?? "");
   const [givenName, setGivenName] = useState(contact?.name.given ?? "");
   const [surname, setSurname] = useState(contact?.name.surname ?? "");
@@ -57,7 +58,7 @@ export const ContactForm = React.memo(function ContactForm({
       const hasName = fullName || givenName || surname;
       const hasEmail = emails.some((em) => em.address.trim());
       if (!hasName && !hasEmail) {
-        toast.error("Please enter at least a name or email");
+        toast.error(t("contacts.enterNameOrEmail"));
         return;
       }
 
@@ -128,7 +129,7 @@ export const ContactForm = React.memo(function ContactForm({
           }}
         >
           <Save size={14} />
-          Save
+          {t("contacts.save")}
         </button>
         <button
           type="button"
@@ -137,51 +138,51 @@ export const ContactForm = React.memo(function ContactForm({
           style={{ color: "var(--color-text-secondary)" }}
         >
           <XCircle size={14} />
-          Cancel
+          {t("contacts.cancel")}
         </button>
       </div>
 
       <div className="flex flex-col gap-4 px-6 py-4">
         {/* Name section */}
-        <FormSection label="Name">
+        <FormSection label={t("contacts.name")}>
           <FormInput
-            label="Full name"
+            label={t("contacts.fullName")}
             value={fullName}
             onChange={setFullName}
-            placeholder="Full name"
+            placeholder={t("contacts.fullName")}
           />
           <div className="flex gap-2">
             <FormInput
-              label="First"
+              label={t("contacts.first")}
               value={givenName}
               onChange={setGivenName}
-              placeholder="First name"
+              placeholder={t("contacts.firstName")}
             />
             <FormInput
-              label="Last"
+              label={t("contacts.last")}
               value={surname}
               onChange={setSurname}
-              placeholder="Last name"
+              placeholder={t("contacts.lastName")}
             />
           </div>
           <div className="flex gap-2">
             <FormInput
-              label="Prefix"
+              label={t("contacts.prefix")}
               value={prefix}
               onChange={setPrefix}
-              placeholder="Prefix"
+              placeholder={t("contacts.prefix")}
             />
             <FormInput
-              label="Suffix"
+              label={t("contacts.suffix")}
               value={suffix}
               onChange={setSuffix}
-              placeholder="Suffix"
+              placeholder={t("contacts.suffix")}
             />
           </div>
         </FormSection>
 
         {/* Email section */}
-        <FormSection label="Email">
+        <FormSection label={t("contacts.email")}>
           <MultiField
             items={emails}
             onChange={setEmails}
@@ -217,7 +218,7 @@ export const ContactForm = React.memo(function ContactForm({
         </FormSection>
 
         {/* Phone section */}
-        <FormSection label="Phone">
+        <FormSection label={t("contacts.phone")}>
           <MultiField
             items={phones}
             onChange={setPhones}
@@ -253,7 +254,7 @@ export const ContactForm = React.memo(function ContactForm({
         </FormSection>
 
         {/* Address section */}
-        <FormSection label="Address">
+        <FormSection label={t("contacts.address")}>
           <MultiField
             items={addresses}
             onChange={setAddresses}
@@ -267,7 +268,7 @@ export const ContactForm = React.memo(function ContactForm({
                     next[i] = { ...next[i], street: e.target.value };
                     setAddresses(next);
                   }}
-                  placeholder="Street"
+                  placeholder={t("contacts.street")}
                   className="text-sm px-2 py-1.5 rounded border outline-none bg-transparent"
                   style={{
                     color: "var(--color-text-primary)",
@@ -283,7 +284,7 @@ export const ContactForm = React.memo(function ContactForm({
                       next[i] = { ...next[i], city: e.target.value };
                       setAddresses(next);
                     }}
-                    placeholder="City"
+                    placeholder={t("contacts.city")}
                     className="flex-1 text-sm px-2 py-1.5 rounded border outline-none bg-transparent"
                     style={{
                       color: "var(--color-text-primary)",
@@ -298,7 +299,7 @@ export const ContactForm = React.memo(function ContactForm({
                       next[i] = { ...next[i], state: e.target.value };
                       setAddresses(next);
                     }}
-                    placeholder="State"
+                    placeholder={t("contacts.state")}
                     className="w-20 text-sm px-2 py-1.5 rounded border outline-none bg-transparent"
                     style={{
                       color: "var(--color-text-primary)",
@@ -313,7 +314,7 @@ export const ContactForm = React.memo(function ContactForm({
                       next[i] = { ...next[i], postalCode: e.target.value };
                       setAddresses(next);
                     }}
-                    placeholder="ZIP"
+                    placeholder={t("contacts.zip")}
                     className="w-20 text-sm px-2 py-1.5 rounded border outline-none bg-transparent"
                     style={{
                       color: "var(--color-text-primary)",
@@ -330,7 +331,7 @@ export const ContactForm = React.memo(function ContactForm({
                       next[i] = { ...next[i], country: e.target.value };
                       setAddresses(next);
                     }}
-                    placeholder="Country"
+                    placeholder={t("contacts.country")}
                     className="flex-1 text-sm px-2 py-1.5 rounded border outline-none bg-transparent"
                     style={{
                       color: "var(--color-text-primary)",
@@ -353,7 +354,7 @@ export const ContactForm = React.memo(function ContactForm({
         </FormSection>
 
         {/* URLs */}
-        <FormSection label="URLs">
+        <FormSection label={t("contacts.urls")}>
           <MultiField
             items={urls}
             onChange={setUrls}
@@ -389,29 +390,29 @@ export const ContactForm = React.memo(function ContactForm({
         </FormSection>
 
         {/* Organization */}
-        <FormSection label="Organization">
+        <FormSection label={t("contacts.organization")}>
           <FormInput
-            label="Company"
+            label={t("contacts.company")}
             value={orgName}
             onChange={setOrgName}
-            placeholder="Company name"
+            placeholder={t("contacts.companyName")}
           />
           <FormInput
-            label="Department"
+            label={t("contacts.department")}
             value={orgDepartment}
             onChange={setOrgDepartment}
-            placeholder="Department"
+            placeholder={t("contacts.department")}
           />
           <FormInput
-            label="Title"
+            label={t("contacts.title")}
             value={orgTitle}
             onChange={setOrgTitle}
-            placeholder="Job title"
+            placeholder={t("contacts.jobTitle")}
           />
         </FormSection>
 
         {/* Birthday */}
-        <FormSection label="Birthday">
+        <FormSection label={t("contacts.birthday")}>
           <input
             type="date"
             value={birthday}
@@ -425,11 +426,11 @@ export const ContactForm = React.memo(function ContactForm({
         </FormSection>
 
         {/* Notes */}
-        <FormSection label="Notes">
+        <FormSection label={t("contacts.notes")}>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Add notes..."
+            placeholder={t("contacts.addNotes")}
             rows={3}
             className="text-sm px-2 py-1.5 rounded border outline-none bg-transparent resize-y"
             style={{
@@ -503,15 +504,21 @@ function LabelSelect({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const { t } = useTranslation();
+  const LABELS = [
+    { value: "Work", label: t("contacts.labelWork") },
+    { value: "Home", label: t("contacts.labelHome") },
+    { value: "Other", label: t("contacts.labelOther") },
+  ];
   return (
     <StyledSelect
       value={value}
       onValueChange={onChange}
       options={[
-        { value: "", label: "Label" },
-        ...LABELS.map((l) => ({ value: l, label: l })),
+        { value: "", label: t("contacts.label") },
+        ...LABELS,
       ]}
-      placeholder="Label"
+      placeholder={t("contacts.label")}
       className="shrink-0"
     />
   );
@@ -529,6 +536,7 @@ function MultiField<T>({
   renderItem: (item: T, index: number) => React.ReactNode;
   createEmpty: () => T;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-2">
       {items.map((item, i) => (
@@ -555,7 +563,7 @@ function MultiField<T>({
         style={{ color: "var(--color-text-accent)" }}
       >
         <Plus size={12} />
-        Add
+        {t("contacts.add")}
       </button>
     </div>
   );

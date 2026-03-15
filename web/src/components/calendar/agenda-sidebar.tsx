@@ -14,6 +14,7 @@ import {
 } from "@/hooks/use-calendar.ts";
 import { useCalendars, useCalendarEvents } from "@/hooks/use-calendar.ts";
 import { useUIStore } from "@/stores/ui-store.ts";
+import { useTranslation } from "react-i18next";
 
 interface AgendaSidebarProps {
   onNavigateToEvent?: (event: CalendarEvent) => void;
@@ -22,6 +23,7 @@ interface AgendaSidebarProps {
 export const AgendaSidebar = React.memo(function AgendaSidebar({
   onNavigateToEvent,
 }: AgendaSidebarProps) {
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem("agendaSidebarCollapsed") === "true";
@@ -119,7 +121,7 @@ export const AgendaSidebar = React.memo(function AgendaSidebar({
           className="text-xs font-medium flex-1"
           style={{ color: "var(--color-text-secondary)" }}
         >
-          Today's Schedule
+          {t("calendar.todaysSchedule")}
         </span>
         <span
           className="text-[10px]"
@@ -137,7 +139,7 @@ export const AgendaSidebar = React.memo(function AgendaSidebar({
               className="px-3 py-3 text-xs text-center"
               style={{ color: "var(--color-text-tertiary)" }}
             >
-              No events today
+              {t("calendar.noEventsToday")}
             </div>
           ) : (
             todayEvents.map((event) => {
