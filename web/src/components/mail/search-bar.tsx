@@ -1,13 +1,48 @@
-/** Search bar with suggestions dropdown and debounced search — premium design */
+/** Search bar with visual dropdown — quick filters, recent searches, and narrowing chips */
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
-import { Search, X, SlidersHorizontal, Clock, Sparkles } from "lucide-react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import {
+  Search,
+  X,
+  SlidersHorizontal,
+  Clock,
+  Mail,
+  Star,
+  Paperclip,
+  CalendarDays,
+  ArrowRight,
+  User,
+  AtSign,
+  FileText,
+} from "lucide-react";
 import { useSearchStore } from "@/stores/search-store.ts";
-import { SEARCH_SYNTAX_HINTS } from "@/lib/search-parser.ts";
 
 interface SearchBarProps {
   onAdvancedSearch?: () => void;
 }
+
+/** Quick filter definitions */
+const QUICK_FILTERS = [
+  { label: "Unread", query: "is:unread", icon: Mail },
+  { label: "Starred", query: "has:star", icon: Star },
+  { label: "Has attachments", query: "has:attachment", icon: Paperclip },
+  { label: "This week", query: () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return `after:${d.toISOString().slice(0, 10)}`;
+  }, icon: CalendarDays },
+] as const;
+
+function getFilterQuery(filter: typeof QUICK_FILTERS[number]): string {
+  return typeof filter.query === "function" ? filter.query() : filter.query;
+}
+
+/** Narrowing chip definitions — shown when the user types free text */
+const NARROW_OPTIONS = [
+  { label: "From", prefix: "from:", icon: User },
+  { label: "To", prefix: "to:", icon: AtSign },
+  { label: "Subject", prefix: "subject:", icon: FileText },
+] as const;
 
 export const SearchBar = React.memo(function SearchBar({
   onAdvancedSearch,
@@ -41,7 +76,6 @@ export const SearchBar = React.memo(function SearchBar({
       const value = e.target.value;
       setLocalQuery(value);
 
-      // Debounce the actual search
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
@@ -96,7 +130,6 @@ export const SearchBar = React.memo(function SearchBar({
   }, []);
 
   const handleBlur = useCallback(() => {
-    // Delay to allow click on suggestion
     setTimeout(() => {
       setShowSuggestions(false);
       setIsFocused(false);
@@ -113,26 +146,52 @@ export const SearchBar = React.memo(function SearchBar({
     [executeSearch],
   );
 
-  const handleSyntaxClick = useCallback(
-    (prefix: string) => {
-      const newQuery = localQuery ? `${localQuery} ${prefix}` : prefix;
-      setLocalQuery(newQuery);
+  const handleQuickFilterClick = useCallback(
+    (filter: typeof QUICK_FILTERS[number]) => {
+      const q = getFilterQuery(filter);
+      setLocalQuery(q);
+      executeSearch(q);
+      setShowSuggestions(false);
       inputRef.current?.focus();
     },
-    [localQuery],
+    [executeSearch],
   );
 
-  // Filter syntax hints based on current input
-  const currentWord = localQuery.split(/\s+/).pop() ?? "";
-  const matchingHints = currentWord
-    ? SEARCH_SYNTAX_HINTS.filter((h) =>
-        h.prefix.toLowerCase().startsWith(currentWord.toLowerCase()),
-      )
-    : [];
+  const handleNarrowClick = useCallback(
+    (prefix: string) => {
+      const trimmed = localQuery.trim();
+      const newQuery = `${prefix}${trimmed}`;
+      setLocalQuery(newQuery);
+      executeSearch(newQuery);
+      setShowSuggestions(false);
+      inputRef.current?.focus();
+    },
+    [localQuery, executeSearch],
+  );
+
+  // Determine if query is plain text (no operators)
+  const isPlainText = useMemo(() => {
+    const trimmed = localQuery.trim();
+    if (!trimmed) return false;
+    return !/^(from|to|subject|has|is|in|before|after|larger|smaller):/i.test(trimmed);
+  }, [localQuery]);
+
+  // Filtered recent searches
+  const filteredRecent = useMemo(() => {
+    if (!localQuery.trim()) return recentSearches.slice(0, 5);
+    const lower = localQuery.toLowerCase();
+    return recentSearches
+      .filter((s) => s.toLowerCase().includes(lower))
+      .slice(0, 5);
+  }, [localQuery, recentSearches]);
+
+  const hasQuery = localQuery.trim().length > 0;
 
   const showDropdown =
     showSuggestions &&
-    (recentSearches.length > 0 || matchingHints.length > 0 || !localQuery);
+    (recentSearches.length > 0 || !hasQuery);
+  // Also show dropdown when typing
+  const showDropdownFinal = showSuggestions && (showDropdown || hasQuery);
 
   return (
     <form onSubmit={handleSubmit} className="flex-1 max-w-xl relative">
@@ -204,139 +263,220 @@ export const SearchBar = React.memo(function SearchBar({
       )}
 
       {/* Suggestions dropdown */}
-      {showDropdown && (
+      {showDropdownFinal && (
         <div
           ref={suggestionsRef}
-          className="absolute left-0 right-0 top-full mt-1.5 overflow-hidden z-50 animate-scale-in"
+          className="absolute left-0 right-0 top-full mt-1.5 overflow-hidden z-50 animate-fade-in"
           style={{
             backgroundColor: "var(--color-bg-elevated)",
             border: "1px solid var(--color-border-primary)",
             boxShadow: "var(--shadow-lg)",
-            borderRadius: "var(--radius-md)",
-            maxHeight: 320,
+            borderRadius: "var(--radius-lg, 12px)",
+            maxHeight: 380,
             overflowY: "auto",
           }}
         >
-          {/* Syntax hints */}
-          {matchingHints.length > 0 && (
-            <div>
-              <div
-                className="px-3 py-2 text-[11px] font-medium uppercase tracking-wider"
-                style={{ color: "var(--color-text-tertiary)" }}
-              >
-                Search operators
-              </div>
-              {matchingHints.map((hint) => (
-                <button
-                  key={hint.prefix}
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => handleSyntaxClick(hint.prefix)}
-                  className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                  style={{ color: "var(--color-text-primary)" }}
-                >
-                  <Sparkles size={13} style={{ color: "var(--color-text-accent)" }} />
-                  <span className="font-mono text-xs font-medium" style={{ color: "var(--color-text-accent)" }}>
-                    {hint.prefix}
-                  </span>
-                  <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-                    {hint.description}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Show all hints when input is empty */}
-          {!localQuery && (
-            <div>
-              <div
-                className="px-3 py-2 text-[11px] font-medium uppercase tracking-wider"
-                style={{ color: "var(--color-text-tertiary)" }}
-              >
-                Search operators
-              </div>
-              {SEARCH_SYNTAX_HINTS.slice(0, 6).map((hint) => (
-                <button
-                  key={hint.prefix}
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => handleSyntaxClick(hint.prefix)}
-                  className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                  style={{ color: "var(--color-text-primary)" }}
-                >
-                  <Sparkles size={13} style={{ color: "var(--color-text-accent)" }} />
-                  <span className="font-mono text-xs font-medium" style={{ color: "var(--color-text-accent)" }}>
-                    {hint.prefix}
-                  </span>
-                  <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-                    {hint.description}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Recent searches */}
-          {recentSearches.length > 0 && (
-            <div>
-              <div
-                className="px-3 py-2 text-[11px] font-medium uppercase tracking-wider flex items-center justify-between"
-                style={{
-                  color: "var(--color-text-tertiary)",
-                  borderTop: matchingHints.length > 0 || !localQuery ? "1px solid var(--color-border-primary)" : undefined,
-                }}
-              >
-                Recent searches
-              </div>
-              {recentSearches.slice(0, 8).map((search) => (
-                <div
-                  key={search}
-                  className="flex items-center gap-2.5 w-full px-3 py-2 text-sm hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 group"
-                >
-                  <Clock size={13} style={{ color: "var(--color-text-tertiary)" }} />
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => handleSuggestionClick(search)}
-                    className="flex-1 text-left truncate"
-                    style={{ color: "var(--color-text-primary)" }}
-                  >
-                    {search}
-                  </button>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => removeRecentSearch(search)}
-                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded-md hover:bg-[var(--color-bg-secondary)] transition-all duration-150"
+          {/* === EMPTY STATE: no query typed === */}
+          {!hasQuery && (
+            <>
+              {/* Recent searches */}
+              {recentSearches.length > 0 && (
+                <div className="py-1.5">
+                  <div
+                    className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider"
                     style={{ color: "var(--color-text-tertiary)" }}
                   >
-                    <X size={12} />
-                  </button>
+                    Recent searches
+                  </div>
+                  {recentSearches.slice(0, 5).map((search) => (
+                    <div
+                      key={search}
+                      className="flex items-center gap-2.5 w-full px-3 py-1.5 text-sm hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 group cursor-pointer"
+                    >
+                      <Clock size={14} style={{ color: "var(--color-text-tertiary)" }} />
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleSuggestionClick(search)}
+                        className="flex-1 text-left truncate"
+                        style={{ color: "var(--color-text-primary)" }}
+                      >
+                        {search}
+                      </button>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => removeRecentSearch(search)}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded-md hover:bg-[var(--color-bg-secondary)] transition-all duration-150"
+                        style={{ color: "var(--color-text-tertiary)" }}
+                        title="Remove"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
+
+              {/* Quick filters */}
+              <div
+                className="px-3 py-2"
+                style={{
+                  borderTop: recentSearches.length > 0 ? "1px solid var(--color-border-primary)" : undefined,
+                }}
+              >
+                <div
+                  className="text-[11px] font-semibold uppercase tracking-wider mb-2"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                >
+                  Quick filters
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {QUICK_FILTERS.map((filter) => {
+                    const Icon = filter.icon;
+                    return (
+                      <button
+                        key={filter.label}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleQuickFilterClick(filter)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-150 hover:scale-[1.03] active:scale-[0.97]"
+                        style={{
+                          color: "var(--color-text-secondary)",
+                          border: "1px solid var(--color-border-primary)",
+                          backgroundColor: "var(--color-bg-secondary)",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "var(--color-bg-tertiary)";
+                          e.currentTarget.style.borderColor = "var(--color-border-focus)";
+                          e.currentTarget.style.color = "var(--color-text-accent)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "var(--color-bg-secondary)";
+                          e.currentTarget.style.borderColor = "var(--color-border-primary)";
+                          e.currentTarget.style.color = "var(--color-text-secondary)";
+                        }}
+                      >
+                        <Icon size={12} />
+                        {filter.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
           )}
 
-          {/* Advanced search link */}
-          {onAdvancedSearch && (
-            <div
-              style={{ borderTop: "1px solid var(--color-border-primary)" }}
-            >
+          {/* === TYPING STATE: query has content === */}
+          {hasQuery && (
+            <>
+              {/* Search for "X" — main action */}
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  setShowSuggestions(false);
-                  onAdvancedSearch();
-                }}
-                className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-left hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 font-medium"
-                style={{ color: "var(--color-text-accent)" }}
+                onClick={() => handleSuggestionClick(localQuery.trim())}
+                className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-left hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+                style={{ color: "var(--color-text-primary)" }}
               >
-                <SlidersHorizontal size={13} />
-                Advanced search...
+                <Search size={14} style={{ color: "var(--color-text-accent)" }} />
+                <span>
+                  Search for{" "}
+                  <span className="font-semibold" style={{ color: "var(--color-text-accent)" }}>
+                    &ldquo;{localQuery.trim()}&rdquo;
+                  </span>
+                </span>
+                <ArrowRight size={13} className="ml-auto" style={{ color: "var(--color-text-tertiary)" }} />
               </button>
-            </div>
+
+              {/* Narrow your search — only for plain text */}
+              {isPlainText && (
+                <div
+                  className="px-3 py-2"
+                  style={{ borderTop: "1px solid var(--color-border-primary)" }}
+                >
+                  <div
+                    className="text-[11px] font-semibold uppercase tracking-wider mb-2"
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  >
+                    Narrow your search
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {NARROW_OPTIONS.map((opt) => {
+                      const Icon = opt.icon;
+                      return (
+                        <button
+                          key={opt.prefix}
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleNarrowClick(opt.prefix)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-150 hover:scale-[1.03] active:scale-[0.97]"
+                          style={{
+                            color: "var(--color-text-secondary)",
+                            border: "1px solid var(--color-border-primary)",
+                            backgroundColor: "var(--color-bg-secondary)",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "var(--color-bg-tertiary)";
+                            e.currentTarget.style.borderColor = "var(--color-border-focus)";
+                            e.currentTarget.style.color = "var(--color-text-accent)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = "var(--color-bg-secondary)";
+                            e.currentTarget.style.borderColor = "var(--color-border-primary)";
+                            e.currentTarget.style.color = "var(--color-text-secondary)";
+                          }}
+                        >
+                          <Icon size={12} />
+                          {opt.label}: {localQuery.trim()}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Filtered recent searches */}
+              {filteredRecent.length > 0 && (
+                <div
+                  className="py-1.5"
+                  style={{ borderTop: "1px solid var(--color-border-primary)" }}
+                >
+                  <div
+                    className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider"
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  >
+                    Recent
+                  </div>
+                  {filteredRecent.map((search) => (
+                    <div
+                      key={search}
+                      className="flex items-center gap-2.5 w-full px-3 py-1.5 text-sm hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 group cursor-pointer"
+                    >
+                      <Clock size={14} style={{ color: "var(--color-text-tertiary)" }} />
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleSuggestionClick(search)}
+                        className="flex-1 text-left truncate"
+                        style={{ color: "var(--color-text-primary)" }}
+                      >
+                        {search}
+                      </button>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => removeRecentSearch(search)}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded-md hover:bg-[var(--color-bg-secondary)] transition-all duration-150"
+                        style={{ color: "var(--color-text-tertiary)" }}
+                        title="Remove"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
