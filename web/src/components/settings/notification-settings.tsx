@@ -6,23 +6,26 @@ import { useSettingsStore } from "@/stores/settings-store.ts";
 import { requestNotificationPermission } from "@/lib/notifications.ts";
 import { useTranslation } from "react-i18next";
 
+const isTauri = () => "__TAURI__" in window;
+
 export const NotificationSettings = React.memo(function NotificationSettings() {
   const { t } = useTranslation();
   const notifications = useSettingsStore((s) => s.notifications);
   const setNotifications = useSettingsStore((s) => s.setNotifications);
   const [permissionState, setPermissionState] = useState<NotificationPermission>(
-    "Notification" in window ? Notification.permission : "denied",
+    isTauri() ? "granted" : ("Notification" in window ? Notification.permission : "denied"),
   );
 
   const handleToggleEnabled = useCallback(async () => {
     if (!notifications.enabled) {
       // Turning ON — request permission first
       const granted = await requestNotificationPermission();
-      // Refresh the cached permission state
-      setPermissionState(
-        "Notification" in window ? Notification.permission : "denied",
-      );
-      if (!granted && Notification.permission === "denied") {
+      if (!isTauri()) {
+        setPermissionState(
+          "Notification" in window ? Notification.permission : "denied",
+        );
+      }
+      if (!granted && !isTauri() && Notification.permission === "denied") {
         // Permission denied — turn on the toggle anyway so the user sees the
         // "blocked by browser" message, but notifications won't fire.
       }
@@ -45,15 +48,15 @@ export const NotificationSettings = React.memo(function NotificationSettings() {
               className="text-sm font-medium"
               style={{ color: "var(--color-text-primary)" }}
             >
-              {t("notifications.desktopTitle")}
+              {isTauri() ? t("notifications.nativeTitle", { defaultValue: "Native notifications" }) : t("notifications.desktopTitle")}
             </h3>
             <p
               className="text-xs mt-0.5"
               style={{ color: "var(--color-text-tertiary)" }}
             >
-              {t("notifications.desktopDesc")}
+              {isTauri() ? t("notifications.nativeDesc", { defaultValue: "Show native OS notifications for new emails" }) : t("notifications.desktopDesc")}
             </p>
-            {permissionState === "denied" && notifications.enabled && (
+            {!isTauri() && permissionState === "denied" && notifications.enabled && (
               <p
                 className="text-xs mt-1"
                 style={{ color: "var(--color-text-danger)" }}
