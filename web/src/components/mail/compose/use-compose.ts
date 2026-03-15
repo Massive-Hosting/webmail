@@ -71,7 +71,7 @@ export function useCompose() {
           : "someone";
         const date = new Date(email.receivedAt).toLocaleString();
         const originalBody = getEmailBodyHTML(email);
-        bodyHTML = `<p><br></p><p><br></p><hr style="border: none; border-top: 1px solid #ccc; margin: 16px 0 8px 0;"><div class="compose-quoted-text" style="border-left: 4px solid var(--color-border-primary, #d6d3d1); padding-left: 12px; margin-top: 8px; color: var(--color-text-secondary, #78716C);">
+        bodyHTML = `<p><br></p><hr style="border: none; border-top: 1px solid #ccc; margin: 12px 0 8px 0;"><div class="compose-quoted-text" style="border-left: 4px solid var(--color-border-primary, #d6d3d1); padding-left: 12px; margin-top: 8px; color: var(--color-text-secondary, #78716C);">
 <p style="margin: 0 0 4px 0; font-size: 12px;">On ${date}, ${senderDisplay} wrote:</p>
 ${originalBody}
 </div>`;
@@ -150,7 +150,7 @@ ${originalBody}
           if (boundary !== -1) {
             const before = bodyHTML.slice(0, boundary);
             const after = bodyHTML.slice(boundary);
-            bodyHTML = `${before}${sigSeparator}${identity.htmlSignature}<p><br></p>${after}`;
+            bodyHTML = `${before}${sigSeparator}${identity.htmlSignature}${after}`;
           } else {
             bodyHTML = `<p><br></p>${sigSeparator}${identity.htmlSignature}${bodyHTML}`;
           }
