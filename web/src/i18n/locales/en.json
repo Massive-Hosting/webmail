@@ -540,5 +540,8 @@
   "listToolbar.newestFirst": "Newest first",
   "listToolbar.oldestFirst": "Oldest first",
   "listToolbar.groupByConversation": "Group by conversation",
-  "listToolbar.showIndividual": "Show individual messages"
+  "listToolbar.showIndividual": "Show individual messages",
+  "contacts.namePlaceholder": "Full name",
+  "contacts.showNameDetails": "Show first/last name",
+  "contacts.hideNameDetails": "Hide details"
 }

@@ -540,5 +540,8 @@
   "listToolbar.newestFirst": "Neueste zuerst",
   "listToolbar.oldestFirst": "Älteste zuerst",
   "listToolbar.groupByConversation": "Nach Konversation gruppieren",
-  "listToolbar.showIndividual": "Einzelne Nachrichten anzeigen"
+  "listToolbar.showIndividual": "Einzelne Nachrichten anzeigen",
+  "contacts.namePlaceholder": "Vollständiger Name",
+  "contacts.showNameDetails": "Vor-/Nachname anzeigen",
+  "contacts.hideNameDetails": "Details ausblenden"
 }

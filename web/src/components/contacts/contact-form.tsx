@@ -26,6 +26,10 @@ export const ContactForm = React.memo(function ContactForm({
   const [surname, setSurname] = useState(contact?.name.surname ?? "");
   const [prefix, setPrefix] = useState(contact?.name.prefix ?? "");
   const [suffix, setSuffix] = useState(contact?.name.suffix ?? "");
+  // Show expanded name fields only when prefix/suffix are set or user expands
+  const [showNameDetails, setShowNameDetails] = useState(
+    !!(contact?.name.prefix || contact?.name.suffix)
+  );
   const [emails, setEmails] = useState<ContactEmail[]>(
     contact?.emails.length ? [...contact.emails] : [{ address: "" }],
   );
@@ -143,42 +147,67 @@ export const ContactForm = React.memo(function ContactForm({
       </div>
 
       <div className="flex flex-col gap-4 px-6 py-4">
-        {/* Name section */}
+        {/* Name section — simple by default, expandable */}
         <FormSection label={t("contacts.name")}>
           <FormInput
-            label={t("contacts.fullName")}
+            label={t("contacts.name")}
             value={fullName}
-            onChange={setFullName}
-            placeholder={t("contacts.fullName")}
+            onChange={(val) => {
+              setFullName(val);
+              // Auto-split into given/surname for JSContact
+              if (!showNameDetails) {
+                const parts = val.trim().split(/\s+/);
+                if (parts.length >= 2) {
+                  setGivenName(parts[0]);
+                  setSurname(parts.slice(1).join(" "));
+                } else {
+                  setGivenName(val.trim());
+                  setSurname("");
+                }
+              }
+            }}
+            placeholder={t("contacts.namePlaceholder")}
           />
-          <div className="flex gap-2">
-            <FormInput
-              label={t("contacts.first")}
-              value={givenName}
-              onChange={setGivenName}
-              placeholder={t("contacts.firstName")}
-            />
-            <FormInput
-              label={t("contacts.last")}
-              value={surname}
-              onChange={setSurname}
-              placeholder={t("contacts.lastName")}
-            />
-          </div>
-          <div className="flex gap-2">
-            <FormInput
-              label={t("contacts.prefix")}
-              value={prefix}
-              onChange={setPrefix}
-              placeholder={t("contacts.prefix")}
-            />
-            <FormInput
-              label={t("contacts.suffix")}
-              value={suffix}
-              onChange={setSuffix}
-              placeholder={t("contacts.suffix")}
-            />
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowNameDetails((v) => !v)}
+            className="text-xs font-medium transition-colors self-start"
+            style={{ color: "var(--color-text-accent)" }}
+          >
+            {showNameDetails ? t("contacts.hideNameDetails") : t("contacts.showNameDetails")}
+          </button>
+          {showNameDetails && (
+            <>
+              <div className="flex gap-2">
+                <FormInput
+                  label={t("contacts.first")}
+                  value={givenName}
+                  onChange={setGivenName}
+                  placeholder={t("contacts.firstName")}
+                />
+                <FormInput
+                  label={t("contacts.last")}
+                  value={surname}
+                  onChange={setSurname}
+                  placeholder={t("contacts.lastName")}
+                />
+              </div>
+              <div className="flex gap-2">
+                <FormInput
+                  label={t("contacts.prefix")}
+                  value={prefix}
+                  onChange={setPrefix}
+                  placeholder={t("contacts.prefix")}
+                />
+                <FormInput
+                  label={t("contacts.suffix")}
+                  value={suffix}
+                  onChange={setSuffix}
+                  placeholder={t("contacts.suffix")}
+                />
+              </div>
+            </>
+          )}
         </FormSection>
 
         {/* Email section */}

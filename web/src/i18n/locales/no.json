@@ -540,5 +540,8 @@
   "listToolbar.newestFirst": "Nyeste først",
   "listToolbar.oldestFirst": "Eldste først",
   "listToolbar.groupByConversation": "Grupper etter samtale",
-  "listToolbar.showIndividual": "Vis individuelle meldinger"
+  "listToolbar.showIndividual": "Vis individuelle meldinger",
+  "contacts.namePlaceholder": "Fullt navn",
+  "contacts.showNameDetails": "Vis for-/etternavn",
+  "contacts.hideNameDetails": "Skjul detaljer"
 }
