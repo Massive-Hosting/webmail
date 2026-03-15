@@ -281,9 +281,7 @@
 /* ---- Thread child item (expanded) ---- */
 
 .message-list-item--thread-child {
-  padding-left: 24px;
-  border-left: 3px solid var(--color-bg-accent);
-  background-color: var(--color-bg-secondary);
+  padding-left: 32px;
   gap: 8px;
   height: 56px;
 }
@@ -300,52 +298,25 @@
   background-color: var(--color-message-unread);
 }
 
-.message-list-item--thread-child .message-list-item__indicator {
+.message-list-item--thread-child-last {
+  border-bottom: 1px solid var(--color-border-secondary);
+  margin-bottom: 1px;
+}
+
+/* Hide connector lines — keep it clean with just indentation */
+.message-list-item__thread-line {
   display: none;
 }
 
-.message-list-item--thread-child-last {
-  border-bottom: 1px solid var(--color-border-primary);
-  margin-bottom: 2px;
-}
-
-.message-list-item__thread-line {
-  width: 16px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  align-self: stretch;
-}
-
-.message-list-item__thread-line-segment {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 1px;
-  background-color: var(--color-border-primary);
-}
-
-.message-list-item__thread-line-segment--last {
-  bottom: 50%;
-}
-
+.message-list-item__thread-line-segment,
+.message-list-item__thread-line-segment--last,
 .message-list-item__thread-line-segment::after {
-  content: "";
-  position: absolute;
-  bottom: 50%;
-  left: 0;
-  width: 8px;
-  height: 1px;
-  background-color: var(--color-border-primary);
+  display: none;
 }
 
 /* Thread children loading skeleton */
 .thread-children-loading {
-  border-left: 3px solid var(--color-bg-accent);
-  background-color: var(--color-bg-secondary);
+  padding-left: 32px;
 }
 
 /* ================================================================
