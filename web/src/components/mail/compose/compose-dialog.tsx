@@ -117,9 +117,26 @@ export const ComposePanel = React.memo(function ComposePanel({
           const sig = `<p><br></p>${sigSeparator}${matchingIdentity.htmlSignature}`;
           updateDraft(draftId, { bodyHTML: sig, isDirty: false });
         } else if (!draft.bodyHTML.includes(sigSeparator)) {
-          // Body has content (e.g. AI prefill) but no signature — append it
+          // Body has content (e.g. AI prefill or quoted text) but no signature.
+          // Insert signature BEFORE the quoted text (look for the quote boundary).
           const sig = `<p><br></p>${sigSeparator}${matchingIdentity.htmlSignature}`;
-          updateDraft(draftId, { bodyHTML: draft.bodyHTML + sig, isDirty: false });
+          const quoteMarkers = ['<div style="border-top:', '<div class="compose-quoted-text', '<blockquote', '---------- Forwarded message'];
+          let insertIdx = -1;
+          for (const marker of quoteMarkers) {
+            const idx = draft.bodyHTML.indexOf(marker);
+            if (idx !== -1 && (insertIdx === -1 || idx < insertIdx)) {
+              insertIdx = idx;
+            }
+          }
+          if (insertIdx !== -1) {
+            // Insert signature before the quoted text
+            const before = draft.bodyHTML.slice(0, insertIdx);
+            const after = draft.bodyHTML.slice(insertIdx);
+            updateDraft(draftId, { bodyHTML: before + sig + after, isDirty: false });
+          } else {
+            // No quoted text found — append at end
+            updateDraft(draftId, { bodyHTML: draft.bodyHTML + sig, isDirty: false });
+          }
         }
       }
     }
