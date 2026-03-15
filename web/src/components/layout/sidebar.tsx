@@ -1,4 +1,4 @@
-/** Sidebar with folder tree and navigation tabs */
+/** Sidebar with folder tree and navigation tabs — premium design */
 
 import React, { lazy, Suspense } from "react";
 import { FolderTree } from "@/components/mail/folder-tree.tsx";
@@ -28,60 +28,61 @@ export const Sidebar = React.memo(function Sidebar() {
 
   return (
     <div
-      className="flex flex-col shrink-0 h-full overflow-hidden transition-[width] duration-200"
+      className="flex flex-col shrink-0 h-full overflow-hidden"
       style={{
         width,
         backgroundColor: "var(--color-bg-secondary)",
         borderRight: "1px solid var(--color-border-primary)",
+        transition: "width 200ms cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
       {/* Navigation tabs */}
       <div
-        className="flex items-center gap-1 px-2 py-2"
-        style={{ borderBottom: "1px solid var(--color-border-secondary)" }}
+        className="shrink-0 px-2 py-2"
+        style={{ borderBottom: "1px solid var(--color-border-primary)" }}
       >
         {sidebarCollapsed ? (
-          <div className="flex flex-col items-center gap-1 w-full">
+          <div className="flex flex-col items-center gap-0.5 w-full">
             <NavIcon
-              icon={<Mail size={20} />}
+              icon={<Mail size={18} />}
               active={activeView === "mail"}
               label="Mail"
               onClick={() => setActiveView("mail")}
             />
             <NavIcon
-              icon={<Users size={20} />}
+              icon={<Users size={18} />}
               active={activeView === "contacts"}
               label="Contacts"
               onClick={() => setActiveView("contacts")}
             />
             <NavIcon
-              icon={<Calendar size={20} />}
+              icon={<Calendar size={18} />}
               active={activeView === "calendar"}
               label="Calendar"
               onClick={() => setActiveView("calendar")}
             />
           </div>
         ) : (
-          <>
+          <div className="flex items-center gap-0.5">
             <NavButton
-              icon={<Mail size={16} />}
+              icon={<Mail size={15} />}
               label="Mail"
               active={activeView === "mail"}
               onClick={() => setActiveView("mail")}
             />
             <NavButton
-              icon={<Users size={16} />}
+              icon={<Users size={15} />}
               label="Contacts"
               active={activeView === "contacts"}
               onClick={() => setActiveView("contacts")}
             />
             <NavButton
-              icon={<Calendar size={16} />}
+              icon={<Calendar size={15} />}
               label="Calendar"
               active={activeView === "calendar"}
               onClick={() => setActiveView("calendar")}
             />
-          </>
+          </div>
         )}
       </div>
 
@@ -90,6 +91,10 @@ export const Sidebar = React.memo(function Sidebar() {
         {!sidebarCollapsed && activeView === "mail" && (
           <>
             <FolderTree />
+            <div
+              className="mx-3 my-1"
+              style={{ borderTop: "1px solid var(--color-border-primary)" }}
+            />
             <Suspense fallback={<div />}>
               <AgendaSidebar
                 onNavigateToEvent={() => setActiveView("calendar")}
@@ -102,17 +107,23 @@ export const Sidebar = React.memo(function Sidebar() {
       {/* Collapse toggle */}
       <button
         onClick={toggleSidebar}
-        className="flex items-center justify-center h-8 shrink-0 hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+        className="flex items-center justify-center h-9 shrink-0 transition-colors duration-150 hover:bg-[var(--color-bg-tertiary)]"
         style={{
           color: "var(--color-text-tertiary)",
-          borderTop: "1px solid var(--color-border-secondary)",
+          borderTop: "1px solid var(--color-border-primary)",
         }}
         aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        onMouseOver={(e) => {
+          e.currentTarget.style.color = "var(--color-text-secondary)";
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.color = "var(--color-text-tertiary)";
+        }}
       >
         {sidebarCollapsed ? (
-          <ChevronRight size={16} />
+          <ChevronRight size={15} />
         ) : (
-          <ChevronLeft size={16} />
+          <ChevronLeft size={15} />
         )}
       </button>
     </div>
@@ -133,10 +144,23 @@ function NavButton({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors duration-150"
+      className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium transition-all duration-150"
       style={{
-        backgroundColor: active ? "var(--color-bg-tertiary)" : "transparent",
+        backgroundColor: active ? "var(--color-message-selected)" : "transparent",
         color: active ? "var(--color-text-accent)" : "var(--color-text-secondary)",
+        borderRadius: "var(--radius-sm)",
+      }}
+      onMouseOver={(e) => {
+        if (!active) {
+          e.currentTarget.style.backgroundColor = "var(--color-bg-tertiary)";
+          e.currentTarget.style.color = "var(--color-text-primary)";
+        }
+      }}
+      onMouseOut={(e) => {
+        if (!active) {
+          e.currentTarget.style.backgroundColor = "transparent";
+          e.currentTarget.style.color = "var(--color-text-secondary)";
+        }
       }}
     >
       {icon}
@@ -159,13 +183,26 @@ function NavIcon({
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center w-10 rounded-md transition-colors duration-150"
+      className="flex items-center justify-center w-10 transition-all duration-150"
       style={{
         height: "var(--density-sidebar-item)",
-        backgroundColor: active ? "var(--color-bg-tertiary)" : "transparent",
+        backgroundColor: active ? "var(--color-message-selected)" : "transparent",
         color: active ? "var(--color-text-accent)" : "var(--color-text-secondary)",
+        borderRadius: "var(--radius-sm)",
       }}
       title={label}
+      onMouseOver={(e) => {
+        if (!active) {
+          e.currentTarget.style.backgroundColor = "var(--color-bg-tertiary)";
+          e.currentTarget.style.color = "var(--color-text-primary)";
+        }
+      }}
+      onMouseOut={(e) => {
+        if (!active) {
+          e.currentTarget.style.backgroundColor = "transparent";
+          e.currentTarget.style.color = "var(--color-text-secondary)";
+        }
+      }}
     >
       {icon}
     </button>

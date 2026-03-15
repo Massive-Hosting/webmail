@@ -102,16 +102,16 @@ export const MessageList = React.memo(function MessageList({
     [prefetchMessage],
   );
 
-  // Loading state
+  // Loading state with shimmer skeletons
   if (isLoading) {
     return (
-      <div className="flex flex-col">
+      <div className="message-list-skeleton">
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 px-3" style={{ height: "var(--density-row-height)" }}>
-            <div className="w-2" />
+          <div key={i} className="message-list-skeleton__row" style={{ height: "var(--density-row-height)" }}>
+            <div className="message-list-skeleton__dot-space" />
             <Skeleton width={36} height={36} rounded />
-            <div className="flex-1 flex flex-col gap-1.5">
-              <div className="flex items-center gap-2">
+            <div className="message-list-skeleton__content">
+              <div className="message-list-skeleton__top">
                 <Skeleton width={120} height={14} />
                 <div className="flex-1" />
                 <Skeleton width={50} height={12} />
@@ -129,7 +129,7 @@ export const MessageList = React.memo(function MessageList({
   if (emails.length === 0) {
     return (
       <EmptyState
-        icon={<Inbox size={48} strokeWidth={1.5} />}
+        icon={<Inbox size={48} strokeWidth={1} />}
         title="No messages"
         description="This folder is empty. Messages that arrive here will show up in this list."
         className="h-full"
@@ -140,7 +140,7 @@ export const MessageList = React.memo(function MessageList({
   return (
     <div
       ref={parentRef}
-      className="h-full overflow-y-auto"
+      className="message-list"
       style={{ contain: "strict" }}
       role="listbox"
       aria-label="Messages"
@@ -166,16 +166,14 @@ export const MessageList = React.memo(function MessageList({
                   height: rowHeight,
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
-                className="flex items-center justify-center"
+                className="message-list-skeleton__row"
               >
-                <div className="flex items-center gap-3 px-3 w-full">
-                  <div className="w-2" />
-                  <Skeleton width={36} height={36} rounded />
-                  <div className="flex-1 flex flex-col gap-1.5">
-                    <Skeleton width={120} height={14} />
-                    <Skeleton width="80%" height={14} />
-                    <Skeleton width="60%" height={12} />
-                  </div>
+                <div className="message-list-skeleton__dot-space" />
+                <Skeleton width={36} height={36} rounded />
+                <div className="message-list-skeleton__content">
+                  <Skeleton width={120} height={14} />
+                  <Skeleton width="80%" height={14} />
+                  <Skeleton width="60%" height={12} />
                 </div>
               </div>
             );

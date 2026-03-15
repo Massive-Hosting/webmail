@@ -1,4 +1,4 @@
-/** Top toolbar with search, compose, and theme toggle */
+/** Top toolbar with search, compose, and theme toggle — premium design */
 
 import React, { useCallback } from "react";
 import {
@@ -24,6 +24,54 @@ interface ToolbarProps {
   onAdvancedSearch?: () => void;
 }
 
+/** Reusable toolbar icon button with tooltip */
+function ToolbarIconButton({
+  onClick,
+  icon,
+  label,
+  tooltipText,
+}: {
+  onClick?: () => void;
+  icon: React.ReactNode;
+  label: string;
+  tooltipText: string;
+}) {
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>
+        <button
+          onClick={onClick}
+          className="flex items-center justify-center w-8 h-8 rounded-md transition-all duration-150 hover:bg-[var(--color-bg-tertiary)]"
+          style={{ color: "var(--color-text-secondary)" }}
+          aria-label={label}
+          onMouseOver={(e) => {
+            e.currentTarget.style.color = "var(--color-text-primary)";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.color = "var(--color-text-secondary)";
+          }}
+        >
+          {icon}
+        </button>
+      </Tooltip.Trigger>
+      <Tooltip.Content
+        className="text-xs px-2.5 py-1.5 animate-scale-in"
+        style={{
+          backgroundColor: "var(--color-bg-elevated)",
+          color: "var(--color-text-primary)",
+          boxShadow: "var(--shadow-md)",
+          border: "1px solid var(--color-border-primary)",
+          borderRadius: "var(--radius-sm)",
+          fontWeight: 500,
+        }}
+        sideOffset={6}
+      >
+        {tooltipText}
+      </Tooltip.Content>
+    </Tooltip.Root>
+  );
+}
+
 export const Toolbar = React.memo(function Toolbar({
   onCompose,
   onSettings,
@@ -46,9 +94,9 @@ export const Toolbar = React.memo(function Toolbar({
     theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
 
   return (
-    <Tooltip.Provider delayDuration={300}>
+    <Tooltip.Provider delayDuration={400}>
       <div
-        className="flex items-center gap-2 px-3 shrink-0"
+        className="flex items-center gap-3 px-3 shrink-0"
         style={{
           height: "var(--density-toolbar)",
           backgroundColor: "var(--color-bg-secondary)",
@@ -59,7 +107,7 @@ export const Toolbar = React.memo(function Toolbar({
         {isMobile && (
           <button
             onClick={toggleSidebar}
-            className="p-2 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+            className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
             style={{ color: "var(--color-text-secondary)" }}
             aria-label="Toggle sidebar menu"
           >
@@ -69,7 +117,7 @@ export const Toolbar = React.memo(function Toolbar({
 
         {/* Logo / App name */}
         <div
-          className="font-semibold text-sm mr-2"
+          className="font-semibold text-sm tracking-tight select-none"
           style={{ color: "var(--color-text-accent)" }}
         >
           Webmail
@@ -78,120 +126,78 @@ export const Toolbar = React.memo(function Toolbar({
         {/* Search bar */}
         <SearchBar onAdvancedSearch={onAdvancedSearch} />
 
+        {/* Separator */}
+        <div
+          className="h-5 w-px shrink-0"
+          style={{ backgroundColor: "var(--color-border-primary)" }}
+        />
+
         {/* Action buttons */}
-        <div className="flex items-center gap-1 ml-2">
+        <div className="flex items-center gap-0.5">
           {/* Compose */}
           <Tooltip.Root>
             <Tooltip.Trigger asChild>
               <button
                 onClick={onCompose}
-                className="flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md transition-colors duration-150"
+                className="flex items-center gap-1.5 h-8 px-3.5 text-sm font-medium transition-all duration-150"
                 style={{
                   backgroundColor: "var(--color-bg-accent)",
                   color: "var(--color-text-inverse)",
+                  borderRadius: "var(--radius-md)",
+                  boxShadow: "0 1px 3px rgba(99, 102, 241, 0.15)",
                 }}
                 onMouseOver={(e) => {
                   e.currentTarget.style.backgroundColor = "var(--color-bg-accent-hover)";
+                  e.currentTarget.style.boxShadow = "0 2px 6px rgba(99, 102, 241, 0.25)";
                 }}
                 onMouseOut={(e) => {
                   e.currentTarget.style.backgroundColor = "var(--color-bg-accent)";
+                  e.currentTarget.style.boxShadow = "0 1px 3px rgba(99, 102, 241, 0.15)";
                 }}
               >
-                <PenSquare size={16} />
+                <PenSquare size={15} />
                 {!isMobile && <span>Compose</span>}
               </button>
             </Tooltip.Trigger>
             <Tooltip.Content
-              className="text-xs px-2 py-1 rounded"
+              className="text-xs px-2.5 py-1.5 animate-scale-in"
               style={{
                 backgroundColor: "var(--color-bg-elevated)",
                 color: "var(--color-text-primary)",
                 boxShadow: "var(--shadow-md)",
                 border: "1px solid var(--color-border-primary)",
+                borderRadius: "var(--radius-sm)",
+                fontWeight: 500,
               }}
-              sideOffset={5}
+              sideOffset={6}
             >
               Compose (C)
             </Tooltip.Content>
           </Tooltip.Root>
 
           {/* Theme toggle */}
-          <Tooltip.Root>
-            <Tooltip.Trigger asChild>
-              <button
-                onClick={handleThemeToggle}
-                className="p-2 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                style={{ color: "var(--color-text-secondary)" }}
-                aria-label={`Theme: ${theme}. Click to change.`}
-              >
-                <ThemeIcon size={18} />
-              </button>
-            </Tooltip.Trigger>
-            <Tooltip.Content
-              className="text-xs px-2 py-1 rounded"
-              style={{
-                backgroundColor: "var(--color-bg-elevated)",
-                color: "var(--color-text-primary)",
-                boxShadow: "var(--shadow-md)",
-                border: "1px solid var(--color-border-primary)",
-              }}
-              sideOffset={5}
-            >
-              Theme: {theme}
-            </Tooltip.Content>
-          </Tooltip.Root>
+          <ToolbarIconButton
+            onClick={handleThemeToggle}
+            icon={<ThemeIcon size={17} />}
+            label={`Theme: ${theme}. Click to change.`}
+            tooltipText={`Theme: ${theme}`}
+          />
 
           {/* Settings */}
-          <Tooltip.Root>
-            <Tooltip.Trigger asChild>
-              <button
-                onClick={onSettings}
-                className="p-2 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                style={{ color: "var(--color-text-secondary)" }}
-                aria-label="Settings"
-              >
-                <Settings size={18} />
-              </button>
-            </Tooltip.Trigger>
-            <Tooltip.Content
-              className="text-xs px-2 py-1 rounded"
-              style={{
-                backgroundColor: "var(--color-bg-elevated)",
-                color: "var(--color-text-primary)",
-                boxShadow: "var(--shadow-md)",
-                border: "1px solid var(--color-border-primary)",
-              }}
-              sideOffset={5}
-            >
-              Settings
-            </Tooltip.Content>
-          </Tooltip.Root>
+          <ToolbarIconButton
+            onClick={onSettings}
+            icon={<Settings size={17} />}
+            label="Settings"
+            tooltipText="Settings"
+          />
 
           {/* Logout */}
-          <Tooltip.Root>
-            <Tooltip.Trigger asChild>
-              <button
-                onClick={handleLogout}
-                className="p-2 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                style={{ color: "var(--color-text-secondary)" }}
-                aria-label="Log out"
-              >
-                <LogOut size={18} />
-              </button>
-            </Tooltip.Trigger>
-            <Tooltip.Content
-              className="text-xs px-2 py-1 rounded"
-              style={{
-                backgroundColor: "var(--color-bg-elevated)",
-                color: "var(--color-text-primary)",
-                boxShadow: "var(--shadow-md)",
-                border: "1px solid var(--color-border-primary)",
-              }}
-              sideOffset={5}
-            >
-              Log out
-            </Tooltip.Content>
-          </Tooltip.Root>
+          <ToolbarIconButton
+            onClick={handleLogout}
+            icon={<LogOut size={17} />}
+            label="Log out"
+            tooltipText="Log out"
+          />
         </div>
       </div>
     </Tooltip.Provider>

@@ -31,12 +31,13 @@ export const ReadingPane = React.memo(function ReadingPane() {
 
   if (!selectedEmailId) {
     return (
-      <div
-        className="flex items-center justify-center h-full"
-        style={{ backgroundColor: "var(--color-bg-primary)" }}
-      >
+      <div className="reading-pane reading-pane--empty">
         <EmptyState
-          icon={<Mail size={48} strokeWidth={1.5} />}
+          icon={
+            <div className="reading-pane__empty-icon-wrapper">
+              <Mail size={40} strokeWidth={1} />
+            </div>
+          }
           title="Select a message to read"
           description="Choose a message from the list to view its contents here."
         />
