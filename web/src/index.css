@@ -33,8 +33,8 @@
   --color-bg-tertiary: #EEEEEC;
   --color-bg-elevated: #FFFFFF;
   --color-bg-overlay: rgba(28, 25, 23, 0.4);
-  --color-bg-accent: #6366F1;
-  --color-bg-accent-hover: #4F46E5;
+  --color-bg-accent: #3B82F6;
+  --color-bg-accent-hover: #2563EB;
   --color-bg-danger: #EF4444;
   --color-bg-success: #22C55E;
   --color-bg-warning: #F59E0B;
@@ -43,15 +43,15 @@
   --color-text-secondary: #78716C;
   --color-text-tertiary: #A8A29E;
   --color-text-inverse: #FFFFFF;
-  --color-text-accent: #6366F1;
+  --color-text-accent: #2563EB;
   --color-text-danger: #DC2626;
 
   --color-border-primary: #E7E5E4;
   --color-border-secondary: #F0EEEC;
-  --color-border-focus: #6366F1;
+  --color-border-focus: #3B82F6;
 
-  --color-message-unread: #F0F5FF;
-  --color-message-selected: #EEF2FF;
+  --color-message-unread: #EFF6FF;
+  --color-message-selected: #EFF6FF;
   --color-message-hover: #F7F7F6;
   --color-message-flagged: #FEF9EE;
 
@@ -82,19 +82,20 @@
   --color-bg-tertiary: #292524;
   --color-bg-elevated: #1C1917;
   --color-bg-overlay: rgba(0, 0, 0, 0.6);
-  --color-bg-accent: #818CF8;
-  --color-bg-accent-hover: #A5B4FC;
+  --color-bg-accent: #3B82F6;
+  --color-bg-accent-hover: #60A5FA;
 
   --color-text-primary: #E7E5E4;
   --color-text-secondary: #A8A29E;
   --color-text-tertiary: #78716C;
+  --color-text-accent: #60A5FA;
 
   --color-border-primary: #292524;
   --color-border-secondary: #1C1917;
-  --color-border-focus: #818CF8;
+  --color-border-focus: #3B82F6;
 
-  --color-message-unread: #1a1a2e;
-  --color-message-selected: #1E1B4B;
+  --color-message-unread: #172554;
+  --color-message-selected: #172554;
   --color-message-hover: #1C1917;
   --color-message-flagged: #292524;
 

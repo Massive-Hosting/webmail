@@ -67,9 +67,9 @@ export function getInitials(addr: EmailAddress): string {
 /** Generate a consistent color for an avatar based on email */
 export function getAvatarColor(email: string): string {
   const colors = [
-    "#4f46e5", "#7c3aed", "#2563eb", "#0891b2",
-    "#059669", "#d97706", "#dc2626", "#db2777",
-    "#9333ea", "#0d9488", "#ea580c", "#4338ca",
+    "#2563eb", "#7c3aed", "#0891b2", "#059669",
+    "#d97706", "#dc2626", "#db2777", "#0d9488",
+    "#9333ea", "#ea580c", "#1d4ed8", "#0369a1",
   ];
   let hash = 0;
   for (let i = 0; i < email.length; i++) {

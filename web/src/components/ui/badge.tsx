@@ -1,4 +1,4 @@
-/** Unread count badge — refined indigo pill */
+/** Unread count badge — refined blue pill */
 
 import React from "react";
 

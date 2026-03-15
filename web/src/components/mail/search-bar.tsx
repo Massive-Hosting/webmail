@@ -158,7 +158,7 @@ export const SearchBar = React.memo(function SearchBar({
             color: "var(--color-text-primary)",
             border: isFocused ? "1px solid var(--color-border-focus)" : "1px solid transparent",
             borderRadius: "var(--radius-md)",
-            boxShadow: isFocused ? "0 0 0 3px rgba(99, 102, 241, 0.08)" : "none",
+            boxShadow: isFocused ? "0 0 0 3px rgba(59, 130, 246, 0.08)" : "none",
             transition: "border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease",
           }}
         />

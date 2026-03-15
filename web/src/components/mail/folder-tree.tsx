@@ -195,7 +195,7 @@ export const FolderTree = React.memo(function FolderTree() {
               color: "var(--color-text-primary)",
               border: "1px solid var(--color-border-focus)",
               borderRadius: "var(--radius-sm)",
-              boxShadow: "0 0 0 3px rgba(99, 102, 241, 0.08)",
+              boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.08)",
             }}
             placeholder="Folder name..."
           />
@@ -368,7 +368,7 @@ const FolderItem = React.memo(function FolderItem({
             color: "var(--color-text-primary)",
             border: "1px solid var(--color-border-focus)",
             borderRadius: "var(--radius-sm)",
-            boxShadow: "0 0 0 3px rgba(99, 102, 241, 0.08)",
+            boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.08)",
           }}
         />
       </div>

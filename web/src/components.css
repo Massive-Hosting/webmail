@@ -34,7 +34,7 @@
 
 .message-list-item:hover {
   background-color: var(--color-message-hover);
-  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.03);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.03);
 }
 
 .message-list-item[data-selected] {
@@ -65,7 +65,7 @@
   height: 6px;
   border-radius: var(--radius-full);
   background-color: var(--color-bg-accent);
-  box-shadow: 0 0 4px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 4px rgba(59, 130, 246, 0.4);
   flex-shrink: 0;
 }
 
@@ -800,7 +800,7 @@
   height: 5px;
   border-radius: var(--radius-full);
   background-color: var(--color-bg-accent);
-  box-shadow: 0 0 3px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 3px rgba(59, 130, 246, 0.4);
 }
 
 .thread-view__collapsed-sender {
@@ -1410,7 +1410,7 @@
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
   font-family: inherit;
 }
 

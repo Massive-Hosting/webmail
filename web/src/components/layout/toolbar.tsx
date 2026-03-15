@@ -144,15 +144,15 @@ export const Toolbar = React.memo(function Toolbar({
                   backgroundColor: "var(--color-bg-accent)",
                   color: "var(--color-text-inverse)",
                   borderRadius: "var(--radius-md)",
-                  boxShadow: "0 1px 3px rgba(99, 102, 241, 0.15)",
+                  boxShadow: "0 1px 3px rgba(59, 130, 246, 0.15)",
                 }}
                 onMouseOver={(e) => {
                   e.currentTarget.style.backgroundColor = "var(--color-bg-accent-hover)";
-                  e.currentTarget.style.boxShadow = "0 2px 6px rgba(99, 102, 241, 0.25)";
+                  e.currentTarget.style.boxShadow = "0 2px 6px rgba(59, 130, 246, 0.25)";
                 }}
                 onMouseOut={(e) => {
                   e.currentTarget.style.backgroundColor = "var(--color-bg-accent)";
-                  e.currentTarget.style.boxShadow = "0 1px 3px rgba(99, 102, 241, 0.15)";
+                  e.currentTarget.style.boxShadow = "0 1px 3px rgba(59, 130, 246, 0.15)";
                 }}
               >
                 <PenSquare size={15} />

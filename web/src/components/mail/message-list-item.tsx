@@ -64,7 +64,7 @@ export const MessageListItem = React.memo(
             onClick={(e) => onClick(email, e)}
             onMouseEnter={() => onMouseEnter?.(email.id)}
           >
-            {/* Unread indicator - small indigo dot */}
+            {/* Unread indicator - small blue dot */}
             <div className="message-list-item__indicator">
               {unread && (
                 <div className="message-list-item__unread-dot" />

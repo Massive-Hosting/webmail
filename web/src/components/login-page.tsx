@@ -70,7 +70,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
         style={{
           width: 600,
           height: 400,
-          background: "radial-gradient(ellipse at center, rgba(99, 102, 241, 0.08) 0%, transparent 70%)",
+          background: "radial-gradient(ellipse at center, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
           filter: "blur(40px)",
         }}
       />
@@ -92,7 +92,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             style={{
               backgroundColor: "var(--color-bg-accent)",
               borderRadius: "var(--radius-lg)",
-              boxShadow: "0 4px 12px rgba(99, 102, 241, 0.25)",
+              boxShadow: "0 4px 12px rgba(59, 130, 246, 0.25)",
             }}
           >
             <Mail size={22} style={{ color: "var(--color-text-inverse)" }} />
@@ -157,7 +157,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               }}
               onFocus={(e) => {
                 e.currentTarget.style.borderColor = "var(--color-border-focus)";
-                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
+                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.1)";
               }}
               onBlur={(e) => {
                 e.currentTarget.style.borderColor = "var(--color-border-primary)";
@@ -193,7 +193,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 }}
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = "var(--color-border-focus)";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.1)";
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = "var(--color-border-primary)";
@@ -241,17 +241,17 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               color: "var(--color-text-inverse)",
               borderRadius: "var(--radius-md)",
               transition: "background-color 150ms ease, transform 100ms ease, box-shadow 150ms ease",
-              boxShadow: "0 1px 3px rgba(99, 102, 241, 0.2)",
+              boxShadow: "0 1px 3px rgba(59, 130, 246, 0.2)",
             }}
             onMouseOver={(e) => {
               if (!isSubmitting) {
                 e.currentTarget.style.backgroundColor = "var(--color-bg-accent-hover)";
-                e.currentTarget.style.boxShadow = "0 2px 8px rgba(99, 102, 241, 0.3)";
+                e.currentTarget.style.boxShadow = "0 2px 8px rgba(59, 130, 246, 0.3)";
               }
             }}
             onMouseOut={(e) => {
               e.currentTarget.style.backgroundColor = "var(--color-bg-accent)";
-              e.currentTarget.style.boxShadow = "0 1px 3px rgba(99, 102, 241, 0.2)";
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(59, 130, 246, 0.2)";
             }}
             onMouseDown={(e) => {
               if (!isSubmitting) {
