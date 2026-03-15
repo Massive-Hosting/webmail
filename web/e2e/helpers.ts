@@ -88,6 +88,10 @@ export async function login(
       test.skip(true, 'Login returned 401 — test credentials may be invalid or core API unreachable');
       return;
     }
+    if (status === 429) {
+      test.skip(true, 'Login returned 429 — rate limited, try again later');
+      return;
+    }
     // Other errors: let the test fail naturally.
     expect(response.ok(), `Login failed with status ${status}`).toBeTruthy();
   }
