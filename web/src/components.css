@@ -112,18 +112,18 @@
 }
 
 .message-list-item__indicator {
-  width: 8px;
+  width: 4px;
   flex-shrink: 0;
   display: flex;
-  justify-content: center;
+  align-items: stretch;
 }
 
 .message-list-item__unread-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-full);
+  width: 3px;
+  align-self: stretch;
+  margin: 8px 0;
+  border-radius: 2px;
   background-color: var(--color-bg-accent);
-  box-shadow: 0 0 4px rgba(59, 130, 246, 0.4);
   flex-shrink: 0;
 }
 

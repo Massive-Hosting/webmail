@@ -50,7 +50,7 @@
   --color-border-secondary: #E7E5E4;
   --color-border-focus: #3B82F6;
 
-  --color-message-unread: #EFF6FF;
+  --color-message-unread: transparent;
   --color-message-selected: #EFF6FF;
   --color-message-hover: #F7F7F6;
   --color-message-flagged: #FEF9EE;
@@ -94,7 +94,7 @@
   --color-border-secondary: #1C1917;
   --color-border-focus: #3B82F6;
 
-  --color-message-unread: #172554;
+  --color-message-unread: transparent;
   --color-message-selected: #172554;
   --color-message-hover: #1C1917;
   --color-message-flagged: #292524;

@@ -191,6 +191,8 @@ export const useUIStore = create<UIState>((set, get) => {
     },
 
     setSelectedEmail: (id, threadId) => {
+      // Minimize any inline compose drafts so the selected email is visible.
+      useComposeStore.getState().minimizeAllInlineDrafts();
       set({
         selectedEmailId: id,
         selectedThreadId: threadId ?? null,
