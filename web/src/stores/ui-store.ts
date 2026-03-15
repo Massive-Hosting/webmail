@@ -23,6 +23,8 @@ interface UIState extends PanelLayout {
   selectedThreadId: string | null;
   /** Multi-selected email IDs */
   selectedEmailIds: Set<string>;
+  /** Thread IDs that are expanded inline in the message list */
+  expandedThreads: Set<string>;
   /** Whether we're on mobile */
   isMobile: boolean;
   /** Active view for mobile navigation */
@@ -44,6 +46,8 @@ interface UIState extends PanelLayout {
   selectEmailRange: (ids: string[]) => void;
   selectAllEmails: (ids: string[]) => void;
   clearSelection: () => void;
+  toggleThread: (threadId: string) => void;
+  collapseThread: (threadId: string) => void;
   setIsMobile: (isMobile: boolean) => void;
   setMobileView: (view: "sidebar" | "list" | "message") => void;
   setChordPrefix: (prefix: string | null) => void;
@@ -110,6 +114,7 @@ export const useUIStore = create<UIState>((set, get) => {
     selectedEmailId: null,
     selectedThreadId: null,
     selectedEmailIds: new Set(),
+    expandedThreads: new Set(),
     isMobile: false,
     mobileView: "list",
     chordPrefix: null,
@@ -181,6 +186,7 @@ export const useUIStore = create<UIState>((set, get) => {
         selectedEmailId: null,
         selectedThreadId: null,
         selectedEmailIds: new Set(),
+        expandedThreads: new Set(),
       });
     },
 
@@ -223,6 +229,26 @@ export const useUIStore = create<UIState>((set, get) => {
 
     clearSelection: () => {
       set({ selectedEmailIds: new Set(), selectedEmailId: null, selectedThreadId: null });
+    },
+
+    toggleThread: (threadId) => {
+      set((state) => {
+        const next = new Set(state.expandedThreads);
+        if (next.has(threadId)) {
+          next.delete(threadId);
+        } else {
+          next.add(threadId);
+        }
+        return { expandedThreads: next };
+      });
+    },
+
+    collapseThread: (threadId) => {
+      set((state) => {
+        const next = new Set(state.expandedThreads);
+        next.delete(threadId);
+        return { expandedThreads: next };
+      });
     },
 
     setIsMobile: (isMobile) => set({ isMobile }),

@@ -91,7 +91,7 @@ export async function fetchEmails(params: {
   limit?: number;
   sort?: JMAPSort[];
   filter?: JMAPFilter;
-}): Promise<{ emails: EmailListItem[]; total: number; position: number }> {
+}): Promise<{ emails: EmailListItem[]; total: number; position: number; threadCounts: Record<string, number> }> {
   const {
     mailboxId,
     position = 0,
@@ -131,25 +131,47 @@ export async function fetchEmails(params: {
         },
         "g0",
       ],
+      [
+        "Thread/get",
+        {
+          "#ids": {
+            resultOf: "g0",
+            name: "Email/get",
+            path: "/list/*/threadId",
+          },
+        },
+        "t0",
+      ],
     ],
   };
 
   const response = await jmapRequest(request);
   const [, queryResult] = response.methodResponses[0];
   const [, getResult] = response.methodResponses[1];
+  const [, threadResult] = response.methodResponses[2];
 
   const qr = queryResult as { total: number; position: number; ids: string[] };
   const gr = getResult as { list: EmailListItem[]; state?: string };
+  const tr = threadResult as { list: Thread[] };
 
   // Store the JMAP state for delta sync
   if (gr.state) {
     useJMAPStateStore.getState().setEmailState(gr.state);
   }
 
+  // Build a map of threadId -> number of emails in thread
+  const threadCounts: Record<string, number> = {};
+  if (tr.list) {
+    for (const thread of tr.list) {
+      threadCounts[thread.id] = thread.emailIds.length;
+    }
+  }
+
   return {
     emails: gr.list,
     total: qr.total,
     position: qr.position,
+    threadCounts,
   };
 }
 
@@ -176,6 +198,51 @@ export async function fetchEmail(emailId: string): Promise<Email | null> {
   const [, result] = response.methodResponses[0];
   const list = (result as { list: Email[] }).list;
   return list.length > 0 ? list[0] : null;
+}
+
+/** Fetch thread emails in lightweight list format (for inline thread expansion) */
+export async function fetchThreadListEmails(threadId: string): Promise<{
+  thread: Thread;
+  emails: EmailListItem[];
+}> {
+  const request: JMAPRequest = {
+    using: JMAP_USING,
+    methodCalls: [
+      [
+        "Thread/get",
+        {
+          ids: [threadId],
+        },
+        "t0",
+      ],
+      [
+        "Email/get",
+        {
+          "#ids": {
+            resultOf: "t0",
+            name: "Thread/get",
+            path: "/list/*/emailIds",
+          },
+          properties: EMAIL_LIST_PROPERTIES,
+        },
+        "e0",
+      ],
+    ],
+  };
+
+  const response = await jmapRequest(request);
+  const [, threadResult] = response.methodResponses[0];
+  const [, emailResult] = response.methodResponses[1];
+
+  const threads = (threadResult as { list: Thread[] }).list;
+  const emails = (emailResult as { list: EmailListItem[] }).list;
+
+  return {
+    thread: threads[0],
+    emails: emails.sort(
+      (a, b) => new Date(a.receivedAt).getTime() - new Date(b.receivedAt).getTime(),
+    ),
+  };
 }
 
 /** Fetch a thread and all its emails */

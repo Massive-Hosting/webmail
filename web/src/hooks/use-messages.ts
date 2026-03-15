@@ -18,7 +18,7 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
     queryKey: ["emails", mailboxId, filter],
     queryFn: async ({ pageParam = 0 }) => {
       if (!mailboxId) {
-        return { emails: [] as EmailListItem[], total: 0, position: 0 };
+        return { emails: [] as EmailListItem[], total: 0, position: 0, threadCounts: {} as Record<string, number> };
       }
       return fetchEmails({
         mailboxId,
@@ -46,6 +46,18 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
   const emails = useMemo(() => {
     if (!query.data?.pages) return [];
     return query.data.pages.flatMap((page) => page.emails);
+  }, [query.data]);
+
+  /** Merged thread counts from all pages */
+  const threadCounts = useMemo(() => {
+    if (!query.data?.pages) return {} as Record<string, number>;
+    const merged: Record<string, number> = {};
+    for (const page of query.data.pages) {
+      if (page.threadCounts) {
+        Object.assign(merged, page.threadCounts);
+      }
+    }
+    return merged;
   }, [query.data]);
 
   const total = query.data?.pages[0]?.total ?? 0;
@@ -218,6 +230,7 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
   return {
     emails,
     total,
+    threadCounts,
     isLoading: query.isLoading,
     isFetchingNextPage: query.isFetchingNextPage,
     hasNextPage: query.hasNextPage,
@@ -277,7 +290,7 @@ function optimisticRemoveEmail(
 
 /** Type helper for the paginated query data structure */
 function useInfiniteQueryData(): {
-  pages: { emails: EmailListItem[]; total: number; position: number }[];
+  pages: { emails: EmailListItem[]; total: number; position: number; threadCounts: Record<string, number> }[];
   pageParams: unknown[];
 } | undefined {
   return undefined;

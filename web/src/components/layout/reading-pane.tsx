@@ -1,11 +1,10 @@
-/** Reading pane container - shows message, thread, or compose view */
+/** Reading pane container - shows single message or compose view */
 
 import React, { lazy, Suspense, useEffect, useRef } from "react";
 import { useUIStore } from "@/stores/ui-store.ts";
 import { useComposeStore } from "@/stores/compose-store.ts";
 import { useSettingsStore } from "@/stores/settings-store.ts";
 import { MessageView } from "@/components/mail/message-view.tsx";
-import { ThreadView } from "@/components/mail/thread-view.tsx";
 import { EmptyState } from "@/components/ui/empty-state.tsx";
 import { Mail } from "lucide-react";
 import { updateEmails } from "@/api/mail.ts";
@@ -21,7 +20,6 @@ const ComposePanel = lazy(() =>
 export const ReadingPane = React.memo(function ReadingPane() {
   const { t } = useTranslation();
   const selectedEmailId = useUIStore((s) => s.selectedEmailId);
-  const selectedThreadId = useUIStore((s) => s.selectedThreadId);
   const activeDraftId = useComposeStore((s) => s.activeDraftId);
   const activeDraft = useComposeStore((s) =>
     s.activeDraftId ? s.drafts.get(s.activeDraftId) : undefined,
@@ -52,15 +50,7 @@ export const ReadingPane = React.memo(function ReadingPane() {
     );
   }
 
-  if (selectedThreadId) {
-    return (
-      <>
-        <MarkAsReadEffect emailId={selectedEmailId} />
-        <ThreadView threadId={selectedThreadId} activeEmailId={selectedEmailId} />
-      </>
-    );
-  }
-
+  // Always show a single message in the reading pane (thread is displayed in message list)
   return (
     <>
       <MarkAsReadEffect emailId={selectedEmailId} />

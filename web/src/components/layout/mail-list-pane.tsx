@@ -55,6 +55,7 @@ export const MailListPane = React.memo(function MailListPane({
   const {
     emails,
     total,
+    threadCounts,
     isLoading,
     isFetchingNextPage,
     hasNextPage,
@@ -169,6 +170,7 @@ export const MailListPane = React.memo(function MailListPane({
         ) : (
           <MessageList
             emails={displayEmails}
+            threadCounts={searchActive ? {} : threadCounts}
             isLoading={displayLoading}
             isFetchingNextPage={displayFetchingNext}
             hasNextPage={displayHasNext}
