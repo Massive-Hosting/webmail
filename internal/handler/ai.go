@@ -1,18 +1,19 @@
 package handler
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
 	"webmail/internal/config"
 	"webmail/internal/middleware"
 
-	"github.com/anthropics/anthropic-sdk-go"
-	"github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/rs/zerolog"
 )
 
@@ -25,20 +26,23 @@ const (
 
 // AIHandler handles AI-powered email composition endpoints.
 type AIHandler struct {
-	client      anthropic.Client
+	httpClient  *http.Client
+	baseURL     string
+	apiKey      string
 	model       string
-	maxTokens   int64
+	maxTokens   int
 	rateLimiter *aiRateLimiter
 	log         zerolog.Logger
 }
 
 // NewAIHandler creates a new AI handler.
 func NewAIHandler(cfg *config.Config, log zerolog.Logger) *AIHandler {
-	client := anthropic.NewClient(option.WithAPIKey(cfg.AIAPIKey))
 	return &AIHandler{
-		client:      client,
+		httpClient:  &http.Client{Timeout: 120 * time.Second},
+		baseURL:     strings.TrimRight(cfg.AIBaseURL, "/"),
+		apiKey:      cfg.AIAPIKey,
 		model:       cfg.AIModel,
-		maxTokens:   int64(cfg.AIMaxTokens),
+		maxTokens:   cfg.AIMaxTokens,
 		rateLimiter: newAIRateLimiter(20, time.Hour),
 		log:         log,
 	}
@@ -54,7 +58,7 @@ type aiRateLimiter struct {
 }
 
 type aiBucket struct {
-	count     int
+	count       int
 	windowStart time.Time
 }
 
@@ -227,6 +231,28 @@ func (h *AIHandler) Rewrite(w http.ResponseWriter, r *http.Request) {
 	h.streamResponse(w, r, systemPromptRewrite, userMsg)
 }
 
+// openaiRequest is the payload sent to the OpenAI-compatible chat completions endpoint.
+type openaiRequest struct {
+	Model     string           `json:"model"`
+	Messages  []openaiMessage  `json:"messages"`
+	MaxTokens int              `json:"max_tokens"`
+	Stream    bool             `json:"stream"`
+}
+
+type openaiMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+// openaiStreamChunk represents a single SSE chunk from the OpenAI-compatible API.
+type openaiStreamChunk struct {
+	Choices []struct {
+		Delta struct {
+			Content string `json:"content"`
+		} `json:"delta"`
+	} `json:"choices"`
+}
+
 // streamResponse sends an SSE stream of AI-generated text.
 func (h *AIHandler) streamResponse(w http.ResponseWriter, r *http.Request, systemPrompt, userMessage string) {
 	// Set SSE headers.
@@ -241,31 +267,87 @@ func (h *AIHandler) streamResponse(w http.ResponseWriter, r *http.Request, syste
 		return
 	}
 
-	stream := h.client.Messages.NewStreaming(r.Context(), anthropic.MessageNewParams{
-		Model:     anthropic.Model(h.model),
+	// Build the OpenAI-compatible request.
+	reqBody := openaiRequest{
+		Model: h.model,
+		Messages: []openaiMessage{
+			{Role: "system", Content: systemPrompt},
+			{Role: "user", Content: userMessage},
+		},
 		MaxTokens: h.maxTokens,
-		System: []anthropic.TextBlockParam{
-			{Text: systemPrompt},
-		},
-		Messages: []anthropic.MessageParam{
-			anthropic.NewUserMessage(anthropic.NewTextBlock(userMessage)),
-		},
-	})
-	defer stream.Close()
+		Stream:    true,
+	}
 
-	for stream.Next() {
-		evt := stream.Current()
-		if evt.Type == "content_block_delta" {
-			if evt.Delta.Type == "text_delta" {
-				data, _ := json.Marshal(map[string]string{"text": evt.Delta.Text})
-				fmt.Fprintf(w, "data: %s\n\n", data)
-				flusher.Flush()
-			}
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		h.log.Error().Err(err).Msg("failed to marshal AI request")
+		data, _ := json.Marshal(map[string]string{"error": "internal error"})
+		fmt.Fprintf(w, "data: %s\n\n", data)
+		flusher.Flush()
+		return
+	}
+
+	httpReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost, h.baseURL+"/v1/chat/completions", bytes.NewReader(bodyBytes))
+	if err != nil {
+		h.log.Error().Err(err).Msg("failed to create AI request")
+		data, _ := json.Marshal(map[string]string{"error": "internal error"})
+		fmt.Fprintf(w, "data: %s\n\n", data)
+		flusher.Flush()
+		return
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", "Bearer "+h.apiKey)
+
+	resp, err := h.httpClient.Do(httpReq)
+	if err != nil {
+		h.log.Error().Err(err).Msg("AI API request failed")
+		data, _ := json.Marshal(map[string]string{"error": "AI generation failed"})
+		fmt.Fprintf(w, "data: %s\n\n", data)
+		flusher.Flush()
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		errBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+		h.log.Error().Int("status", resp.StatusCode).Str("body", string(errBody)).Msg("AI API returned error")
+		data, _ := json.Marshal(map[string]string{"error": "AI generation failed"})
+		fmt.Fprintf(w, "data: %s\n\n", data)
+		flusher.Flush()
+		return
+	}
+
+	// Read the SSE stream from the upstream API and forward chunks to the client.
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// SSE lines start with "data: ".
+		if !strings.HasPrefix(line, "data: ") {
+			continue
+		}
+		payload := strings.TrimPrefix(line, "data: ")
+
+		// End of stream.
+		if payload == "[DONE]" {
+			break
+		}
+
+		var chunk openaiStreamChunk
+		if err := json.Unmarshal([]byte(payload), &chunk); err != nil {
+			h.log.Warn().Err(err).Str("payload", payload).Msg("failed to parse AI stream chunk")
+			continue
+		}
+
+		if len(chunk.Choices) > 0 && chunk.Choices[0].Delta.Content != "" {
+			data, _ := json.Marshal(map[string]string{"text": chunk.Choices[0].Delta.Content})
+			fmt.Fprintf(w, "data: %s\n\n", data)
+			flusher.Flush()
 		}
 	}
 
-	if err := stream.Err(); err != nil {
-		h.log.Error().Err(err).Msg("AI stream error")
+	if err := scanner.Err(); err != nil {
+		h.log.Error().Err(err).Msg("AI stream read error")
 		data, _ := json.Marshal(map[string]string{"error": "AI generation failed"})
 		fmt.Fprintf(w, "data: %s\n\n", data)
 		flusher.Flush()

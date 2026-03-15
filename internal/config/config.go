@@ -24,6 +24,7 @@ type Config struct {
 
 	// AI assistant configuration.
 	AIEnabled   bool
+	AIBaseURL   string
 	AIAPIKey    string
 	AIModel     string
 	AIMaxTokens int
@@ -42,8 +43,9 @@ func Load() (*Config, error) {
 		ValkeyURL:          envOr("VALKEY_URL", "redis://127.0.0.1:6379/0"),
 		TemporalAddress:    envOr("TEMPORAL_ADDRESS", "localhost:7233"),
 		AIEnabled:          envBoolOr("AI_ENABLED", false),
+		AIBaseURL:          os.Getenv("AI_BASE_URL"),
 		AIAPIKey:           os.Getenv("AI_API_KEY"),
-		AIModel:            envOr("AI_MODEL", "claude-sonnet-4-20250514"),
+		AIModel:            os.Getenv("AI_MODEL"),
 		AIMaxTokens:        envIntOr("AI_MAX_TOKENS", 1024),
 	}
 
