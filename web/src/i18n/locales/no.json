@@ -13,6 +13,7 @@
   "toolbar.themeClick": "Tema: {{theme}}. Klikk for \u00e5 endre.",
   "toolbar.settings": "Innstillinger",
   "toolbar.logOut": "Logg ut",
+  "toolbar.userMenu": "Brukermeny",
 
   "action.newMail": "Ny e-post",
   "action.newMailShortcut": "Ny e-post (C)",

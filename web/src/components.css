@@ -1957,7 +1957,7 @@
 /* ---- Settings dialog tab active indicator ---- */
 .settings-tab[data-state="active"] {
   color: var(--color-text-accent) !important;
-  border-bottom-color: var(--color-text-accent) !important;
+  background-color: var(--color-bg-tertiary);
   font-weight: 600;
 }
 

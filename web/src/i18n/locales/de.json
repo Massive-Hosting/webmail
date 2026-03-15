@@ -13,6 +13,7 @@
   "toolbar.themeClick": "Design: {{theme}}. Klicken zum \u00c4ndern.",
   "toolbar.settings": "Einstellungen",
   "toolbar.logOut": "Abmelden",
+  "toolbar.userMenu": "Benutzermen\u00fc",
 
   "action.newMail": "Neue E-Mail",
   "action.newMailShortcut": "Neue E-Mail (C)",

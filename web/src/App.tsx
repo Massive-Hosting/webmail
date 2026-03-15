@@ -6,6 +6,7 @@ import { getSession } from "@/api/client.ts";
 import { AppShell } from "@/components/layout/app-shell.tsx";
 import { LoginPage } from "@/components/login-page.tsx";
 import { useSettingsStore } from "@/stores/settings-store.ts";
+import { useAuthStore } from "@/stores/auth-store.ts";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,16 +27,18 @@ type AuthState = "loading" | "authenticated" | "unauthenticated";
 export default function App() {
   const [authState, setAuthState] = useState<AuthState>("loading");
   const loadSettings = useSettingsStore((s) => s.loadFromServer);
+  const setSession = useAuthStore((s) => s.setSession);
 
   useEffect(() => {
     getSession()
-      .then(() => {
+      .then((session) => {
+        setSession(session.email, session.accountId);
         setAuthState("authenticated");
         // Load settings from server after authentication
         loadSettings();
       })
       .catch(() => setAuthState("unauthenticated"));
-  }, [loadSettings]);
+  }, [loadSettings, setSession]);
 
   const handleLoginSuccess = useCallback(() => {
     setAuthState("authenticated");

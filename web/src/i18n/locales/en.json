@@ -13,6 +13,7 @@
   "toolbar.themeClick": "Theme: {{theme}}. Click to change.",
   "toolbar.settings": "Settings",
   "toolbar.logOut": "Log out",
+  "toolbar.userMenu": "User menu",
 
   "action.newMail": "New mail",
   "action.newMailShortcut": "New mail (C)",

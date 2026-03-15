@@ -1,4 +1,4 @@
-/** Settings dialog with tabs for all settings sections */
+/** Settings dialog with vertical tabs for all settings sections */
 
 import React from "react";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -43,7 +43,7 @@ export const SettingsDialog = React.memo(function SettingsDialog({
           style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
         />
         <Dialog.Content
-          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg w-[700px] h-[80vh] overflow-hidden flex flex-col animate-scale-in"
+          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg max-w-[900px] w-[90vw] h-[80vh] overflow-hidden flex flex-col animate-scale-in"
           style={{
             backgroundColor: "var(--color-bg-elevated)",
             border: "1px solid var(--color-border-primary)",
@@ -74,10 +74,13 @@ export const SettingsDialog = React.memo(function SettingsDialog({
             </Dialog.Close>
           </div>
 
-          <Tabs.Root defaultValue={initialTab} className="flex-1 overflow-hidden flex flex-col">
+          <Tabs.Root defaultValue={initialTab} className="flex-1 overflow-hidden flex flex-row" orientation="vertical">
             <Tabs.List
-              className="flex gap-1 px-6 pt-2 shrink-0 overflow-x-auto"
-              style={{ borderBottom: "1px solid var(--color-border-secondary)" }}
+              className="flex flex-col gap-0.5 py-2 px-2 shrink-0 overflow-y-auto"
+              style={{
+                borderRight: "1px solid var(--color-border-secondary)",
+                width: "180px",
+              }}
               aria-label="Settings sections"
             >
               <TabTrigger value="general">
@@ -157,11 +160,9 @@ function TabTrigger({
   return (
     <Tabs.Trigger
       value={value}
-      className="settings-tab flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-t-md transition-colors whitespace-nowrap"
+      className="settings-tab flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap text-left w-full"
       style={{
         color: "var(--color-text-secondary)",
-        borderBottom: "2px solid transparent",
-        marginBottom: "-1px",
       }}
     >
       {children}
