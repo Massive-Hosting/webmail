@@ -90,6 +90,9 @@ export function useMailboxes() {
           sortOrder: 999,
           totalEmails: 0,
           unreadEmails: 0,
+          totalThreads: 0,
+          unreadThreads: 0,
+          myRights: { mayReadItems: true, mayAddItems: true, mayRemoveItems: true, maySetSeen: true, maySetKeywords: true, mayCreateChild: true, mayRename: true, mayDelete: true, maySubmit: true },
         };
         queryClient.setQueryData<Mailbox[]>(["mailboxes"], [...prev, optimistic]);
       }

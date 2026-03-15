@@ -8,7 +8,7 @@
 
 import type { QueryClient } from "@tanstack/react-query";
 import { useJMAPStateStore } from "@/stores/jmap-state-store.ts";
-import { fetchEmailChanges, fetchMailboxChanges } from "@/api/mail.ts";
+import { fetchEmailChanges, fetchMailboxChanges, fetchBatchedDeltaSync } from "@/api/mail.ts";
 import type { EmailListItem } from "@/types/mail.ts";
 import type { Mailbox } from "@/types/mail.ts";
 import { showEmailNotification } from "@/lib/notifications.ts";
@@ -285,18 +285,74 @@ export class WebSocketClient {
   }
 
   private handleStateChange(changed: Record<string, string>) {
-    for (const typeName of Object.keys(changed)) {
-      switch (typeName) {
-        case "Email":
-          void this.handleEmailDeltaSync(changed[typeName]);
-          break;
-        case "Mailbox":
-          void this.handleMailboxDeltaSync(changed[typeName]);
-          break;
-        case "Thread":
-          void this.queryClient.invalidateQueries({ queryKey: ["thread"] });
-          break;
+    const hasEmail = "Email" in changed;
+    const hasMailbox = "Mailbox" in changed;
+    const hasThread = "Thread" in changed;
+
+    if (hasThread) {
+      void this.queryClient.invalidateQueries({ queryKey: ["thread"] });
+    }
+
+    // Batch Email + Mailbox delta sync into a single JMAP request
+    // when both change simultaneously (common case: reading/moving an email).
+    if (hasEmail && hasMailbox) {
+      void this.handleBatchedDeltaSync();
+    } else if (hasEmail) {
+      void this.handleEmailDeltaSync(changed["Email"]);
+    } else if (hasMailbox) {
+      void this.handleMailboxDeltaSync(changed["Mailbox"]);
+    }
+  }
+
+  /**
+   * Batched delta sync: fetch Email/changes + Mailbox/changes in a single
+   * JMAP HTTP request when both types change simultaneously.
+   */
+  private async handleBatchedDeltaSync() {
+    const store = useJMAPStateStore.getState();
+    const emailSinceState = store.emailState;
+    const mailboxSinceState = store.mailboxState;
+
+    // If we have no stored states, fall back to full invalidation
+    if (!emailSinceState && !mailboxSinceState) {
+      void this.queryClient.invalidateQueries({ queryKey: ["emails"] });
+      void this.queryClient.invalidateQueries({ queryKey: ["email"] });
+      void this.queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
+      return;
+    }
+
+    // If only one has a stored state, handle them independently
+    if (!emailSinceState) {
+      void this.queryClient.invalidateQueries({ queryKey: ["emails"] });
+      void this.queryClient.invalidateQueries({ queryKey: ["email"] });
+      if (mailboxSinceState) {
+        void this.handleMailboxDeltaSync("");
       }
+      return;
+    }
+    if (!mailboxSinceState) {
+      void this.queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
+      void this.handleEmailDeltaSync("");
+      return;
+    }
+
+    try {
+      const result = await fetchBatchedDeltaSync(emailSinceState, mailboxSinceState);
+
+      // Apply email changes
+      store.setEmailState(result.email.newState);
+      this.applyEmailChanges(result.email);
+
+      // Apply mailbox changes
+      store.setMailboxState(result.mailbox.newState);
+      this.applyMailboxChanges(result.mailbox);
+    } catch {
+      // Fall back to full invalidation on any error
+      store.setEmailState(null as unknown as string);
+      store.setMailboxState(null as unknown as string);
+      void this.queryClient.invalidateQueries({ queryKey: ["emails"] });
+      void this.queryClient.invalidateQueries({ queryKey: ["email"] });
+      void this.queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
     }
   }
 
@@ -314,85 +370,8 @@ export class WebSocketClient {
 
     try {
       const changes = await fetchEmailChanges(sinceState);
-
-      // Update stored state
       store.setEmailState(changes.newState);
-
-      // Surgically update cached email lists
-      this.queryClient.setQueriesData<{
-        pages: { emails: EmailListItem[]; total: number; position: number }[];
-        pageParams: unknown[];
-      }>(
-        { queryKey: ["emails"] },
-        (oldData) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => {
-              let emails = page.emails;
-
-              // Remove destroyed emails
-              if (changes.destroyed.length > 0) {
-                const destroyedSet = new Set(changes.destroyed);
-                emails = emails.filter((e) => !destroyedSet.has(e.id));
-              }
-
-              // Update changed emails
-              if (changes.updated.length > 0) {
-                const updatedMap = new Map(changes.updated.map((e) => [e.id, e]));
-                emails = emails.map((e) => updatedMap.get(e.id) ?? e);
-              }
-
-              // Prepend created emails to first page
-              // (they'll be re-sorted on next full fetch, but this gives instant visibility)
-              return { ...page, emails };
-            }),
-          };
-        },
-      );
-
-      // Add created emails to the first page of each matching query
-      if (changes.created.length > 0) {
-        this.queryClient.setQueriesData<{
-          pages: { emails: EmailListItem[]; total: number; position: number }[];
-          pageParams: unknown[];
-        }>(
-          { queryKey: ["emails"] },
-          (oldData) => {
-            if (!oldData || oldData.pages.length === 0) return oldData;
-            const firstPage = oldData.pages[0];
-            return {
-              ...oldData,
-              pages: [
-                {
-                  ...firstPage,
-                  emails: [...changes.created, ...firstPage.emails],
-                  total: firstPage.total + changes.created.length,
-                },
-                ...oldData.pages.slice(1),
-              ],
-            };
-          },
-        );
-
-        // Show desktop notification for the first new email
-        showEmailNotification(changes.created[0]);
-      }
-
-      // Invalidate single-email caches for changed/destroyed emails
-      const affectedIds = [
-        ...changes.updated.map((e) => e.id),
-        ...changes.destroyed,
-      ];
-      for (const id of affectedIds) {
-        void this.queryClient.invalidateQueries({ queryKey: ["email", id] });
-      }
-
-      // If there are more changes, fall back to full invalidation
-      if (changes.hasMoreChanges) {
-        void this.queryClient.invalidateQueries({ queryKey: ["emails"] });
-        void this.queryClient.invalidateQueries({ queryKey: ["email"] });
-      }
+      this.applyEmailChanges(changes);
     } catch (err: unknown) {
       // cannotCalculateChanges or any other error: fall back to full invalidation
       store.setEmailState(null as unknown as string);
@@ -414,46 +393,134 @@ export class WebSocketClient {
 
     try {
       const changes = await fetchMailboxChanges(sinceState);
-
-      // Update stored state
       store.setMailboxState(changes.newState);
-
-      // Surgically update cached mailbox list
-      this.queryClient.setQueriesData<Mailbox[]>(
-        { queryKey: ["mailboxes"] },
-        (oldData) => {
-          if (!oldData) return oldData;
-
-          let mailboxes = [...oldData];
-
-          // Remove destroyed
-          if (changes.destroyed.length > 0) {
-            const destroyedSet = new Set(changes.destroyed);
-            mailboxes = mailboxes.filter((m) => !destroyedSet.has(m.id));
-          }
-
-          // Update changed
-          if (changes.updated.length > 0) {
-            const updatedMap = new Map(changes.updated.map((m) => [m.id, m]));
-            mailboxes = mailboxes.map((m) => updatedMap.get(m.id) ?? m);
-          }
-
-          // Add created
-          if (changes.created.length > 0) {
-            mailboxes = [...mailboxes, ...changes.created];
-          }
-
-          return mailboxes;
-        },
-      );
-
-      // If there are more changes, fall back to full invalidation
-      if (changes.hasMoreChanges) {
-        void this.queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
-      }
+      this.applyMailboxChanges(changes);
     } catch {
       // cannotCalculateChanges or any other error: fall back
       store.setMailboxState(null as unknown as string);
+      void this.queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
+    }
+  }
+
+  /** Apply email delta changes to TanStack Query cache */
+  private applyEmailChanges(changes: {
+    created: EmailListItem[];
+    updated: EmailListItem[];
+    destroyed: string[];
+    hasMoreChanges: boolean;
+  }) {
+    // Surgically update cached email lists
+    this.queryClient.setQueriesData<{
+      pages: { emails: EmailListItem[]; total: number; position: number }[];
+      pageParams: unknown[];
+    }>(
+      { queryKey: ["emails"] },
+      (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => {
+            let emails = page.emails;
+
+            // Remove destroyed emails
+            if (changes.destroyed.length > 0) {
+              const destroyedSet = new Set(changes.destroyed);
+              emails = emails.filter((e) => !destroyedSet.has(e.id));
+            }
+
+            // Update changed emails
+            if (changes.updated.length > 0) {
+              const updatedMap = new Map(changes.updated.map((e) => [e.id, e]));
+              emails = emails.map((e) => updatedMap.get(e.id) ?? e);
+            }
+
+            return { ...page, emails };
+          }),
+        };
+      },
+    );
+
+    // Add created emails to the first page of each matching query
+    if (changes.created.length > 0) {
+      this.queryClient.setQueriesData<{
+        pages: { emails: EmailListItem[]; total: number; position: number }[];
+        pageParams: unknown[];
+      }>(
+        { queryKey: ["emails"] },
+        (oldData) => {
+          if (!oldData || oldData.pages.length === 0) return oldData;
+          const firstPage = oldData.pages[0];
+          return {
+            ...oldData,
+            pages: [
+              {
+                ...firstPage,
+                emails: [...changes.created, ...firstPage.emails],
+                total: firstPage.total + changes.created.length,
+              },
+              ...oldData.pages.slice(1),
+            ],
+          };
+        },
+      );
+
+      // Show desktop notification for the first new email
+      showEmailNotification(changes.created[0]);
+    }
+
+    // Invalidate single-email caches for changed/destroyed emails
+    const affectedIds = [
+      ...changes.updated.map((e) => e.id),
+      ...changes.destroyed,
+    ];
+    for (const id of affectedIds) {
+      void this.queryClient.invalidateQueries({ queryKey: ["email", id] });
+    }
+
+    // If there are more changes, fall back to full invalidation
+    if (changes.hasMoreChanges) {
+      void this.queryClient.invalidateQueries({ queryKey: ["emails"] });
+      void this.queryClient.invalidateQueries({ queryKey: ["email"] });
+    }
+  }
+
+  /** Apply mailbox delta changes to TanStack Query cache */
+  private applyMailboxChanges(changes: {
+    created: Mailbox[];
+    updated: Mailbox[];
+    destroyed: string[];
+    hasMoreChanges: boolean;
+  }) {
+    this.queryClient.setQueriesData<Mailbox[]>(
+      { queryKey: ["mailboxes"] },
+      (oldData) => {
+        if (!oldData) return oldData;
+
+        let mailboxes = [...oldData];
+
+        // Remove destroyed
+        if (changes.destroyed.length > 0) {
+          const destroyedSet = new Set(changes.destroyed);
+          mailboxes = mailboxes.filter((m) => !destroyedSet.has(m.id));
+        }
+
+        // Update changed
+        if (changes.updated.length > 0) {
+          const updatedMap = new Map(changes.updated.map((m) => [m.id, m]));
+          mailboxes = mailboxes.map((m) => updatedMap.get(m.id) ?? m);
+        }
+
+        // Add created
+        if (changes.created.length > 0) {
+          mailboxes = [...mailboxes, ...changes.created];
+        }
+
+        return mailboxes;
+      },
+    );
+
+    // If there are more changes, fall back to full invalidation
+    if (changes.hasMoreChanges) {
       void this.queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
     }
   }

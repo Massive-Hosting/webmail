@@ -7,6 +7,7 @@ import { AppShell } from "@/components/layout/app-shell.tsx";
 import { LoginPage } from "@/components/login-page.tsx";
 import { useSettingsStore } from "@/stores/settings-store.ts";
 import { useAuthStore } from "@/stores/auth-store.ts";
+import { prefetchInitialMailData } from "@/api/batch.ts";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +37,9 @@ export default function App() {
         setAuthState("authenticated");
         // Load settings from server after authentication
         loadSettings();
+        // Batch-prefetch mailboxes + identities in a single JMAP request
+        // and populate the TanStack Query cache before hooks mount.
+        void prefetchInitialMailData(queryClient);
       })
       .catch(() => setAuthState("unauthenticated"));
   }, [loadSettings, setSession]);
@@ -43,6 +47,7 @@ export default function App() {
   const handleLoginSuccess = useCallback(() => {
     setAuthState("authenticated");
     loadSettings();
+    void prefetchInitialMailData(queryClient);
   }, [loadSettings]);
 
   if (authState === "loading") {

@@ -222,6 +222,9 @@ export function useCalendarEvents(
   const query = useQuery({
     queryKey: ["calendarEvents", calendarIds, dateRange],
     queryFn: () => fetchCalendarEvents(calendarIds, dateRange),
+    // Only fetch when we have calendar IDs — avoids a wasted request
+    // when calendars haven't loaded yet (e.g. agenda sidebar on initial load).
+    enabled: calendarIds.length > 0,
     staleTime: 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });

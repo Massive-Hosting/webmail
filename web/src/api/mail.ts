@@ -583,6 +583,115 @@ export async function fetchMailboxChanges(
   };
 }
 
+/**
+ * Batched delta sync: fetch Email/changes + Mailbox/changes in a single
+ * JMAP HTTP request (saves one round-trip when both change simultaneously).
+ */
+export async function fetchBatchedDeltaSync(
+  emailSinceState: string,
+  mailboxSinceState: string,
+): Promise<{
+  email: EmailChangesResult;
+  mailbox: MailboxChangesResult;
+}> {
+  const mailboxProperties = [
+    "id", "name", "parentId", "role", "sortOrder",
+    "totalEmails", "unreadEmails", "totalThreads", "unreadThreads",
+    "myRights",
+  ];
+
+  const request: JMAPRequest = {
+    using: JMAP_USING,
+    methodCalls: [
+      // Email changes (3 calls)
+      ["Email/changes", { sinceState: emailSinceState }, "ec"],
+      [
+        "Email/get",
+        {
+          "#ids": { resultOf: "ec", name: "Email/changes", path: "/created" },
+          properties: EMAIL_LIST_PROPERTIES,
+        },
+        "eg_created",
+      ],
+      [
+        "Email/get",
+        {
+          "#ids": { resultOf: "ec", name: "Email/changes", path: "/updated" },
+          properties: EMAIL_LIST_PROPERTIES,
+        },
+        "eg_updated",
+      ],
+      // Mailbox changes (3 calls)
+      ["Mailbox/changes", { sinceState: mailboxSinceState }, "mc"],
+      [
+        "Mailbox/get",
+        {
+          "#ids": { resultOf: "mc", name: "Mailbox/changes", path: "/created" },
+          properties: mailboxProperties,
+        },
+        "mg_created",
+      ],
+      [
+        "Mailbox/get",
+        {
+          "#ids": { resultOf: "mc", name: "Mailbox/changes", path: "/updated" },
+          properties: mailboxProperties,
+        },
+        "mg_updated",
+      ],
+    ],
+  };
+
+  const response = await jmapRequest(request);
+
+  // Parse email changes (responses 0-2)
+  const [, emailChangesResult] = response.methodResponses[0];
+  const [, emailCreatedResult] = response.methodResponses[1];
+  const [, emailUpdatedResult] = response.methodResponses[2];
+
+  const ec = emailChangesResult as {
+    oldState: string;
+    newState: string;
+    created: string[];
+    updated: string[];
+    destroyed: string[];
+    hasMoreChanges: boolean;
+  };
+
+  // Parse mailbox changes (responses 3-5)
+  const [, mailboxChangesResult] = response.methodResponses[3];
+  const [, mailboxCreatedResult] = response.methodResponses[4];
+  const [, mailboxUpdatedResult] = response.methodResponses[5];
+
+  const mc = mailboxChangesResult as {
+    oldState: string;
+    newState: string;
+    created: string[];
+    updated: string[];
+    destroyed: string[];
+    hasMoreChanges: boolean;
+  };
+
+  return {
+    email: {
+      oldState: ec.oldState,
+      newState: ec.newState,
+      created: (emailCreatedResult as { list: EmailListItem[] }).list,
+      updated: (emailUpdatedResult as { list: EmailListItem[] }).list,
+      destroyed: ec.destroyed,
+      hasMoreChanges: ec.hasMoreChanges,
+    },
+    mailbox: {
+      oldState: mc.oldState,
+      newState: mc.newState,
+      created: (mailboxCreatedResult as { list: Mailbox[] }).list,
+      updated: (mailboxUpdatedResult as { list: Mailbox[] }).list,
+      destroyed: mc.destroyed,
+      hasMoreChanges: mc.hasMoreChanges,
+    },
+  };
+}
+
 // ---- Identity operations ----
 
 /** Fetch all identities (for From dropdown and signatures) */
