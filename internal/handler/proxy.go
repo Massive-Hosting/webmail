@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -86,16 +87,13 @@ func (h *ProxyHandler) JMAP(w http.ResponseWriter, r *http.Request) {
 
 	// Forward to Stalwart.
 	stalwartURL := sess.StalwartURL + "/jmap/"
-	proxyReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost, stalwartURL, io.NopCloser(io.LimitReader(r.Body, 0)))
+	proxyReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost, stalwartURL, bytes.NewReader(body))
 	if err != nil {
 		h.log.Error().Err(err).Msg("failed to create stalwart request")
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"internal_error"})
 		return
 	}
 
-	// Use the original body since we already read it.
-	proxyReq.Body = io.NopCloser(bytesReader(body))
-	proxyReq.ContentLength = int64(len(body))
 	proxyReq.Header.Set("Content-Type", "application/json")
 	proxyReq.SetBasicAuth(sess.Email, sess.Password)
 
