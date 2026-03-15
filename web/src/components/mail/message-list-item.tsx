@@ -5,7 +5,7 @@ import type { EmailListItem } from "@/types/mail.ts";
 import { isUnread, isFlagged } from "@/types/mail.ts";
 import { Avatar } from "@/components/ui/avatar.tsx";
 import { formatMessageDate, formatAddress } from "@/lib/format.ts";
-import { Star, Paperclip, ChevronRight, ChevronDown } from "lucide-react";
+import { Star, Paperclip, ChevronRight, ChevronDown, Check } from "lucide-react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { useTranslation } from "react-i18next";
 
@@ -75,9 +75,19 @@ export const MessageListItem = React.memo(
               )}
             </div>
 
-            {/* Avatar with subtle shadow */}
+            {/* Avatar / checkmark when multi-selected */}
             <div className="message-list-item__avatar">
-              <Avatar address={sender} size={36} />
+              {isMultiSelected ? (
+                <div style={{
+                  width: 36, height: 36, borderRadius: "50%",
+                  backgroundColor: "var(--color-bg-accent)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Check size={18} style={{ color: "#fff" }} />
+                </div>
+              ) : (
+                <Avatar address={sender} size={36} />
+              )}
             </div>
 
             {/* Content area */}
