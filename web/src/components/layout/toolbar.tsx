@@ -8,6 +8,7 @@ import {
   Settings,
   LogOut,
   ChevronDown,
+  Globe,
 } from "lucide-react";
 import { SearchBar } from "@/components/mail/search-bar.tsx";
 import { useTheme } from "@/hooks/use-theme.ts";
@@ -237,7 +238,10 @@ export const Toolbar = React.memo(function Toolbar({
                     className="flex items-center justify-between px-3 py-2 text-sm cursor-pointer outline-none transition-colors data-[highlighted]:bg-[var(--color-bg-tertiary)]"
                     style={{ color: "var(--color-text-primary)" }}
                   >
-                    <span>{t("settings.language")}</span>
+                    <span className="flex items-center gap-2">
+                      <Globe size={15} style={{ color: "var(--color-text-secondary)" }} />
+                      {t("settings.language")}
+                    </span>
                     <span
                       className="text-xs"
                       style={{ color: "var(--color-text-secondary)" }}
