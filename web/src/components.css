@@ -1288,8 +1288,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 16px;
-  height: 36px;
+  padding: 8px 16px;
+  min-height: 36px;
   border-bottom: 1px solid var(--color-border-secondary);
 }
 
@@ -1329,6 +1329,9 @@
   gap: 6px;
   padding: 6px 12px 6px 0;
   flex-shrink: 0;
+  align-self: flex-start;
+  position: sticky;
+  top: 0;
   border-bottom: 1px solid var(--color-border-secondary);
 }
 
@@ -1399,11 +1402,13 @@
 .compose-dialog__send-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 7px 18px;
   border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 600;
+  line-height: 1;
   color: var(--color-text-inverse);
   background-color: var(--color-bg-accent);
   border: none;

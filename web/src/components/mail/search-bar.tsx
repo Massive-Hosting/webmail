@@ -215,11 +215,11 @@ export const SearchBar = React.memo(function SearchBar({
           placeholder={t("search.placeholder")}
           className="w-full h-8 pl-9 pr-20 text-sm outline-none"
           style={{
-            backgroundColor: "var(--color-bg-tertiary)",
+            backgroundColor: isFocused ? "var(--color-bg-elevated)" : "var(--color-bg-elevated)",
             color: "var(--color-text-primary)",
-            border: isFocused ? "1px solid var(--color-border-focus)" : "1px solid transparent",
+            border: isFocused ? "1px solid var(--color-border-focus)" : "1px solid var(--color-border-primary)",
             borderRadius: "var(--radius-md)",
-            boxShadow: isFocused ? "0 0 0 3px rgba(59, 130, 246, 0.08)" : "none",
+            boxShadow: isFocused ? "0 0 0 2px rgba(59, 130, 246, 0.12)" : "none",
             transition: "border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease",
           }}
         />

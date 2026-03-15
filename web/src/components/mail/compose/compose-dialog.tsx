@@ -191,15 +191,24 @@ export const ComposePanel = React.memo(function ComposePanel({
         saving: false,
         lastSaved: new Date(),
         saveError: undefined,
+        consecutiveSaveFailures: 0,
       });
 
       queryClient.invalidateQueries({ queryKey: ["emails"] });
       queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
     } catch (err) {
+      const failures = (currentDraft.consecutiveSaveFailures ?? 0) + 1;
+      console.warn("[compose] Auto-save failed (attempt " + failures + "):", err);
       updateDraft(draftId, {
         saving: false,
-        saveError: t("compose.failedToSaveDraft"),
+        consecutiveSaveFailures: failures,
+        // Only show error to user after 3 consecutive failures
+        saveError: failures >= 3 ? t("compose.failedToSaveDraft") : undefined,
       });
+      // Retry silently after a delay if under the threshold
+      if (failures < 3) {
+        setTimeout(() => handleAutoSave(), 5000);
+      }
     }
   }, [draftId, findByRole, updateDraft, queryClient]);
 

@@ -1,7 +1,8 @@
 /** Chip-based recipient input for To/Cc/Bcc fields with contact autocomplete */
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { X } from "lucide-react";
+import { X, UserPlus, UserCog, Copy, Trash2 } from "lucide-react";
+import * as ContextMenu from "@radix-ui/react-context-menu";
 import type { Recipient } from "@/stores/compose-store.ts";
 import {
   useContactSearch,
@@ -11,6 +12,9 @@ import {
 } from "@/hooks/use-contacts.ts";
 import type { Contact } from "@/types/contacts.ts";
 import { getAvatarColor } from "@/lib/format.ts";
+import { useQueryClient } from "@tanstack/react-query";
+import { useUIStore } from "@/stores/ui-store.ts";
+import { toast } from "sonner";
 
 interface RecipientInputProps {
   label: string;
@@ -431,35 +435,131 @@ function RecipientChip({
 }) {
   const displayText = recipient.name || recipient.email;
   const isInvalid = !recipient.isValid;
+  const queryClient = useQueryClient();
+  const setActiveView = useUIStore((s) => s.setActiveView);
+
+  // Look up contact from cached data (no network request)
+  const matchingContact = useMemo(() => {
+    const cachedContacts = queryClient.getQueryData<Contact[]>(["contacts"]);
+    if (!cachedContacts) return null;
+    return cachedContacts.find((c) =>
+      c.emails.some((e) => e.address.toLowerCase() === recipient.email.toLowerCase()),
+    ) ?? null;
+  }, [queryClient, recipient.email]);
+
+  const handleCopyEmail = useCallback(() => {
+    navigator.clipboard.writeText(recipient.email).then(() => {
+      toast.success("Email address copied");
+    });
+  }, [recipient.email]);
+
+  const handleEditContact = useCallback(() => {
+    if (matchingContact) {
+      setActiveView("contacts");
+      // Store the contact ID to select after navigating
+      sessionStorage.setItem("selectContactId", matchingContact.id);
+    }
+  }, [matchingContact, setActiveView]);
+
+  const handleAddContact = useCallback(() => {
+    setActiveView("contacts");
+    // Store email to pre-fill in new contact form
+    sessionStorage.setItem("newContactEmail", recipient.email);
+    if (recipient.name) {
+      sessionStorage.setItem("newContactName", recipient.name);
+    }
+  }, [setActiveView, recipient.email, recipient.name]);
+
+  const itemClassName = "flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150";
+  const itemStyle = { color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" };
 
   return (
-    <span
-      className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full max-w-[200px]"
-      style={{
-        backgroundColor: isInvalid
-          ? "var(--color-bg-error, #fee2e2)"
-          : "var(--color-bg-tertiary)",
-        color: isInvalid
-          ? "var(--color-text-error, #dc2626)"
-          : "var(--color-text-primary)",
-        border: isInvalid
-          ? "1px solid var(--color-border-error, #fca5a5)"
-          : "1px solid var(--color-border-primary)",
-      }}
-      title={recipient.name ? `${recipient.name} <${recipient.email}>` : recipient.email}
-    >
-      <span className="truncate">{displayText}</span>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onRemove();
-        }}
-        className="shrink-0 hover:opacity-70"
-        style={{ color: "inherit" }}
-      >
-        <X size={12} />
-      </button>
-    </span>
+    <ContextMenu.Root>
+      <ContextMenu.Trigger asChild>
+        <span
+          className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full max-w-[200px]"
+          style={{
+            backgroundColor: isInvalid
+              ? "var(--color-bg-error, #fee2e2)"
+              : "var(--color-bg-tertiary)",
+            color: isInvalid
+              ? "var(--color-text-error, #dc2626)"
+              : "var(--color-text-primary)",
+            border: isInvalid
+              ? "1px solid var(--color-border-error, #fca5a5)"
+              : "1px solid var(--color-border-primary)",
+          }}
+          title={recipient.name ? `${recipient.name} <${recipient.email}>` : recipient.email}
+        >
+          <span className="truncate">{displayText}</span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            className="shrink-0 hover:opacity-70"
+            style={{ color: "inherit" }}
+          >
+            <X size={12} />
+          </button>
+        </span>
+      </ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content
+          className="min-w-[180px] p-1 text-sm animate-scale-in"
+          style={{
+            backgroundColor: "var(--color-bg-elevated)",
+            border: "1px solid var(--color-border-primary)",
+            boxShadow: "var(--shadow-lg)",
+            borderRadius: "var(--radius-md)",
+            zIndex: 50,
+          }}
+        >
+          {matchingContact ? (
+            <ContextMenu.Item
+              className={itemClassName}
+              style={itemStyle}
+              onSelect={handleEditContact}
+            >
+              <UserCog size={14} />
+              Edit contact
+            </ContextMenu.Item>
+          ) : (
+            <ContextMenu.Item
+              className={itemClassName}
+              style={itemStyle}
+              onSelect={handleAddContact}
+            >
+              <UserPlus size={14} />
+              Add to contacts
+            </ContextMenu.Item>
+          )}
+
+          <ContextMenu.Item
+            className={itemClassName}
+            style={itemStyle}
+            onSelect={handleCopyEmail}
+          >
+            <Copy size={14} />
+            Copy email address
+          </ContextMenu.Item>
+
+          <ContextMenu.Separator
+            className="my-1"
+            style={{ borderTop: "1px solid var(--color-border-primary)" }}
+          />
+
+          <ContextMenu.Item
+            className={itemClassName}
+            style={{ color: "var(--color-text-error, #dc2626)", borderRadius: "var(--radius-sm)" }}
+            onSelect={onRemove}
+          >
+            <Trash2 size={14} />
+            Remove
+          </ContextMenu.Item>
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
   );
 }

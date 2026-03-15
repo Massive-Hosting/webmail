@@ -49,6 +49,8 @@ export interface DraftState {
   lastSaved?: Date;
   saving: boolean;
   saveError?: string;
+  /** Number of consecutive auto-save failures (only show error after 3) */
+  consecutiveSaveFailures: number;
   /** Pre-resolved mailbox IDs so auto-save doesn't depend on hook state */
   draftsMailboxId?: string;
   sentMailboxId?: string;
@@ -94,6 +96,7 @@ function createDefaultDraft(overrides: Partial<DraftState> & { draftId: string }
     attachments: [],
     isDirty: false,
     saving: false,
+    consecutiveSaveFailures: 0,
     ...overrides,
   };
 }
