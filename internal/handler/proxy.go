@@ -97,6 +97,8 @@ func (h *ProxyHandler) JMAP(w http.ResponseWriter, r *http.Request) {
 	proxyReq.Header.Set("Content-Type", "application/json")
 	proxyReq.SetBasicAuth(sess.Email, sess.Password)
 
+	h.log.Debug().Str("url", stalwartURL).Int("bodyLen", len(body)).Msg("forwarding JMAP request to stalwart")
+
 	resp, err := h.client.Do(proxyReq)
 	if err != nil {
 		h.log.Error().Err(err).Msg("stalwart request failed")
@@ -104,6 +106,16 @@ func (h *ProxyHandler) JMAP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
+
+	// Log non-200 responses for debugging.
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(resp.Body)
+		h.log.Warn().Int("status", resp.StatusCode).Str("body", string(respBody)).Msg("stalwart returned error")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(resp.StatusCode)
+		w.Write(respBody) //nolint:errcheck
+		return
+	}
 
 	// Stream response back.
 	w.Header().Set("Content-Type", "application/json")

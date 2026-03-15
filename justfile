@@ -99,6 +99,16 @@ install-ui:
 docker-build:
     docker build -t webmail:latest .
 
+# --- Seed ---
+
+# Seed test data into Stalwart
+seed:
+    go run ./cmd/seed
+
+# Seed test data (clean first)
+seed-clean:
+    go run ./cmd/seed -clean
+
 # --- Helpers ---
 
 # Connect to webmail database
