@@ -265,6 +265,30 @@ export async function destroyEmails(emailIds: string[]): Promise<void> {
   await jmapRequest(request);
 }
 
+/** Query email IDs matching a filter (for bulk operations) */
+export async function queryEmailIds(params: {
+  filter: JMAPFilter;
+  limit?: number;
+}): Promise<string[]> {
+  const request: JMAPRequest = {
+    using: JMAP_USING,
+    methodCalls: [
+      [
+        "Email/query",
+        {
+          filter: params.filter,
+          limit: params.limit ?? 500,
+        },
+        "q0",
+      ],
+    ],
+  };
+
+  const response = await jmapRequest(request);
+  const [, result] = response.methodResponses[0];
+  return (result as { ids: string[] }).ids;
+}
+
 /** Mailbox mutations */
 export async function createMailbox(params: {
   name: string;

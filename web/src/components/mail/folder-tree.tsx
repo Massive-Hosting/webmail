@@ -1,6 +1,6 @@
 /** Mailbox folder tree component — premium design */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useRef, useEffect } from "react";
 import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 import { useUIStore } from "@/stores/ui-store.ts";
 import { Badge } from "@/components/ui/badge.tsx";
@@ -17,9 +17,11 @@ import {
   FolderPlus,
   ChevronRight,
   ChevronDown,
-  MoreHorizontal,
 } from "lucide-react";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import * as ContextMenu from "@radix-ui/react-context-menu";
+import { queryEmailIds, updateEmails, destroyEmails } from "@/api/mail.ts";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const ROLE_ICONS: Record<string, React.ReactNode> = {
   inbox: <Inbox size={16} />,
@@ -31,12 +33,13 @@ const ROLE_ICONS: Record<string, React.ReactNode> = {
 };
 
 export const FolderTree = React.memo(function FolderTree() {
-  const { standardFolders, customFolders, isLoading, createMailbox, deleteMailbox } = useMailboxes();
+  const { standardFolders, customFolders, isLoading, createMailbox, deleteMailbox, updateMailbox } = useMailboxes();
   const selectedMailboxId = useUIStore((s) => s.selectedMailboxId);
   const setSelectedMailbox = useUIStore((s) => s.setSelectedMailbox);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const queryClient = useQueryClient();
 
   const toggleExpanded = useCallback((id: string) => {
     setExpandedFolders((prev) => {
@@ -57,6 +60,52 @@ export const FolderTree = React.memo(function FolderTree() {
       setCreatingFolder(false);
     }
   }, [newFolderName, createMailbox]);
+
+  const handleMarkAllRead = useCallback(async (mailboxId: string) => {
+    try {
+      const ids = await queryEmailIds({
+        filter: { inMailbox: mailboxId, notKeyword: "$seen" },
+      });
+      if (ids.length === 0) {
+        toast("All messages are already read");
+        return;
+      }
+      const updates: Record<string, Record<string, unknown>> = {};
+      for (const id of ids) {
+        updates[id] = { "keywords/$seen": true };
+      }
+      await updateEmails(updates);
+      queryClient.invalidateQueries({ queryKey: ["emails"] });
+      queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
+      toast(`Marked ${ids.length} message${ids.length !== 1 ? "s" : ""} as read`);
+    } catch {
+      toast.error("Failed to mark all as read");
+    }
+  }, [queryClient]);
+
+  const handleEmptyFolder = useCallback(async (mailboxId: string, folderName: string) => {
+    try {
+      const ids = await queryEmailIds({
+        filter: { inMailbox: mailboxId },
+      });
+      if (ids.length === 0) {
+        toast(`${folderName} is already empty`);
+        return;
+      }
+      await destroyEmails(ids);
+      queryClient.invalidateQueries({ queryKey: ["emails"] });
+      queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
+      toast(`Emptied ${folderName} (${ids.length} message${ids.length !== 1 ? "s" : ""})`);
+    } catch {
+      toast.error(`Failed to empty ${folderName}`);
+    }
+  }, [queryClient]);
+
+  const handleRenameMailbox = useCallback((mailboxId: string, newName: string) => {
+    if (newName.trim()) {
+      updateMailbox({ id: mailboxId, updates: { name: newName.trim() } });
+    }
+  }, [updateMailbox]);
 
   if (isLoading) {
     return (
@@ -93,6 +142,9 @@ export const FolderTree = React.memo(function FolderTree() {
           icon={ROLE_ICONS[mailbox.role ?? ""] ?? <Folder size={16} />}
           isRoleFolder
           onDelete={() => {}}
+          onMarkAllRead={handleMarkAllRead}
+          onEmptyFolder={handleEmptyFolder}
+          onRename={handleRenameMailbox}
         />
       ))}
 
@@ -115,6 +167,9 @@ export const FolderTree = React.memo(function FolderTree() {
           onSelect={setSelectedMailbox}
           onToggleExpand={toggleExpanded}
           onDelete={deleteMailbox}
+          onMarkAllRead={handleMarkAllRead}
+          onEmptyFolder={handleEmptyFolder}
+          onRename={handleRenameMailbox}
           depth={0}
         />
       ))}
@@ -177,6 +232,9 @@ const FolderItem = React.memo(function FolderItem({
   onToggleExpand,
   isRoleFolder = false,
   onDelete,
+  onMarkAllRead,
+  onEmptyFolder,
+  onRename,
 }: {
   mailbox: Mailbox;
   isActive: boolean;
@@ -188,18 +246,140 @@ const FolderItem = React.memo(function FolderItem({
   onToggleExpand?: () => void;
   isRoleFolder?: boolean;
   onDelete: (id: string) => void;
+  onMarkAllRead: (mailboxId: string) => void;
+  onEmptyFolder: (mailboxId: string, folderName: string) => void;
+  onRename: (mailboxId: string, newName: string) => void;
 }) {
-  const [showContext, setShowContext] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(mailbox.name);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isRenaming && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [isRenaming]);
+
+  const handleRenameSubmit = useCallback(() => {
+    if (renameValue.trim() && renameValue.trim() !== mailbox.name) {
+      onRename(mailbox.id, renameValue.trim());
+    }
+    setIsRenaming(false);
+  }, [renameValue, mailbox.id, mailbox.name, onRename]);
+
+  const contextMenuContent = (
+    <ContextMenu.Content
+      className="min-w-[160px] p-1 text-sm animate-scale-in"
+      style={{
+        backgroundColor: "var(--color-bg-elevated)",
+        border: "1px solid var(--color-border-primary)",
+        boxShadow: "var(--shadow-lg)",
+        borderRadius: "var(--radius-md)",
+      }}
+    >
+      <ContextMenu.Item
+        className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+        style={{
+          color: "var(--color-text-primary)",
+          borderRadius: "var(--radius-sm)",
+        }}
+        onSelect={() => onMarkAllRead(mailbox.id)}
+      >
+        Mark all as read
+      </ContextMenu.Item>
+      {!isRoleFolder && (
+        <>
+          <ContextMenu.Item
+            className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+            style={{
+              color: "var(--color-text-primary)",
+              borderRadius: "var(--radius-sm)",
+            }}
+            onSelect={() => {
+              setRenameValue(mailbox.name);
+              setIsRenaming(true);
+            }}
+          >
+            Rename
+          </ContextMenu.Item>
+          <ContextMenu.Separator
+            className="my-1"
+            style={{ borderTop: "1px solid var(--color-border-primary)" }}
+          />
+          <ContextMenu.Item
+            className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+            style={{
+              color: "var(--color-text-danger)",
+              borderRadius: "var(--radius-sm)",
+            }}
+            onSelect={() => onDelete(mailbox.id)}
+          >
+            Delete folder
+          </ContextMenu.Item>
+        </>
+      )}
+      {(mailbox.role === "trash" || mailbox.role === "junk") && (
+        <ContextMenu.Item
+          className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+          style={{
+            color: "var(--color-text-danger)",
+            borderRadius: "var(--radius-sm)",
+          }}
+          onSelect={() => onEmptyFolder(mailbox.id, mailbox.name)}
+        >
+          Empty {mailbox.name}
+        </ContextMenu.Item>
+      )}
+    </ContextMenu.Content>
+  );
+
+  if (isRenaming) {
+    return (
+      <div
+        className="flex items-center gap-2.5 w-full px-3 py-1"
+        style={{
+          paddingLeft: `${12 + depth * 16}px`,
+          height: "var(--density-sidebar-item)",
+          marginLeft: "4px",
+          marginRight: "4px",
+          width: "calc(100% - 8px)",
+        }}
+      >
+        <span
+          className="shrink-0"
+          style={{ color: "var(--color-text-secondary)" }}
+        >
+          {icon}
+        </span>
+        <input
+          ref={renameInputRef}
+          type="text"
+          value={renameValue}
+          onChange={(e) => setRenameValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleRenameSubmit();
+            if (e.key === "Escape") setIsRenaming(false);
+          }}
+          onBlur={handleRenameSubmit}
+          className="flex-1 h-6 px-1.5 text-sm outline-none"
+          style={{
+            backgroundColor: "var(--color-bg-tertiary)",
+            color: "var(--color-text-primary)",
+            border: "1px solid var(--color-border-focus)",
+            borderRadius: "var(--radius-sm)",
+            boxShadow: "0 0 0 3px rgba(99, 102, 241, 0.08)",
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
-    <DropdownMenu.Root open={showContext} onOpenChange={setShowContext}>
-      <DropdownMenu.Trigger asChild>
+    <ContextMenu.Root>
+      <ContextMenu.Trigger asChild>
         <button
           onClick={onClick}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            setShowContext(true);
-          }}
           className="flex items-center gap-2.5 w-full px-3 py-1 text-sm transition-all duration-150 group"
           role="treeitem"
           aria-selected={isActive}
@@ -255,72 +435,12 @@ const FolderItem = React.memo(function FolderItem({
             <Badge count={mailbox.unreadEmails} />
           )}
         </button>
-      </DropdownMenu.Trigger>
+      </ContextMenu.Trigger>
 
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          className="min-w-[160px] p-1 text-sm animate-scale-in"
-          style={{
-            backgroundColor: "var(--color-bg-elevated)",
-            border: "1px solid var(--color-border-primary)",
-            boxShadow: "var(--shadow-lg)",
-            borderRadius: "var(--radius-md)",
-          }}
-          sideOffset={5}
-        >
-          <DropdownMenu.Item
-            className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-            style={{
-              color: "var(--color-text-primary)",
-              borderRadius: "var(--radius-sm)",
-            }}
-            onSelect={() => {}}
-          >
-            Mark all as read
-          </DropdownMenu.Item>
-          {!isRoleFolder && (
-            <>
-              <DropdownMenu.Item
-                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                style={{
-                  color: "var(--color-text-primary)",
-                  borderRadius: "var(--radius-sm)",
-                }}
-                onSelect={() => {}}
-              >
-                Rename
-              </DropdownMenu.Item>
-              <DropdownMenu.Separator
-                className="my-1"
-                style={{ borderTop: "1px solid var(--color-border-primary)" }}
-              />
-              <DropdownMenu.Item
-                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                style={{
-                  color: "var(--color-text-danger)",
-                  borderRadius: "var(--radius-sm)",
-                }}
-                onSelect={() => onDelete(mailbox.id)}
-              >
-                Delete folder
-              </DropdownMenu.Item>
-            </>
-          )}
-          {(mailbox.role === "trash" || mailbox.role === "junk") && (
-            <DropdownMenu.Item
-              className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-              style={{
-                color: "var(--color-text-danger)",
-                borderRadius: "var(--radius-sm)",
-              }}
-              onSelect={() => {}}
-            >
-              Empty {mailbox.name}
-            </DropdownMenu.Item>
-          )}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+      <ContextMenu.Portal>
+        {contextMenuContent}
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
   );
 });
 
@@ -333,6 +453,9 @@ function FolderItemWithChildren({
   onSelect,
   onToggleExpand,
   onDelete,
+  onMarkAllRead,
+  onEmptyFolder,
+  onRename,
   depth,
 }: {
   mailbox: Mailbox;
@@ -342,6 +465,9 @@ function FolderItemWithChildren({
   onSelect: (id: string) => void;
   onToggleExpand: (id: string) => void;
   onDelete: (id: string) => void;
+  onMarkAllRead: (mailboxId: string) => void;
+  onEmptyFolder: (mailboxId: string, folderName: string) => void;
+  onRename: (mailboxId: string, newName: string) => void;
   depth: number;
 }) {
   const children = childrenMap.get(mailbox.id) ?? [];
@@ -360,6 +486,9 @@ function FolderItemWithChildren({
         isExpanded={isExpanded}
         onToggleExpand={() => onToggleExpand(mailbox.id)}
         onDelete={onDelete}
+        onMarkAllRead={onMarkAllRead}
+        onEmptyFolder={onEmptyFolder}
+        onRename={onRename}
       />
       {hasChildren && isExpanded && children.map((child) => (
         <FolderItemWithChildren
@@ -371,6 +500,9 @@ function FolderItemWithChildren({
           onSelect={onSelect}
           onToggleExpand={onToggleExpand}
           onDelete={onDelete}
+          onMarkAllRead={onMarkAllRead}
+          onEmptyFolder={onEmptyFolder}
+          onRename={onRename}
           depth={depth + 1}
         />
       ))}

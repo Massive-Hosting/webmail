@@ -24,6 +24,12 @@ interface MessageListProps {
   hasNextPage: boolean;
   onFetchNextPage: () => void;
   onStarEmail: (emailId: string, flagged: boolean) => void;
+  onReply?: (email: EmailListItem) => void;
+  onReplyAll?: (email: EmailListItem) => void;
+  onForward?: (email: EmailListItem) => void;
+  onMarkRead?: (emailIds: string[], seen: boolean) => void;
+  onArchive?: (emailIds: string[]) => void;
+  onDelete?: (emailIds: string[]) => void;
 }
 
 export const MessageList = React.memo(function MessageList({
@@ -33,6 +39,12 @@ export const MessageList = React.memo(function MessageList({
   hasNextPage,
   onFetchNextPage,
   onStarEmail,
+  onReply,
+  onReplyAll,
+  onForward,
+  onMarkRead,
+  onArchive,
+  onDelete,
 }: MessageListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const selectedEmailId = useUIStore((s) => s.selectedEmailId);
@@ -199,6 +211,12 @@ export const MessageList = React.memo(function MessageList({
                 onClick={handleItemClick}
                 onStar={onStarEmail}
                 onMouseEnter={handleMouseEnter}
+                onReply={onReply}
+                onReplyAll={onReplyAll}
+                onForward={onForward}
+                onMarkRead={onMarkRead}
+                onArchive={onArchive}
+                onDelete={onDelete}
               />
             </div>
           );

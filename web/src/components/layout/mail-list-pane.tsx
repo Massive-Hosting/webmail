@@ -1,6 +1,6 @@
 /** Message list pane container - premium toolbar and contextual empty states */
 
-import React from "react";
+import React, { useCallback } from "react";
 import { MessageList } from "@/components/mail/message-list.tsx";
 import { useUIStore } from "@/stores/ui-store.ts";
 import { useSearchStore } from "@/stores/search-store.ts";
@@ -9,6 +9,9 @@ import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 import { useUnreadTitle } from "@/hooks/use-unread-title.ts";
 import { EmptyState } from "@/components/ui/empty-state.tsx";
 import type { EmailListItem } from "@/types/mail.ts";
+import { useCompose } from "@/components/mail/compose/use-compose.ts";
+import { fetchEmail, fetchIdentities } from "@/api/mail.ts";
+import { useQuery } from "@tanstack/react-query";
 import {
   Archive,
   Trash2,
@@ -70,6 +73,41 @@ export const MailListPane = React.memo(function MailListPane({
   const hasSelection = selectedEmailIds.size > 1;
   const archiveMailbox = findByRole("archive");
   const trashMailbox = findByRole("trash");
+
+  const { open: openCompose } = useCompose();
+  const { data: identities } = useQuery({
+    queryKey: ["identities"],
+    queryFn: fetchIdentities,
+    staleTime: 5 * 60 * 1000,
+  });
+  const defaultIdentity = identities?.[0] ?? null;
+
+  const handleReply = useCallback(async (emailItem: EmailListItem) => {
+    const fullEmail = await fetchEmail(emailItem.id);
+    if (fullEmail) openCompose({ mode: "reply", email: fullEmail, identity: defaultIdentity });
+  }, [openCompose, defaultIdentity]);
+
+  const handleReplyAll = useCallback(async (emailItem: EmailListItem) => {
+    const fullEmail = await fetchEmail(emailItem.id);
+    if (fullEmail) openCompose({ mode: "reply-all", email: fullEmail, identity: defaultIdentity });
+  }, [openCompose, defaultIdentity]);
+
+  const handleForward = useCallback(async (emailItem: EmailListItem) => {
+    const fullEmail = await fetchEmail(emailItem.id);
+    if (fullEmail) openCompose({ mode: "forward", email: fullEmail, identity: defaultIdentity });
+  }, [openCompose, defaultIdentity]);
+
+  const handleArchive = useCallback((emailIds: string[]) => {
+    if (archiveMailbox && selectedMailboxId) {
+      moveEmails(emailIds, selectedMailboxId, archiveMailbox.id);
+    }
+  }, [archiveMailbox, selectedMailboxId, moveEmails]);
+
+  const handleDelete = useCallback((emailIds: string[]) => {
+    if (trashMailbox && selectedMailboxId) {
+      moveEmails(emailIds, selectedMailboxId, trashMailbox.id);
+    }
+  }, [trashMailbox, selectedMailboxId, moveEmails]);
 
   // Decide which data to show
   const displayEmails = searchActive ? searchEmails : emails;
@@ -186,6 +224,12 @@ export const MailListPane = React.memo(function MailListPane({
               hasNextPage={displayHasNext}
               onFetchNextPage={displayFetchNext}
               onStarEmail={starEmail}
+              onReply={handleReply}
+              onReplyAll={handleReplyAll}
+              onForward={handleForward}
+              onMarkRead={markRead}
+              onArchive={handleArchive}
+              onDelete={handleDelete}
             />
           )}
         </div>
