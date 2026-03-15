@@ -23,9 +23,6 @@ env:
 jobs:
   build-macos:
     runs-on: macos-latest
-    strategy:
-      matrix:
-        target: [aarch64-apple-darwin, x86_64-apple-darwin]
     steps:
       - uses: actions/checkout@v4
 
@@ -39,19 +36,18 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: aarch64-apple-darwin
 
       # Build frontend first (Go embeds web/dist via embedstatic tag).
       - name: Build frontend
         run: cd web && npm ci && npm run build
 
-      # Build Go sidecar for target architecture.
+      # Build Go sidecar for Apple Silicon.
       - name: Build Go sidecar
         run: |
-          GOARCH=${{ matrix.target == 'aarch64-apple-darwin' && 'arm64' || 'amd64' }}
-          CGO_ENABLED=0 GOOS=darwin GOARCH=$GOARCH go build -tags embedstatic \
+          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -tags embedstatic \
             -ldflags="-s -w" \
-            -o desktop/src-tauri/binaries/webmail-api-${{ matrix.target }} \
+            -o desktop/src-tauri/binaries/webmail-api-aarch64-apple-darwin \
             ./cmd/webmail-api
 
       # Install Tauri CLI and desktop project dependencies.
@@ -63,7 +59,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         with:
           projectPath: desktop
-          args: --target ${{ matrix.target }}
+          args: --target aarch64-apple-darwin
         env:
           # Apple code signing — only active when secrets are configured.
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
@@ -79,11 +75,11 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: macos-${{ matrix.target }}
+          name: macos-aarch64
           path: |
-            desktop/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
-            desktop/src-tauri/target/${{ matrix.target }}/release/bundle/macos/*.app.tar.gz
-            desktop/src-tauri/target/${{ matrix.target }}/release/bundle/macos/*.app.tar.gz.sig
+            desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+            desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz
+            desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz.sig
 
   build-windows:
     runs-on: windows-latest
@@ -226,9 +222,8 @@ jobs:
           PUB_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
           # Read signatures if they exist (only present when TAURI_SIGNING_PRIVATE_KEY is set).
-          MACOS_ARM_SIG=$(cat artifacts/*aarch64*/*.sig 2>/dev/null || echo "")
-          MACOS_X64_SIG=$(cat artifacts/*x86_64-apple*/*.sig 2>/dev/null || echo "")
-          WINDOWS_MSI_SIG=$(cat artifacts/*.msi.zip.sig 2>/dev/null || echo "")
+          MACOS_SIG=$(cat artifacts/*aarch64*/*.sig 2>/dev/null || echo "")
+          WINDOWS_SIG=$(cat artifacts/*.msi.zip.sig 2>/dev/null || echo "")
           LINUX_SIG=$(cat artifacts/*.AppImage.tar.gz.sig 2>/dev/null || echo "")
 
           cat > latest.json <<EOF
@@ -238,15 +233,11 @@ jobs:
             "platforms": {
               "darwin-aarch64": {
                 "url": "https://github.com/${{ github.repository }}/releases/download/${GITHUB_REF_NAME}/Webmail.app.tar.gz",
-                "signature": "$MACOS_ARM_SIG"
-              },
-              "darwin-x86_64": {
-                "url": "https://github.com/${{ github.repository }}/releases/download/${GITHUB_REF_NAME}/Webmail.app.tar.gz",
-                "signature": "$MACOS_X64_SIG"
+                "signature": "$MACOS_SIG"
               },
               "windows-x86_64": {
                 "url": "https://github.com/${{ github.repository }}/releases/download/${GITHUB_REF_NAME}/Webmail_${VERSION}_x64-setup.nsis.zip",
-                "signature": "$WINDOWS_MSI_SIG"
+                "signature": "$WINDOWS_SIG"
               },
               "linux-x86_64": {
                 "url": "https://github.com/${{ github.repository }}/releases/download/${GITHUB_REF_NAME}/Webmail_${VERSION}_amd64.AppImage.tar.gz",
