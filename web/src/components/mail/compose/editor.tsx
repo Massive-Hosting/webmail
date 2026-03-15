@@ -189,6 +189,9 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
         hardBreak: { keepMarks: true },
+        // Disable extensions we configure separately to avoid duplicates
+        link: false,
+        underline: false,
       }),
       Link.configure({
         openOnClick: false,
