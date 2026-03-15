@@ -175,7 +175,7 @@ interface ThreadHeaderItemProps {
   messageCount: number;
   isExpanded: boolean;
   isSelected: boolean;
-  onClick: () => void;
+  onClick: (event?: React.MouseEvent) => void;
   onStar: (emailId: string, flagged: boolean) => void;
   onMouseEnter?: (emailId: string) => void;
   onReply?: (email: EmailListItem) => void;
@@ -227,7 +227,7 @@ export const ThreadHeaderItem = React.memo(
         role="option"
         aria-selected={isSelected}
         aria-expanded={isExpanded}
-        onClick={onClick}
+        onClick={(e) => onClick(e)}
         onMouseEnter={() => onMouseEnter?.(email.id)}
       >
         {/* Thread expand/collapse chevron */}

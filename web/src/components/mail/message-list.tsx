@@ -199,7 +199,6 @@ export const MessageList = React.memo(function MessageList({
 
   const handleItemClick = useCallback(
     (email: EmailListItem, event: React.MouseEvent) => {
-      console.log("[click]", { shift: event.shiftKey, ctrl: event.ctrlKey, emailId: email.id, lastClickedEmailId, emailsCount: emails.length });
       if (event.ctrlKey || event.metaKey) {
         toggleEmailSelection(email.id);
       } else if (event.shiftKey) {
@@ -207,16 +206,12 @@ export const MessageList = React.memo(function MessageList({
         if (lastClickedEmailId) {
           const startIdx = emails.findIndex((e) => e.id === lastClickedEmailId);
           const endIdx = emails.findIndex((e) => e.id === email.id);
-          console.log("[shift-click]", { startIdx, endIdx, lastClickedEmailId });
           if (startIdx !== -1 && endIdx !== -1) {
             const min = Math.min(startIdx, endIdx);
             const max = Math.max(startIdx, endIdx);
-            const ids = emails.slice(min, max + 1).map((e) => e.id);
-            console.log("[shift-click] selecting range:", ids);
-            selectEmailRange(ids);
+            selectEmailRange(emails.slice(min, max + 1).map((e) => e.id));
           }
         } else {
-          console.log("[shift-click] no lastClickedEmailId, falling back to normal select");
           setSelectedEmail(email.id, email.threadId);
         }
       } else {
@@ -227,7 +222,12 @@ export const MessageList = React.memo(function MessageList({
   );
 
   const handleThreadHeaderClick = useCallback(
-    (email: EmailListItem, threadId: string) => {
+    (email: EmailListItem, threadId: string, event?: React.MouseEvent) => {
+      // If shift/ctrl held, handle multi-select instead of expand/collapse
+      if (event && (event.shiftKey || event.ctrlKey || event.metaKey)) {
+        handleItemClick(email, event);
+        return;
+      }
       toggleThread(threadId);
       // If we're expanding (not collapsing), auto-select latest message
       // The actual selection happens after data loads via ExpandedThreadChildren
@@ -241,10 +241,14 @@ export const MessageList = React.memo(function MessageList({
   );
 
   const handleThreadChildSelect = useCallback(
-    (email: EmailListItem) => {
+    (email: EmailListItem, event?: React.MouseEvent) => {
+      if (event && (event.shiftKey || event.ctrlKey || event.metaKey)) {
+        handleItemClick(email, event);
+        return;
+      }
       setSelectedEmail(email.id, email.threadId);
     },
-    [setSelectedEmail],
+    [setSelectedEmail, handleItemClick],
   );
 
   const handleMouseEnter = useCallback(
@@ -337,7 +341,7 @@ export const MessageList = React.memo(function MessageList({
                   messageCount={row.messageCount}
                   isExpanded={row.isExpanded}
                   isSelected={row.email.id === selectedEmailId}
-                  onClick={() => handleThreadHeaderClick(row.email, row.threadId)}
+                  onClick={(e?: React.MouseEvent) => handleThreadHeaderClick(row.email, row.threadId, e)}
                   onStar={onStarEmail}
                   onMouseEnter={handleMouseEnter}
                   onReply={onReply}

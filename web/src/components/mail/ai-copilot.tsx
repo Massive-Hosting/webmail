@@ -241,9 +241,10 @@ export const AICopilot = React.memo(function AICopilot({
     (content: string) => {
       if (!email) return;
       // Strip common AI sign-offs that the app's signature will replace
-      const cleaned = stripSignOff(content);
+      const cleaned = stripSignOff(content).trim();
       const htmlBody = cleaned
         .split("\n\n")
+        .filter((p) => p.trim() !== "")
         .map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`)
         .join("");
       openCompose({
