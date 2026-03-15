@@ -6,6 +6,7 @@ import { useSettingsStore } from "@/stores/settings-store.ts";
 import type { ThemeMode, DensityMode, StartPage } from "@/stores/settings-store.ts";
 import { useTranslation } from "react-i18next";
 import { LANGUAGES } from "@/i18n/index.ts";
+import { StyledSelect } from "@/components/ui/styled-select.tsx";
 
 export const GeneralSettings = React.memo(function GeneralSettings() {
   const { t, i18n } = useTranslation();
@@ -21,26 +22,17 @@ export const GeneralSettings = React.memo(function GeneralSettings() {
     <div className="p-6 space-y-6">
       {/* Language */}
       <SettingSection title={t("settings.language")} description={t("settings.languageDesc")}>
-        <select
+        <StyledSelect
           value={i18n.language}
-          onChange={(e) => {
-            i18n.changeLanguage(e.target.value);
-            localStorage.setItem("language", e.target.value);
+          onValueChange={(v) => {
+            i18n.changeLanguage(v);
+            localStorage.setItem("language", v);
           }}
-          className="text-sm px-3 py-2 rounded-md outline-none cursor-pointer"
-          style={{
-            backgroundColor: "var(--color-bg-tertiary)",
-            color: "var(--color-text-primary)",
-            border: "1px solid var(--color-border-primary)",
-            borderRadius: "var(--radius-md)",
-          }}
-        >
-          {LANGUAGES.map((lang) => (
-            <option key={lang.code} value={lang.code}>
-              {lang.label}
-            </option>
-          ))}
-        </select>
+          options={LANGUAGES.map((lang) => ({
+            value: lang.code,
+            label: lang.label,
+          }))}
+        />
       </SettingSection>
 
       {/* Theme */}

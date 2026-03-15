@@ -37,6 +37,7 @@ import { useAIEnabled } from "@/hooks/use-ai-enabled.ts";
 import { AIPanel } from "./ai-panel.tsx";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/auth-store.ts";
+import { StyledSelect } from "@/components/ui/styled-select.tsx";
 
 // Re-export useCompose from its own module (keeps it out of the lazy-loaded chunk)
 export { useCompose } from "./use-compose.ts";
@@ -567,17 +568,15 @@ export const ComposePanel = React.memo(function ComposePanel({
         {identities && identities.length > 1 && (
           <div className="compose-dialog__field">
             <label className="compose-dialog__field-label">{t("compose.from")}</label>
-            <select
+            <StyledSelect
               value={draft.from?.id ?? ""}
-              onChange={(e) => handleIdentityChange(e.target.value)}
-              className="compose-dialog__identity-select"
-            >
-              {identities.map((id) => (
-                <option key={id.id} value={id.id}>
-                  {id.name} &lt;{id.email}&gt;
-                </option>
-              ))}
-            </select>
+              onValueChange={handleIdentityChange}
+              options={identities.map((id) => ({
+                value: id.id,
+                label: `${id.name} <${id.email}>`,
+              }))}
+              className="flex-1"
+            />
           </div>
         )}
 

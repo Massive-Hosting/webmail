@@ -21,8 +21,11 @@ import { formatFingerprint } from "@/lib/pgp.ts";
 import { useQuery } from "@tanstack/react-query";
 import { fetchIdentities } from "@/api/mail.ts";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import { StyledSelect } from "@/components/ui/styled-select.tsx";
 
 export const PGPSettingsPanel = React.memo(function PGPSettingsPanel() {
+  const { t } = useTranslation();
   const isSetUp = usePGPStore((s) => s.isSetUp);
   const isUnlocked = usePGPStore((s) => s.isUnlocked);
   const keyInfo = usePGPStore((s) => s.keyInfo);
@@ -54,24 +57,22 @@ export const PGPSettingsPanel = React.memo(function PGPSettingsPanel() {
 
   const handleOneClickSetup = useCallback(async () => {
     if (!defaultIdentity) {
-      toast.error("No identity found. Please try again later.");
+      toast.error(t("pgp.noIdentity"));
       return;
     }
 
     // We need the password to derive the passphrase. Since login already happened,
     // we prompt for it. In production this could be passed from the session.
-    const password = window.prompt(
-      "Enter your email password to enable email signing.\nYour password is used to protect your signing key and is not stored.",
-    );
+    const password = window.prompt(t("pgp.passwordPrompt"));
     if (!password) return;
 
     try {
       await setup(defaultIdentity.name, defaultIdentity.email, password);
-      toast.success("Email signing is enabled. Your emails will now carry a digital signature.");
+      toast.success(t("pgp.enabledToast"));
     } catch {
-      toast.error("Failed to enable email signing. Please try again.");
+      toast.error(t("pgp.failedToEnable"));
     }
-  }, [defaultIdentity, setup]);
+  }, [defaultIdentity, setup, t]);
 
   if (!isSetUp || !isUnlocked) {
     return (
@@ -106,10 +107,10 @@ export const PGPSettingsPanel = React.memo(function PGPSettingsPanel() {
         <ShieldCheck size={20} style={{ color: "#22c55e" }} />
         <div>
           <p className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
-            Email signing is enabled
+            {t("pgp.signingEnabled")}
           </p>
           <p className="text-xs mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
-            Your emails carry a digital signature that recipients can verify.
+            {t("pgp.signingEnabledDesc")}
           </p>
         </div>
       </div>
@@ -134,7 +135,7 @@ export const PGPSettingsPanel = React.memo(function PGPSettingsPanel() {
           className="text-sm font-semibold"
           style={{ color: "var(--color-text-primary)" }}
         >
-          Defaults
+          {t("pgp.defaults")}
         </h3>
 
         <div className="flex items-center justify-between">
@@ -142,15 +143,15 @@ export const PGPSettingsPanel = React.memo(function PGPSettingsPanel() {
             className="text-sm"
             style={{ color: "var(--color-text-secondary)" }}
           >
-            Sign outgoing messages
+            {t("pgp.signOutgoing")}
           </label>
           <SelectDropdown
             value={signDefault}
             onChange={(v) => setSignDefault(v as SignDefault)}
             options={[
-              { value: "always", label: "Always" },
-              { value: "ask", label: "Ask each time" },
-              { value: "never", label: "Never" },
+              { value: "always", label: t("pgp.always") },
+              { value: "ask", label: t("pgp.askEachTime") },
+              { value: "never", label: t("pgp.never") },
             ]}
           />
         </div>
@@ -160,15 +161,15 @@ export const PGPSettingsPanel = React.memo(function PGPSettingsPanel() {
             className="text-sm"
             style={{ color: "var(--color-text-secondary)" }}
           >
-            Encrypt when keys available
+            {t("pgp.encryptWhenAvailable")}
           </label>
           <SelectDropdown
             value={encryptDefault}
             onChange={(v) => setEncryptDefault(v as EncryptDefault)}
             options={[
-              { value: "always", label: "Always" },
-              { value: "ask", label: "Ask each time" },
-              { value: "never", label: "Never" },
+              { value: "always", label: t("pgp.always") },
+              { value: "ask", label: t("pgp.askEachTime") },
+              { value: "never", label: t("pgp.never") },
             ]}
           />
         </div>
@@ -178,7 +179,7 @@ export const PGPSettingsPanel = React.memo(function PGPSettingsPanel() {
             className="text-sm"
             style={{ color: "var(--color-text-secondary)" }}
           >
-            Auto-lookup recipient keys
+            {t("pgp.autoLookup")}
           </label>
           <button
             onClick={() => setAutoLookupKeys(!autoLookupKeys)}
@@ -208,7 +209,7 @@ export const PGPSettingsPanel = React.memo(function PGPSettingsPanel() {
         style={{ color: "var(--color-text-accent)" }}
       >
         {showAdvanced ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        Advanced PGP Settings
+        {t("pgp.advancedSettings")}
       </button>
 
       {showAdvanced && keyInfo && (
@@ -236,6 +237,7 @@ function SetupView({
   onSetup: () => void;
   onImport: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center text-center max-w-md mx-auto py-8">
       <div
@@ -249,15 +251,14 @@ function SetupView({
         className="text-lg font-semibold mb-2"
         style={{ color: "var(--color-text-primary)" }}
       >
-        Digitally Sign Your Emails
+        {t("pgp.digitallySignTitle")}
       </h3>
 
       <p
         className="text-sm mb-6 leading-relaxed"
         style={{ color: "var(--color-text-secondary)" }}
       >
-        When you sign your emails, recipients can verify that the message really
-        came from you and wasn't tampered with. This is like a digital wax seal.
+        {t("pgp.digitallySignDesc")}
       </p>
 
       {error && (
@@ -285,7 +286,7 @@ function SetupView({
         ) : (
           <ShieldCheck size={16} />
         )}
-        Enable Email Signing
+        {t("pgp.enableSigning")}
       </button>
 
       <button
@@ -293,7 +294,7 @@ function SetupView({
         className="mt-3 text-xs"
         style={{ color: "var(--color-text-accent)" }}
       >
-        I already have a PGP key — import it
+        {t("pgp.importExistingKey")}
       </button>
     </div>
   );
@@ -313,6 +314,7 @@ function AdvancedSettings({
   onDelete: (email: string) => Promise<void>;
   loading: boolean;
 }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const privateKeyArmored = usePGPStore((s) => s.privateKeyArmored);
 
@@ -321,8 +323,8 @@ function AdvancedSettings({
     await navigator.clipboard.writeText(publicKeyArmored);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    toast.success("Public key copied to clipboard");
-  }, [publicKeyArmored]);
+    toast.success(t("pgp.publicKeyCopied"));
+  }, [publicKeyArmored, t]);
 
   const handleExportPublicKey = useCallback(() => {
     if (!publicKeyArmored) return;
@@ -337,9 +339,7 @@ function AdvancedSettings({
 
   const handleExportPrivateKey = useCallback(() => {
     if (!privateKeyArmored) return;
-    const proceed = window.confirm(
-      "WARNING: Your private key is extremely sensitive. Anyone with access to it can read your encrypted emails and forge your signature.\n\nOnly export if you need to import it on another device. Keep it safe.\n\nContinue?",
-    );
+    const proceed = window.confirm(t("pgp.exportWarning"));
     if (!proceed) return;
 
     const blob = new Blob([privateKeyArmored], { type: "text/plain" });
@@ -349,17 +349,15 @@ function AdvancedSettings({
     a.download = `${email ?? "private"}-pgp-private.asc`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [privateKeyArmored, email]);
+  }, [privateKeyArmored, email, t]);
 
   const handleDelete = useCallback(async () => {
     if (!email) return;
-    const proceed = window.confirm(
-      "Are you sure you want to delete your PGP key? This cannot be undone. You will no longer be able to decrypt messages encrypted to this key.",
-    );
+    const proceed = window.confirm(t("pgp.deleteConfirm"));
     if (!proceed) return;
     await onDelete(email);
-    toast.success("PGP key deleted");
-  }, [email, onDelete]);
+    toast.success(t("pgp.keyDeleted"));
+  }, [email, onDelete, t]);
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString(undefined, {
@@ -402,8 +400,8 @@ function AdvancedSettings({
               className="flex items-center gap-3 mt-2 text-xs"
               style={{ color: "var(--color-text-tertiary)" }}
             >
-              <span>Algorithm: {keyInfo.algorithm}</span>
-              <span>Created: {formatDate(keyInfo.created)}</span>
+              <span>{t("pgp.algorithm", { algorithm: keyInfo.algorithm })}</span>
+              <span>{t("pgp.created", { date: formatDate(keyInfo.created) })}</span>
               {keyInfo.expires && (
                 <span
                   style={{
@@ -412,8 +410,9 @@ function AdvancedSettings({
                       : undefined,
                   }}
                 >
-                  {keyInfo.isExpired ? "Expired" : "Expires"}:{" "}
-                  {formatDate(keyInfo.expires)}
+                  {keyInfo.isExpired
+                    ? t("pgp.expired", { date: formatDate(keyInfo.expires) })
+                    : t("pgp.expires", { date: formatDate(keyInfo.expires) })}
                 </span>
               )}
             </div>
@@ -424,7 +423,7 @@ function AdvancedSettings({
                 style={{ color: "var(--color-text-danger, #dc2626)" }}
               >
                 <AlertTriangle size={12} />
-                This key has been revoked
+                {t("pgp.keyRevoked")}
               </div>
             )}
           </div>
@@ -434,22 +433,22 @@ function AdvancedSettings({
         <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: "1px solid var(--color-border-secondary)" }}>
           <ActionBtn
             icon={copied ? <Check size={12} /> : <Copy size={12} />}
-            label={copied ? "Copied" : "Copy Public Key"}
+            label={copied ? t("pgp.copied") : t("pgp.copyPublicKey")}
             onClick={handleCopyPublicKey}
           />
           <ActionBtn
             icon={<Download size={12} />}
-            label="Export Public"
+            label={t("pgp.exportPublic")}
             onClick={handleExportPublicKey}
           />
           <ActionBtn
             icon={<Download size={12} />}
-            label="Export Private"
+            label={t("pgp.exportPrivate")}
             onClick={handleExportPrivateKey}
           />
           <ActionBtn
             icon={<Trash2 size={12} />}
-            label="Delete Key"
+            label={t("pgp.deleteKey")}
             onClick={handleDelete}
             danger
           />
@@ -469,6 +468,7 @@ function ImportKeyDialog({
   onClose: () => void;
   onImport: (armoredKey: string, email: string, passphrase: string) => Promise<void>;
 }) {
+  const { t } = useTranslation();
   const [keyText, setKeyText] = useState("");
   const [passphrase, setPassphrase] = useState("");
   const [importing, setImporting] = useState(false);
@@ -490,11 +490,11 @@ function ImportKeyDialog({
 
   const handleImport = useCallback(async () => {
     if (!keyText.trim()) {
-      setError("Please paste a key or upload a file.");
+      setError(t("pgp.pasteOrUpload"));
       return;
     }
     if (!passphrase.trim()) {
-      setError("Please enter the passphrase for this key.");
+      setError(t("pgp.enterPassphrase"));
       return;
     }
 
@@ -503,16 +503,16 @@ function ImportKeyDialog({
 
     try {
       await onImport(keyText.trim(), email, passphrase);
-      toast.success("PGP key imported successfully");
+      toast.success(t("pgp.importSuccess"));
       onClose();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to import key",
+        err instanceof Error ? err.message : t("pgp.failedToImport"),
       );
     } finally {
       setImporting(false);
     }
-  }, [keyText, passphrase, email, onImport, onClose]);
+  }, [keyText, passphrase, email, onImport, onClose, t]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
@@ -528,7 +528,7 @@ function ImportKeyDialog({
           className="text-base font-semibold"
           style={{ color: "var(--color-text-primary)" }}
         >
-          Import PGP Private Key
+          {t("pgp.importTitle")}
         </h3>
 
         {error && (
@@ -548,7 +548,7 @@ function ImportKeyDialog({
             className="text-sm font-medium"
             style={{ color: "var(--color-text-primary)" }}
           >
-            Private key (armored)
+            {t("pgp.privateKeyArmored")}
           </label>
           <textarea
             value={keyText}
@@ -567,7 +567,7 @@ function ImportKeyDialog({
             style={{ color: "var(--color-text-accent)" }}
           >
             <Upload size={12} />
-            Upload .asc / .gpg file
+            {t("pgp.uploadFile")}
           </button>
           <input
             ref={fileInputRef}
@@ -583,13 +583,13 @@ function ImportKeyDialog({
             className="text-sm font-medium"
             style={{ color: "var(--color-text-primary)" }}
           >
-            Passphrase
+            {t("pgp.passphrase")}
           </label>
           <input
             type="password"
             value={passphrase}
             onChange={(e) => setPassphrase(e.target.value)}
-            placeholder="Enter the key's passphrase"
+            placeholder={t("pgp.passphrasePlaceholder")}
             className="w-full h-9 px-3 text-sm rounded-md outline-none"
             style={{
               backgroundColor: "var(--color-bg-primary)",
@@ -608,7 +608,7 @@ function ImportKeyDialog({
               backgroundColor: "var(--color-bg-tertiary)",
             }}
           >
-            Cancel
+            {t("pgp.cancel")}
           </button>
           <button
             onClick={handleImport}
@@ -617,7 +617,7 @@ function ImportKeyDialog({
             style={{ backgroundColor: "var(--color-bg-accent)" }}
           >
             {importing && <Loader2 size={14} className="animate-spin" />}
-            Import
+            {t("pgp.import")}
           </button>
         </div>
       </div>
@@ -664,21 +664,10 @@ function SelectDropdown({
   options: Array<{ value: string; label: string }>;
 }) {
   return (
-    <select
+    <StyledSelect
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="text-sm px-2 py-1 rounded-md outline-none"
-      style={{
-        backgroundColor: "var(--color-bg-secondary)",
-        color: "var(--color-text-primary)",
-        border: "1px solid var(--color-border-primary)",
-      }}
-    >
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
+      onValueChange={onChange}
+      options={options}
+    />
   );
 }

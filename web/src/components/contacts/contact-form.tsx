@@ -6,6 +6,7 @@ import type { Contact, ContactEmail, ContactPhone, ContactAddress, ContactUrl } 
 import { getContactDisplayName, getContactInitials } from "@/hooks/use-contacts.ts";
 import { getAvatarColor } from "@/lib/format.ts";
 import { toast } from "sonner";
+import { StyledSelect } from "@/components/ui/styled-select.tsx";
 
 const LABELS = ["Work", "Home", "Other"];
 
@@ -504,22 +505,16 @@ function LabelSelect({
   onChange: (value: string) => void;
 }) {
   return (
-    <select
+    <StyledSelect
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="text-xs px-1.5 py-1.5 rounded border outline-none bg-transparent shrink-0"
-      style={{
-        color: "var(--color-text-secondary)",
-        borderColor: "var(--color-border-primary)",
-      }}
-    >
-      <option value="">Label</option>
-      {LABELS.map((l) => (
-        <option key={l} value={l}>
-          {l}
-        </option>
-      ))}
-    </select>
+      onValueChange={onChange}
+      options={[
+        { value: "", label: "Label" },
+        ...LABELS.map((l) => ({ value: l, label: l })),
+      ]}
+      placeholder="Label"
+      className="shrink-0"
+    />
   );
 }
 

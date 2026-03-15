@@ -30,6 +30,7 @@ import {
   Filter,
 } from "lucide-react";
 import { useFilterRules } from "@/hooks/use-filter-rules.ts";
+import { StyledSelect } from "@/components/ui/styled-select.tsx";
 import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 import {
   type FilterRule,
@@ -41,9 +42,11 @@ import {
   actionNeedsValue,
   createEmptyRule,
 } from "@/types/filter-rules.ts";
+import { useTranslation } from "react-i18next";
 
 /** Main filter rules panel */
 export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
+  const { t } = useTranslation();
   const { rules, isLoading, saveRules, isSaving } = useFilterRules();
   const [localRules, setLocalRules] = useState<FilterRule[] | null>(null);
   const [editingRule, setEditingRule] = useState<FilterRule | null>(null);
@@ -145,7 +148,7 @@ export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
     return (
       <div className="p-6">
         <div className="text-sm" style={{ color: "var(--color-text-tertiary)" }}>
-          Loading filter rules...
+          {t("filterRules.loading")}
         </div>
       </div>
     );
@@ -160,7 +163,7 @@ export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
             className="text-lg font-semibold"
             style={{ color: "var(--color-text-primary)" }}
           >
-            Filter Rules
+            {t("filterRules.title")}
           </h2>
         </div>
         <button
@@ -172,7 +175,7 @@ export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
           }}
         >
           <Plus size={16} />
-          New Rule
+          {t("filterRules.newRule")}
         </button>
       </div>
 
@@ -180,8 +183,7 @@ export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
         className="text-sm mb-4"
         style={{ color: "var(--color-text-secondary)" }}
       >
-        Filter rules automatically process incoming email. Drag to reorder — rules are
-        evaluated top to bottom.
+        {t("filterRules.description")}
       </p>
 
       {activeRules.length === 0 ? (
@@ -202,13 +204,13 @@ export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
             className="text-sm font-medium"
             style={{ color: "var(--color-text-secondary)" }}
           >
-            No filter rules
+            {t("filterRules.noRules")}
           </p>
           <p
             className="text-xs mt-1"
             style={{ color: "var(--color-text-tertiary)" }}
           >
-            Create a rule to automatically organize incoming mail.
+            {t("filterRules.noRulesDesc")}
           </p>
         </div>
       ) : (
@@ -391,6 +393,7 @@ function RuleEditorDialog({
   rule: FilterRule;
   onSave: (rule: FilterRule) => void;
 }) {
+  const { t } = useTranslation();
   const [localRule, setLocalRule] = useState<FilterRule>({ ...rule });
   const { sortedMailboxes } = useMailboxes();
 
@@ -486,7 +489,7 @@ function RuleEditorDialog({
               className="text-lg font-semibold"
               style={{ color: "var(--color-text-primary)" }}
             >
-              {rule.name === "New Rule" ? "Create Rule" : `Edit Rule: "${rule.name}"`}
+              {rule.name === "New Rule" ? t("filterRules.createRule") : t("filterRules.editRule", { name: rule.name })}
             </Dialog.Title>
             <Dialog.Close asChild>
               <button
@@ -505,7 +508,7 @@ function RuleEditorDialog({
                 className="block text-xs font-medium mb-1"
                 style={{ color: "var(--color-text-secondary)" }}
               >
-                Rule name
+                {t("filterRules.ruleName")}
               </label>
               <input
                 type="text"
@@ -515,7 +518,7 @@ function RuleEditorDialog({
                 }
                 className="w-full h-8 px-3 text-sm rounded-md outline-none"
                 style={inputStyle}
-                placeholder="e.g., Newsletters to Archive"
+                placeholder={t("filterRules.ruleNamePlaceholder")}
               />
             </div>
 
@@ -526,22 +529,21 @@ function RuleEditorDialog({
                   className="text-sm font-medium"
                   style={{ color: "var(--color-text-primary)" }}
                 >
-                  When
+                  {t("filterRules.when")}
                 </span>
-                <select
+                <StyledSelect
                   value={localRule.conditionMatch}
-                  onChange={(e) =>
+                  onValueChange={(v) =>
                     setLocalRule((prev) => ({
                       ...prev,
-                      conditionMatch: e.target.value as "all" | "any",
+                      conditionMatch: v as "all" | "any",
                     }))
                   }
-                  className="h-7 px-2 text-sm rounded outline-none"
-                  style={inputStyle}
-                >
-                  <option value="all">all</option>
-                  <option value="any">any</option>
-                </select>
+                  options={[
+                    { value: "all", label: "all" },
+                    { value: "any", label: "any" },
+                  ]}
+                />
                 <span
                   className="text-sm"
                   style={{ color: "var(--color-text-primary)" }}
@@ -553,38 +555,30 @@ function RuleEditorDialog({
               <div className="space-y-2">
                 {localRule.conditions.map((condition, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <select
+                    <StyledSelect
                       value={condition.field}
-                      onChange={(e) =>
+                      onValueChange={(v) =>
                         updateCondition(index, {
-                          field: e.target.value as FilterCondition["field"],
+                          field: v as FilterCondition["field"],
                         })
                       }
-                      className="h-8 px-2 text-sm rounded-md outline-none"
-                      style={inputStyle}
-                    >
-                      {CONDITION_FIELDS.map((f) => (
-                        <option key={f.value} value={f.value}>
-                          {f.label}
-                        </option>
-                      ))}
-                    </select>
-                    <select
+                      options={CONDITION_FIELDS.map((f) => ({
+                        value: f.value,
+                        label: f.label,
+                      }))}
+                    />
+                    <StyledSelect
                       value={condition.operator}
-                      onChange={(e) =>
+                      onValueChange={(v) =>
                         updateCondition(index, {
-                          operator: e.target.value as FilterCondition["operator"],
+                          operator: v as FilterCondition["operator"],
                         })
                       }
-                      className="h-8 px-2 text-sm rounded-md outline-none"
-                      style={inputStyle}
-                    >
-                      {CONDITION_OPERATORS.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
+                      options={CONDITION_OPERATORS.map((o) => ({
+                        value: o.value,
+                        label: o.label,
+                      }))}
+                    />
                     <input
                       type="text"
                       value={condition.value}
@@ -630,46 +624,40 @@ function RuleEditorDialog({
               <div className="space-y-2">
                 {localRule.actions.map((action, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <select
+                    <StyledSelect
                       value={action.type}
-                      onChange={(e) =>
+                      onValueChange={(v) =>
                         updateAction(index, {
-                          type: e.target.value as FilterAction["type"],
-                          value: actionNeedsValue(
-                            e.target.value as FilterAction["type"],
-                          )
+                          type: v as FilterAction["type"],
+                          value: actionNeedsValue(v as FilterAction["type"])
                             ? action.value
                             : undefined,
                         })
                       }
-                      className="h-8 px-2 text-sm rounded-md outline-none"
-                      style={inputStyle}
-                    >
-                      {ACTION_TYPES.map((a) => (
-                        <option key={a.value} value={a.value}>
-                          {a.label}
-                        </option>
-                      ))}
-                    </select>
+                      options={ACTION_TYPES.map((a) => ({
+                        value: a.value,
+                        label: a.label,
+                      }))}
+                    />
 
                     {actionNeedsValue(action.type) && (
                       <>
                         {(action.type === "moveTo" || action.type === "copyTo") ? (
-                          <select
+                          <StyledSelect
                             value={action.value ?? ""}
-                            onChange={(e) =>
-                              updateAction(index, { value: e.target.value })
+                            onValueChange={(v) =>
+                              updateAction(index, { value: v })
                             }
-                            className="flex-1 h-8 px-2 text-sm rounded-md outline-none"
-                            style={inputStyle}
-                          >
-                            <option value="">Select mailbox...</option>
-                            {sortedMailboxes.map((mb) => (
-                              <option key={mb.id} value={mb.name}>
-                                {mb.name}
-                              </option>
-                            ))}
-                          </select>
+                            options={[
+                              { value: "", label: "Select mailbox..." },
+                              ...sortedMailboxes.map((mb) => ({
+                                value: mb.name,
+                                label: mb.name,
+                              })),
+                            ]}
+                            placeholder="Select mailbox..."
+                            className="flex-1"
+                          />
                         ) : (
                           <input
                             type="text"

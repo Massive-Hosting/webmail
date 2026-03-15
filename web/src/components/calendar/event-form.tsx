@@ -14,6 +14,7 @@ import type {
 } from "@/types/calendar.ts";
 import { format, parseISO, minutesToDuration, parseDurationMinutes } from "@/hooks/use-calendar.ts";
 import { useContactSearch } from "@/hooks/use-contacts.ts";
+import { StyledSelect } from "@/components/ui/styled-select.tsx";
 
 interface EventFormProps {
   open: boolean;
@@ -302,22 +303,15 @@ export const EventForm = React.memo(function EventForm({
                 >
                   Calendar
                 </span>
-                <select
+                <StyledSelect
                   value={selectedCalendarId}
-                  onChange={(e) => setSelectedCalendarId(e.target.value)}
-                  className="flex-1 px-2 py-1 text-sm rounded outline-none"
-                  style={{
-                    backgroundColor: "var(--color-bg-tertiary)",
-                    color: "var(--color-text-primary)",
-                    border: "1px solid var(--color-border-secondary)",
-                  }}
-                >
-                  {calendars.map((cal) => (
-                    <option key={cal.id} value={cal.id}>
-                      {cal.name}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={setSelectedCalendarId}
+                  options={calendars.map((cal) => ({
+                    value: cal.id,
+                    label: cal.name,
+                  }))}
+                  className="flex-1"
+                />
               </div>
             )}
 
@@ -408,22 +402,12 @@ export const EventForm = React.memo(function EventForm({
                 size={14}
                 style={{ color: "var(--color-text-tertiary)" }}
               />
-              <select
+              <StyledSelect
                 value={recurrence}
-                onChange={(e) => setRecurrence(e.target.value)}
-                className="flex-1 px-2 py-1 text-sm rounded outline-none"
-                style={{
-                  backgroundColor: "var(--color-bg-tertiary)",
-                  color: "var(--color-text-primary)",
-                  border: "1px solid var(--color-border-secondary)",
-                }}
-              >
-                {RECURRENCE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                onValueChange={setRecurrence}
+                options={RECURRENCE_OPTIONS}
+                className="flex-1"
+              />
             </div>
 
             {/* Attendees */}
@@ -526,22 +510,12 @@ export const EventForm = React.memo(function EventForm({
                 size={14}
                 style={{ color: "var(--color-text-tertiary)" }}
               />
-              <select
+              <StyledSelect
                 value={reminder}
-                onChange={(e) => setReminder(e.target.value)}
-                className="flex-1 px-2 py-1 text-sm rounded outline-none"
-                style={{
-                  backgroundColor: "var(--color-bg-tertiary)",
-                  color: "var(--color-text-primary)",
-                  border: "1px solid var(--color-border-secondary)",
-                }}
-              >
-                {REMINDER_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                onValueChange={setReminder}
+                options={REMINDER_OPTIONS}
+                className="flex-1"
+              />
             </div>
 
             {/* Description */}

@@ -5,6 +5,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { X, Search } from "lucide-react";
 import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 import { useSearchStore } from "@/stores/search-store.ts";
+import { StyledSelect } from "@/components/ui/styled-select.tsx";
 
 interface AdvancedSearchProps {
   open: boolean;
@@ -251,19 +252,19 @@ export const AdvancedSearchDialog = React.memo(function AdvancedSearchDialog({
               >
                 In mailbox
               </label>
-              <select
+              <StyledSelect
                 value={form.inMailbox}
-                onChange={(e) => updateField("inMailbox", e.target.value)}
-                className="w-full h-8 px-3 text-sm rounded-md outline-none"
-                style={inputStyle}
-              >
-                <option value="">All mailboxes</option>
-                {sortedMailboxes.map((mb) => (
-                  <option key={mb.id} value={mb.name.toLowerCase()}>
-                    {mb.name}
-                  </option>
-                ))}
-              </select>
+                onValueChange={(v) => updateField("inMailbox", v)}
+                options={[
+                  { value: "", label: "All mailboxes" },
+                  ...sortedMailboxes.map((mb) => ({
+                    value: mb.name.toLowerCase(),
+                    label: mb.name,
+                  })),
+                ]}
+                placeholder="All mailboxes"
+                className="w-full"
+              />
             </div>
 
             {/* Checkboxes */}

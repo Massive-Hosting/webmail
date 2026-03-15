@@ -5,8 +5,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchIdentities, jmapRequest } from "@/api/mail.ts";
 import type { Identity } from "@/types/mail.ts";
 import { Loader2, Check, AlertCircle, PenLine } from "lucide-react";
+import { StyledSelect } from "@/components/ui/styled-select.tsx";
+import { useTranslation } from "react-i18next";
 
 export const SignatureSettings = React.memo(function SignatureSettings() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: identities, isLoading } = useQuery({
     queryKey: ["identities"],
@@ -41,7 +44,7 @@ export const SignatureSettings = React.memo(function SignatureSettings() {
     return (
       <div className="p-6">
         <p className="text-sm" style={{ color: "var(--color-text-tertiary)" }}>
-          No email identities found.
+          {t("signatures.noIdentities")}
         </p>
       </div>
     );
@@ -56,24 +59,17 @@ export const SignatureSettings = React.memo(function SignatureSettings() {
             className="text-xs font-medium block mb-1.5"
             style={{ color: "var(--color-text-secondary)" }}
           >
-            Identity
+            {t("signatures.identity")}
           </label>
-          <select
+          <StyledSelect
             value={selectedId ?? ""}
-            onChange={(e) => setSelectedId(e.target.value)}
-            className="w-full px-3 py-2 text-sm rounded-md outline-none"
-            style={{
-              backgroundColor: "var(--color-bg-tertiary)",
-              color: "var(--color-text-primary)",
-              border: "1px solid var(--color-border-primary)",
-            }}
-          >
-            {identities.map((id) => (
-              <option key={id.id} value={id.id}>
-                {id.name} &lt;{id.email}&gt;
-              </option>
-            ))}
-          </select>
+            onValueChange={setSelectedId}
+            options={identities.map((id) => ({
+              value: id.id,
+              label: `${id.name} <${id.email}>`,
+            }))}
+            className="w-full"
+          />
         </div>
       )}
 
@@ -89,6 +85,7 @@ export const SignatureSettings = React.memo(function SignatureSettings() {
 });
 
 function SignatureEditor({ identity }: { identity: Identity }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [htmlSig, setHtmlSig] = useState(identity.htmlSignature ?? "");
   const [textSig, setTextSig] = useState(identity.textSignature ?? "");
@@ -153,7 +150,7 @@ function SignatureEditor({ identity }: { identity: Identity }) {
             className="text-sm font-medium"
             style={{ color: "var(--color-text-primary)" }}
           >
-            Signature for {identity.email}
+            {t("signatures.signatureFor", { email: identity.email })}
           </h3>
         </div>
         <div className="flex items-center gap-2">
@@ -175,7 +172,7 @@ function SignatureEditor({ identity }: { identity: Identity }) {
                     : "var(--color-text-secondary)",
               }}
             >
-              Rich text
+              {t("signatures.richText")}
             </button>
             <button
               onClick={() => setMode("text")}
@@ -192,7 +189,7 @@ function SignatureEditor({ identity }: { identity: Identity }) {
                 borderLeft: "1px solid var(--color-border-primary)",
               }}
             >
-              Plain text
+              {t("signatures.plainText")}
             </button>
           </div>
         </div>
@@ -224,7 +221,7 @@ function SignatureEditor({ identity }: { identity: Identity }) {
             border: "1px solid var(--color-border-primary)",
             fontFamily: "monospace",
           }}
-          placeholder="Your plain text signature..."
+          placeholder={t("signatures.plainTextPlaceholder")}
         />
       )}
 
@@ -245,10 +242,10 @@ function SignatureEditor({ identity }: { identity: Identity }) {
           )}
           {saveStatus === "saved" && <Check size={14} />}
           {saveStatus === "saving"
-            ? "Saving..."
+            ? t("signatures.saving")
             : saveStatus === "saved"
-              ? "Saved"
-              : "Save signature"}
+              ? t("signatures.saved")
+              : t("signatures.saveSignature")}
         </button>
         {saveStatus === "error" && (
           <span
@@ -256,7 +253,7 @@ function SignatureEditor({ identity }: { identity: Identity }) {
             style={{ color: "var(--color-text-danger)" }}
           >
             <AlertCircle size={12} />
-            Failed to save
+            {t("signatures.failedToSave")}
           </span>
         )}
       </div>

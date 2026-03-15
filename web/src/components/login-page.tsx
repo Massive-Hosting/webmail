@@ -6,6 +6,7 @@ import type { ApiError } from "@/api/client.ts";
 import { Mail, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { LANGUAGES } from "@/i18n/index.ts";
+import { StyledSelect } from "@/components/ui/styled-select.tsx";
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -279,27 +280,17 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
         className="fixed bottom-4 right-4"
         style={{ zIndex: 10 }}
       >
-        <select
+        <StyledSelect
           value={i18n.language}
-          onChange={(e) => {
-            i18n.changeLanguage(e.target.value);
-            localStorage.setItem("language", e.target.value);
+          onValueChange={(v) => {
+            i18n.changeLanguage(v);
+            localStorage.setItem("language", v);
           }}
-          className="text-xs px-2 py-1.5 rounded-md outline-none cursor-pointer"
-          style={{
-            backgroundColor: "var(--color-bg-elevated)",
-            color: "var(--color-text-secondary)",
-            border: "1px solid var(--color-border-primary)",
-            borderRadius: "var(--radius-sm)",
-          }}
-          aria-label={t("login.language")}
-        >
-          {LANGUAGES.map((lang) => (
-            <option key={lang.code} value={lang.code}>
-              {lang.label}
-            </option>
-          ))}
-        </select>
+          options={LANGUAGES.map((lang) => ({
+            value: lang.code,
+            label: lang.label,
+          }))}
+        />
       </div>
     </div>
   );
