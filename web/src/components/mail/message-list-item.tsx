@@ -1,4 +1,4 @@
-/** Single message list row - 72px fixed height */
+/** Single message list row - premium design with smooth transitions */
 
 import React, { useCallback } from "react";
 import type { EmailListItem } from "@/types/mail.ts";
@@ -37,98 +37,70 @@ export const MessageListItem = React.memo(
       [email.id, flagged, onStar],
     );
 
-    let bgColor = "transparent";
-    if (isSelected || isMultiSelected) {
-      bgColor = "var(--color-message-selected)";
-    } else if (unread) {
-      bgColor = "var(--color-message-unread)";
-    }
+    const active = isSelected || isMultiSelected;
 
     return (
       <div
-        className="flex items-center gap-3 px-3 cursor-pointer transition-colors duration-100 group"
-        style={{ backgroundColor: bgColor, height: "var(--density-row-height)" }}
+        className="message-list-item group"
+        data-selected={active || undefined}
+        data-unread={unread || undefined}
         role="option"
         aria-selected={isSelected}
         onClick={(e) => onClick(email, e)}
         onMouseEnter={() => onMouseEnter?.(email.id)}
-        onMouseOver={(e) => {
-          if (!isSelected && !isMultiSelected && !unread) {
-            e.currentTarget.style.backgroundColor = "var(--color-message-hover)";
-          }
-        }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.backgroundColor = bgColor;
-        }}
       >
-        {/* Unread dot */}
-        <div className="w-2 shrink-0 flex justify-center">
+        {/* Unread indicator - small indigo dot */}
+        <div className="message-list-item__indicator">
           {unread && (
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: "var(--color-bg-accent)" }}
-            />
+            <div className="message-list-item__unread-dot" />
           )}
         </div>
 
-        {/* Avatar */}
-        <Avatar address={sender} size={36} />
+        {/* Avatar with subtle shadow */}
+        <div className="message-list-item__avatar">
+          <Avatar address={sender} size={36} />
+        </div>
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
+        {/* Content area */}
+        <div className="message-list-item__content">
           {/* Top row: sender + date */}
-          <div className="flex items-center gap-2">
-            <span
-              className={`text-sm truncate flex-1 ${unread ? "font-semibold" : ""}`}
-              style={{ color: "var(--color-text-primary)" }}
-            >
+          <div className="message-list-item__top-row">
+            <span className={`message-list-item__sender ${unread ? "message-list-item__sender--unread" : ""}`}>
               {formatAddress(sender)}
             </span>
-            <span
-              className="text-xs shrink-0"
-              style={{ color: "var(--color-text-tertiary)" }}
-            >
+            <span className="message-list-item__date">
               {formatMessageDate(email.receivedAt)}
             </span>
           </div>
 
-          {/* Subject */}
-          <div
-            className={`text-sm truncate ${unread ? "font-semibold" : ""}`}
-            style={{ color: "var(--color-text-primary)" }}
-          >
+          {/* Subject line */}
+          <div className={`message-list-item__subject ${unread ? "message-list-item__subject--unread" : ""}`}>
             {email.subject || "(no subject)"}
           </div>
 
-          {/* Preview */}
-          <div
-            className="text-xs truncate"
-            style={{ color: "var(--color-text-secondary)" }}
-          >
+          {/* Preview text */}
+          <div className="message-list-item__preview">
             {email.preview}
           </div>
         </div>
 
-        {/* Indicators */}
-        <div className="flex items-center gap-1 shrink-0">
+        {/* Right-side indicators */}
+        <div className="message-list-item__actions">
           {email.hasAttachment && (
             <Paperclip
               size={14}
-              style={{ color: "var(--color-text-tertiary)" }}
+              className="message-list-item__attachment-icon"
             />
           )}
           <button
             onClick={handleStarClick}
-            className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
+            className={`message-list-item__star-btn ${flagged ? "message-list-item__star-btn--active" : ""}`}
             aria-label={flagged ? "Remove star" : "Add star"}
           >
             <Star
-              size={16}
-              fill={flagged ? "#f59e0b" : "none"}
-              style={{
-                color: flagged ? "#f59e0b" : "var(--color-text-tertiary)",
-              }}
-              className={`${flagged ? "star-bounce" : "opacity-0 group-hover:opacity-100 transition-opacity"}`}
+              size={15}
+              fill={flagged ? "currentColor" : "none"}
+              strokeWidth={flagged ? 0 : 1.5}
             />
           </button>
         </div>

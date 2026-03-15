@@ -97,7 +97,7 @@ func (h *ProxyHandler) JMAP(w http.ResponseWriter, r *http.Request) {
 	proxyReq.Header.Set("Content-Type", "application/json")
 	proxyReq.SetBasicAuth(sess.Email, sess.Password)
 
-	h.log.Debug().Str("url", stalwartURL).Int("bodyLen", len(body)).Msg("forwarding JMAP request to stalwart")
+	h.log.Debug().Str("url", stalwartURL).Int("bodyLen", len(body)).Str("body", string(body)).Msg("forwarding JMAP request to stalwart")
 
 	resp, err := h.client.Do(proxyReq)
 	if err != nil {
