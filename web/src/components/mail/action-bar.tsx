@@ -130,6 +130,29 @@ export const ActionBar = React.memo(function ActionBar({
     if (singleEmail) onStar(singleEmail.id, !isStarred);
   }, [singleEmail, isStarred, onStar]);
 
+  const optimisticRemoveFromList = useCallback((ids: string[]) => {
+    const idSet = new Set(ids);
+    queryClient.setQueriesData(
+      { queryKey: ["emails"] },
+      (oldData: unknown) => {
+        if (!oldData || typeof oldData !== "object") return oldData;
+        const data = oldData as {
+          pages: Array<{ emails: Array<{ id: string }>; total: number; position: number }>;
+          pageParams: unknown[];
+        };
+        if (!data.pages) return oldData;
+        return {
+          ...data,
+          pages: data.pages.map((page) => ({
+            ...page,
+            emails: page.emails.filter((e) => !idSet.has(e.id)),
+            total: Math.max(0, page.total - ids.length),
+          })),
+        };
+      },
+    );
+  }, [queryClient]);
+
   const handleSnooze = useCallback(async (until: Date) => {
     if (!singleEmail || !currentMailboxId) return;
     // Optimistically: set $snoozed keyword + remove from current list
@@ -158,29 +181,6 @@ export const ActionBar = React.memo(function ActionBar({
     }
     return setSeconds(setMinutes(setHours(now, 18), 0), 0);
   }, []);
-
-  const optimisticRemoveFromList = useCallback((ids: string[]) => {
-    const idSet = new Set(ids);
-    queryClient.setQueriesData(
-      { queryKey: ["emails"] },
-      (oldData: unknown) => {
-        if (!oldData || typeof oldData !== "object") return oldData;
-        const data = oldData as {
-          pages: Array<{ emails: Array<{ id: string }>; total: number; position: number }>;
-          pageParams: unknown[];
-        };
-        if (!data.pages) return oldData;
-        return {
-          ...data,
-          pages: data.pages.map((page) => ({
-            ...page,
-            emails: page.emails.filter((e) => !idSet.has(e.id)),
-            total: Math.max(0, page.total - ids.length),
-          })),
-        };
-      },
-    );
-  }, [queryClient]);
 
   const handleCancelScheduled = useCallback(async () => {
     if (!hasSelection) return;
