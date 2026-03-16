@@ -46,10 +46,15 @@ export default function App() {
   }, [loadSettings, setSession]);
 
   const handleLoginSuccess = useCallback(() => {
+    getSession()
+      .then((session) => {
+        setSession(session.email, session.accountId);
+      })
+      .catch(() => {});
     setAuthState("authenticated");
     loadSettings();
     void prefetchInitialMailData(queryClient);
-  }, [loadSettings]);
+  }, [loadSettings, setSession]);
 
   if (authState === "loading") {
     return <LoadingScreen />;
