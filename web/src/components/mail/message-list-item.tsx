@@ -22,6 +22,7 @@ import {
   Trash2,
 } from "lucide-react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { DateTimePickerDialog } from "@/components/ui/datetime-picker-dialog.tsx";
 import { addHours, setHours, setMinutes, setSeconds, addDays, nextMonday, isPast, format } from "date-fns";
@@ -636,6 +637,7 @@ function MessageContextMenu({
   onPrint?: (email: EmailListItem) => void;
 }) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [showSnoozePicker, setShowSnoozePicker] = useState(false);
 
   const handleSnooze = useCallback((until: Date) => {
@@ -720,8 +722,16 @@ function MessageContextMenu({
             className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
             style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
             onSelect={() => {
-              updateEmails({ [email.id]: { "keywords/$snoozed": null } }).then(() => {
-                toast.success(t("action.unsnoozed"));
+              // Optimistic removal from snoozed list
+              queryClient.setQueriesData({ queryKey: ["emails"] }, (oldData: unknown) => {
+                if (!oldData || typeof oldData !== "object") return oldData;
+                const data = oldData as { pages: Array<{ emails: Array<{ id: string }>; total: number; position: number }>; pageParams: unknown[] };
+                if (!data.pages) return oldData;
+                return { ...data, pages: data.pages.map((page) => ({ ...page, emails: page.emails.filter((e) => e.id !== email.id), total: Math.max(0, page.total - 1) })) };
+              });
+              toast.success(t("action.unsnoozed"));
+              updateEmails({ [email.id]: { "keywords/$snoozed": null } }).finally(() => {
+                queryClient.invalidateQueries({ queryKey: ["emails"] });
               });
             }}
           >

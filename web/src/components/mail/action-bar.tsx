@@ -157,35 +157,60 @@ export const ActionBar = React.memo(function ActionBar({
     return setSeconds(setMinutes(setHours(now, 18), 0), 0);
   }, []);
 
+  const optimisticRemoveFromList = useCallback((ids: string[]) => {
+    const idSet = new Set(ids);
+    queryClient.setQueriesData(
+      { queryKey: ["emails"] },
+      (oldData: unknown) => {
+        if (!oldData || typeof oldData !== "object") return oldData;
+        const data = oldData as {
+          pages: Array<{ emails: Array<{ id: string }>; total: number; position: number }>;
+          pageParams: unknown[];
+        };
+        if (!data.pages) return oldData;
+        return {
+          ...data,
+          pages: data.pages.map((page) => ({
+            ...page,
+            emails: page.emails.filter((e) => !idSet.has(e.id)),
+            total: Math.max(0, page.total - ids.length),
+          })),
+        };
+      },
+    );
+  }, [queryClient]);
+
   const handleCancelScheduled = useCallback(async () => {
     if (!hasSelection) return;
+    optimisticRemoveFromList(selectedIds);
+    toast.success(t("action.sendCancelledSchedule"));
     try {
       const updates: Record<string, Record<string, unknown>> = {};
       for (const id of selectedIds) {
         updates[id] = { "keywords/$scheduled": null };
       }
       await updateEmails(updates);
-      queryClient.invalidateQueries({ queryKey: ["emails"] });
-      toast.success(t("action.sendCancelledSchedule"));
     } catch {
       toast.error("Failed to cancel scheduled send");
     }
-  }, [hasSelection, selectedIds, queryClient, t]);
+    queryClient.invalidateQueries({ queryKey: ["emails"] });
+  }, [hasSelection, selectedIds, queryClient, t, optimisticRemoveFromList]);
 
   const handleUnsnooze = useCallback(async () => {
     if (!hasSelection) return;
+    optimisticRemoveFromList(selectedIds);
+    toast.success(t("action.unsnoozed"));
     try {
       const updates: Record<string, Record<string, unknown>> = {};
       for (const id of selectedIds) {
         updates[id] = { "keywords/$snoozed": null };
       }
       await updateEmails(updates);
-      queryClient.invalidateQueries({ queryKey: ["emails"] });
-      toast.success(t("action.unsnoozed"));
     } catch {
       toast.error("Failed to unsnooze");
     }
-  }, [hasSelection, selectedIds, queryClient, t]);
+    queryClient.invalidateQueries({ queryKey: ["emails"] });
+  }, [hasSelection, selectedIds, queryClient, t, optimisticRemoveFromList]);
 
   const handleReply = useCallback(() => {
     if (singleEmail) onReply(singleEmail);
