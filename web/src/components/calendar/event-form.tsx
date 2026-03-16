@@ -1,6 +1,6 @@
 /** Event form dialog for create/edit */
 
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, Plus, Trash2, MapPin, Clock, Users, Bell, Palette, Repeat } from "lucide-react";
 import type {
@@ -133,6 +133,62 @@ export const EventForm = React.memo(function EventForm({
       .filter((p) => p.roles?.attendee)
       .map((p) => ({ name: p.name ?? "", email: p.email ?? "" }));
   });
+
+  // Sync form state when event prop changes (e.g., opening edit dialog).
+  useEffect(() => {
+    if (!open) return;
+    setTitle(event?.title ?? "");
+    setDescription(event?.description ?? "");
+    setLocation(event?.location ?? "");
+    setAllDay(event?.showWithoutTime ?? false);
+    setDurationMinutes(parseDurationMinutes(event?.duration));
+    setEventColor(event?.color ?? "");
+    setAttendeeInput("");
+
+    if (event) {
+      const s = event.start;
+      setStartDate(s.substring(0, 10));
+      setStartTime(s.substring(11, 16));
+      setSelectedCalendarId(Object.keys(event.calendarIds)[0] ?? calendars[0]?.id ?? "");
+    } else {
+      const d = defaultDate ?? new Date();
+      const h = defaultHour ?? d.getHours();
+      d.setHours(h, 0, 0, 0);
+      const s = format(d, "yyyy-MM-dd'T'HH:mm:ss");
+      setStartDate(s.substring(0, 10));
+      setStartTime(s.substring(11, 16));
+      const def = calendars.find((c) => c.isDefault);
+      setSelectedCalendarId(def?.id ?? calendars[0]?.id ?? "");
+    }
+
+    if (!event?.recurrenceRules?.length) {
+      setRecurrence("none");
+    } else {
+      setRecurrence(event.recurrenceRules[0].frequency);
+    }
+
+    if (!event?.alerts) {
+      setReminder("-PT15M");
+    } else {
+      const alertValues = Object.values(event.alerts);
+      if (alertValues.length === 0) {
+        setReminder("");
+      } else {
+        const trigger = alertValues[0].trigger;
+        setReminder("offset" in trigger ? trigger.offset : "");
+      }
+    }
+
+    if (!event?.participants) {
+      setAttendees([]);
+    } else {
+      setAttendees(
+        Object.values(event.participants)
+          .filter((p) => p.roles?.attendee)
+          .map((p) => ({ name: p.name ?? "", email: p.email ?? "" })),
+      );
+    }
+  }, [event, open, calendars, defaultDate, defaultHour]);
 
   const { results: contactResults } = useContactSearch(attendeeInput, attendeeInput.length >= 1);
 
