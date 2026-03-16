@@ -642,12 +642,13 @@ function CalendarSidebarItem({
           </div>
           <span className="truncate">{calendar.name}</span>
           {calendar.shareWith && Object.keys(calendar.shareWith).length > 0 && (
-            <Users
-              size={10}
-              className="shrink-0 ml-auto"
-              style={{ color: "var(--color-text-tertiary)" }}
-              title={t("calendar.shared")}
-            />
+            <span title={t("calendar.shared")}>
+              <Users
+                size={10}
+                className="shrink-0 ml-auto"
+                style={{ color: "var(--color-text-tertiary)" }}
+              />
+            </span>
           )}
         </button>
       </ContextMenu.Trigger>
