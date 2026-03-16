@@ -44,7 +44,7 @@ interface MailListPaneProps {
   searchFetchNextPage?: () => void;
 }
 
-export const MailListPane = React.memo(function MailListPane({
+export function MailListPane({
   searchActive = false,
   searchQuery = "",
   searchEmails = [],
@@ -282,7 +282,7 @@ export const MailListPane = React.memo(function MailListPane({
       )}
     </div>
   );
-});
+}
 
 function ContextualEmptyState({ mailboxRole, virtualFolder }: { mailboxRole: string | null; virtualFolder?: string | null }) {
   const { t } = useTranslation();
