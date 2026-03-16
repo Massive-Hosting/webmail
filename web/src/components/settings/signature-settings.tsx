@@ -7,10 +7,12 @@ import type { Identity } from "@/types/mail.ts";
 import { Loader2, Check, AlertCircle, PenLine, ImagePlus } from "lucide-react";
 import { StyledSelect } from "@/components/ui/styled-select.tsx";
 import { useTranslation } from "react-i18next";
+import { useAuthStore } from "@/stores/auth-store.ts";
 
 export const SignatureSettings = React.memo(function SignatureSettings() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const loginEmail = useAuthStore((s) => s.email);
   const { data: identities, isLoading } = useQuery({
     queryKey: ["identities"],
     queryFn: fetchIdentities,
@@ -64,12 +66,23 @@ export const SignatureSettings = React.memo(function SignatureSettings() {
           <StyledSelect
             value={selectedId ?? ""}
             onValueChange={setSelectedId}
-            options={identities.map((id) => ({
-              value: id.id,
-              label: `${id.name} <${id.email}>`,
-            }))}
+            options={identities.map((id) => {
+              const isPrimary = id.email.toLowerCase() === loginEmail.toLowerCase();
+              return {
+                value: id.id,
+                label: isPrimary
+                  ? `${id.name} <${id.email}> ★`
+                  : `${id.name} <${id.email}>`,
+              };
+            })}
             className="w-full"
           />
+          <p
+            className="text-xs mt-1"
+            style={{ color: "var(--color-text-tertiary)" }}
+          >
+            {t("signatures.primaryHint", { defaultValue: "★ marks the identity shown in your avatar" })}
+          </p>
         </div>
       )}
 
@@ -173,8 +186,13 @@ function SignatureEditor({ identity }: { identity: Identity }) {
         ],
       });
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["identities"] });
+      // Update the avatar display name if this is the primary identity
+      const authState = useAuthStore.getState();
+      if (identity.email.toLowerCase() === authState.email.toLowerCase()) {
+        authState.setDisplayName(variables.name);
+      }
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2000);
     },

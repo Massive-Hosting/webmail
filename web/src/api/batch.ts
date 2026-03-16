@@ -104,11 +104,12 @@ export async function prefetchInitialMailData(queryClient: QueryClient): Promise
   queryClient.setQueryData(["mailboxes"], mailboxData.list);
   queryClient.setQueryData(["identities"], identities);
 
-  // Set display name from matching identity
+  // Set display name from matching identity (or fall back to first identity)
   const authState = useAuthStore.getState();
-  const matchingIdentity = identities.find(
-    (id) => id.email.toLowerCase() === authState.email.toLowerCase(),
-  );
+  const matchingIdentity =
+    identities.find(
+      (id) => id.email.toLowerCase() === authState.email.toLowerCase(),
+    ) ?? identities[0];
   if (matchingIdentity?.name && matchingIdentity.name !== matchingIdentity.email) {
     authState.setDisplayName(matchingIdentity.name);
   }
