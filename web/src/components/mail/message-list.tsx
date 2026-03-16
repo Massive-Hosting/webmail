@@ -60,6 +60,7 @@ function ExpandedThreadChildren({
   onArchive,
   onDelete,
   onProperties,
+  currentMailboxId,
 }: {
   threadId: string;
   parentEmail: EmailListItem;
@@ -76,6 +77,7 @@ function ExpandedThreadChildren({
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
   onProperties?: (email: EmailListItem) => void;
+  currentMailboxId?: string | null;
 }) {
   const { emails, isLoading } = useThreadMessages(threadId);
 
@@ -118,6 +120,8 @@ function ExpandedThreadChildren({
           onArchive={onArchive}
           onDelete={onDelete}
           onProperties={onProperties}
+          selectedEmailIds={selectedEmailIds}
+          currentMailboxId={currentMailboxId}
         />
       ))}
     </>
@@ -144,6 +148,7 @@ export const MessageList = React.memo(function MessageList({
   const parentRef = useRef<HTMLDivElement>(null);
   const selectedEmailId = useUIStore((s) => s.selectedEmailId);
   const selectedEmailIds = useUIStore((s) => s.selectedEmailIds);
+  const selectedMailboxId = useUIStore((s) => s.selectedMailboxId);
   const lastClickedEmailId = useUIStore((s) => s.lastClickedEmailId);
   const expandedThreads = useUIStore((s) => s.expandedThreads);
   const setSelectedEmail = useUIStore((s) => s.setSelectedEmail);
@@ -354,6 +359,8 @@ export const MessageList = React.memo(function MessageList({
                 onArchive={onArchive}
                 onDelete={onDelete}
                 onProperties={onProperties}
+                selectedEmailIds={selectedEmailIds}
+                currentMailboxId={selectedMailboxId}
               />
             </div>
           );
@@ -378,6 +385,8 @@ export const MessageList = React.memo(function MessageList({
                   onArchive={onArchive}
                   onDelete={onDelete}
                   onProperties={onProperties}
+                  selectedEmailIds={selectedEmailIds}
+                  currentMailboxId={selectedMailboxId}
                 />
               </div>
               {row.isExpanded && (
@@ -397,6 +406,7 @@ export const MessageList = React.memo(function MessageList({
                   onArchive={onArchive}
                   onDelete={onDelete}
                   onProperties={onProperties}
+                  currentMailboxId={selectedMailboxId}
                 />
               )}
             </div>

@@ -1,6 +1,6 @@
 /** Message list row components: regular item, thread header, and thread child */
 
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import type { EmailListItem } from "@/types/mail.ts";
 import { isUnread, isFlagged } from "@/types/mail.ts";
 import { Avatar } from "@/components/ui/avatar.tsx";
@@ -23,6 +23,10 @@ interface MessageListItemProps {
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
   onProperties?: (email: EmailListItem) => void;
+  /** IDs of all multi-selected emails (for drag-and-drop) */
+  selectedEmailIds?: ReadonlySet<string>;
+  /** Current mailbox ID (for drag-and-drop source) */
+  currentMailboxId?: string | null;
 }
 
 export const MessageListItem = React.memo(
@@ -40,11 +44,14 @@ export const MessageListItem = React.memo(
     onArchive,
     onDelete,
     onProperties,
+    selectedEmailIds,
+    currentMailboxId,
   }: MessageListItemProps) {
     const { t } = useTranslation();
     const unread = isUnread(email);
     const flagged = isFlagged(email);
     const sender = email.from?.[0] ?? { name: null, email: "unknown" };
+    const [isDragging, setIsDragging] = useState(false);
 
     const handleStarClick = useCallback(
       (e: React.MouseEvent) => {
@@ -53,6 +60,26 @@ export const MessageListItem = React.memo(
       },
       [email.id, flagged, onStar],
     );
+
+    const handleDragStart = useCallback(
+      (e: React.DragEvent) => {
+        const ids: string[] =
+          selectedEmailIds && selectedEmailIds.size > 0 && (isMultiSelected || isSelected)
+            ? Array.from(selectedEmailIds)
+            : [email.id];
+        e.dataTransfer.setData(
+          "text/plain",
+          JSON.stringify({ emailIds: ids, fromMailboxId: currentMailboxId }),
+        );
+        e.dataTransfer.effectAllowed = "move";
+        setIsDragging(true);
+      },
+      [email.id, isMultiSelected, isSelected, selectedEmailIds, currentMailboxId],
+    );
+
+    const handleDragEnd = useCallback(() => {
+      setIsDragging(false);
+    }, []);
 
     const active = isSelected || isMultiSelected;
 
@@ -63,10 +90,14 @@ export const MessageListItem = React.memo(
             className="message-list-item group"
             data-selected={active || undefined}
             data-unread={unread || undefined}
+            data-dragging={isDragging || undefined}
             role="option"
             aria-selected={isSelected}
+            draggable
             onClick={(e) => onClick(email, e)}
             onMouseEnter={() => onMouseEnter?.(email.id)}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
           >
             {/* Unread indicator - small blue dot */}
             <div className="message-list-item__indicator">
@@ -153,7 +184,9 @@ export const MessageListItem = React.memo(
     prev.onMarkRead === next.onMarkRead &&
     prev.onArchive === next.onArchive &&
     prev.onDelete === next.onDelete &&
-    prev.onProperties === next.onProperties,
+    prev.onProperties === next.onProperties &&
+    prev.selectedEmailIds === next.selectedEmailIds &&
+    prev.currentMailboxId === next.currentMailboxId,
 );
 
 /* ================================================================
@@ -175,6 +208,8 @@ interface ThreadHeaderItemProps {
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
   onProperties?: (email: EmailListItem) => void;
+  selectedEmailIds?: ReadonlySet<string>;
+  currentMailboxId?: string | null;
 }
 
 export const ThreadHeaderItem = React.memo(
@@ -193,11 +228,14 @@ export const ThreadHeaderItem = React.memo(
     onArchive,
     onDelete,
     onProperties,
+    selectedEmailIds,
+    currentMailboxId,
   }: ThreadHeaderItemProps) {
     const { t } = useTranslation();
     const unread = isUnread(email);
     const flagged = isFlagged(email);
     const sender = email.from?.[0] ?? { name: null, email: "unknown" };
+    const [isDragging, setIsDragging] = useState(false);
 
     const handleStarClick = useCallback(
       (e: React.MouseEvent) => {
@@ -207,6 +245,26 @@ export const ThreadHeaderItem = React.memo(
       [email.id, flagged, onStar],
     );
 
+    const handleDragStart = useCallback(
+      (e: React.DragEvent) => {
+        const ids: string[] =
+          selectedEmailIds && selectedEmailIds.size > 0 && isSelected
+            ? Array.from(selectedEmailIds)
+            : [email.id];
+        e.dataTransfer.setData(
+          "text/plain",
+          JSON.stringify({ emailIds: ids, fromMailboxId: currentMailboxId }),
+        );
+        e.dataTransfer.effectAllowed = "move";
+        setIsDragging(true);
+      },
+      [email.id, isSelected, selectedEmailIds, currentMailboxId],
+    );
+
+    const handleDragEnd = useCallback(() => {
+      setIsDragging(false);
+    }, []);
+
     return (
       <ContextMenu.Root>
         <ContextMenu.Trigger asChild>
@@ -214,11 +272,15 @@ export const ThreadHeaderItem = React.memo(
         className={`message-list-item message-list-item--thread-header group ${isExpanded ? "message-list-item--thread-expanded" : ""}`}
         data-selected={isSelected || undefined}
         data-unread={unread || undefined}
+        data-dragging={isDragging || undefined}
         role="option"
         aria-selected={isSelected}
         aria-expanded={isExpanded}
+        draggable
         onClick={(e) => onClick(e)}
         onMouseEnter={() => onMouseEnter?.(email.id)}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
       >
         {/* Thread expand/collapse chevron */}
         <div className="message-list-item__thread-chevron">
@@ -303,7 +365,9 @@ export const ThreadHeaderItem = React.memo(
     prev.isSelected === next.isSelected &&
     prev.isExpanded === next.isExpanded &&
     prev.messageCount === next.messageCount &&
-    prev.email.keywords === next.email.keywords,
+    prev.email.keywords === next.email.keywords &&
+    prev.selectedEmailIds === next.selectedEmailIds &&
+    prev.currentMailboxId === next.currentMailboxId,
 );
 
 /* ================================================================
@@ -326,6 +390,8 @@ interface ThreadChildItemProps {
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
   onProperties?: (email: EmailListItem) => void;
+  selectedEmailIds?: ReadonlySet<string>;
+  currentMailboxId?: string | null;
 }
 
 export const ThreadChildItem = React.memo(
@@ -345,11 +411,14 @@ export const ThreadChildItem = React.memo(
     onArchive,
     onDelete,
     onProperties,
+    selectedEmailIds,
+    currentMailboxId,
   }: ThreadChildItemProps) {
     const { t } = useTranslation();
     const unread = isUnread(email);
     const flagged = isFlagged(email);
     const sender = email.from?.[0] ?? { name: null, email: "unknown" };
+    const [isDragging, setIsDragging] = useState(false);
 
     const handleStarClick = useCallback(
       (e: React.MouseEvent) => {
@@ -358,6 +427,26 @@ export const ThreadChildItem = React.memo(
       },
       [email.id, flagged, onStar],
     );
+
+    const handleDragStart = useCallback(
+      (e: React.DragEvent) => {
+        const ids: string[] =
+          selectedEmailIds && selectedEmailIds.size > 0 && (isMultiSelected || isSelected)
+            ? Array.from(selectedEmailIds)
+            : [email.id];
+        e.dataTransfer.setData(
+          "text/plain",
+          JSON.stringify({ emailIds: ids, fromMailboxId: currentMailboxId }),
+        );
+        e.dataTransfer.effectAllowed = "move";
+        setIsDragging(true);
+      },
+      [email.id, isMultiSelected, isSelected, selectedEmailIds, currentMailboxId],
+    );
+
+    const handleDragEnd = useCallback(() => {
+      setIsDragging(false);
+    }, []);
 
     const active = isSelected || isMultiSelected;
 
@@ -368,13 +457,17 @@ export const ThreadChildItem = React.memo(
             className={`message-list-item message-list-item--thread-child group ${isLast ? "message-list-item--thread-child-last" : ""}`}
             data-selected={active || undefined}
             data-unread={unread || undefined}
+            data-dragging={isDragging || undefined}
             role="option"
             aria-selected={isSelected}
+            draggable
             onClick={(e) => {
               e.stopPropagation();
               onClick(email, e);
             }}
             onMouseEnter={() => onMouseEnter?.(email.id)}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
           >
             {/* Thread connector line */}
             <div className="message-list-item__thread-line">
@@ -456,7 +549,9 @@ export const ThreadChildItem = React.memo(
     prev.onMarkRead === next.onMarkRead &&
     prev.onArchive === next.onArchive &&
     prev.onDelete === next.onDelete &&
-    prev.onProperties === next.onProperties,
+    prev.onProperties === next.onProperties &&
+    prev.selectedEmailIds === next.selectedEmailIds &&
+    prev.currentMailboxId === next.currentMailboxId,
 );
 
 /* ================================================================

@@ -1,6 +1,6 @@
 /** Calendar page with toolbar, view switcher, and calendar views */
 
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -9,6 +9,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import * as ContextMenu from "@radix-ui/react-context-menu";
 import { MonthView } from "./month-view.tsx";
 import { WeekView } from "./week-view.tsx";
 import { DayView } from "./day-view.tsx";
@@ -44,7 +45,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
     title,
   } = useCalendarNavigation("month");
 
-  const { calendars, updateCalendar } = useCalendars();
+  const { calendars, updateCalendar, deleteCalendar } = useCalendars();
 
   // Track visible calendars
   const [hiddenCalendarIds, setHiddenCalendarIds] = useState<Set<string>>(
@@ -260,44 +261,16 @@ export const CalendarPage = React.memo(function CalendarPage() {
           >
             {t("calendar.calendars")}
           </div>
-          {calendars.map((cal) => {
-            const hidden = hiddenCalendarIds.has(cal.id);
-            const color = cal.color ?? "#3b82f6";
-            return (
-              <button
-                key={cal.id}
-                className="flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                style={{
-                  color: hidden
-                    ? "var(--color-text-tertiary)"
-                    : "var(--color-text-primary)",
-                  opacity: hidden ? 0.5 : 1,
-                }}
-                onClick={() => toggleCalendarVisibility(cal.id)}
-              >
-                <div
-                  className="w-3 h-3 rounded-sm shrink-0 flex items-center justify-center"
-                  style={{
-                    backgroundColor: hidden ? "transparent" : color,
-                    border: `1.5px solid ${color}`,
-                  }}
-                >
-                  {!hidden && (
-                    <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                      <path
-                        d="M1.5 4L3 5.5L6.5 2"
-                        stroke="white"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                </div>
-                <span className="truncate">{cal.name}</span>
-              </button>
-            );
-          })}
+          {calendars.map((cal) => (
+            <CalendarSidebarItem
+              key={cal.id}
+              calendar={cal}
+              hidden={hiddenCalendarIds.has(cal.id)}
+              onToggleVisibility={() => toggleCalendarVisibility(cal.id)}
+              onRename={(name) => updateCalendar(cal.id, { name })}
+              onDelete={() => deleteCalendar(cal.id)}
+            />
+          ))}
         </div>
       </div>
 
@@ -435,3 +408,154 @@ export const CalendarPage = React.memo(function CalendarPage() {
     </div>
   );
 });
+
+/** Individual calendar item in sidebar with context menu and inline rename */
+function CalendarSidebarItem({
+  calendar,
+  hidden,
+  onToggleVisibility,
+  onRename,
+  onDelete,
+}: {
+  calendar: { id: string; name: string; color?: string; isDefault?: boolean };
+  hidden: boolean;
+  onToggleVisibility: () => void;
+  onRename: (name: string) => void;
+  onDelete: () => void;
+}) {
+  const { t } = useTranslation();
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(calendar.name);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+  const color = calendar.color ?? "#3b82f6";
+
+  useEffect(() => {
+    if (isRenaming && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [isRenaming]);
+
+  const handleRenameSubmit = useCallback(() => {
+    if (renameValue.trim() && renameValue.trim() !== calendar.name) {
+      onRename(renameValue.trim());
+    }
+    setIsRenaming(false);
+  }, [renameValue, calendar.name, onRename]);
+
+  if (isRenaming) {
+    return (
+      <div className="flex items-center gap-2 px-2 py-1.5 rounded text-xs">
+        <div
+          className="w-3 h-3 rounded-sm shrink-0"
+          style={{
+            backgroundColor: color,
+            border: `1.5px solid ${color}`,
+          }}
+        />
+        <input
+          ref={renameInputRef}
+          type="text"
+          value={renameValue}
+          onChange={(e) => setRenameValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleRenameSubmit();
+            if (e.key === "Escape") setIsRenaming(false);
+          }}
+          onBlur={handleRenameSubmit}
+          className="flex-1 h-5 px-1 text-xs outline-none"
+          style={{
+            backgroundColor: "var(--color-bg-tertiary)",
+            color: "var(--color-text-primary)",
+            border: "1px solid var(--color-border-focus)",
+            borderRadius: "var(--radius-sm)",
+            boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.08)",
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <ContextMenu.Root>
+      <ContextMenu.Trigger asChild>
+        <button
+          className="flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs hover:bg-[var(--color-bg-tertiary)] transition-colors"
+          style={{
+            color: hidden
+              ? "var(--color-text-tertiary)"
+              : "var(--color-text-primary)",
+            opacity: hidden ? 0.5 : 1,
+          }}
+          onClick={onToggleVisibility}
+        >
+          <div
+            className="w-3 h-3 rounded-sm shrink-0 flex items-center justify-center"
+            style={{
+              backgroundColor: hidden ? "transparent" : color,
+              border: `1.5px solid ${color}`,
+            }}
+          >
+            {!hidden && (
+              <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                <path
+                  d="M1.5 4L3 5.5L6.5 2"
+                  stroke="white"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+          </div>
+          <span className="truncate">{calendar.name}</span>
+        </button>
+      </ContextMenu.Trigger>
+
+      <ContextMenu.Portal>
+        <ContextMenu.Content
+          className="min-w-[140px] p-1 text-sm animate-scale-in"
+          style={{
+            backgroundColor: "var(--color-bg-elevated)",
+            border: "1px solid var(--color-border-primary)",
+            boxShadow: "var(--shadow-lg)",
+            borderRadius: "var(--radius-md)",
+            zIndex: 50,
+          }}
+        >
+          <ContextMenu.Item
+            className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+            style={{
+              color: "var(--color-text-primary)",
+              borderRadius: "var(--radius-sm)",
+            }}
+            onSelect={() => {
+              setRenameValue(calendar.name);
+              setIsRenaming(true);
+            }}
+          >
+            {t("calendar.rename")}
+          </ContextMenu.Item>
+          {!calendar.isDefault && (
+            <>
+              <ContextMenu.Separator
+                className="my-1"
+                style={{ borderTop: "1px solid var(--color-border-primary)" }}
+              />
+              <ContextMenu.Item
+                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+                style={{
+                  color: "var(--color-text-danger)",
+                  borderRadius: "var(--radius-sm)",
+                }}
+                onSelect={onDelete}
+              >
+                {t("calendar.deleteCalendar")}
+              </ContextMenu.Item>
+            </>
+          )}
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
+  );
+}

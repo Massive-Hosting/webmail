@@ -113,6 +113,25 @@ export const FolderTree = React.memo(function FolderTree() {
     }
   }, [updateMailbox]);
 
+  const handleDropEmails = useCallback(async (emailIds: string[], fromMailboxId: string, toMailboxId: string, folderName: string) => {
+    const toastId = toast.loading(t("toast.movingMessages", { count: emailIds.length }));
+    try {
+      const updates: Record<string, Record<string, unknown>> = {};
+      for (const id of emailIds) {
+        updates[id] = {
+          [`mailboxIds/${fromMailboxId}`]: null,
+          [`mailboxIds/${toMailboxId}`]: true,
+        };
+      }
+      await updateEmails(updates);
+      queryClient.invalidateQueries({ queryKey: ["emails"] });
+      queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
+      toast.success(t("toast.movedMessages", { count: emailIds.length, name: folderName }), { id: toastId });
+    } catch {
+      toast.error(t("toast.failedToMove"), { id: toastId });
+    }
+  }, [queryClient, t]);
+
   if (isLoading) {
     return (
       <div className="p-2 flex flex-col gap-0.5">
@@ -151,6 +170,7 @@ export const FolderTree = React.memo(function FolderTree() {
           onMarkAllRead={handleMarkAllRead}
           onEmptyFolder={handleEmptyFolder}
           onRename={handleRenameMailbox}
+          onDropEmails={handleDropEmails}
         />
       ))}
 
@@ -176,6 +196,7 @@ export const FolderTree = React.memo(function FolderTree() {
           onMarkAllRead={handleMarkAllRead}
           onEmptyFolder={handleEmptyFolder}
           onRename={handleRenameMailbox}
+          onDropEmails={handleDropEmails}
           depth={0}
         />
       ))}
@@ -241,6 +262,7 @@ const FolderItem = React.memo(function FolderItem({
   onMarkAllRead,
   onEmptyFolder,
   onRename,
+  onDropEmails,
 }: {
   mailbox: Mailbox;
   isActive: boolean;
@@ -255,11 +277,14 @@ const FolderItem = React.memo(function FolderItem({
   onMarkAllRead: (mailboxId: string) => void;
   onEmptyFolder: (mailboxId: string, folderName: string) => void;
   onRename: (mailboxId: string, newName: string) => void;
+  onDropEmails?: (emailIds: string[], fromMailboxId: string, toMailboxId: string, folderName: string) => void;
 }) {
   const { t } = useTranslation();
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(mailbox.name);
+  const [isDropTarget, setIsDropTarget] = useState(false);
   const renameInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef(0);
 
   useEffect(() => {
     if (isRenaming && renameInputRef.current) {
@@ -274,6 +299,53 @@ const FolderItem = React.memo(function FolderItem({
     }
     setIsRenaming(false);
   }, [renameValue, mailbox.id, mailbox.name, onRename]);
+
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    },
+    [],
+  );
+
+  const handleDragEnter = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current++;
+      setIsDropTarget(true);
+    },
+    [],
+  );
+
+  const handleDragLeave = useCallback(
+    () => {
+      dragCounterRef.current--;
+      if (dragCounterRef.current <= 0) {
+        dragCounterRef.current = 0;
+        setIsDropTarget(false);
+      }
+    },
+    [],
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current = 0;
+      setIsDropTarget(false);
+      try {
+        const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+        const emailIds = data.emailIds as string[];
+        const fromMailboxId = data.fromMailboxId as string;
+        if (emailIds && fromMailboxId && fromMailboxId !== mailbox.id) {
+          onDropEmails?.(emailIds, fromMailboxId, mailbox.id, mailbox.name);
+        }
+      } catch {
+        // Not valid drag data, ignore
+      }
+    },
+    [mailbox.id, mailbox.name, onDropEmails],
+  );
 
   const contextMenuContent = (
     <ContextMenu.Content
@@ -395,19 +467,29 @@ const FolderItem = React.memo(function FolderItem({
           style={{
             paddingLeft: `${12 + depth * 16}px`,
             height: "var(--density-sidebar-item)",
-            backgroundColor: isActive ? "var(--color-message-selected)" : "transparent",
+            backgroundColor: isDropTarget
+              ? "var(--color-message-selected)"
+              : isActive
+                ? "var(--color-message-selected)"
+                : "transparent",
             color: isActive ? "var(--color-text-accent)" : "var(--color-text-primary)",
             borderRadius: "var(--radius-sm)",
             marginLeft: "4px",
             marginRight: "4px",
             width: "calc(100% - 8px)",
+            border: isDropTarget ? "2px solid var(--color-bg-accent)" : "2px solid transparent",
+            cursor: isDropTarget ? "move" : undefined,
           }}
           onMouseOver={(e) => {
-            if (!isActive) e.currentTarget.style.backgroundColor = "var(--color-bg-tertiary)";
+            if (!isActive && !isDropTarget) e.currentTarget.style.backgroundColor = "var(--color-bg-tertiary)";
           }}
           onMouseOut={(e) => {
-            if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
+            if (!isActive && !isDropTarget) e.currentTarget.style.backgroundColor = "transparent";
           }}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
         >
           {hasChildren && (
             <span
@@ -463,6 +545,7 @@ function FolderItemWithChildren({
   onMarkAllRead,
   onEmptyFolder,
   onRename,
+  onDropEmails,
   depth,
 }: {
   mailbox: Mailbox;
@@ -475,6 +558,7 @@ function FolderItemWithChildren({
   onMarkAllRead: (mailboxId: string) => void;
   onEmptyFolder: (mailboxId: string, folderName: string) => void;
   onRename: (mailboxId: string, newName: string) => void;
+  onDropEmails?: (emailIds: string[], fromMailboxId: string, toMailboxId: string, folderName: string) => void;
   depth: number;
 }) {
   const children = childrenMap.get(mailbox.id) ?? [];
@@ -496,6 +580,7 @@ function FolderItemWithChildren({
         onMarkAllRead={onMarkAllRead}
         onEmptyFolder={onEmptyFolder}
         onRename={onRename}
+        onDropEmails={onDropEmails}
       />
       {hasChildren && isExpanded && children.map((child) => (
         <FolderItemWithChildren
@@ -510,6 +595,7 @@ function FolderItemWithChildren({
           onMarkAllRead={onMarkAllRead}
           onEmptyFolder={onEmptyFolder}
           onRename={onRename}
+          onDropEmails={onDropEmails}
           depth={depth + 1}
         />
       ))}
