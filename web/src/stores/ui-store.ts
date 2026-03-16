@@ -11,6 +11,7 @@ interface PanelLayout {
 }
 
 export type AppView = "mail" | "contacts" | "calendar";
+export type VirtualFolder = "scheduled" | "snoozed" | null;
 
 interface UIState extends PanelLayout {
   /** Active app view (mail, contacts, calendar) */
@@ -39,6 +40,8 @@ interface UIState extends PanelLayout {
   chordPrefix: string | null;
   /** Chord timeout ID */
   chordTimeout: ReturnType<typeof setTimeout> | null;
+  /** Active virtual folder (scheduled/snoozed) — mutually exclusive with selectedMailboxId */
+  virtualFolder: VirtualFolder;
 
   // Actions
   setActiveView: (view: AppView) => void;
@@ -60,6 +63,7 @@ interface UIState extends PanelLayout {
   setCopilotOpen: (open: boolean) => void;
   toggleCopilot: () => void;
   setChordPrefix: (prefix: string | null) => void;
+  setVirtualFolder: (folder: VirtualFolder) => void;
   resetLayout: () => void;
 }
 
@@ -131,6 +135,7 @@ export const useUIStore = create<UIState>((set, get) => {
     mobileView: "list",
     chordPrefix: null,
     chordTimeout: null,
+    virtualFolder: null,
 
     setActiveView: (view) => set({ activeView: view }),
 
@@ -199,6 +204,7 @@ export const useUIStore = create<UIState>((set, get) => {
       useComposeStore.getState().minimizeAllInlineDrafts();
       set({
         selectedMailboxId: id,
+        virtualFolder: null,
         selectedEmailId: null,
         selectedThreadId: null,
         selectedEmailIds: new Set(),
@@ -290,6 +296,18 @@ export const useUIStore = create<UIState>((set, get) => {
       } else {
         set({ chordPrefix: null, chordTimeout: null });
       }
+    },
+
+    setVirtualFolder: (folder) => {
+      useComposeStore.getState().minimizeAllInlineDrafts();
+      set({
+        virtualFolder: folder,
+        selectedMailboxId: null,
+        selectedEmailId: null,
+        selectedThreadId: null,
+        selectedEmailIds: new Set(),
+        expandedThreads: new Set(),
+      });
     },
 
     resetLayout: () => {

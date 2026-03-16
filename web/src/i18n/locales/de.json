@@ -700,5 +700,11 @@
   "sieve.active": "Aktiv",
   "sieve.inactive": "Inaktiv",
   "sieve.noScript": "Kein Sieve-Skript gefunden",
-  "sieve.loading": "Skript wird geladen..."
+  "sieve.loading": "Skript wird geladen...",
+  "folder.scheduled": "Geplant",
+  "folder.snoozed": "Zurückgestellt",
+  "action.cancelSend": "Senden abbrechen",
+  "action.sendCancelledSchedule": "Geplantes Senden abgebrochen",
+  "action.unsnooze": "Zurückstellung aufheben",
+  "action.unsnoozed": "Zurückstellung aufgehoben"
 }

@@ -92,8 +92,17 @@ export function AppShell() {
   const searchQuery = useSearchStore((s) => s.query);
   const clearSearch = useSearchStore((s) => s.clearSearch);
 
+  const virtualFolder = useUIStore((s) => s.virtualFolder);
+
   const { findByRole, sortedMailboxes, mailboxes } = useMailboxes();
-  const { emails, starEmail, markRead, moveEmails, destroyEmails } = useMessages(selectedMailboxId);
+
+  // Virtual folder filter for scheduled/snoozed views
+  const virtualFilter = virtualFolder
+    ? { hasKeyword: virtualFolder === "scheduled" ? "$scheduled" : "$snoozed" }
+    : undefined;
+  const effectiveMailboxId = virtualFolder ? null : selectedMailboxId;
+
+  const { emails, starEmail, markRead, moveEmails, destroyEmails } = useMessages(effectiveMailboxId, virtualFilter);
   const { email: selectedEmail } = useMessage(selectedEmailId);
   const { open: openCompose } = useCompose();
   const { bulkThreshold, startBulkMove, startBulkDelete, startBulkMarkRead } = useTasks();
@@ -537,6 +546,7 @@ export function AppShell() {
               currentMailboxId={selectedMailboxId}
               currentMailboxRole={currentMailbox?.role ?? null}
               mailboxes={sortedMailboxes}
+              virtualFolder={virtualFolder}
               onNewMail={handleNewMail}
               onDelete={handleDelete}
               onArchive={handleArchive}

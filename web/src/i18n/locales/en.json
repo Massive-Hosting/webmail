@@ -700,5 +700,11 @@
   "sieve.active": "Active",
   "sieve.inactive": "Inactive",
   "sieve.noScript": "No Sieve script found",
-  "sieve.loading": "Loading script..."
+  "sieve.loading": "Loading script...",
+  "folder.scheduled": "Scheduled",
+  "folder.snoozed": "Snoozed",
+  "action.cancelSend": "Cancel send",
+  "action.sendCancelledSchedule": "Scheduled send cancelled",
+  "action.unsnooze": "Unsnooze",
+  "action.unsnoozed": "Email unsnoozed"
 }

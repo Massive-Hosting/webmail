@@ -19,7 +19,10 @@ import {
   ChevronDown,
   Download,
   Upload,
+  CalendarClock,
+  Clock,
 } from "lucide-react";
+import type { VirtualFolder } from "@/stores/ui-store.ts";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { queryEmailIds, updateEmails, destroyEmails } from "@/api/mail.ts";
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,6 +46,8 @@ export const FolderTree = React.memo(function FolderTree() {
   const { standardFolders, customFolders, isLoading, createMailbox, deleteMailbox, updateMailbox } = useMailboxes();
   const selectedMailboxId = useUIStore((s) => s.selectedMailboxId);
   const setSelectedMailbox = useUIStore((s) => s.setSelectedMailbox);
+  const virtualFolder = useUIStore((s) => s.virtualFolder);
+  const setVirtualFolder = useUIStore((s) => s.setVirtualFolder);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -235,6 +240,20 @@ export const FolderTree = React.memo(function FolderTree() {
           onImportToFolder={handleImportToFolder}
         />
       ))}
+
+      {/* Virtual folders */}
+      <VirtualFolderItem
+        icon={<CalendarClock size={16} />}
+        label={t("folder.scheduled")}
+        isActive={virtualFolder === "scheduled"}
+        onClick={() => setVirtualFolder("scheduled")}
+      />
+      <VirtualFolderItem
+        icon={<Clock size={16} />}
+        label={t("folder.snoozed")}
+        isActive={virtualFolder === "snoozed"}
+        onClick={() => setVirtualFolder("snoozed")}
+      />
 
       {/* Separator */}
       {customFolders.length > 0 && (
@@ -700,6 +719,58 @@ const FolderItem = React.memo(function FolderItem({
         {contextMenuContent}
       </ContextMenu.Portal>
     </ContextMenu.Root>
+  );
+});
+
+/** Virtual folder item (Scheduled / Snoozed) — simplified, no context menu or drag-drop */
+const VirtualFolderItem = React.memo(function VirtualFolderItem({
+  icon,
+  label,
+  isActive,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2.5 w-full px-3 py-1 text-sm transition-all duration-150 group"
+      role="treeitem"
+      aria-selected={isActive}
+      aria-current={isActive ? "true" : undefined}
+      style={{
+        paddingLeft: "12px",
+        height: "var(--density-sidebar-item)",
+        backgroundColor: isActive ? "var(--color-message-selected)" : "transparent",
+        color: isActive ? "var(--color-text-accent)" : "var(--color-text-primary)",
+        borderRadius: "var(--radius-sm)",
+        marginLeft: "4px",
+        marginRight: "4px",
+        width: "calc(100% - 8px)",
+        border: "2px solid transparent",
+      }}
+      onMouseOver={(e) => {
+        if (!isActive) e.currentTarget.style.backgroundColor = "var(--color-bg-tertiary)";
+      }}
+      onMouseOut={(e) => {
+        if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
+      }}
+    >
+      <span
+        className="shrink-0"
+        style={{
+          color: isActive ? "var(--color-text-accent)" : "var(--color-text-secondary)",
+        }}
+      >
+        {icon}
+      </span>
+      <span className="truncate flex-1 text-left font-normal">
+        {label}
+      </span>
+    </button>
   );
 });
 

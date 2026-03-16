@@ -86,7 +86,7 @@ export async function fetchMailboxes(): Promise<Mailbox[]> {
 
 /** Query emails in a mailbox with pagination */
 export async function fetchEmails(params: {
-  mailboxId: string;
+  mailboxId?: string | null;
   position?: number;
   limit?: number;
   sort?: JMAPSort[];
@@ -103,7 +103,7 @@ export async function fetchEmails(params: {
   } = params;
 
   const queryFilter: JMAPFilter = {
-    inMailbox: mailboxId,
+    ...(mailboxId ? { inMailbox: mailboxId } : {}),
     ...filter,
   };
 

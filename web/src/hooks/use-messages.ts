@@ -23,11 +23,11 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
   const query = useInfiniteQuery({
     queryKey,
     queryFn: async ({ pageParam = 0 }) => {
-      if (!mailboxId) {
+      if (!mailboxId && !filter) {
         return { emails: [] as EmailListItem[], total: 0, position: 0, threadCounts: {} as Record<string, number> };
       }
       return fetchEmails({
-        mailboxId,
+        mailboxId: mailboxId ?? undefined,
         position: pageParam as number,
         limit: PAGE_SIZE,
         filter,
@@ -44,7 +44,7 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
       return nextPosition;
     },
     initialPageParam: 0,
-    enabled: !!mailboxId,
+    enabled: !!mailboxId || !!filter,
     staleTime: 2 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     // When WebSocket is connected, disable polling — we get push updates.

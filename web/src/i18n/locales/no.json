@@ -700,5 +700,11 @@
   "sieve.active": "Aktiv",
   "sieve.inactive": "Inaktiv",
   "sieve.noScript": "Ingen Sieve-skript funnet",
-  "sieve.loading": "Laster skript..."
+  "sieve.loading": "Laster skript...",
+  "folder.scheduled": "Planlagt",
+  "folder.snoozed": "Utsatt",
+  "action.cancelSend": "Avbryt sending",
+  "action.sendCancelledSchedule": "Planlagt sending avbrutt",
+  "action.unsnooze": "Fjern utsettelse",
+  "action.unsnoozed": "Utsettelse fjernet"
 }

@@ -55,6 +55,7 @@ export const MailListPane = React.memo(function MailListPane({
 }: MailListPaneProps) {
   const { t } = useTranslation();
   const selectedMailboxId = useUIStore((s) => s.selectedMailboxId);
+  const virtualFolder = useUIStore((s) => s.virtualFolder);
   const sortNewestFirst = useUIStore((s) => s.sortNewestFirst);
   const toggleSort = useUIStore((s) => s.toggleSort);
   const conversationView = useSettingsStore((s) => s.conversationView);
@@ -67,7 +68,15 @@ export const MailListPane = React.memo(function MailListPane({
   }, [conversationView, setConversationView]);
 
   const currentMailbox = mailboxes.find((m) => m.id === selectedMailboxId);
-  const mailboxName = currentMailbox?.name ?? "Inbox";
+
+  // Virtual folder filter
+  const virtualFilter = virtualFolder
+    ? { hasKeyword: virtualFolder === "scheduled" ? "$scheduled" : "$snoozed" }
+    : undefined;
+  const effectiveMailboxId = virtualFolder ? null : selectedMailboxId;
+  const mailboxName = virtualFolder
+    ? (virtualFolder === "scheduled" ? t("folder.scheduled") : t("folder.snoozed"))
+    : (currentMailbox?.name ?? "Inbox");
 
   const {
     emails,
@@ -80,7 +89,7 @@ export const MailListPane = React.memo(function MailListPane({
     starEmail,
     markRead,
     moveEmails,
-  } = useMessages(selectedMailboxId);
+  } = useMessages(effectiveMailboxId, virtualFilter);
 
   useUnreadTitle(currentMailbox?.unreadEmails ?? 0, mailboxName);
 

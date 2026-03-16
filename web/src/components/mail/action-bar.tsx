@@ -14,15 +14,20 @@ import {
   MailOpen,
   Star,
   Clock,
+  XCircle,
+  BellOff,
 } from "lucide-react";
 import { addHours, setHours, setMinutes, setSeconds, addDays, nextMonday, isPast, format } from "date-fns";
 import { startSnooze } from "@/api/tasks.ts";
+import { updateEmails } from "@/api/mail.ts";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useTranslation } from "react-i18next";
 import type { EmailListItem } from "@/types/mail.ts";
 import type { Mailbox } from "@/types/mail.ts";
+import type { VirtualFolder } from "@/stores/ui-store.ts";
 
 export interface ActionBarProps {
   /** Currently selected email IDs */
@@ -37,6 +42,8 @@ export interface ActionBarProps {
   currentMailboxRole: string | null;
   /** All mailboxes (for "Move to" dropdown) */
   mailboxes: Mailbox[];
+  /** Active virtual folder (scheduled/snoozed) */
+  virtualFolder?: VirtualFolder;
 
   // Callbacks
   onNewMail: () => void;
@@ -59,6 +66,7 @@ export const ActionBar = React.memo(function ActionBar({
   currentMailboxId,
   currentMailboxRole,
   mailboxes,
+  virtualFolder,
   onNewMail,
   onDelete,
   onArchive,
@@ -72,6 +80,7 @@ export const ActionBar = React.memo(function ActionBar({
   onSnooze,
 }: ActionBarProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const selectionCount = selectedEmailIds.size;
   const hasSelection = selectionCount > 0;
   const isSingleSelected = selectionCount === 1;
@@ -146,6 +155,36 @@ export const ActionBar = React.memo(function ActionBar({
     return setSeconds(setMinutes(setHours(now, 18), 0), 0);
   }, []);
 
+  const handleCancelScheduled = useCallback(async () => {
+    if (!hasSelection) return;
+    try {
+      const updates: Record<string, Record<string, unknown>> = {};
+      for (const id of selectedIds) {
+        updates[id] = { "keywords/$scheduled": null };
+      }
+      await updateEmails(updates);
+      queryClient.invalidateQueries({ queryKey: ["emails"] });
+      toast.success(t("action.sendCancelledSchedule"));
+    } catch {
+      toast.error("Failed to cancel scheduled send");
+    }
+  }, [hasSelection, selectedIds, queryClient, t]);
+
+  const handleUnsnooze = useCallback(async () => {
+    if (!hasSelection) return;
+    try {
+      const updates: Record<string, Record<string, unknown>> = {};
+      for (const id of selectedIds) {
+        updates[id] = { "keywords/$snoozed": null };
+      }
+      await updateEmails(updates);
+      queryClient.invalidateQueries({ queryKey: ["emails"] });
+      toast.success(t("action.unsnoozed"));
+    } catch {
+      toast.error("Failed to unsnooze");
+    }
+  }, [hasSelection, selectedIds, queryClient, t]);
+
   const handleReply = useCallback(() => {
     if (singleEmail) onReply(singleEmail);
   }, [singleEmail, onReply]);
@@ -175,6 +214,26 @@ export const ActionBar = React.memo(function ActionBar({
         </Tooltip.Root>
 
         <div className="action-bar__separator" />
+
+        {/* Virtual folder actions: Cancel send / Unsnooze */}
+        {virtualFolder === "scheduled" && (
+          <ActionBarButton
+            icon={<XCircle size={18} />}
+            label={t("action.cancelSend")}
+            tooltip={t("action.cancelSend")}
+            onClick={handleCancelScheduled}
+            disabled={!hasSelection}
+          />
+        )}
+        {virtualFolder === "snoozed" && (
+          <ActionBarButton
+            icon={<BellOff size={18} />}
+            label={t("action.unsnooze")}
+            tooltip={t("action.unsnooze")}
+            onClick={handleUnsnooze}
+            disabled={!hasSelection}
+          />
+        )}
 
         {/* Core actions — always visible */}
         <ActionBarButton
