@@ -15,25 +15,22 @@ test.describe('Search', () => {
     await expect(searchInput).toBeFocused();
   });
 
-  test('typing in search shows suggestions dropdown', async ({ page }) => {
+  test('focusing search shows suggestions dropdown', async ({ page }) => {
     const searchInput = page.locator('#search-input');
     await searchInput.click();
 
-    // On focus, the suggestions dropdown should appear with search operators.
+    // On focus, the suggestions dropdown should appear with search guidance.
     await expect(
-      page.getByText('Search operators').first(),
-    ).toBeVisible({ timeout: 5_000 });
+      page.getByText('Narrow your search').first(),
+    ).toBeVisible();
   });
 
   test('submitting a search query triggers search', async ({ page }) => {
     const searchInput = page.locator('#search-input');
     await searchInput.fill('test');
-
-    // Submit the search form.
     await searchInput.press('Enter');
 
-    // Wait for the search to execute.  We can check that the search is
-    // active by looking for the "Current mailbox only" checkbox that
+    // Wait for the search to execute.  The "Current mailbox only" checkbox
     // appears when search is active.
     await expect(
       page.getByText(/Current mailbox only/i),
@@ -46,7 +43,9 @@ test.describe('Search', () => {
     await searchInput.press('Enter');
 
     // Wait for search to be active.
-    await page.waitForTimeout(1_000);
+    await expect(
+      page.getByText(/Current mailbox only/i),
+    ).toBeVisible({ timeout: 10_000 });
 
     // Press Escape to clear.
     await searchInput.press('Escape');
@@ -54,13 +53,13 @@ test.describe('Search', () => {
     // The "Current mailbox only" toggle should disappear.
     await expect(
       page.getByText(/Current mailbox only/i),
-    ).toBeHidden({ timeout: 5_000 });
+    ).toBeHidden();
   });
 
   test('advanced search button opens advanced search dialog', async ({ page }) => {
-    // Click the advanced search button (SlidersHorizontal icon) next to
-    // the search input.
+    // Click the advanced search button next to the search input.
     const advancedBtn = page.getByTitle('Advanced search');
+    await expect(advancedBtn).toBeVisible();
     await advancedBtn.click();
 
     // The AdvancedSearchDialog should appear.

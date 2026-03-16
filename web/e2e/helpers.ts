@@ -35,31 +35,31 @@ export const ACCOUNT_SUPPORT = {
 export async function gotoLoginPage(page: Page) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(
-    page.getByRole('heading', { name: 'Sign in to Webmail' }),
+    page.getByRole('heading', { name: 'Welcome back' }),
   ).toBeVisible({ timeout: 20_000 });
 }
 
 /**
  * Log in with the given credentials.  Waits for the /api/auth/login response
- * and for the main app shell to appear (the "Webmail" logo text in the toolbar).
+ * and for the main app shell to appear (the folder tree).
  *
  * If the backend returns an error (e.g., core API unreachable), the test is
  * skipped rather than failed.
  */
 export async function login(
   page: Page,
-  email = ACCOUNT_INFO.email,
-  password = ACCOUNT_INFO.password,
+  email: string = ACCOUNT_INFO.email,
+  password: string = ACCOUNT_INFO.password,
 ) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
 
   // Check if we are already authenticated or need to log in.
-  const loginHeading = page.getByRole('heading', { name: 'Sign in to Webmail' });
-  const appShell = page.getByText('Webmail', { exact: true }).first();
+  const loginHeading = page.getByRole('heading', { name: 'Welcome back' });
+  const folderTree = page.getByRole('navigation', { name: /Mail folders/i });
 
   const firstVisible = await Promise.race([
     loginHeading.waitFor({ timeout: 20_000 }).then(() => 'login' as const),
-    appShell.waitFor({ timeout: 20_000 }).then(() => 'app' as const),
+    folderTree.waitFor({ timeout: 20_000 }).then(() => 'app' as const),
   ]);
 
   if (firstVisible === 'app') {
@@ -96,8 +96,23 @@ export async function login(
     expect(response.ok(), `Login failed with status ${status}`).toBeTruthy();
   }
 
-  // Wait for the app shell to render after successful login.
-  await expect(appShell).toBeVisible({ timeout: 15_000 });
+  // Wait for the folder tree to render after successful login.
+  await expect(folderTree).toBeVisible({ timeout: 15_000 });
+}
+
+/**
+ * Log out by opening the user dropdown menu and clicking "Log out".
+ * Waits for the login page to appear afterwards.
+ */
+export async function logout(page: Page) {
+  // Open the user avatar dropdown menu.
+  await page.getByRole('button', { name: /User menu/i }).click();
+  // Click the "Log out" menu item.
+  await page.getByRole('menuitem', { name: /Log out/i }).click();
+  // Wait for the login page heading to reappear.
+  await expect(
+    page.getByRole('heading', { name: 'Welcome back' }),
+  ).toBeVisible({ timeout: 20_000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -128,6 +143,30 @@ export async function isBackendReachable(baseURL: string): Promise<boolean> {
  */
 export async function waitForFolderTree(page: Page) {
   await expect(
-    page.getByRole('button', { name: /Inbox/i }).first(),
+    page.getByRole('navigation', { name: /Mail folders/i }),
   ).toBeVisible({ timeout: 15_000 });
+}
+
+// ---------------------------------------------------------------------------
+// Utility: navigate to an activity view
+// ---------------------------------------------------------------------------
+
+/**
+ * Click a navigation button in the activity bar (Mail, Contacts, Calendar).
+ * These buttons use aria-label rather than visible text.
+ */
+export async function navigateTo(page: Page, view: 'Mail' | 'Contacts' | 'Calendar') {
+  await page.getByRole('button', { name: view, exact: true }).click();
+}
+
+// ---------------------------------------------------------------------------
+// Utility: open settings dialog
+// ---------------------------------------------------------------------------
+
+/**
+ * Open the settings dialog from the toolbar and wait for it to render.
+ */
+export async function openSettings(page: Page) {
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.locator('#settings-title')).toBeVisible({ timeout: 10_000 });
 }

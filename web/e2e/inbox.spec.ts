@@ -9,10 +9,12 @@ test.describe('Inbox & Message List', () => {
   test('folder tree loads with standard folders', async ({ page }) => {
     await waitForFolderTree(page);
 
-    // Standard JMAP folders — check for their presence in the sidebar.
+    const sidebar = page.getByRole('navigation', { name: /Mail folders/i });
+
+    // Standard JMAP folders should appear in the sidebar.
     for (const folder of ['Inbox', 'Sent', 'Drafts', 'Trash', 'Junk']) {
       await expect(
-        page.getByRole('button', { name: new RegExp(folder, 'i') }).first(),
+        sidebar.getByRole('button', { name: new RegExp(folder, 'i') }).first(),
       ).toBeVisible();
     }
   });
@@ -20,19 +22,21 @@ test.describe('Inbox & Message List', () => {
   test('clicking a folder selects it', async ({ page }) => {
     await waitForFolderTree(page);
 
+    const sidebar = page.getByRole('navigation', { name: /Mail folders/i });
+
     // Click the "Sent" folder.
-    const sentButton = page.getByRole('button', { name: /Sent/i }).first();
+    const sentButton = sidebar.getByRole('button', { name: /Sent/i }).first();
     await sentButton.click();
 
-    // The button should now look "active" — we can check it has the accent
-    // colour or that the message list header updates.  A simple approach:
-    // wait briefly and verify no crash.
-    await page.waitForTimeout(500);
+    // The main content area should remain visible (no crash).
+    await expect(page.getByRole('main').first()).toBeVisible();
 
     // Click back to Inbox.
-    const inboxButton = page.getByRole('button', { name: /Inbox/i }).first();
+    const inboxButton = sidebar.getByRole('button', { name: /Inbox/i }).first();
     await inboxButton.click();
-    await page.waitForTimeout(500);
+
+    // The main region should still be visible.
+    await expect(page.getByRole('main').first()).toBeVisible();
   });
 
   test('message list renders (handles empty or populated state)', async ({ page }) => {
@@ -43,20 +47,19 @@ test.describe('Inbox & Message List', () => {
     const main = page.getByRole('main').first();
     await expect(main).toBeVisible();
 
-    // Look for either an email list item or an empty-state message.
-    const hasMessages = await page.locator('[role="main"]').getByText(/Select a message|No messages|Subject/i).count() > 0
-      || await page.locator('[role="main"]').locator('button, a').count() > 2;
+    // Check for either message list items or an empty-state indicator.
+    // Both are valid depending on the mailbox state.
+    const messageItem = main.locator('[role="option"]').first();
+    const emptyState = main.getByText(/no messages|select a message/i).first();
 
-    // Just ensure we didn't crash — the test passes either way.
-    expect(typeof hasMessages).toBe('boolean');
+    // At least one of these should eventually appear.
+    await expect(messageItem.or(emptyState)).toBeVisible({ timeout: 15_000 });
   });
 
-  test('unread badge renders on folders that have unread mail', async ({ page }) => {
+  test('sidebar navigation region is accessible', async ({ page }) => {
     await waitForFolderTree(page);
 
-    // The Badge component renders unread counts next to folder names.
-    // We just check it doesn't crash.  If there are unread counts they
-    // appear as small numeric badges.  We look for any badge-like element.
+    // The sidebar has proper ARIA labeling.
     const sidebar = page.getByRole('navigation', { name: /Mail folders/i });
     await expect(sidebar).toBeVisible();
   });

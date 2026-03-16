@@ -12,7 +12,7 @@ import type {
   Participant,
   Alert,
 } from "@/types/calendar.ts";
-import { format, parseISO, minutesToDuration, parseDurationMinutes } from "@/hooks/use-calendar.ts";
+import { format, parseISO, minutesToDuration, parseDurationMinutes, getEventColor, isEventOnDay } from "@/hooks/use-calendar.ts";
 import { useContactSearch } from "@/hooks/use-contacts.ts";
 import { StyledSelect } from "@/components/ui/styled-select.tsx";
 import { useTranslation } from "react-i18next";
@@ -22,6 +22,7 @@ interface EventFormProps {
   onOpenChange: (open: boolean) => void;
   event?: CalendarEvent | null;
   calendars: Calendar[];
+  dayEvents?: CalendarEvent[];
   defaultDate?: Date;
   defaultHour?: number;
   onSave: (data: CalendarEventCreate | CalendarEventUpdate, eventId?: string) => void;
@@ -72,6 +73,7 @@ export const EventForm = React.memo(function EventForm({
   onOpenChange,
   event,
   calendars,
+  dayEvents,
   defaultDate,
   defaultHour,
   onSave,
@@ -263,6 +265,17 @@ export const EventForm = React.memo(function EventForm({
 
   // Resolve event color for timeline
   const resolvedColor = eventColor || "#3b82f6";
+
+  // Other events on the same day (exclude the one being edited), reactive to date changes
+  const otherDayEvents = useMemo(() => {
+    if (!dayEvents) return [];
+    const formDate = new Date(startDate + "T12:00:00");
+    return dayEvents.filter((e) => {
+      if (e.id === event?.id) return false;
+      if (e.showWithoutTime) return false;
+      return isEventOnDay(e, formDate);
+    });
+  }, [dayEvents, event?.id, startDate]);
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -635,6 +648,8 @@ export const EventForm = React.memo(function EventForm({
                   onStartTimeChange={setStartTime}
                   onDurationChange={setDurationMinutes}
                   title={title}
+                  otherEvents={otherDayEvents}
+                  calendars={calendars}
                 />
               </div>
             )}
@@ -656,6 +671,8 @@ interface DayTimelineProps {
   onStartTimeChange: (time: string) => void;
   onDurationChange: (minutes: number) => void;
   title: string;
+  otherEvents?: CalendarEvent[];
+  calendars?: Calendar[];
 }
 
 function DayTimeline({
@@ -665,6 +682,8 @@ function DayTimeline({
   onStartTimeChange,
   onDurationChange,
   title,
+  otherEvents,
+  calendars,
 }: DayTimelineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<{
@@ -784,6 +803,48 @@ function DayTimeline({
           </span>
         </div>
       ))}
+
+      {/* Other events on this day (non-interactive background) */}
+      {otherEvents?.map((evt) => {
+        const evtStart = parseISO(evt.start);
+        const evtStartMins = evtStart.getHours() * 60 + evtStart.getMinutes();
+        const evtDuration = parseDurationMinutes(evt.duration);
+        const evtTopMins = evtStartMins - TIMELINE_START_HOUR * 60;
+        const evtTop = (evtTopMins / 60) * HOUR_HEIGHT;
+        const evtHeight = (evtDuration / 60) * HOUR_HEIGHT;
+        if (evtTop + evtHeight < 0 || evtTop > totalHeight) return null;
+        const evtColor = getEventColor(evt, calendars ?? []);
+        return (
+          <div
+            key={evt.id}
+            className="absolute rounded-md overflow-hidden pointer-events-none"
+            style={{
+              top: Math.max(0, evtTop),
+              left: 52,
+              right: 8,
+              height: Math.max(evtHeight, (MIN_DURATION_MINUTES / 60) * HOUR_HEIGHT),
+              backgroundColor: evtColor + "18",
+              border: `1px dashed ${evtColor}50`,
+              zIndex: 5,
+            }}
+          >
+            <div className="px-2 pt-1">
+              <div
+                className="text-[10px] font-medium truncate"
+                style={{ color: evtColor, opacity: 0.7 }}
+              >
+                {evt.title}
+              </div>
+              <div
+                className="text-[9px]"
+                style={{ color: evtColor, opacity: 0.5 }}
+              >
+                {format(evtStart, "HH:mm")}
+              </div>
+            </div>
+          </div>
+        );
+      })}
 
       {/* Event block */}
       {eventTop >= -HOUR_HEIGHT && eventTop < totalHeight && (

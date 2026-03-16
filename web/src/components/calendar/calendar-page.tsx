@@ -5,9 +5,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
-  Calendar as CalendarIcon,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { ResizeHandle } from "@/components/layout/resize-handle.tsx";
@@ -46,7 +43,10 @@ export const CalendarPage = React.memo(function CalendarPage() {
     title,
   } = useCalendarNavigation("month");
 
-  const { calendars, updateCalendar, deleteCalendar } = useCalendars();
+  const { calendars, createCalendar, updateCalendar, deleteCalendar } = useCalendars();
+
+  // Track which calendar ID is newly created (should enter rename mode)
+  const [newCalendarId, setNewCalendarId] = useState<string | null>(null);
 
   // Sidebar width (resizable, persisted)
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -119,6 +119,19 @@ export const CalendarPage = React.memo(function CalendarPage() {
       return next;
     });
   }, []);
+
+  // Create new calendar
+  const handleAddCalendar = useCallback(async () => {
+    const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16"];
+    const usedColors = new Set(calendars.map((c) => c.color));
+    const nextColor = colors.find((c) => !usedColors.has(c)) ?? colors[Math.floor(Math.random() * colors.length)];
+    try {
+      const id = await createCalendar({ name: t("calendar.newCalendar"), color: nextColor });
+      if (id) setNewCalendarId(id);
+    } catch {
+      // error toast handled by hook
+    }
+  }, [calendars, createCalendar, t]);
 
   // Create new event
   const handleNewEvent = useCallback(() => {
@@ -280,11 +293,21 @@ export const CalendarPage = React.memo(function CalendarPage() {
         </div>
 
         <div className="flex flex-col gap-0.5 p-2">
-          <div
-            className="text-[10px] font-medium uppercase tracking-wide px-2 py-1"
-            style={{ color: "var(--color-text-tertiary)" }}
-          >
-            {t("calendar.calendars")}
+          <div className="flex items-center justify-between px-2 py-1">
+            <div
+              className="text-[10px] font-medium uppercase tracking-wide"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
+              {t("calendar.calendars")}
+            </div>
+            <button
+              onClick={handleAddCalendar}
+              className="p-0.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
+              style={{ color: "var(--color-text-tertiary)" }}
+              title={t("calendar.addCalendar")}
+            >
+              <Plus size={12} />
+            </button>
           </div>
           {calendars.map((cal) => (
             <CalendarSidebarItem
@@ -293,7 +316,10 @@ export const CalendarPage = React.memo(function CalendarPage() {
               hidden={hiddenCalendarIds.has(cal.id)}
               onToggleVisibility={() => toggleCalendarVisibility(cal.id)}
               onRename={(name) => updateCalendar(cal.id, { name })}
+              onChangeColor={(color) => updateCalendar(cal.id, { color })}
               onDelete={() => deleteCalendar(cal.id)}
+              autoRename={cal.id === newCalendarId}
+              onAutoRenameDone={() => setNewCalendarId(null)}
             />
           ))}
         </div>
@@ -433,6 +459,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
         onOpenChange={setFormOpen}
         event={editingEvent}
         calendars={calendars}
+        dayEvents={events}
         defaultDate={defaultFormDate}
         defaultHour={defaultFormHour}
         onSave={handleSave}
@@ -442,25 +469,46 @@ export const CalendarPage = React.memo(function CalendarPage() {
   );
 });
 
+const CALENDAR_COLORS = [
+  "#3b82f6", "#10b981", "#f59e0b", "#ef4444",
+  "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16",
+  "#f97316", "#6366f1", "#14b8a6", "#a855f7",
+];
+
 /** Individual calendar item in sidebar with context menu and inline rename */
 function CalendarSidebarItem({
   calendar,
   hidden,
   onToggleVisibility,
   onRename,
+  onChangeColor,
   onDelete,
+  autoRename,
+  onAutoRenameDone,
 }: {
   calendar: { id: string; name: string; color?: string; isDefault?: boolean };
   hidden: boolean;
   onToggleVisibility: () => void;
   onRename: (name: string) => void;
+  onChangeColor: (color: string) => void;
   onDelete: () => void;
+  autoRename?: boolean;
+  onAutoRenameDone?: () => void;
 }) {
   const { t } = useTranslation();
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(calendar.name);
   const renameInputRef = useRef<HTMLInputElement>(null);
   const color = calendar.color ?? "#3b82f6";
+
+  // Auto-enter rename mode for newly created calendars
+  useEffect(() => {
+    if (autoRename) {
+      setRenameValue(calendar.name);
+      setIsRenaming(true);
+      onAutoRenameDone?.();
+    }
+  }, [autoRename, calendar.name, onAutoRenameDone]);
 
   useEffect(() => {
     if (isRenaming && renameInputRef.current) {
@@ -569,6 +617,50 @@ function CalendarSidebarItem({
           >
             {t("calendar.rename")}
           </ContextMenu.Item>
+          <ContextMenu.Sub>
+            <ContextMenu.SubTrigger
+              className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+              style={{
+                color: "var(--color-text-primary)",
+                borderRadius: "var(--radius-sm)",
+              }}
+            >
+              <span className="flex-1">{t("calendar.color")}</span>
+              <div
+                className="w-3 h-3 rounded-full ml-2 shrink-0"
+                style={{ backgroundColor: color }}
+              />
+            </ContextMenu.SubTrigger>
+            <ContextMenu.Portal>
+              <ContextMenu.SubContent
+                className="p-2 animate-scale-in"
+                style={{
+                  backgroundColor: "var(--color-bg-elevated)",
+                  border: "1px solid var(--color-border-primary)",
+                  boxShadow: "var(--shadow-lg)",
+                  borderRadius: "var(--radius-md)",
+                  zIndex: 50,
+                }}
+              >
+                <div className="grid grid-cols-4 gap-1.5">
+                  {CALENDAR_COLORS.map((c) => (
+                    <ContextMenu.Item
+                      key={c}
+                      className="w-6 h-6 rounded-full cursor-pointer outline-none flex items-center justify-center transition-transform hover:scale-110"
+                      style={{ backgroundColor: c }}
+                      onSelect={() => onChangeColor(c)}
+                    >
+                      {c === color && (
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                          <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </ContextMenu.Item>
+                  ))}
+                </div>
+              </ContextMenu.SubContent>
+            </ContextMenu.Portal>
+          </ContextMenu.Sub>
           {!calendar.isDefault && (
             <>
               <ContextMenu.Separator

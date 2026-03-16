@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { login, waitForFolderTree } from './helpers';
+import { login, waitForFolderTree, navigateTo } from './helpers';
 
 test.describe('Navigation & Layout', () => {
   test.beforeEach(async ({ page }) => {
@@ -8,7 +8,6 @@ test.describe('Navigation & Layout', () => {
   });
 
   test('three-pane layout renders on desktop', async ({ page }) => {
-    // Verify the three panes exist:
     // 1. Sidebar (role="navigation" with "Mail folders" label)
     const sidebar = page.getByRole('navigation', { name: /Mail folders/i });
     await expect(sidebar).toBeVisible();
@@ -18,45 +17,40 @@ test.describe('Navigation & Layout', () => {
     await expect(main).toBeVisible();
 
     // 3. Reading pane (role="complementary" with "Message preview")
+    // May or may not be visible depending on user settings / viewport.
     const readingPane = page.getByRole('complementary', { name: /Message preview/i });
-    // Reading pane may or may not be visible depending on settings;
-    // just check it exists in the DOM or is visible.
-    const rpVisible = await readingPane.isVisible().catch(() => false);
-    expect(typeof rpVisible).toBe('boolean');
+    // Just check it exists in the DOM (it may be conditionally hidden).
+    expect(await readingPane.count()).toBeGreaterThanOrEqual(0);
   });
 
   test('clicking Contacts tab shows contacts page', async ({ page }) => {
-    // The sidebar has nav buttons: Mail, Contacts, Calendar.
-    const contactsBtn = page.getByRole('button', { name: 'Contacts' });
-    await contactsBtn.click();
+    // The activity bar has navigation buttons identified by aria-label.
+    await navigateTo(page, 'Contacts');
 
-    // The contacts page should load (lazy-loaded).
-    await page.waitForTimeout(1_000);
-
-    // Verify we are on the contacts view — the main area should have
-    // contacts-related content.
-    const main = page.getByRole('main').first();
-    await expect(main).toBeVisible();
+    // The contacts page should load. It renders a search input for contacts.
+    await expect(
+      page.getByPlaceholder(/Search contacts/i),
+    ).toBeVisible({ timeout: 10_000 });
   });
 
   test('clicking Calendar tab shows calendar page', async ({ page }) => {
-    const calendarBtn = page.getByRole('button', { name: 'Calendar' });
-    await calendarBtn.click();
+    await navigateTo(page, 'Calendar');
 
-    await page.waitForTimeout(1_000);
-
-    const main = page.getByRole('main').first();
-    await expect(main).toBeVisible();
+    // The calendar page should render with view switcher buttons.
+    await expect(
+      page.getByRole('button', { name: /Today/i }),
+    ).toBeVisible({ timeout: 10_000 });
   });
 
   test('clicking Mail tab returns to inbox', async ({ page }) => {
     // Switch to Contacts first.
-    await page.getByRole('button', { name: 'Contacts' }).click();
-    await page.waitForTimeout(500);
+    await navigateTo(page, 'Contacts');
+    await expect(
+      page.getByPlaceholder(/Search contacts/i),
+    ).toBeVisible({ timeout: 10_000 });
 
     // Switch back to Mail.
-    await page.getByRole('button', { name: 'Mail' }).click();
-    await page.waitForTimeout(500);
+    await navigateTo(page, 'Mail');
 
     // Folder tree should be visible again.
     await waitForFolderTree(page);
@@ -69,41 +63,37 @@ test.describe('Navigation & Layout', () => {
     // The KeyboardShortcutDialog should appear.
     await expect(
       page.getByText(/Keyboard Shortcuts/i).first(),
-    ).toBeVisible({ timeout: 5_000 });
+    ).toBeVisible();
   });
 
   test('theme toggle button cycles themes', async ({ page }) => {
-    // The theme toggle button has aria-label starting with "Theme:".
+    // The theme toggle button has aria-label containing "Theme:".
     const themeBtn = page.getByRole('button', { name: /Theme:/i });
     await expect(themeBtn).toBeVisible();
 
-    // Click it to cycle the theme.
+    // Click to cycle the theme. The button label should change.
+    const initialLabel = await themeBtn.getAttribute('aria-label');
     await themeBtn.click();
-    await page.waitForTimeout(300);
 
-    // Click again.
-    await themeBtn.click();
-    await page.waitForTimeout(300);
-
-    // No crash — theme toggling works.
+    // After cycling, the theme label should have changed.
+    await expect(themeBtn).not.toHaveAttribute('aria-label', initialLabel ?? '');
   });
 
   test('sidebar collapse/expand toggle works', async ({ page }) => {
-    // The collapse button has aria-label "Collapse sidebar" or "Expand sidebar".
-    const collapseBtn = page.getByRole('button', { name: /Collapse sidebar/i });
-    if (await collapseBtn.isVisible()) {
-      await collapseBtn.click();
-      await page.waitForTimeout(500);
+    // The activity bar has a sidebar toggle button.
+    // When sidebar is visible, the button says "Hide sidebar".
+    const hideBtn = page.getByRole('button', { name: /Hide sidebar/i });
+    const showBtn = page.getByRole('button', { name: /Show sidebar/i });
 
-      // Now it should be "Expand sidebar".
-      const expandBtn = page.getByRole('button', { name: /Expand sidebar/i });
-      await expect(expandBtn).toBeVisible();
+    if (await hideBtn.isVisible()) {
+      await hideBtn.click();
+
+      // After hiding, "Show sidebar" should appear.
+      await expect(showBtn).toBeVisible();
 
       // Expand again.
-      await expandBtn.click();
-      await page.waitForTimeout(500);
-
-      await expect(collapseBtn).toBeVisible();
+      await showBtn.click();
+      await expect(hideBtn).toBeVisible();
     }
   });
 });

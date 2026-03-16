@@ -8,11 +8,11 @@ test.describe('Compose & Send', () => {
   });
 
   test('opens compose dialog via toolbar button', async ({ page }) => {
-    // Click the Compose button in the toolbar.
-    await page.getByRole('button', { name: /Compose/i }).click();
+    // The compose button in the action bar reads "New mail".
+    await page.getByRole('button', { name: /New mail/i }).click();
 
-    // The compose dialog should appear — look for the Send button and
-    // the Subject input or "To" recipient field.
+    // The compose dialog should appear with a Send button and
+    // a Subject input or "To" recipient field.
     await expect(
       page.getByRole('button', { name: /Send/i }).first(),
     ).toBeVisible({ timeout: 10_000 });
@@ -20,15 +20,15 @@ test.describe('Compose & Send', () => {
 
   test('sends an email to the support account', async ({ page }) => {
     // Open compose.
-    await page.getByRole('button', { name: /Compose/i }).click();
+    await page.getByRole('button', { name: /New mail/i }).click();
 
     // Wait for the compose panel to appear.
     await expect(
       page.getByRole('button', { name: /Send/i }).first(),
     ).toBeVisible({ timeout: 10_000 });
 
-    // Fill in recipients — the RecipientInput is a custom component.
-    // It uses an input with placeholder containing "Recipients" or similar.
+    // Fill in recipients -- the RecipientInput uses an input with
+    // placeholder containing "Recipients" or "to".
     const toInput = page.getByPlaceholder(/recipients|to/i).first();
     await toInput.fill(ACCOUNT_SUPPORT.email);
     await toInput.press('Enter');
@@ -38,7 +38,6 @@ test.describe('Compose & Send', () => {
     await subjectInput.fill('E2E Test Message');
 
     // Type body text into the Tiptap editor.
-    // The editor is a contenteditable div with role "textbox" or class ProseMirror.
     const editor = page.locator('.ProseMirror').first();
     if (await editor.isVisible()) {
       await editor.click();
@@ -55,21 +54,33 @@ test.describe('Compose & Send', () => {
   });
 
   test('compose can be closed without sending', async ({ page }) => {
-    await page.getByRole('button', { name: /Compose/i }).click();
+    await page.getByRole('button', { name: /New mail/i }).click();
     await expect(
       page.getByRole('button', { name: /Send/i }).first(),
     ).toBeVisible({ timeout: 10_000 });
 
-    // Close the compose dialog — there is an X / close button.
-    // Use the close button (lucide X icon) in the compose panel header.
+    // Close the compose dialog using the X button.
     const closeButton = page.locator('button').filter({ has: page.locator('svg.lucide-x') }).first();
     if (await closeButton.isVisible()) {
       await closeButton.click();
+    } else {
+      // Fallback: press Escape to close the dialog.
+      await page.keyboard.press('Escape');
     }
 
     // Compose dialog should no longer show the Send button.
     await expect(
       page.getByRole('button', { name: /^Send$/i }),
-    ).toBeHidden({ timeout: 5_000 });
+    ).toBeHidden();
+  });
+
+  test('keyboard shortcut opens compose', async ({ page }) => {
+    // Press "c" which is the keyboard shortcut for compose.
+    await page.keyboard.press('c');
+
+    // The compose dialog should appear.
+    await expect(
+      page.getByRole('button', { name: /Send/i }).first(),
+    ).toBeVisible({ timeout: 10_000 });
   });
 });

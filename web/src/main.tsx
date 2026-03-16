@@ -10,3 +10,10 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </StrictMode>,
 );
+
+// Register service worker for notification handling (browser only, not Tauri)
+if ("serviceWorker" in navigator && !("__TAURI__" in window)) {
+  navigator.serviceWorker.register("/sw.js").catch((err) => {
+    console.warn("[sw] Registration failed:", err);
+  });
+}
