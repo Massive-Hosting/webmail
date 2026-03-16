@@ -227,6 +227,7 @@
   "settingsDialog.shortcuts": "Tastenkürzel",
   "settingsDialog.notifications": "Benachrichtigungen",
   "settingsDialog.storage": "Speicher",
+  "settingsDialog.vacation": "Abwesenheitsnotiz",
   "settingsDialog.security": "Sicherheit",
   "search.placeholder": "Nachrichten suchen... (/ für Fokus)",
   "search.clearSearchEsc": "Suche löschen (Esc)",
@@ -589,5 +590,18 @@
   "properties.notPresent": "Nicht vorhanden",
   "properties.date": "Datum",
   "properties.size": "Größe",
-  "action.properties": "Nachrichtendetails"
+  "action.properties": "Nachrichtendetails",
+  "vacation.title": "Abwesenheitsnotiz",
+  "vacation.enable": "Automatische Antwort aktivieren",
+  "vacation.dateRange": "Antworten senden w\u00e4hrend",
+  "vacation.dateRangeHint": "Leer lassen, um immer zu antworten, solange aktiviert.",
+  "vacation.startDate": "Startdatum",
+  "vacation.endDate": "Enddatum",
+  "vacation.subject": "Betreff (optional)",
+  "vacation.subjectPlaceholder": "Leer lassen f\u00fcr automatischen Betreff",
+  "vacation.message": "Nachricht",
+  "vacation.save": "Speichern",
+  "vacation.active": "Automatische Antworten sind aktiv",
+  "vacation.activeUntil": "Aktiv bis {{date}}",
+  "vacation.saved": "Abwesenheitseinstellungen gespeichert"
 }

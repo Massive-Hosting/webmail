@@ -227,6 +227,7 @@
   "settingsDialog.shortcuts": "Snarveier",
   "settingsDialog.notifications": "Varsler",
   "settingsDialog.storage": "Lagring",
+  "settingsDialog.vacation": "Frav\u00e6rsmelding",
   "settingsDialog.security": "Sikkerhet",
   "search.placeholder": "Søk i meldinger... (/ for fokus)",
   "search.clearSearchEsc": "Tøm søk (Esc)",
@@ -589,5 +590,18 @@
   "properties.notPresent": "Ikke tilgjengelig",
   "properties.date": "Dato",
   "properties.size": "Størrelse",
-  "action.properties": "Meldingsdetaljer"
+  "action.properties": "Meldingsdetaljer",
+  "vacation.title": "Frav\u00e6rsmelding",
+  "vacation.enable": "Aktiver automatisk svar",
+  "vacation.dateRange": "Send svar i perioden",
+  "vacation.dateRangeHint": "La st\u00e5 tomt for \u00e5 svare hele tiden mens aktivert.",
+  "vacation.startDate": "Startdato",
+  "vacation.endDate": "Sluttdato",
+  "vacation.subject": "Emne (valgfritt)",
+  "vacation.subjectPlaceholder": "La st\u00e5 tomt for automatisk emne",
+  "vacation.message": "Melding",
+  "vacation.save": "Lagre",
+  "vacation.active": "Automatiske svar er aktive",
+  "vacation.activeUntil": "Aktiv til {{date}}",
+  "vacation.saved": "Frav\u00e6rsinnstillinger lagret"
 }

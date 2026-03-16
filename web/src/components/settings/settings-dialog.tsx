@@ -14,6 +14,7 @@ import {
   Bell,
   HardDrive,
   Shield,
+  Palmtree,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { FilterRulesPanel } from "./filter-rules.tsx";
@@ -24,6 +25,7 @@ import { SignatureSettings } from "./signature-settings.tsx";
 import { KeyboardSettings } from "./keyboard-settings.tsx";
 import { NotificationSettings } from "./notification-settings.tsx";
 import { StorageSettings } from "./storage-settings.tsx";
+import { VacationSettings } from "./vacation-settings.tsx";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -97,6 +99,10 @@ export const SettingsDialog = React.memo(function SettingsDialog({
                 <PenLine size={14} />
                 {t("settingsDialog.signatures")}
               </TabTrigger>
+              <TabTrigger value="vacation">
+                <Palmtree size={14} />
+                {t("settingsDialog.vacation")}
+              </TabTrigger>
               <TabTrigger value="filters">
                 <Filter size={14} />
                 {t("settingsDialog.filters")}
@@ -128,6 +134,9 @@ export const SettingsDialog = React.memo(function SettingsDialog({
               </Tabs.Content>
               <Tabs.Content value="signatures">
                 <SignatureSettings />
+              </Tabs.Content>
+              <Tabs.Content value="vacation">
+                <VacationSettings />
               </Tabs.Content>
               <Tabs.Content value="filters">
                 <FilterRulesPanel />

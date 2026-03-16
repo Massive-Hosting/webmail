@@ -1089,6 +1089,86 @@ export async function sendEmail(params: SendEmailParams): Promise<void> {
   }
 }
 
+// ---- Vacation / Out of Office (VacationResponse) ----
+
+export interface VacationResponse {
+  isEnabled: boolean;
+  fromDate: string | null;
+  toDate: string | null;
+  subject: string | null;
+  textBody: string;
+  htmlBody: string | null;
+}
+
+const JMAP_USING_VACATION = [
+  ...JMAP_USING,
+  "urn:ietf:params:jmap:vacationresponse",
+];
+
+/** Fetch the singleton VacationResponse */
+export async function getVacationResponse(): Promise<VacationResponse> {
+  const request: JMAPRequest = {
+    using: JMAP_USING_VACATION,
+    methodCalls: [
+      [
+        "VacationResponse/get",
+        {
+          ids: ["singleton"],
+        },
+        "v0",
+      ],
+    ],
+  };
+
+  const response = await jmapRequest(request);
+  const [, result] = response.methodResponses[0];
+  const list = (result as { list: VacationResponse[] }).list;
+  if (list.length > 0) {
+    return list[0];
+  }
+  return {
+    isEnabled: false,
+    fromDate: null,
+    toDate: null,
+    subject: null,
+    textBody: "",
+    htmlBody: null,
+  };
+}
+
+/** Update the singleton VacationResponse */
+export async function setVacationResponse(params: Partial<VacationResponse>): Promise<void> {
+  const request: JMAPRequest = {
+    using: JMAP_USING_VACATION,
+    methodCalls: [
+      [
+        "VacationResponse/set",
+        {
+          update: {
+            singleton: params,
+          },
+        },
+        "v0",
+      ],
+    ],
+  };
+
+  const response = await jmapRequest(request);
+  const [method, result] = response.methodResponses[0];
+  if (method === "error") {
+    throw new Error(
+      (result as { description?: string }).description ?? "Failed to update vacation response",
+    );
+  }
+  const setResult = result as {
+    notUpdated?: Record<string, { type: string; description?: string }>;
+  };
+  if (setResult.notUpdated?.singleton) {
+    const err = setResult.notUpdated.singleton;
+    throw new Error(err.description ?? err.type ?? "Failed to update vacation response");
+  }
+}
+
 // ---- Email headers (for properties dialog) ----
 
 /** Header property names to request from JMAP */

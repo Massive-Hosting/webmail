@@ -227,6 +227,7 @@
   "settingsDialog.shortcuts": "Shortcuts",
   "settingsDialog.notifications": "Notifications",
   "settingsDialog.storage": "Storage",
+  "settingsDialog.vacation": "Out of Office",
   "settingsDialog.security": "Security",
   "search.placeholder": "Search messages... (/ to focus)",
   "search.clearSearchEsc": "Clear search (Esc)",
@@ -589,5 +590,18 @@
   "properties.notPresent": "Not present",
   "properties.date": "Date",
   "properties.size": "Size",
-  "action.properties": "Message details"
+  "action.properties": "Message details",
+  "vacation.title": "Out of Office",
+  "vacation.enable": "Enable automatic reply",
+  "vacation.dateRange": "Send replies during",
+  "vacation.dateRangeHint": "Leave empty to reply all the time while enabled.",
+  "vacation.startDate": "Start date",
+  "vacation.endDate": "End date",
+  "vacation.subject": "Subject (optional)",
+  "vacation.subjectPlaceholder": "Leave empty for automatic subject",
+  "vacation.message": "Message",
+  "vacation.save": "Save",
+  "vacation.active": "Automatic replies are active",
+  "vacation.activeUntil": "Active until {{date}}",
+  "vacation.saved": "Vacation settings saved"
 }
