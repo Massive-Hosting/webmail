@@ -319,8 +319,9 @@ export const EventForm = React.memo(function EventForm({
     }
   }, [event, onDelete, onOpenChange]);
 
-  // Resolve event color for timeline
-  const resolvedColor = eventColor || "#3b82f6";
+  // Resolve event color for timeline: custom color > calendar color > fallback
+  const selectedCalendar = calendars.find((c) => c.id === selectedCalendarId);
+  const resolvedColor = eventColor || selectedCalendar?.color || "#3b82f6";
 
   // Other events on the same day (exclude the one being edited), reactive to date changes
   const otherDayEvents = useMemo(() => {
