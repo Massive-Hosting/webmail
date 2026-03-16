@@ -324,7 +324,6 @@ export async function fetchContacts(): Promise<Contact[]> {
       [
         "ContactCard/query",
         {
-          sort: [{ property: "name/full", isAscending: true }],
           limit: 10000,
         },
         "q0",
