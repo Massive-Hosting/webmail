@@ -12,6 +12,7 @@ import {
   ChevronDown,
   Printer,
   Clock,
+  BellOff,
   Reply,
   ReplyAll,
   Forward,
@@ -25,6 +26,7 @@ import { useTranslation } from "react-i18next";
 import { DateTimePickerDialog } from "@/components/ui/datetime-picker-dialog.tsx";
 import { addHours, setHours, setMinutes, setSeconds, addDays, nextMonday, isPast, format } from "date-fns";
 import { startSnooze } from "@/api/tasks.ts";
+import { updateEmails } from "@/api/mail.ts";
 import { toast } from "sonner";
 
 interface MessageListItemProps {
@@ -713,73 +715,88 @@ function MessageContextMenu({
           style={{ borderTop: "1px solid var(--color-border-primary)" }}
         />
 
-        <ContextMenu.Sub>
-          <ContextMenu.SubTrigger
+        {email.keywords["$snoozed"] ? (
+          <ContextMenu.Item
             className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
             style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+            onSelect={() => {
+              updateEmails({ [email.id]: { "keywords/$snoozed": null } }).then(() => {
+                toast.success(t("action.unsnoozed"));
+              });
+            }}
           >
-            <Clock size={14} />
-            {t("action.snooze")}
-          </ContextMenu.SubTrigger>
-          <ContextMenu.Portal>
-            <ContextMenu.SubContent
-              className="min-w-[160px] p-1 text-sm"
-              style={{
-                backgroundColor: "var(--color-bg-elevated)",
-                border: "1px solid var(--color-border-primary)",
-                boxShadow: "var(--shadow-lg)",
-                borderRadius: "var(--radius-md)",
-                zIndex: 51,
-              }}
+            <BellOff size={14} />
+            {t("action.unsnooze")}
+          </ContextMenu.Item>
+        ) : (
+          <ContextMenu.Sub>
+            <ContextMenu.SubTrigger
+              className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+              style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
             >
-              <ContextMenu.Item
-                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
-                onSelect={() => {
-                  const now = new Date();
-                  const hour = now.getHours();
-                  handleSnooze(hour >= 15 ? addHours(now, 3) : setSeconds(setMinutes(setHours(now, 18), 0), 0));
+              <Clock size={14} />
+              {t("action.snooze")}
+            </ContextMenu.SubTrigger>
+            <ContextMenu.Portal>
+              <ContextMenu.SubContent
+                className="min-w-[160px] p-1 text-sm"
+                style={{
+                  backgroundColor: "var(--color-bg-elevated)",
+                  border: "1px solid var(--color-border-primary)",
+                  boxShadow: "var(--shadow-lg)",
+                  borderRadius: "var(--radius-md)",
+                  zIndex: 51,
                 }}
               >
-                {t("action.laterToday")}
-              </ContextMenu.Item>
-              <ContextMenu.Item
-                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
-                onSelect={() => {
-                  const tomorrow = addDays(new Date(), 1);
-                  handleSnooze(setSeconds(setMinutes(setHours(tomorrow, 9), 0), 0));
-                }}
-              >
-                {t("action.tomorrowMorning")}
-              </ContextMenu.Item>
-              <ContextMenu.Item
-                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
-                onSelect={() => {
-                  const monday = nextMonday(new Date());
-                  handleSnooze(setSeconds(setMinutes(setHours(monday, 9), 0), 0));
-                }}
-              >
-                {t("action.mondayMorning")}
-              </ContextMenu.Item>
-              <ContextMenu.Separator
-                className="my-1"
-                style={{ borderTop: "1px solid var(--color-border-primary)" }}
-              />
-              <ContextMenu.Item
-                className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
-                onSelect={() => {
-                  setTimeout(() => setShowSnoozePicker(true), 100);
-                }}
-              >
-                <Clock size={13} />
-                {t("action.pickDateTime")}
-              </ContextMenu.Item>
-            </ContextMenu.SubContent>
-          </ContextMenu.Portal>
-        </ContextMenu.Sub>
+                <ContextMenu.Item
+                  className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+                  style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+                  onSelect={() => {
+                    const now = new Date();
+                    const hour = now.getHours();
+                    handleSnooze(hour >= 15 ? addHours(now, 3) : setSeconds(setMinutes(setHours(now, 18), 0), 0));
+                  }}
+                >
+                  {t("action.laterToday")}
+                </ContextMenu.Item>
+                <ContextMenu.Item
+                  className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+                  style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+                  onSelect={() => {
+                    const tomorrow = addDays(new Date(), 1);
+                    handleSnooze(setSeconds(setMinutes(setHours(tomorrow, 9), 0), 0));
+                  }}
+                >
+                  {t("action.tomorrowMorning")}
+                </ContextMenu.Item>
+                <ContextMenu.Item
+                  className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+                  style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+                  onSelect={() => {
+                    const monday = nextMonday(new Date());
+                    handleSnooze(setSeconds(setMinutes(setHours(monday, 9), 0), 0));
+                  }}
+                >
+                  {t("action.mondayMorning")}
+                </ContextMenu.Item>
+                <ContextMenu.Separator
+                  className="my-1"
+                  style={{ borderTop: "1px solid var(--color-border-primary)" }}
+                />
+                <ContextMenu.Item
+                  className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+                  style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+                  onSelect={() => {
+                    setTimeout(() => setShowSnoozePicker(true), 100);
+                  }}
+                >
+                  <Clock size={13} />
+                  {t("action.pickDateTime")}
+                </ContextMenu.Item>
+              </ContextMenu.SubContent>
+            </ContextMenu.Portal>
+          </ContextMenu.Sub>
+        )}
 
         <ContextMenu.Item
           className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"

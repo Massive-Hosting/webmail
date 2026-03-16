@@ -346,8 +346,8 @@ export const ActionBar = React.memo(function ActionBar({
           disabled={!isSingleSelected}
         />
 
-        {/* Snooze dropdown */}
-        <DropdownMenu.Root>
+        {/* Snooze dropdown — hidden when viewing snoozed/scheduled virtual folders */}
+        {!virtualFolder && <DropdownMenu.Root>
           <Tooltip.Root>
             <Tooltip.Trigger asChild>
               <DropdownMenu.Trigger asChild>
@@ -409,7 +409,7 @@ export const ActionBar = React.memo(function ActionBar({
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
-        </DropdownMenu.Root>
+        </DropdownMenu.Root>}
 
         {/* Selection count for multi-select */}
         {selectionCount > 1 && (
