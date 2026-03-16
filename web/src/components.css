@@ -169,7 +169,7 @@
 .message-list-item__sender {
   font-size: 14px;
   font-weight: 400;
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -177,7 +177,8 @@
 }
 
 .message-list-item__sender--unread {
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
 .message-list-item__date {
@@ -190,14 +191,15 @@
 .message-list-item__subject {
   font-size: 13px;
   font-weight: 400;
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .message-list-item__subject--unread {
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
 .message-list-item__preview {
