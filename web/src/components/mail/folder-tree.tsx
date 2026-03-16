@@ -17,12 +17,15 @@ import {
   FolderPlus,
   ChevronRight,
   ChevronDown,
+  Download,
+  Upload,
 } from "lucide-react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { queryEmailIds, updateEmails, destroyEmails } from "@/api/mail.ts";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { useTasks } from "@/hooks/use-tasks.ts";
 
 const ROLE_ICONS: Record<string, React.ReactNode> = {
   inbox: <Inbox size={16} />,
@@ -42,6 +45,9 @@ export const FolderTree = React.memo(function FolderTree() {
   const [newFolderName, setNewFolderName] = useState("");
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const { startExportMailbox, startImportMailbox } = useTasks();
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [importTargetMailboxId, setImportTargetMailboxId] = useState<string | null>(null);
 
   const toggleExpanded = useCallback((id: string) => {
     setExpandedFolders((prev) => {
@@ -113,6 +119,25 @@ export const FolderTree = React.memo(function FolderTree() {
     }
   }, [updateMailbox]);
 
+  const handleExportFolder = useCallback((mailboxId: string) => {
+    startExportMailbox(mailboxId, "mbox");
+  }, [startExportMailbox]);
+
+  const handleImportToFolder = useCallback((mailboxId: string) => {
+    setImportTargetMailboxId(mailboxId);
+    importInputRef.current?.click();
+  }, []);
+
+  const handleImportFileSelected = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && importTargetMailboxId) {
+      startImportMailbox(importTargetMailboxId, file);
+      setImportTargetMailboxId(null);
+    }
+    // Reset input so the same file can be selected again.
+    e.target.value = "";
+  }, [importTargetMailboxId, startImportMailbox]);
+
   const handleDropEmails = useCallback(async (emailIds: string[], fromMailboxId: string, toMailboxId: string, folderName: string) => {
     const toastId = toast.loading(t("toast.movingMessages", { count: emailIds.length }));
     try {
@@ -157,6 +182,15 @@ export const FolderTree = React.memo(function FolderTree() {
 
   return (
     <div className="py-2 flex flex-col gap-1" role="tree" aria-label={t("folder.mailFolders")}>
+      {/* Hidden file input for mbox import */}
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".mbox,.eml"
+        className="hidden"
+        onChange={handleImportFileSelected}
+      />
+
       {/* Standard folders */}
       {standardFolders.map((mailbox) => (
         <FolderItem
@@ -171,6 +205,8 @@ export const FolderTree = React.memo(function FolderTree() {
           onEmptyFolder={handleEmptyFolder}
           onRename={handleRenameMailbox}
           onDropEmails={handleDropEmails}
+          onExportFolder={handleExportFolder}
+          onImportToFolder={handleImportToFolder}
         />
       ))}
 
@@ -197,6 +233,8 @@ export const FolderTree = React.memo(function FolderTree() {
           onEmptyFolder={handleEmptyFolder}
           onRename={handleRenameMailbox}
           onDropEmails={handleDropEmails}
+          onExportFolder={handleExportFolder}
+          onImportToFolder={handleImportToFolder}
           depth={0}
         />
       ))}
@@ -263,6 +301,8 @@ const FolderItem = React.memo(function FolderItem({
   onEmptyFolder,
   onRename,
   onDropEmails,
+  onExportFolder,
+  onImportToFolder,
 }: {
   mailbox: Mailbox;
   isActive: boolean;
@@ -278,6 +318,8 @@ const FolderItem = React.memo(function FolderItem({
   onEmptyFolder: (mailboxId: string, folderName: string) => void;
   onRename: (mailboxId: string, newName: string) => void;
   onDropEmails?: (emailIds: string[], fromMailboxId: string, toMailboxId: string, folderName: string) => void;
+  onExportFolder?: (mailboxId: string) => void;
+  onImportToFolder?: (mailboxId: string) => void;
 }) {
   const { t } = useTranslation();
   const [isRenaming, setIsRenaming] = useState(false);
@@ -410,6 +452,32 @@ const FolderItem = React.memo(function FolderItem({
           {t("folder.empty", { name: mailbox.name })}
         </ContextMenu.Item>
       )}
+      <ContextMenu.Separator
+        className="my-1"
+        style={{ borderTop: "1px solid var(--color-border-primary)" }}
+      />
+      <ContextMenu.Item
+        className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+        style={{
+          color: "var(--color-text-primary)",
+          borderRadius: "var(--radius-sm)",
+        }}
+        onSelect={() => onExportFolder?.(mailbox.id)}
+      >
+        <Download size={14} />
+        {t("tasks.exportFolder")}
+      </ContextMenu.Item>
+      <ContextMenu.Item
+        className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+        style={{
+          color: "var(--color-text-primary)",
+          borderRadius: "var(--radius-sm)",
+        }}
+        onSelect={() => onImportToFolder?.(mailbox.id)}
+      >
+        <Upload size={14} />
+        {t("tasks.importToFolder")}
+      </ContextMenu.Item>
     </ContextMenu.Content>
   );
 
@@ -546,6 +614,8 @@ function FolderItemWithChildren({
   onEmptyFolder,
   onRename,
   onDropEmails,
+  onExportFolder,
+  onImportToFolder,
   depth,
 }: {
   mailbox: Mailbox;
@@ -559,6 +629,8 @@ function FolderItemWithChildren({
   onEmptyFolder: (mailboxId: string, folderName: string) => void;
   onRename: (mailboxId: string, newName: string) => void;
   onDropEmails?: (emailIds: string[], fromMailboxId: string, toMailboxId: string, folderName: string) => void;
+  onExportFolder?: (mailboxId: string) => void;
+  onImportToFolder?: (mailboxId: string) => void;
   depth: number;
 }) {
   const children = childrenMap.get(mailbox.id) ?? [];
@@ -581,6 +653,8 @@ function FolderItemWithChildren({
         onEmptyFolder={onEmptyFolder}
         onRename={onRename}
         onDropEmails={onDropEmails}
+        onExportFolder={onExportFolder}
+        onImportToFolder={onImportToFolder}
       />
       {hasChildren && isExpanded && children.map((child) => (
         <FolderItemWithChildren
@@ -596,6 +670,8 @@ function FolderItemWithChildren({
           onEmptyFolder={onEmptyFolder}
           onRename={onRename}
           onDropEmails={onDropEmails}
+          onExportFolder={onExportFolder}
+          onImportToFolder={onImportToFolder}
           depth={depth + 1}
         />
       ))}

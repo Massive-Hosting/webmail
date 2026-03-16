@@ -608,5 +608,18 @@
   "vacation.save": "Save",
   "vacation.active": "Automatic replies are active",
   "vacation.activeUntil": "Active until {{date}}",
-  "vacation.saved": "Vacation settings saved"
+  "vacation.saved": "Vacation settings saved",
+  "tasks.started": "{{type}} started",
+  "tasks.failedToStart": "Failed to start background task",
+  "tasks.uploading": "Uploading file...",
+  "tasks.bulkMove": "Bulk move",
+  "tasks.bulkDelete": "Bulk delete",
+  "tasks.bulkMarkRead": "Bulk mark as read",
+  "tasks.exportMailbox": "Mailbox export",
+  "tasks.importMailbox": "Mailbox import",
+  "tasks.exportFolder": "Export folder",
+  "tasks.importToFolder": "Import to folder",
+  "tasks.selectMboxFile": "Select .mbox file",
+  "tasks.exportFormat": "Export as mbox",
+  "tasks.importMbox": "Import mbox"
 }

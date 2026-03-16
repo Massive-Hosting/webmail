@@ -17,6 +17,7 @@ import (
 	"webmail/internal/hosting"
 	"webmail/internal/middleware"
 	"webmail/internal/session"
+	"webmail/internal/worker"
 	"webmail/internal/ws"
 
 	"github.com/go-chi/chi/v5"
@@ -96,10 +97,25 @@ func main() {
 	settingsHandler := handler.NewSettingsHandler(queries, log)
 	pgpHandler := handler.NewPGPHandler(queries, log)
 	partnerHandler := handler.NewPartnerHandler()
-	// Progress relay (Valkey subscriber is nil until Phase 3 Valkey integration).
-	progressRelay := ws.NewProgressRelay(hub, nil, log)
+	// Progress relay with real Valkey subscriber.
+	valkeySubscriber := ws.NewValkeySubscriber(rdb)
+	progressRelay := ws.NewProgressRelay(hub, valkeySubscriber, log)
 	wsHandler := handler.NewWebSocketHandler(hub, progressRelay, log)
 	healthHandler := handler.NewHealthHandler(pool)
+
+	// Start Temporal worker (in-process).
+	temporalClient, temporalCleanup, err := worker.Start(ctx, cfg, pool, rdb, log)
+	if err != nil {
+		log.Warn().Err(err).Msg("failed to start temporal worker, task endpoints will be unavailable")
+	} else {
+		defer temporalCleanup()
+	}
+
+	// Task handler (only if Temporal connected).
+	var taskHandler *handler.TaskHandler
+	if temporalClient != nil {
+		taskHandler = handler.NewTaskHandler(temporalClient, log)
+	}
 
 	// AI handler (only if enabled).
 	var aiHandler *handler.AIHandler
@@ -166,6 +182,16 @@ func main() {
 
 			// WebSocket.
 			r.Get("/ws", wsHandler.Upgrade)
+
+			// Task endpoints (Temporal workflows).
+			if taskHandler != nil {
+				r.Post("/tasks/bulk-move", taskHandler.BulkMove)
+				r.Post("/tasks/bulk-delete", taskHandler.BulkDelete)
+				r.Post("/tasks/bulk-mark-read", taskHandler.BulkMarkRead)
+				r.Post("/tasks/export-mailbox", taskHandler.ExportMailbox)
+				r.Post("/tasks/import-mailbox", taskHandler.ImportMailbox)
+				r.Get("/tasks/{taskId}", taskHandler.GetTaskStatus)
+			}
 
 			// AI assistant (only registered when enabled).
 			if aiHandler != nil {

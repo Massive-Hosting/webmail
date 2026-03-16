@@ -13,6 +13,7 @@ import { ActionBar } from "@/components/mail/action-bar.tsx";
 import { KeyboardShortcutDialog } from "@/components/mail/keyboard-shortcut-dialog.tsx";
 import { useCompose } from "@/components/mail/compose/use-compose.ts";
 import { TaskTray } from "@/components/ui/task-tray.tsx";
+import { useTasks } from "@/hooks/use-tasks.ts";
 import { useUIStore } from "@/stores/ui-store.ts";
 import { useSettingsStore } from "@/stores/settings-store.ts";
 import { useSearchStore } from "@/stores/search-store.ts";
@@ -95,6 +96,7 @@ export function AppShell() {
   const { emails, starEmail, markRead, moveEmails } = useMessages(selectedMailboxId);
   const { email: selectedEmail } = useMessage(selectedEmailId);
   const { open: openCompose } = useCompose();
+  const { bulkThreshold, startBulkMove, startBulkDelete, startBulkMarkRead } = useTasks();
 
   // Search results
   const search = useSearch();
@@ -317,29 +319,45 @@ export function AppShell() {
     if (fullEmail) openCompose({ mode: "forward", email: fullEmail, identity: defaultIdentity });
   }, [openCompose, defaultIdentity]);
 
-  const handleArchive = useCallback((emailIds: string[]) => {
+  const handleArchive = useCallback(async (emailIds: string[]) => {
     if (archiveMailbox && selectedMailboxId) {
-      moveEmails(emailIds, selectedMailboxId, archiveMailbox.id);
+      if (emailIds.length > bulkThreshold) {
+        await startBulkMove(emailIds, selectedMailboxId, archiveMailbox.id);
+      } else {
+        moveEmails(emailIds, selectedMailboxId, archiveMailbox.id);
+      }
     }
-  }, [archiveMailbox, selectedMailboxId, moveEmails]);
+  }, [archiveMailbox, selectedMailboxId, moveEmails, bulkThreshold, startBulkMove]);
 
-  const handleDelete = useCallback((emailIds: string[]) => {
+  const handleDelete = useCallback(async (emailIds: string[]) => {
     if (trashMailbox && selectedMailboxId) {
-      moveEmails(emailIds, selectedMailboxId, trashMailbox.id);
+      if (emailIds.length > bulkThreshold) {
+        await startBulkDelete(emailIds);
+      } else {
+        moveEmails(emailIds, selectedMailboxId, trashMailbox.id);
+      }
     }
-  }, [trashMailbox, selectedMailboxId, moveEmails]);
+  }, [trashMailbox, selectedMailboxId, moveEmails, bulkThreshold, startBulkDelete]);
 
-  const handleJunk = useCallback((emailIds: string[]) => {
+  const handleJunk = useCallback(async (emailIds: string[]) => {
     if (junkMailbox && selectedMailboxId) {
-      moveEmails(emailIds, selectedMailboxId, junkMailbox.id);
+      if (emailIds.length > bulkThreshold) {
+        await startBulkMove(emailIds, selectedMailboxId, junkMailbox.id);
+      } else {
+        moveEmails(emailIds, selectedMailboxId, junkMailbox.id);
+      }
     }
-  }, [junkMailbox, selectedMailboxId, moveEmails]);
+  }, [junkMailbox, selectedMailboxId, moveEmails, bulkThreshold, startBulkMove]);
 
-  const handleMoveToFolder = useCallback((emailIds: string[], targetMailboxId: string) => {
+  const handleMoveToFolder = useCallback(async (emailIds: string[], targetMailboxId: string) => {
     if (selectedMailboxId) {
-      moveEmails(emailIds, selectedMailboxId, targetMailboxId);
+      if (emailIds.length > bulkThreshold) {
+        await startBulkMove(emailIds, selectedMailboxId, targetMailboxId);
+      } else {
+        moveEmails(emailIds, selectedMailboxId, targetMailboxId);
+      }
     }
-  }, [selectedMailboxId, moveEmails]);
+  }, [selectedMailboxId, moveEmails, bulkThreshold, startBulkMove]);
 
   // Shared content
   const toasterConfig = (

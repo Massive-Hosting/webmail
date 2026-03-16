@@ -608,5 +608,18 @@
   "vacation.save": "Lagre",
   "vacation.active": "Automatiske svar er aktive",
   "vacation.activeUntil": "Aktiv til {{date}}",
-  "vacation.saved": "Frav\u00e6rsinnstillinger lagret"
+  "vacation.saved": "Frav\u00e6rsinnstillinger lagret",
+  "tasks.started": "{{type}} startet",
+  "tasks.failedToStart": "Kunne ikke starte bakgrunnsoppgave",
+  "tasks.uploading": "Laster opp fil...",
+  "tasks.bulkMove": "Masseflytting",
+  "tasks.bulkDelete": "Massesletting",
+  "tasks.bulkMarkRead": "Massemerk som lest",
+  "tasks.exportMailbox": "Eksport av postboks",
+  "tasks.importMailbox": "Import av postboks",
+  "tasks.exportFolder": "Eksporter mappe",
+  "tasks.importToFolder": "Importer til mappe",
+  "tasks.selectMboxFile": "Velg .mbox-fil",
+  "tasks.exportFormat": "Eksporter som mbox",
+  "tasks.importMbox": "Importer mbox"
 }

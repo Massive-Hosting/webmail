@@ -608,5 +608,18 @@
   "vacation.save": "Speichern",
   "vacation.active": "Automatische Antworten sind aktiv",
   "vacation.activeUntil": "Aktiv bis {{date}}",
-  "vacation.saved": "Abwesenheitseinstellungen gespeichert"
+  "vacation.saved": "Abwesenheitseinstellungen gespeichert",
+  "tasks.started": "{{type}} gestartet",
+  "tasks.failedToStart": "Hintergrundaufgabe konnte nicht gestartet werden",
+  "tasks.uploading": "Datei wird hochgeladen...",
+  "tasks.bulkMove": "Massenverschiebung",
+  "tasks.bulkDelete": "Massenlöschung",
+  "tasks.bulkMarkRead": "Massen-Gelesen-Markierung",
+  "tasks.exportMailbox": "Postfach-Export",
+  "tasks.importMailbox": "Postfach-Import",
+  "tasks.exportFolder": "Ordner exportieren",
+  "tasks.importToFolder": "In Ordner importieren",
+  "tasks.selectMboxFile": ".mbox-Datei auswählen",
+  "tasks.exportFormat": "Als mbox exportieren",
+  "tasks.importMbox": "Mbox importieren"
 }
