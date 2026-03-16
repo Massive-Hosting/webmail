@@ -120,9 +120,9 @@ export function AppShell() {
 
   const defaultIdentity = identities?.[0] ?? null;
 
-  // Auto-select inbox on first load
+  // Auto-select inbox on first load (but not when a virtual folder is active)
   useEffect(() => {
-    if (!selectedMailboxId && sortedMailboxes.length > 0) {
+    if (!selectedMailboxId && !virtualFolder && sortedMailboxes.length > 0) {
       const inbox = findByRole("inbox");
       if (inbox) {
         setSelectedMailbox(inbox.id);
