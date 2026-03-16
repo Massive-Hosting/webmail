@@ -128,6 +128,8 @@
   "compose.missingPgpKeys": "Die folgenden Empfänger haben keinen öffentlichen PGP-Schlüssel:",
   "compose.cancel": "Abbrechen",
   "compose.sendUnencrypted": "Unverschlüsselt senden",
+  "compose.insertSignature": "Signatur einfügen",
+  "compose.noSignature": "Keine Signatur für diese Identität konfiguriert",
   "ai.assistant": "KI-Assistent",
   "ai.closePanel": "KI-Panel schließen",
   "ai.promptReply": "Wie soll die Antwort klingen? (optional — oder wählen Sie einen Ton)",

@@ -66,12 +66,10 @@
 
 .activity-bar__icon--active {
   background-color: var(--color-message-selected);
-  color: var(--color-text-accent);
 }
 
 .activity-bar__icon--active:hover {
   background-color: var(--color-message-selected);
-  color: var(--color-text-accent);
 }
 
 /* ---- Shared tooltip ---- */
@@ -299,10 +297,13 @@
   padding-left: 32px;
   gap: 8px;
   height: 56px;
+  border-left: 2px solid color-mix(in srgb, var(--color-text-accent) 30%, transparent);
+  background-color: var(--color-bg-secondary);
 }
 
 .message-list-item--thread-child:hover {
   background-color: var(--color-message-hover);
+  border-left: 2px solid color-mix(in srgb, var(--color-text-accent) 50%, transparent);
 }
 
 .message-list-item--thread-child[data-selected] {

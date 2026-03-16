@@ -466,7 +466,7 @@ export function AppShell() {
       </header>
       <div className="flex flex-1 overflow-hidden">
         {/* Activity bar (icon rail) */}
-        <ActivityBar onSettings={handleOpenSettings} />
+        <ActivityBar />
 
         {/* Sidebar (folder tree — only visible for mail view) */}
         <nav role="navigation" aria-label={t("folder.mailFolders")}>

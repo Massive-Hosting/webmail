@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   AlertTriangle,
   Sparkles,
+  FileSignature,
 } from "lucide-react";
 import {
   useComposeStore,
@@ -507,6 +508,55 @@ export const ComposePanel = React.memo(function ComposePanel({
     [draftId, identities, updateDraft],
   );
 
+  const handleInsertSignature = useCallback(() => {
+    const currentDraft = useComposeStore.getState().drafts.get(draftId);
+    if (!currentDraft?.from?.htmlSignature) {
+      toast.info(t("compose.noSignature"));
+      return;
+    }
+
+    let bodyHTML = currentDraft.bodyHTML;
+    const sigSep = '<p>-- </p>';
+    const signature = currentDraft.from.htmlSignature;
+
+    // If signature already exists, replace it
+    const existingSigIdx = bodyHTML.indexOf(sigSep);
+    if (existingSigIdx !== -1) {
+      // Find where the old signature ends (at the next quote boundary or end)
+      const afterSig = bodyHTML.slice(existingSigIdx + sigSep.length);
+      const quoteMarkers = ['<hr', '<div style="border-top:', '<div class="compose-quoted-text', '<blockquote', '---------- Forwarded message'];
+      let endOffset = afterSig.length;
+      for (const marker of quoteMarkers) {
+        const idx = afterSig.indexOf(marker);
+        if (idx !== -1 && idx < endOffset) {
+          endOffset = idx;
+        }
+      }
+      bodyHTML =
+        bodyHTML.slice(0, existingSigIdx) +
+        sigSep + signature +
+        afterSig.slice(endOffset);
+    } else {
+      // Insert before quote boundary or at end
+      const quoteMarkers = ['<hr', '<div style="border-top:', '<div class="compose-quoted-text', '<blockquote', '---------- Forwarded message'];
+      let insertIdx = -1;
+      for (const marker of quoteMarkers) {
+        const idx = bodyHTML.indexOf(marker);
+        if (idx !== -1 && (insertIdx === -1 || idx < insertIdx)) {
+          insertIdx = idx;
+        }
+      }
+      const sigBlock = `<p><br></p>${sigSep}${signature}`;
+      if (insertIdx !== -1) {
+        bodyHTML = bodyHTML.slice(0, insertIdx) + sigBlock + bodyHTML.slice(insertIdx);
+      } else {
+        bodyHTML = bodyHTML + sigBlock;
+      }
+    }
+
+    updateDraft(draftId, { bodyHTML });
+  }, [draftId, updateDraft, t]);
+
   // Keyboard shortcut: Ctrl+Enter to send
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -632,6 +682,29 @@ export const ComposePanel = React.memo(function ComposePanel({
               }))}
               className="flex-1"
             />
+            <button
+              type="button"
+              onClick={handleInsertSignature}
+              className="compose-dialog__window-btn"
+              title={t("compose.insertSignature")}
+              style={{ marginLeft: 4 }}
+            >
+              <FileSignature size={14} />
+            </button>
+          </div>
+        )}
+        {/* Insert signature button when single identity (no From dropdown shown) */}
+        {(!identities || identities.length <= 1) && (
+          <div className="compose-dialog__field">
+            <div className="flex-1" />
+            <button
+              type="button"
+              onClick={handleInsertSignature}
+              className="compose-dialog__window-btn"
+              title={t("compose.insertSignature")}
+            >
+              <FileSignature size={14} />
+            </button>
           </div>
         )}
 

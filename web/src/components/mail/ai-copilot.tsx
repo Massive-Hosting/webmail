@@ -241,10 +241,11 @@ export const AICopilot = React.memo(function AICopilot({
     (content: string) => {
       if (!email) return;
       // Strip common AI sign-offs that the app's signature will replace
-      const cleaned = stripSignOff(content).trim();
+      const cleaned = stripSignOff(content).replace(/[\s\n]+$/, "");
       const htmlBody = cleaned
-        .split("\n\n")
-        .filter((p) => p.trim() !== "")
+        .split(/\n\s*\n/)
+        .map((p) => p.trim())
+        .filter((p) => p !== "")
         .map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`)
         .join("");
       openCompose({
@@ -589,6 +590,10 @@ function stripSignOff(text: string): string {
       }
     }
     break;
+  }
+  // Remove any remaining trailing empty lines
+  while (lines.length > 1 && lines[lines.length - 1].trim() === "") {
+    lines.pop();
   }
   return lines.join("\n").trimEnd();
 }

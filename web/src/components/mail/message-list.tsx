@@ -63,7 +63,7 @@ function ExpandedThreadChildren({
   threadId: string;
   parentEmail: EmailListItem;
   rowHeight: number;
-  onSelectMessage: (email: EmailListItem) => void;
+  onSelectMessage: (email: EmailListItem, event: React.MouseEvent) => void;
   selectedEmailId: string | null;
   onStar: (emailId: string, flagged: boolean) => void;
   onMouseEnter?: (emailId: string) => void;
@@ -228,21 +228,27 @@ export const MessageList = React.memo(function MessageList({
         handleItemClick(email, event);
         return;
       }
-      toggleThread(threadId);
-      // If we're expanding (not collapsing), auto-select latest message
-      // The actual selection happens after data loads via ExpandedThreadChildren
-      if (!expandedThreads.has(threadId)) {
-        // Thread is being expanded - select the header email for now
-        // (the latest message will be auto-selected after thread data loads)
+
+      const isExpanded = expandedThreads.has(threadId);
+
+      if (!isExpanded) {
+        // Collapsed → expand and select the header (latest message auto-selected after load)
+        toggleThread(threadId);
         setSelectedEmail(email.id, threadId);
+      } else if (selectedEmailId !== email.id) {
+        // Expanded AND a child (or something else) is selected → select the parent, do NOT collapse
+        setSelectedEmail(email.id, threadId);
+      } else {
+        // Expanded AND parent is already selected → collapse
+        toggleThread(threadId);
       }
     },
-    [toggleThread, expandedThreads, setSelectedEmail],
+    [toggleThread, expandedThreads, setSelectedEmail, selectedEmailId, handleItemClick],
   );
 
   const handleThreadChildSelect = useCallback(
-    (email: EmailListItem, event?: React.MouseEvent) => {
-      if (event && (event.shiftKey || event.ctrlKey || event.metaKey)) {
+    (email: EmailListItem, event: React.MouseEvent) => {
+      if (event.shiftKey || event.ctrlKey || event.metaKey) {
         handleItemClick(email, event);
         return;
       }

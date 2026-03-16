@@ -103,13 +103,15 @@ export const CalendarPage = React.memo(function CalendarPage() {
     setFormOpen(true);
   }, [currentDate]);
 
-  // Click on a day in month view
+  // Click on a day in month view — open create event dialog pre-filled with that date
   const handleClickDay = useCallback(
     (date: Date) => {
-      goToDate(date);
-      setViewMode("day");
+      setEditingEvent(null);
+      setDefaultFormDate(date);
+      setDefaultFormHour(9);
+      setFormOpen(true);
     },
-    [goToDate, setViewMode],
+    [],
   );
 
   // Double-click day to create event

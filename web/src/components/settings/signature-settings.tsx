@@ -372,8 +372,8 @@ function SignatureEditor({ identity }: { identity: Identity }) {
         )}
       </div>
 
-      {/* Live preview */}
-      {(htmlSig || textSig) && (
+      {/* Live preview — only for plain text mode (rich text editor already shows the rendered signature) */}
+      {mode === "text" && textSig && (
         <div>
           <label
             className="text-xs font-medium block mb-1.5"
@@ -391,11 +391,7 @@ function SignatureEditor({ identity }: { identity: Identity }) {
           >
             <div style={{ borderTop: "1px solid var(--color-border-secondary)", paddingTop: 12 }}>
               <p style={{ margin: "0 0 4px 0", color: "var(--color-text-tertiary)", fontSize: 13 }}>-- </p>
-              {mode === "html" ? (
-                <div dangerouslySetInnerHTML={{ __html: htmlSig }} />
-              ) : (
-                <pre style={{ whiteSpace: "pre-wrap", fontFamily: "monospace", margin: 0, fontSize: 13 }}>{textSig}</pre>
-              )}
+              <pre style={{ whiteSpace: "pre-wrap", fontFamily: "monospace", margin: 0, fontSize: 13 }}>{textSig}</pre>
             </div>
           </div>
         </div>

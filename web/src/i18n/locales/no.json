@@ -128,6 +128,8 @@
   "compose.missingPgpKeys": "Følgende mottakere har ikke en offentlig PGP-nøkkel:",
   "compose.cancel": "Avbryt",
   "compose.sendUnencrypted": "Send ukryptert",
+  "compose.insertSignature": "Sett inn signatur",
+  "compose.noSignature": "Ingen signatur konfigurert for denne identiteten",
   "ai.assistant": "KI-assistent",
   "ai.closePanel": "Lukk KI-panel",
   "ai.promptReply": "Hvordan skal svaret høres ut? (valgfritt — eller velg en tone)",

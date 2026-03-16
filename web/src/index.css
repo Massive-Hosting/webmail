@@ -440,6 +440,13 @@ h1, h2, h3, h4, h5, h6 {
 .compose-editor-content img {
   max-width: 100%;
   height: auto;
+  cursor: pointer;
+}
+
+.compose-editor-content img.ProseMirror-selectednode {
+  outline: 2px solid var(--color-bg-accent);
+  resize: both;
+  overflow: auto;
 }
 
 .compose-editor-content table {

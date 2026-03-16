@@ -11,6 +11,7 @@ import { jmapRequest } from "./mail.ts";
 import type { JMAPRequest } from "@/types/jmap.ts";
 import type { Mailbox, EmailListItem, Thread, Identity } from "@/types/mail.ts";
 import { useJMAPStateStore } from "@/stores/jmap-state-store.ts";
+import { useAuthStore } from "@/stores/auth-store.ts";
 
 const MAILBOX_PROPERTIES = [
   "id", "name", "parentId", "role", "sortOrder",
@@ -102,6 +103,15 @@ export async function prefetchInitialMailData(queryClient: QueryClient): Promise
   // Populate TanStack Query cache
   queryClient.setQueryData(["mailboxes"], mailboxData.list);
   queryClient.setQueryData(["identities"], identities);
+
+  // Set display name from matching identity
+  const authState = useAuthStore.getState();
+  const matchingIdentity = identities.find(
+    (id) => id.email.toLowerCase() === authState.email.toLowerCase(),
+  );
+  if (matchingIdentity?.name && matchingIdentity.name !== matchingIdentity.email) {
+    authState.setDisplayName(matchingIdentity.name);
+  }
 
   // Return inbox ID so caller can set it as selected
   const inbox = mailboxData.list.find((m) => m.role === "inbox");

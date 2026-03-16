@@ -18,6 +18,8 @@ interface OpenComposeOptions {
   windowMode?: WindowMode;
   /** Pre-fill the body with AI-generated text (inserted before quoted text in replies) */
   prefillBody?: string;
+  /** Pre-fill the To recipients */
+  prefillTo?: Array<{ email: string; name?: string | null }>;
 }
 
 export function useCompose() {
@@ -27,7 +29,7 @@ export function useCompose() {
   const open = useCallback(
     (options: OpenComposeOptions) => {
       const draftId = generateDraftId();
-      const { mode, email, identity, windowMode = "inline", prefillBody } = options;
+      const { mode, email, identity, windowMode = "inline", prefillBody, prefillTo } = options;
 
       // Pre-resolve mailbox IDs so auto-save always has them
       const draftsMailboxId = findByRole("drafts")?.id;
@@ -41,6 +43,13 @@ export function useCompose() {
       let references: string[] | undefined;
       const attachments: DraftState["attachments"] = [];
       let showCc = false;
+
+      // Add pre-filled To recipients
+      if (prefillTo) {
+        for (const r of prefillTo) {
+          to.push({ name: r.name ?? null, email: r.email, isValid: true });
+        }
+      }
 
       if (email && (mode === "reply" || mode === "reply-all")) {
         // Reply / Reply-all
@@ -71,7 +80,7 @@ export function useCompose() {
           : "someone";
         const date = new Date(email.receivedAt).toLocaleString();
         const originalBody = getEmailBodyHTML(email);
-        bodyHTML = `<p><br></p><hr style="border: none; border-top: 1px solid #ccc; margin: 12px 0 8px 0;"><div class="compose-quoted-text" style="border-left: 4px solid var(--color-border-primary, #d6d3d1); padding-left: 12px; margin-top: 8px; color: var(--color-text-secondary, #78716C);">
+        bodyHTML = `<hr style="border: none; border-top: 1px solid #ccc; margin: 12px 0 8px 0;"><div class="compose-quoted-text" style="border-left: 4px solid var(--color-border-primary, #d6d3d1); padding-left: 12px; margin-top: 8px; color: var(--color-text-secondary, #78716C);">
 <p style="margin: 0 0 4px 0; font-size: 12px;">On ${date}, ${senderDisplay} wrote:</p>
 ${originalBody}
 </div>`;
@@ -136,6 +145,9 @@ ${originalBody}
         } else {
           bodyHTML = prefillBody;
         }
+      } else if (mode === "reply" || mode === "reply-all") {
+        // No prefill — add a blank line for the user to type in
+        bodyHTML = `<p><br></p>${bodyHTML}`;
       }
 
       // Insert signature if identity has one

@@ -7,6 +7,7 @@ interface AuthState {
   displayName: string;
   accountId: string;
   setSession: (email: string, accountId: string) => void;
+  setDisplayName: (name: string) => void;
 }
 
 /** Derive initials from email or display name */
@@ -32,5 +33,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   accountId: "",
   setSession: (email, accountId) => {
     set({ email, accountId, displayName: "" });
+  },
+  setDisplayName: (name) => {
+    set({ displayName: name });
   },
 }));

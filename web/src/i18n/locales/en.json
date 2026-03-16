@@ -128,6 +128,8 @@
   "compose.missingPgpKeys": "The following recipients do not have a PGP public key:",
   "compose.cancel": "Cancel",
   "compose.sendUnencrypted": "Send unencrypted",
+  "compose.insertSignature": "Insert signature",
+  "compose.noSignature": "No signature configured for this identity",
   "ai.assistant": "AI Assistant",
   "ai.closePanel": "Close AI panel",
   "ai.promptReply": "How should the reply sound? (optional — or just pick a tone)",

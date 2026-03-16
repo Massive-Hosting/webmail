@@ -5,7 +5,7 @@ import type { EmailListItem } from "@/types/mail.ts";
 import { isUnread, isFlagged } from "@/types/mail.ts";
 import { Avatar } from "@/components/ui/avatar.tsx";
 import { formatMessageDate, formatAddress } from "@/lib/format.ts";
-import { Star, Paperclip, ChevronRight, ChevronDown, Check } from "lucide-react";
+import { Star, Paperclip, ChevronRight, ChevronDown } from "lucide-react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { useTranslation } from "react-i18next";
 
@@ -75,19 +75,9 @@ export const MessageListItem = React.memo(
               )}
             </div>
 
-            {/* Avatar / checkmark when multi-selected */}
+            {/* Avatar */}
             <div className="message-list-item__avatar">
-              {isMultiSelected ? (
-                <div style={{
-                  width: 36, height: 36, borderRadius: "50%",
-                  backgroundColor: "var(--color-bg-accent)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <Check size={18} style={{ color: "#fff" }} />
-                </div>
-              ) : (
-                <Avatar address={sender} size={36} />
-              )}
+              <Avatar address={sender} size={36} />
             </div>
 
             {/* Content area */}
@@ -325,7 +315,7 @@ interface ThreadChildItemProps {
   isSelected: boolean;
   isFirst: boolean;
   isLast: boolean;
-  onClick: (email: EmailListItem) => void;
+  onClick: (email: EmailListItem, event: React.MouseEvent) => void;
   onStar: (emailId: string, flagged: boolean) => void;
   onMouseEnter?: (emailId: string) => void;
   onReply?: (email: EmailListItem) => void;
@@ -378,7 +368,7 @@ export const ThreadChildItem = React.memo(
             aria-selected={isSelected}
             onClick={(e) => {
               e.stopPropagation();
-              onClick(email);
+              onClick(email, e);
             }}
             onMouseEnter={() => onMouseEnter?.(email.id)}
           >

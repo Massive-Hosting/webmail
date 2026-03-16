@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/ui/empty-state.tsx";
 import { importVCards, exportVCards } from "./import-export.tsx";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { useCompose } from "@/components/mail/compose/use-compose.ts";
 
 export const ContactsPage = React.memo(function ContactsPage() {
   const { t } = useTranslation();
@@ -138,14 +139,14 @@ export const ContactsPage = React.memo(function ContactsPage() {
     [deleteContact, selectedContactId],
   );
 
+  const { open: openCompose } = useCompose();
+
   const handleComposeEmail = useCallback((email: string, name?: string) => {
-    // Dispatch custom event that compose dialog listens for
-    window.dispatchEvent(
-      new CustomEvent("compose-to", {
-        detail: { email, name },
-      }),
-    );
-  }, []);
+    openCompose({
+      mode: "new",
+      prefillTo: [{ email, name }],
+    });
+  }, [openCompose]);
 
   const handleContextMenu = useCallback(
     (e: React.MouseEvent, contact: Contact) => {
