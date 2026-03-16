@@ -18,12 +18,16 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
   const sortNewestFirst = useUIStore((s) => s.sortNewestFirst);
   const conversationView = useSettingsStore((s) => s.conversationView);
 
-  const queryKey = ["emails", mailboxId, filter, sortNewestFirst, conversationView] as const;
+  // Serialize filter to a stable string for the query key (avoids reference comparison issues)
+  const filterKey = filter ? JSON.stringify(filter) : null;
+  const queryKey = ["emails", mailboxId, filterKey, sortNewestFirst, conversationView] as const;
+
+  const hasFilter = filter != null && Object.keys(filter).length > 0;
 
   const query = useInfiniteQuery({
     queryKey,
     queryFn: async ({ pageParam = 0 }) => {
-      if (!mailboxId && !filter) {
+      if (!mailboxId && !hasFilter) {
         return { emails: [] as EmailListItem[], total: 0, position: 0, threadCounts: {} as Record<string, number> };
       }
       return fetchEmails({
@@ -44,7 +48,7 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
       return nextPosition;
     },
     initialPageParam: 0,
-    enabled: !!mailboxId || (filter != null && Object.keys(filter).length > 0),
+    enabled: !!mailboxId || hasFilter,
     staleTime: 2 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     // When WebSocket is connected, disable polling — we get push updates.
