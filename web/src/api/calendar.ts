@@ -181,9 +181,7 @@ export async function fetchCalendarEvents(
     before: dateRange.end,
   };
 
-  if (calendarIds.length > 0) {
-    filter.inCalendars = calendarIds;
-  }
+  // Note: Stalwart doesn't support inCalendars filter — filter client-side if needed
 
   const request: JMAPRequest = {
     using: JMAP_USING,
