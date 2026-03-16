@@ -1,6 +1,6 @@
 /** Event form dialog for create/edit */
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, Plus, Trash2, MapPin, Clock, Users, Bell, Palette, Repeat } from "lucide-react";
 import type {
@@ -56,6 +56,16 @@ const EVENT_COLORS = [
   "#06b6d4",
   "#84cc16",
 ];
+
+/** Timeline hours: 7am to 9pm */
+const TIMELINE_START_HOUR = 7;
+const TIMELINE_END_HOUR = 21;
+const TIMELINE_HOURS = Array.from(
+  { length: TIMELINE_END_HOUR - TIMELINE_START_HOUR + 1 },
+  (_, i) => TIMELINE_START_HOUR + i,
+);
+const HOUR_HEIGHT = 48; // px per hour row
+const MIN_DURATION_MINUTES = 15;
 
 export const EventForm = React.memo(function EventForm({
   open,
@@ -251,18 +261,22 @@ export const EventForm = React.memo(function EventForm({
     }
   }, [event, onDelete, onOpenChange]);
 
+  // Resolve event color for timeline
+  const resolvedColor = eventColor || "#3b82f6";
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
         <Dialog.Content
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-lg shadow-xl z-50 p-6"
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-h-[85vh] rounded-lg shadow-xl z-50 flex flex-col"
           style={{
+            maxWidth: 900,
             backgroundColor: "var(--color-bg-elevated)",
             border: "1px solid var(--color-border-primary)",
           }}
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between px-6 pt-6 pb-2">
             <Dialog.Title
               className="text-lg font-semibold"
               style={{ color: "var(--color-text-primary)" }}
@@ -279,330 +293,561 @@ export const EventForm = React.memo(function EventForm({
             </Dialog.Close>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {/* Title */}
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t("calendar.eventTitle")}
-              required
-              autoFocus
-              className="w-full px-3 py-2 text-sm rounded-md outline-none"
-              style={{
-                backgroundColor: "var(--color-bg-tertiary)",
-                color: "var(--color-text-primary)",
-                border: "1px solid var(--color-border-secondary)",
-              }}
-            />
-
-            {/* Calendar selector */}
-            {calendars.length > 1 && (
-              <div className="flex items-center gap-2">
-                <span
-                  className="text-xs shrink-0"
-                  style={{ color: "var(--color-text-tertiary)" }}
-                >
-                  {t("calendar.calendar")}
-                </span>
-                <StyledSelect
-                  value={selectedCalendarId}
-                  onValueChange={setSelectedCalendarId}
-                  options={calendars.map((cal) => ({
-                    value: cal.id,
-                    label: cal.name,
-                  }))}
-                  className="flex-1"
-                />
-              </div>
-            )}
-
-            {/* Date & Time */}
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <Clock size={14} style={{ color: "var(--color-text-tertiary)" }} />
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="px-2 py-1 text-sm rounded outline-none"
-                  style={{
-                    backgroundColor: "var(--color-bg-tertiary)",
-                    color: "var(--color-text-primary)",
-                    border: "1px solid var(--color-border-secondary)",
-                  }}
-                />
-                {!allDay && (
-                  <>
-                    <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="px-2 py-1 text-sm rounded outline-none"
-                      style={{
-                        backgroundColor: "var(--color-bg-tertiary)",
-                        color: "var(--color-text-primary)",
-                        border: "1px solid var(--color-border-secondary)",
-                      }}
-                    />
-                    <span
-                      className="text-xs"
-                      style={{ color: "var(--color-text-tertiary)" }}
-                    >
-                      {t("calendar.to")}
-                    </span>
-                    <input
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => handleEndTimeChange(e.target.value)}
-                      className="px-2 py-1 text-sm rounded outline-none"
-                      style={{
-                        backgroundColor: "var(--color-bg-tertiary)",
-                        color: "var(--color-text-primary)",
-                        border: "1px solid var(--color-border-secondary)",
-                      }}
-                    />
-                  </>
-                )}
-              </div>
-              <label className="flex items-center gap-2 text-sm cursor-pointer ml-5">
-                <input
-                  type="checkbox"
-                  checked={allDay}
-                  onChange={(e) => setAllDay(e.target.checked)}
-                  className="rounded"
-                />
-                <span style={{ color: "var(--color-text-secondary)" }}>
-                  {t("calendar.allDay")}
-                </span>
-              </label>
-            </div>
-
-            {/* Location */}
-            <div className="flex items-center gap-2">
-              <MapPin
-                size={14}
-                style={{ color: "var(--color-text-tertiary)" }}
-              />
+          <div className="flex flex-1 min-h-0 overflow-hidden">
+            {/* Left column: form */}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4 flex-1 px-6 pb-6 overflow-y-auto" style={{ minWidth: 0 }}>
+              {/* Title */}
               <input
                 type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder={t("calendar.addLocation")}
-                className="flex-1 px-2 py-1 text-sm rounded outline-none"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={t("calendar.eventTitle")}
+                required
+                autoFocus
+                className="w-full px-3 py-2 text-sm rounded-md outline-none"
                 style={{
                   backgroundColor: "var(--color-bg-tertiary)",
                   color: "var(--color-text-primary)",
                   border: "1px solid var(--color-border-secondary)",
                 }}
               />
-            </div>
 
-            {/* Recurrence */}
-            <div className="flex items-center gap-2">
-              <Repeat
-                size={14}
-                style={{ color: "var(--color-text-tertiary)" }}
-              />
-              <StyledSelect
-                value={recurrence}
-                onValueChange={setRecurrence}
-                options={RECURRENCE_OPTION_KEYS.map(o => ({ value: o.value, label: t(o.key) }))}
-                className="flex-1"
-              />
-            </div>
+              {/* Calendar selector */}
+              {calendars.length > 1 && (
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-xs shrink-0"
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  >
+                    {t("calendar.calendar")}
+                  </span>
+                  <StyledSelect
+                    value={selectedCalendarId}
+                    onValueChange={setSelectedCalendarId}
+                    options={calendars.map((cal) => ({
+                      value: cal.id,
+                      label: cal.name,
+                    }))}
+                    className="flex-1"
+                  />
+                </div>
+              )}
 
-            {/* Attendees */}
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-2">
-                <Users
-                  size={14}
-                  style={{ color: "var(--color-text-tertiary)" }}
-                />
-                <div className="flex-1 relative">
+              {/* Date & Time */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <Clock size={14} style={{ color: "var(--color-text-tertiary)" }} />
                   <input
-                    type="text"
-                    value={attendeeInput}
-                    onChange={(e) => setAttendeeInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        if (attendeeInput.includes("@")) {
-                          addAttendee("", attendeeInput);
-                        }
-                      }
-                    }}
-                    placeholder={t("calendar.addAttendees")}
-                    className="w-full px-2 py-1 text-sm rounded outline-none"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="px-2 py-1 text-sm rounded outline-none"
                     style={{
                       backgroundColor: "var(--color-bg-tertiary)",
                       color: "var(--color-text-primary)",
                       border: "1px solid var(--color-border-secondary)",
                     }}
                   />
-                  {/* Contact autocomplete */}
-                  {contactResults.length > 0 && attendeeInput.length >= 1 && (
-                    <div
-                      className="absolute top-full left-0 right-0 mt-1 py-1 rounded-md shadow-lg z-10 max-h-36 overflow-y-auto"
-                      style={{
-                        backgroundColor: "var(--color-bg-elevated)",
-                        border: "1px solid var(--color-border-primary)",
-                      }}
-                    >
-                      {contactResults.map((contact) =>
-                        contact.emails.map((email) => (
-                          <button
-                            key={`${contact.id}-${email.address}`}
-                            type="button"
-                            className="w-full text-left px-3 py-1.5 text-sm hover:bg-[var(--color-bg-tertiary)]"
-                            style={{ color: "var(--color-text-primary)" }}
-                            onClick={() => {
-                              const displayName =
-                                contact.name.full ??
-                                `${contact.name.given ?? ""} ${contact.name.surname ?? ""}`.trim();
-                              addAttendee(displayName, email.address);
-                            }}
-                          >
-                            <div>{contact.name.full ?? contact.name.given ?? email.address}</div>
-                            <div
-                              className="text-xs"
-                              style={{ color: "var(--color-text-tertiary)" }}
-                            >
-                              {email.address}
-                            </div>
-                          </button>
-                        )),
-                      )}
-                    </div>
+                  {!allDay && (
+                    <>
+                      <input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        className="px-2 py-1 text-sm rounded outline-none"
+                        style={{
+                          backgroundColor: "var(--color-bg-tertiary)",
+                          color: "var(--color-text-primary)",
+                          border: "1px solid var(--color-border-secondary)",
+                        }}
+                      />
+                      <span
+                        className="text-xs"
+                        style={{ color: "var(--color-text-tertiary)" }}
+                      >
+                        {t("calendar.to")}
+                      </span>
+                      <input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => handleEndTimeChange(e.target.value)}
+                        className="px-2 py-1 text-sm rounded outline-none"
+                        style={{
+                          backgroundColor: "var(--color-bg-tertiary)",
+                          color: "var(--color-text-primary)",
+                          border: "1px solid var(--color-border-secondary)",
+                        }}
+                      />
+                    </>
                   )}
                 </div>
-              </div>
-
-              {/* Attendee list */}
-              {attendees.length > 0 && (
-                <div className="flex flex-col gap-1 ml-5">
-                  {attendees.map((a) => (
-                    <div
-                      key={a.email}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <span
-                        className="flex-1 truncate"
-                        style={{ color: "var(--color-text-secondary)" }}
-                      >
-                        {a.name ? `${a.name} <${a.email}>` : a.email}
-                      </span>
-                      <button
-                        type="button"
-                        className="p-0.5 rounded hover:bg-[var(--color-bg-tertiary)]"
-                        style={{ color: "var(--color-text-tertiary)" }}
-                        onClick={() => removeAttendee(a.email)}
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Reminder */}
-            <div className="flex items-center gap-2">
-              <Bell
-                size={14}
-                style={{ color: "var(--color-text-tertiary)" }}
-              />
-              <StyledSelect
-                value={reminder}
-                onValueChange={setReminder}
-                options={REMINDER_OPTION_KEYS.map(o => ({ value: o.value, label: t(o.key) }))}
-                className="flex-1"
-              />
-            </div>
-
-            {/* Description */}
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t("calendar.addDescription")}
-              rows={3}
-              className="w-full px-3 py-2 text-sm rounded-md outline-none resize-none"
-              style={{
-                backgroundColor: "var(--color-bg-tertiary)",
-                color: "var(--color-text-primary)",
-                border: "1px solid var(--color-border-secondary)",
-              }}
-            />
-
-            {/* Color */}
-            <div className="flex items-center gap-2">
-              <Palette
-                size={14}
-                style={{ color: "var(--color-text-tertiary)" }}
-              />
-              <div className="flex gap-1.5">
-                {EVENT_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    className="w-5 h-5 rounded-full transition-transform"
-                    style={{
-                      backgroundColor: c,
-                      transform: eventColor === c ? "scale(1.3)" : undefined,
-                      outline:
-                        eventColor === c
-                          ? `2px solid ${c}`
-                          : undefined,
-                      outlineOffset: 2,
-                    }}
-                    onClick={() =>
-                      setEventColor(eventColor === c ? "" : c)
-                    }
+                <label className="flex items-center gap-2 text-sm cursor-pointer ml-5">
+                  <input
+                    type="checkbox"
+                    checked={allDay}
+                    onChange={(e) => setAllDay(e.target.checked)}
+                    className="rounded"
                   />
-                ))}
+                  <span style={{ color: "var(--color-text-secondary)" }}>
+                    {t("calendar.allDay")}
+                  </span>
+                </label>
               </div>
-            </div>
 
-            {/* Actions */}
-            <div className="flex items-center justify-between pt-2">
-              <div>
-                {isEditing && onDelete && (
-                  <button
-                    type="button"
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                    style={{ color: "var(--color-text-error, #dc2626)" }}
-                    onClick={handleDelete}
-                  >
-                    <Trash2 size={14} />
-                    {t("calendar.deleteEvent")}
-                  </button>
+              {/* Location */}
+              <div className="flex items-center gap-2">
+                <MapPin
+                  size={14}
+                  style={{ color: "var(--color-text-tertiary)" }}
+                />
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder={t("calendar.addLocation")}
+                  className="flex-1 px-2 py-1 text-sm rounded outline-none"
+                  style={{
+                    backgroundColor: "var(--color-bg-tertiary)",
+                    color: "var(--color-text-primary)",
+                    border: "1px solid var(--color-border-secondary)",
+                  }}
+                />
+              </div>
+
+              {/* Recurrence */}
+              <div className="flex items-center gap-2">
+                <Repeat
+                  size={14}
+                  style={{ color: "var(--color-text-tertiary)" }}
+                />
+                <StyledSelect
+                  value={recurrence}
+                  onValueChange={setRecurrence}
+                  options={RECURRENCE_OPTION_KEYS.map(o => ({ value: o.value, label: t(o.key) }))}
+                  className="flex-1"
+                />
+              </div>
+
+              {/* Attendees */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <Users
+                    size={14}
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  />
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={attendeeInput}
+                      onChange={(e) => setAttendeeInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          if (attendeeInput.includes("@")) {
+                            addAttendee("", attendeeInput);
+                          }
+                        }
+                      }}
+                      placeholder={t("calendar.addAttendees")}
+                      className="w-full px-2 py-1 text-sm rounded outline-none"
+                      style={{
+                        backgroundColor: "var(--color-bg-tertiary)",
+                        color: "var(--color-text-primary)",
+                        border: "1px solid var(--color-border-secondary)",
+                      }}
+                    />
+                    {/* Contact autocomplete */}
+                    {contactResults.length > 0 && attendeeInput.length >= 1 && (
+                      <div
+                        className="absolute top-full left-0 right-0 mt-1 py-1 rounded-md shadow-lg z-10 max-h-36 overflow-y-auto"
+                        style={{
+                          backgroundColor: "var(--color-bg-elevated)",
+                          border: "1px solid var(--color-border-primary)",
+                        }}
+                      >
+                        {contactResults.map((contact) =>
+                          contact.emails.map((email) => (
+                            <button
+                              key={`${contact.id}-${email.address}`}
+                              type="button"
+                              className="w-full text-left px-3 py-1.5 text-sm hover:bg-[var(--color-bg-tertiary)]"
+                              style={{ color: "var(--color-text-primary)" }}
+                              onClick={() => {
+                                const displayName =
+                                  contact.name.full ??
+                                  `${contact.name.given ?? ""} ${contact.name.surname ?? ""}`.trim();
+                                addAttendee(displayName, email.address);
+                              }}
+                            >
+                              <div>{contact.name.full ?? contact.name.given ?? email.address}</div>
+                              <div
+                                className="text-xs"
+                                style={{ color: "var(--color-text-tertiary)" }}
+                              >
+                                {email.address}
+                              </div>
+                            </button>
+                          )),
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Attendee list */}
+                {attendees.length > 0 && (
+                  <div className="flex flex-col gap-1 ml-5">
+                    {attendees.map((a) => (
+                      <div
+                        key={a.email}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <span
+                          className="flex-1 truncate"
+                          style={{ color: "var(--color-text-secondary)" }}
+                        >
+                          {a.name ? `${a.name} <${a.email}>` : a.email}
+                        </span>
+                        <button
+                          type="button"
+                          className="p-0.5 rounded hover:bg-[var(--color-bg-tertiary)]"
+                          style={{ color: "var(--color-text-tertiary)" }}
+                          onClick={() => removeAttendee(a.email)}
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-              <div className="flex gap-2">
-                <Dialog.Close asChild>
-                  <button
-                    type="button"
-                    className="px-4 py-1.5 text-sm rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                    style={{ color: "var(--color-text-secondary)" }}
-                  >
-                    {t("calendar.close")}
-                  </button>
-                </Dialog.Close>
-                <button
-                  type="submit"
-                  className="px-4 py-1.5 text-sm font-medium rounded-md transition-colors"
-                  style={{
-                    backgroundColor: "var(--color-text-accent)",
-                    color: "#ffffff",
-                  }}
-                >
-                  {isEditing ? t("calendar.editEventBtn") : t("calendar.create")}
-                </button>
+
+              {/* Reminder */}
+              <div className="flex items-center gap-2">
+                <Bell
+                  size={14}
+                  style={{ color: "var(--color-text-tertiary)" }}
+                />
+                <StyledSelect
+                  value={reminder}
+                  onValueChange={setReminder}
+                  options={REMINDER_OPTION_KEYS.map(o => ({ value: o.value, label: t(o.key) }))}
+                  className="flex-1"
+                />
               </div>
-            </div>
-          </form>
+
+              {/* Description */}
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder={t("calendar.addDescription")}
+                rows={3}
+                className="w-full px-3 py-2 text-sm rounded-md outline-none resize-none"
+                style={{
+                  backgroundColor: "var(--color-bg-tertiary)",
+                  color: "var(--color-text-primary)",
+                  border: "1px solid var(--color-border-secondary)",
+                }}
+              />
+
+              {/* Color */}
+              <div className="flex items-center gap-2">
+                <Palette
+                  size={14}
+                  style={{ color: "var(--color-text-tertiary)" }}
+                />
+                <div className="flex gap-1.5">
+                  {EVENT_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      className="w-5 h-5 rounded-full transition-transform"
+                      style={{
+                        backgroundColor: c,
+                        transform: eventColor === c ? "scale(1.3)" : undefined,
+                        outline:
+                          eventColor === c
+                            ? `2px solid ${c}`
+                            : undefined,
+                        outlineOffset: 2,
+                      }}
+                      onClick={() =>
+                        setEventColor(eventColor === c ? "" : c)
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-between pt-2">
+                <div>
+                  {isEditing && onDelete && (
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                      style={{ color: "var(--color-text-error, #dc2626)" }}
+                      onClick={handleDelete}
+                    >
+                      <Trash2 size={14} />
+                      {t("calendar.deleteEvent")}
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Dialog.Close asChild>
+                    <button
+                      type="button"
+                      className="px-4 py-1.5 text-sm rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                      style={{ color: "var(--color-text-secondary)" }}
+                    >
+                      {t("calendar.close")}
+                    </button>
+                  </Dialog.Close>
+                  <button
+                    type="submit"
+                    className="px-4 py-1.5 text-sm font-medium rounded-md transition-colors"
+                    style={{
+                      backgroundColor: "var(--color-text-accent)",
+                      color: "#ffffff",
+                    }}
+                  >
+                    {isEditing ? t("calendar.editEventBtn") : t("calendar.create")}
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {/* Right column: day timeline */}
+            {!allDay && (
+              <div
+                className="shrink-0 overflow-y-auto"
+                style={{
+                  width: 280,
+                  borderLeft: "1px solid var(--color-border-secondary)",
+                  backgroundColor: "var(--color-bg-primary)",
+                }}
+              >
+                <DayTimeline
+                  startTime={startTime}
+                  durationMinutes={durationMinutes}
+                  color={resolvedColor}
+                  onStartTimeChange={setStartTime}
+                  onDurationChange={setDurationMinutes}
+                  title={title}
+                />
+              </div>
+            )}
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
   );
 });
+
+/* ------------------------------------------------------------------ */
+/* Day timeline component with drag-to-move and resize-to-change      */
+/* ------------------------------------------------------------------ */
+
+interface DayTimelineProps {
+  startTime: string;     // "HH:mm"
+  durationMinutes: number;
+  color: string;
+  onStartTimeChange: (time: string) => void;
+  onDurationChange: (minutes: number) => void;
+  title: string;
+}
+
+function DayTimeline({
+  startTime,
+  durationMinutes,
+  color,
+  onStartTimeChange,
+  onDurationChange,
+  title,
+}: DayTimelineProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dragState, setDragState] = useState<{
+    type: "move" | "resize-top" | "resize-bottom";
+    initialY: number;
+    initialStartMinutes: number;
+    initialDuration: number;
+  } | null>(null);
+
+  const [sh, sm] = startTime.split(":").map(Number);
+  const startMinutes = sh * 60 + sm;
+
+  const totalTimelineMinutes = (TIMELINE_END_HOUR - TIMELINE_START_HOUR + 1) * 60;
+  const totalHeight = TIMELINE_HOURS.length * HOUR_HEIGHT;
+
+  // Position of the event block relative to the timeline
+  const eventTopMinutes = startMinutes - TIMELINE_START_HOUR * 60;
+  const eventTop = (eventTopMinutes / 60) * HOUR_HEIGHT;
+  const eventHeight = (durationMinutes / 60) * HOUR_HEIGHT;
+
+  const clampStartMinutes = useCallback(
+    (mins: number, dur: number) => {
+      const minStart = TIMELINE_START_HOUR * 60;
+      const maxStart = (TIMELINE_END_HOUR + 1) * 60 - dur;
+      return Math.max(minStart, Math.min(maxStart, mins));
+    },
+    [],
+  );
+
+  const minutesToTimeString = useCallback((totalMins: number) => {
+    // Snap to 15-minute increments
+    const snapped = Math.round(totalMins / 15) * 15;
+    const h = Math.floor(snapped / 60) % 24;
+    const m = snapped % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }, []);
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent, type: "move" | "resize-top" | "resize-bottom") => {
+      e.preventDefault();
+      e.stopPropagation();
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      setDragState({
+        type,
+        initialY: e.clientY,
+        initialStartMinutes: startMinutes,
+        initialDuration: durationMinutes,
+      });
+    },
+    [startMinutes, durationMinutes],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragState || !containerRef.current) return;
+      const deltaY = e.clientY - dragState.initialY;
+      const deltaMinutes = (deltaY / HOUR_HEIGHT) * 60;
+
+      if (dragState.type === "move") {
+        const newStart = clampStartMinutes(
+          dragState.initialStartMinutes + deltaMinutes,
+          dragState.initialDuration,
+        );
+        onStartTimeChange(minutesToTimeString(newStart));
+      } else if (dragState.type === "resize-top") {
+        const newStart = dragState.initialStartMinutes + deltaMinutes;
+        const newDuration = dragState.initialDuration - deltaMinutes;
+        if (newDuration >= MIN_DURATION_MINUTES && newStart >= TIMELINE_START_HOUR * 60) {
+          onStartTimeChange(minutesToTimeString(newStart));
+          onDurationChange(Math.round(newDuration / 15) * 15);
+        }
+      } else if (dragState.type === "resize-bottom") {
+        const newDuration = dragState.initialDuration + deltaMinutes;
+        const maxDuration = (TIMELINE_END_HOUR + 1) * 60 - dragState.initialStartMinutes;
+        if (newDuration >= MIN_DURATION_MINUTES && newDuration <= maxDuration) {
+          onDurationChange(Math.round(newDuration / 15) * 15);
+        }
+      }
+    },
+    [dragState, clampStartMinutes, minutesToTimeString, onStartTimeChange, onDurationChange],
+  );
+
+  const handlePointerUp = useCallback(() => {
+    setDragState(null);
+  }, []);
+
+  const formatHourLabel = (h: number) => {
+    const ampm = h >= 12 ? "PM" : "AM";
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${h12} ${ampm}`;
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative select-none"
+      style={{ height: totalHeight, cursor: dragState ? "grabbing" : undefined }}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+    >
+      {/* Hour rows */}
+      {TIMELINE_HOURS.map((hour, i) => (
+        <div
+          key={hour}
+          className="absolute w-full flex items-start"
+          style={{
+            top: i * HOUR_HEIGHT,
+            height: HOUR_HEIGHT,
+            borderBottom: "1px solid var(--color-border-secondary)",
+          }}
+        >
+          <span
+            className="text-[10px] w-12 text-right pr-2 pt-0.5 shrink-0"
+            style={{ color: "var(--color-text-tertiary)" }}
+          >
+            {formatHourLabel(hour)}
+          </span>
+        </div>
+      ))}
+
+      {/* Event block */}
+      {eventTop >= -HOUR_HEIGHT && eventTop < totalHeight && (
+        <div
+          className="absolute rounded-md flex flex-col overflow-hidden"
+          style={{
+            top: Math.max(0, eventTop),
+            left: 52,
+            right: 8,
+            height: Math.max(eventHeight, (MIN_DURATION_MINUTES / 60) * HOUR_HEIGHT),
+            backgroundColor: color + "30",
+            border: `2px solid ${color}`,
+            cursor: dragState?.type === "move" ? "grabbing" : "grab",
+            zIndex: 10,
+            userSelect: "none",
+          }}
+          onPointerDown={(e) => handlePointerDown(e, "move")}
+        >
+          {/* Top resize handle */}
+          <div
+            className="absolute top-0 left-0 right-0 flex justify-center"
+            style={{ height: 8, cursor: "ns-resize", zIndex: 11 }}
+            onPointerDown={(e) => handlePointerDown(e, "resize-top")}
+          >
+            <div
+              className="w-8 rounded-full"
+              style={{ height: 3, marginTop: 2, backgroundColor: color, opacity: 0.6 }}
+            />
+          </div>
+
+          {/* Event content */}
+          <div className="flex-1 px-2 pt-2.5 pb-1 min-h-0">
+            <div
+              className="text-[11px] font-medium truncate"
+              style={{ color }}
+            >
+              {title || "New event"}
+            </div>
+            <div
+              className="text-[10px] mt-0.5"
+              style={{ color: color, opacity: 0.7 }}
+            >
+              {startTime} - {(() => {
+                const total = sh * 60 + sm + durationMinutes;
+                const eh = Math.floor(total / 60) % 24;
+                const em = total % 60;
+                return `${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`;
+              })()}
+            </div>
+          </div>
+
+          {/* Bottom resize handle */}
+          <div
+            className="absolute bottom-0 left-0 right-0 flex justify-center"
+            style={{ height: 8, cursor: "ns-resize", zIndex: 11 }}
+            onPointerDown={(e) => handlePointerDown(e, "resize-bottom")}
+          >
+            <div
+              className="w-8 rounded-full"
+              style={{ height: 3, marginBottom: 2, backgroundColor: color, opacity: 0.6 }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
