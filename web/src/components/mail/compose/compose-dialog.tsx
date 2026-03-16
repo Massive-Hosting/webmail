@@ -898,13 +898,12 @@ export const ComposePanel = React.memo(function ComposePanel({
         {/* Bottom toolbar */}
         <div className="compose-dialog__toolbar">
           <div className="compose-dialog__toolbar-left">
-            <div className="flex items-center">
+            <div className="compose-dialog__send-group">
               <button
                 type="button"
                 onClick={handleSend}
                 disabled={draft.saving}
-                className="compose-dialog__send-btn"
-                style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
+                className="compose-dialog__send-btn compose-dialog__send-btn--main"
               >
                 {draft.saving ? (
                   <Loader2 size={15} className="animate-spin" />
@@ -918,15 +917,7 @@ export const ComposePanel = React.memo(function ComposePanel({
                   <button
                     type="button"
                     disabled={draft.saving}
-                    className="compose-dialog__send-btn"
-                    style={{
-                      borderTopLeftRadius: 0,
-                      borderBottomLeftRadius: 0,
-                      borderLeft: "1px solid rgba(255,255,255,0.2)",
-                      paddingLeft: 4,
-                      paddingRight: 4,
-                      minWidth: "unset",
-                    }}
+                    className="compose-dialog__send-btn compose-dialog__send-btn--dropdown"
                     title={t("action.sendLater")}
                   >
                     <ChevronDown size={14} />

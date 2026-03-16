@@ -1423,6 +1423,22 @@
   gap: 6px;
 }
 
+.compose-dialog__send-group {
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: var(--radius-md);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.compose-dialog__send-group:hover:not(:has(:disabled)) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.compose-dialog__send-group:active:not(:has(:disabled)) {
+  transform: translateY(0);
+}
+
 .compose-dialog__send-btn {
   display: inline-flex;
   align-items: center;
@@ -1437,24 +1453,31 @@
   background-color: var(--color-bg-accent);
   border: none;
   cursor: pointer;
-  transition: all 150ms ease;
+  transition: background-color 150ms ease;
   font-family: inherit;
   letter-spacing: 0.01em;
 }
 
 .compose-dialog__send-btn:hover:not(:disabled) {
   background-color: var(--color-bg-accent-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.compose-dialog__send-btn:active:not(:disabled) {
-  transform: translateY(0);
 }
 
 .compose-dialog__send-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.compose-dialog__send-btn--main {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.compose-dialog__send-btn--dropdown {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 7px 6px;
+  min-width: unset;
 }
 
 .compose-dialog__attach-btn {
