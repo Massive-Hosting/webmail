@@ -8,7 +8,7 @@
  */
 
 import React, { useCallback, useReducer, useEffect, useRef } from "react";
-import { X, RotateCw, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { X, RotateCw, CheckCircle, AlertCircle, Loader2, Download } from "lucide-react";
 import { useTaskProgress } from "@/hooks/use-websocket.ts";
 import type { WSServerMessage } from "@/lib/websocket.ts";
 
@@ -144,6 +144,17 @@ const TaskRow = React.memo(function TaskRow({ task, onDismiss }: TaskRowProps) {
         ? "var(--color-text-error, #ef4444)"
         : "var(--color-text-accent)";
 
+  // Extract blobId from completed export tasks (detail format: "Exported N emails\nblobId:xxx")
+  const exportBlobId =
+    task.taskType === "export-mailbox" && task.status === "completed"
+      ? task.detail.match(/blobId:(\S+)/)?.[1]
+      : undefined;
+
+  // Display detail without the blobId suffix
+  const displayDetail = task.detail
+    ? task.detail.replace(/\nblobId:\S+/, "")
+    : task.taskType;
+
   return (
     <div className="flex items-center gap-3 text-sm">
       <StatusIcon
@@ -158,7 +169,7 @@ const TaskRow = React.memo(function TaskRow({ task, onDismiss }: TaskRowProps) {
             className="font-medium truncate"
             style={{ color: "var(--color-text-primary)" }}
           >
-            {task.detail || task.taskType}
+            {displayDetail}
           </span>
           {task.status === "running" && (
             <span
@@ -185,6 +196,17 @@ const TaskRow = React.memo(function TaskRow({ task, onDismiss }: TaskRowProps) {
           </div>
         )}
       </div>
+
+      {exportBlobId && (
+        <button
+          onClick={() => window.open(`/api/jmap/blob/${exportBlobId}`)}
+          className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
+          style={{ color: "var(--color-text-accent)" }}
+          title="Download export"
+        >
+          <Download size={14} />
+        </button>
+      )}
 
       {task.status === "failed" && (
         <button

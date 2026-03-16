@@ -325,7 +325,7 @@ func ExportMailboxWorkflow(ctx workflow.Context, params ExportMailboxParams) (*E
 		TaskID:   params.TaskID,
 		TaskType: "export-mailbox",
 		Progress: 1.0,
-		Detail:   fmt.Sprintf("Exported %d emails", total),
+		Detail:   fmt.Sprintf("Exported %d emails\nblobId:%s", total, uploadResult.BlobID),
 		Status:   "completed",
 	}).Get(ctx, nil)
 

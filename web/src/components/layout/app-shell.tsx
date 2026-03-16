@@ -93,7 +93,7 @@ export function AppShell() {
   const clearSearch = useSearchStore((s) => s.clearSearch);
 
   const { findByRole, sortedMailboxes, mailboxes } = useMailboxes();
-  const { emails, starEmail, markRead, moveEmails } = useMessages(selectedMailboxId);
+  const { emails, starEmail, markRead, moveEmails, destroyEmails } = useMessages(selectedMailboxId);
   const { email: selectedEmail } = useMessage(selectedEmailId);
   const { open: openCompose } = useCompose();
   const { bulkThreshold, startBulkMove, startBulkDelete, startBulkMarkRead } = useTasks();
@@ -330,14 +330,22 @@ export function AppShell() {
   }, [archiveMailbox, selectedMailboxId, moveEmails, bulkThreshold, startBulkMove]);
 
   const handleDelete = useCallback(async (emailIds: string[]) => {
-    if (trashMailbox && selectedMailboxId) {
+    if (currentMailbox?.role === "trash") {
+      // Already in trash — permanently destroy
+      if (emailIds.length > bulkThreshold) {
+        await startBulkDelete(emailIds);
+      } else {
+        destroyEmails(emailIds);
+      }
+    } else if (trashMailbox && selectedMailboxId) {
+      // Move to trash
       if (emailIds.length > bulkThreshold) {
         await startBulkDelete(emailIds);
       } else {
         moveEmails(emailIds, selectedMailboxId, trashMailbox.id);
       }
     }
-  }, [trashMailbox, selectedMailboxId, moveEmails, bulkThreshold, startBulkDelete]);
+  }, [currentMailbox, trashMailbox, selectedMailboxId, moveEmails, destroyEmails, bulkThreshold, startBulkDelete]);
 
   const handleJunk = useCallback(async (emailIds: string[]) => {
     if (junkMailbox && selectedMailboxId) {

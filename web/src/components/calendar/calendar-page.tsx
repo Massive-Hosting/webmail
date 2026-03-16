@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
+  Upload,
 } from "lucide-react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { ResizeHandle } from "@/components/layout/resize-handle.tsx";
@@ -25,9 +26,11 @@ import type {
   CalendarEventUpdate,
   CalendarViewMode,
 } from "@/types/calendar.ts";
+import { importICS } from "./ics-import.ts";
 import { EmptyState } from "@/components/ui/empty-state.tsx";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const CalendarPage = React.memo(function CalendarPage() {
   const { t } = useTranslation();
@@ -43,6 +46,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
     title,
   } = useCalendarNavigation("month");
 
+  const queryClient = useQueryClient();
   const { calendars, createCalendar, updateCalendar, deleteCalendar } = useCalendars();
 
   // Track which calendar ID is newly created (should enter rename mode)
@@ -140,6 +144,16 @@ export const CalendarPage = React.memo(function CalendarPage() {
     setDefaultFormHour(undefined);
     setFormOpen(true);
   }, [currentDate]);
+
+  // Import .ics file
+  const handleImportICS = useCallback(async () => {
+    const defaultCalendar = calendars.find((c) => c.isDefault) ?? calendars[0];
+    if (!defaultCalendar) return;
+    const count = await importICS(defaultCalendar.id);
+    if (count > 0) {
+      queryClient.invalidateQueries({ queryKey: ["calendarEvents"] });
+    }
+  }, [calendars, queryClient]);
 
   // Click on a day in month view — open create event dialog pre-filled with that date
   const handleClickDay = useCallback(
@@ -289,6 +303,15 @@ export const CalendarPage = React.memo(function CalendarPage() {
           >
             <Plus size={14} />
             {t("calendar.newEvent")}
+          </button>
+          <button
+            onClick={handleImportICS}
+            className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
+            style={{ color: "var(--color-text-secondary)" }}
+            title={t("calendar.importICS")}
+          >
+            <Upload size={14} />
+            {t("calendar.importICS")}
           </button>
         </div>
 

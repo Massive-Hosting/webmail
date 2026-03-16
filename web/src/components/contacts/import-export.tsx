@@ -3,6 +3,7 @@
 import { batchCreateContacts } from "@/api/contacts.ts";
 import type { Contact, ContactCreate } from "@/types/contacts.ts";
 import { getContactDisplayName } from "@/hooks/use-contacts.ts";
+import { toast } from "sonner";
 
 // ---- vCard Parser ----
 
@@ -274,6 +275,11 @@ export async function importVCards(): Promise<number> {
           return;
         }
 
+        // Show progress toast for large imports
+        const toastId = contacts.length > 50
+          ? toast.loading(`Importing contacts...`)
+          : undefined;
+
         // Batch create
         const BATCH_SIZE = 50;
         let total = 0;
@@ -281,6 +287,13 @@ export async function importVCards(): Promise<number> {
           const batch = contacts.slice(i, i + BATCH_SIZE);
           const ids = await batchCreateContacts(batch);
           total += ids.length;
+          if (toastId) {
+            toast.loading(`Imported ${total}/${contacts.length} contacts...`, { id: toastId });
+          }
+        }
+
+        if (toastId) {
+          toast.success(`Imported ${total} contacts`, { id: toastId });
         }
         resolve(total);
       } catch (err) {

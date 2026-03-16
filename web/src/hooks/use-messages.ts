@@ -194,16 +194,31 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
     onMutate: async (params) => {
       await queryClient.cancelQueries({ queryKey });
       const prev = queryClient.getQueryData(queryKey) as ReturnType<typeof useInfiniteQueryData>;
+      // Flatten original emails before removal for index lookup
+      const originalEmails = prev?.pages?.flatMap((p) => p.emails) ?? [];
       // Remove from current list optimistically (read fresh from cache)
       let data = prev;
       for (const emailId of params.emailIds) {
         data = optimisticRemoveEmail(data, emailId);
       }
       queryClient.setQueryData(queryKey, data);
-      // Clear selection so the deleted email isn't still shown in reading pane
+      // Navigate based on autoAdvance setting
       const uiStore = useUIStore.getState();
       if (params.emailIds.includes(uiStore.selectedEmailId ?? "")) {
-        uiStore.setSelectedEmail(null, null);
+        const autoAdvance = useSettingsStore.getState().autoAdvance;
+        const remainingEmails = data?.pages?.flatMap((p) => p.emails) ?? [];
+        const deletedIndex = originalEmails.findIndex((e) => e.id === uiStore.selectedEmailId);
+        if (autoAdvance === "next" && remainingEmails.length > 0) {
+          const nextIndex = Math.min(deletedIndex, remainingEmails.length - 1);
+          const next = remainingEmails[nextIndex];
+          uiStore.setSelectedEmail(next.id, next.threadId);
+        } else if (autoAdvance === "previous" && remainingEmails.length > 0) {
+          const prevIndex = Math.max(0, deletedIndex - 1);
+          const prev = remainingEmails[prevIndex];
+          uiStore.setSelectedEmail(prev.id, prev.threadId);
+        } else {
+          uiStore.setSelectedEmail(null, null);
+        }
       }
       for (const id of params.emailIds) {
         if (uiStore.selectedEmailIds.has(id)) {
@@ -247,15 +262,30 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
     onMutate: async (emailIds) => {
       await queryClient.cancelQueries({ queryKey });
       const prev = queryClient.getQueryData(queryKey) as ReturnType<typeof useInfiniteQueryData>;
+      // Flatten original emails before removal for index lookup
+      const originalEmails = prev?.pages?.flatMap((p) => p.emails) ?? [];
       let data = prev;
       for (const emailId of emailIds) {
         data = optimisticRemoveEmail(data, emailId);
       }
       queryClient.setQueryData(queryKey, data);
-      // Clear selection
+      // Navigate based on autoAdvance setting
       const uiStore = useUIStore.getState();
       if (emailIds.includes(uiStore.selectedEmailId ?? "")) {
-        uiStore.setSelectedEmail(null, null);
+        const autoAdvance = useSettingsStore.getState().autoAdvance;
+        const remainingEmails = data?.pages?.flatMap((p) => p.emails) ?? [];
+        const deletedIndex = originalEmails.findIndex((e) => e.id === uiStore.selectedEmailId);
+        if (autoAdvance === "next" && remainingEmails.length > 0) {
+          const nextIndex = Math.min(deletedIndex, remainingEmails.length - 1);
+          const next = remainingEmails[nextIndex];
+          uiStore.setSelectedEmail(next.id, next.threadId);
+        } else if (autoAdvance === "previous" && remainingEmails.length > 0) {
+          const prevIndex = Math.max(0, deletedIndex - 1);
+          const prevEmail = remainingEmails[prevIndex];
+          uiStore.setSelectedEmail(prevEmail.id, prevEmail.threadId);
+        } else {
+          uiStore.setSelectedEmail(null, null);
+        }
       }
       return { prev };
     },
