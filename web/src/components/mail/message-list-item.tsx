@@ -640,17 +640,29 @@ function MessageContextMenu({
   const queryClient = useQueryClient();
   const [showSnoozePicker, setShowSnoozePicker] = useState(false);
 
-  const handleSnooze = useCallback((until: Date) => {
-    startSnooze({
-      emailId: email.id,
-      mailboxId: currentMailboxId ?? "",
-      until: until.toISOString(),
-    }).then(() => {
-      toast.success(t("action.snoozeSet", { time: format(until, "PPp") }));
-    }).catch(() => {
-      toast.error(t("tasks.failedToStart"));
+  const handleSnooze = useCallback(async (until: Date) => {
+    // Optimistically remove from current list and set keyword
+    queryClient.setQueriesData({ queryKey: ["emails"] }, (oldData: unknown) => {
+      if (!oldData || typeof oldData !== "object") return oldData;
+      const data = oldData as { pages: Array<{ emails: Array<{ id: string }>; total: number; position: number }>; pageParams: unknown[] };
+      if (!data.pages) return oldData;
+      return { ...data, pages: data.pages.map((page) => ({ ...page, emails: page.emails.filter((e) => e.id !== email.id), total: Math.max(0, page.total - 1) })) };
     });
-  }, [email.id, currentMailboxId, t]);
+    toast.success(t("action.snoozeSet", { time: format(until, "PPp") }));
+    try {
+      // Set $snoozed keyword immediately so it appears in Snoozed view
+      await updateEmails({ [email.id]: { "keywords/$snoozed": true } });
+      // Start Temporal workflow for timed unsnooze
+      await startSnooze({
+        emailId: email.id,
+        mailboxId: currentMailboxId ?? "",
+        until: until.toISOString(),
+      });
+    } catch {
+      toast.error(t("tasks.failedToStart"));
+    }
+    queryClient.invalidateQueries({ queryKey: ["emails"] });
+  }, [email.id, currentMailboxId, t, queryClient]);
 
   return (
     <>

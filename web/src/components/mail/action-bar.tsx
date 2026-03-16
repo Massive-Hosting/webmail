@@ -130,23 +130,25 @@ export const ActionBar = React.memo(function ActionBar({
     if (singleEmail) onStar(singleEmail.id, !isStarred);
   }, [singleEmail, isStarred, onStar]);
 
-  const handleSnooze = useCallback((until: Date) => {
+  const handleSnooze = useCallback(async (until: Date) => {
     if (!singleEmail || !currentMailboxId) return;
-    if (onSnooze) {
-      onSnooze(singleEmail.id, currentMailboxId, until);
-    } else {
-      // Fallback: call API directly.
-      startSnooze({
+    // Optimistically: set $snoozed keyword + remove from current list
+    optimisticRemoveFromList([singleEmail.id]);
+    toast.success(t("action.snoozeSet", { time: format(until, "PPp") }));
+    try {
+      // Set $snoozed keyword immediately via JMAP so it appears in the Snoozed view
+      await updateEmails({ [singleEmail.id]: { "keywords/$snoozed": true } });
+      // Start Temporal workflow for the timed unsnooze
+      await startSnooze({
         emailId: singleEmail.id,
         mailboxId: currentMailboxId,
         until: until.toISOString(),
-      }).then(() => {
-        toast.success(t("action.snoozeSet", { time: format(until, "PPp") }));
-      }).catch(() => {
-        toast.error(t("tasks.failedToStart"));
       });
+    } catch {
+      toast.error(t("tasks.failedToStart"));
     }
-  }, [singleEmail, currentMailboxId, onSnooze, t]);
+    queryClient.invalidateQueries({ queryKey: ["emails"] });
+  }, [singleEmail, currentMailboxId, t, optimisticRemoveFromList, queryClient]);
 
   const getSnoozeTimeForLaterToday = useCallback((): Date => {
     const now = new Date();
