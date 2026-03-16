@@ -84,10 +84,10 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
     },
     onMutate: async (params) => {
       await queryClient.cancelQueries({ queryKey });
-      const prev = queryClient.getQueryData(queryKey);
+      const prev = queryClient.getQueryData(queryKey) as ReturnType<typeof useInfiniteQueryData>;
       queryClient.setQueryData(
         queryKey,
-        optimisticUpdateEmail(query.data, params.emailId, (email) => {
+        optimisticUpdateEmail(prev, params.emailId, (email) => {
           const keywords = { ...email.keywords };
           if (params.flagged) {
             keywords["$flagged"] = true;
@@ -147,8 +147,8 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
     },
     onMutate: async (params) => {
       await queryClient.cancelQueries({ queryKey });
-      const prev = queryClient.getQueryData(queryKey);
-      let data = query.data;
+      const prev = queryClient.getQueryData(queryKey) as ReturnType<typeof useInfiniteQueryData>;
+      let data = prev;
       for (const emailId of params.emailIds) {
         data = optimisticUpdateEmail(data, emailId, (email) => {
           const keywords = { ...email.keywords };
@@ -193,13 +193,23 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
     },
     onMutate: async (params) => {
       await queryClient.cancelQueries({ queryKey });
-      const prev = queryClient.getQueryData(queryKey);
-      // Remove from current list optimistically
-      let data = query.data;
+      const prev = queryClient.getQueryData(queryKey) as ReturnType<typeof useInfiniteQueryData>;
+      // Remove from current list optimistically (read fresh from cache)
+      let data = prev;
       for (const emailId of params.emailIds) {
         data = optimisticRemoveEmail(data, emailId);
       }
       queryClient.setQueryData(queryKey, data);
+      // Clear selection so the deleted email isn't still shown in reading pane
+      const uiStore = useUIStore.getState();
+      if (params.emailIds.includes(uiStore.selectedEmailId ?? "")) {
+        uiStore.setSelectedEmail(null, null);
+      }
+      for (const id of params.emailIds) {
+        if (uiStore.selectedEmailIds.has(id)) {
+          uiStore.toggleEmailSelection(id);
+        }
+      }
       return { prev, params };
     },
     onSuccess: (_data, params) => {
@@ -236,12 +246,17 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
     },
     onMutate: async (emailIds) => {
       await queryClient.cancelQueries({ queryKey });
-      const prev = queryClient.getQueryData(queryKey);
-      let data = query.data;
+      const prev = queryClient.getQueryData(queryKey) as ReturnType<typeof useInfiniteQueryData>;
+      let data = prev;
       for (const emailId of emailIds) {
         data = optimisticRemoveEmail(data, emailId);
       }
       queryClient.setQueryData(queryKey, data);
+      // Clear selection
+      const uiStore = useUIStore.getState();
+      if (emailIds.includes(uiStore.selectedEmailId ?? "")) {
+        uiStore.setSelectedEmail(null, null);
+      }
       return { prev };
     },
     onSuccess: (_data, emailIds) => {

@@ -139,7 +139,30 @@ export const FolderTree = React.memo(function FolderTree() {
   }, [importTargetMailboxId, startImportMailbox]);
 
   const handleDropEmails = useCallback(async (emailIds: string[], fromMailboxId: string, toMailboxId: string, folderName: string) => {
-    const toastId = toast.loading(t("toast.movingMessages", { count: emailIds.length }));
+    // Optimistically remove from current email list immediately.
+    const emailIdSet = new Set(emailIds);
+    queryClient.setQueriesData(
+      { queryKey: ["emails"] },
+      (oldData: unknown) => {
+        if (!oldData || typeof oldData !== "object") return oldData;
+        const data = oldData as {
+          pages: Array<{ emails: Array<{ id: string }>; total: number; position: number }>;
+          pageParams: unknown[];
+        };
+        if (!data.pages) return oldData;
+        return {
+          ...data,
+          pages: data.pages.map((page) => ({
+            ...page,
+            emails: page.emails.filter((e) => !emailIdSet.has(e.id)),
+            total: Math.max(0, page.total - emailIds.length),
+          })),
+        };
+      },
+    );
+
+    toast(t("toast.movedMessages", { count: emailIds.length, name: folderName }));
+
     try {
       const updates: Record<string, Record<string, unknown>> = {};
       for (const id of emailIds) {
@@ -149,12 +172,12 @@ export const FolderTree = React.memo(function FolderTree() {
         };
       }
       await updateEmails(updates);
-      queryClient.invalidateQueries({ queryKey: ["emails"] });
-      queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
-      toast.success(t("toast.movedMessages", { count: emailIds.length, name: folderName }), { id: toastId });
     } catch {
-      toast.error(t("toast.failedToMove"), { id: toastId });
+      toast.error(t("toast.failedToMove"));
     }
+
+    queryClient.invalidateQueries({ queryKey: ["emails"] });
+    queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
   }, [queryClient, t]);
 
   if (isLoading) {
