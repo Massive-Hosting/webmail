@@ -96,10 +96,11 @@ export function AppShell() {
 
   const { findByRole, sortedMailboxes, mailboxes } = useMailboxes();
 
-  // Virtual folder filter for scheduled/snoozed views
-  const virtualFilter = virtualFolder
-    ? { hasKeyword: virtualFolder === "scheduled" ? "$scheduled" : "$snoozed" }
-    : undefined;
+  // Virtual folder filter for scheduled/snoozed views (memoized for stable reference)
+  const virtualFilter = useMemo(() => {
+    if (!virtualFolder) return undefined;
+    return { hasKeyword: virtualFolder === "scheduled" ? "$scheduled" : "$snoozed" };
+  }, [virtualFolder]);
   const effectiveMailboxId = virtualFolder ? null : selectedMailboxId;
 
   const { emails, starEmail, markRead, moveEmails, destroyEmails } = useMessages(effectiveMailboxId, virtualFilter);

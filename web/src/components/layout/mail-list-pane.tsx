@@ -1,6 +1,6 @@
 /** Message list pane container - premium toolbar and contextual empty states */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useMemo } from "react";
 import { MessageList } from "@/components/mail/message-list.tsx";
 import { useUIStore } from "@/stores/ui-store.ts";
 import { useSearchStore } from "@/stores/search-store.ts";
@@ -27,6 +27,7 @@ import {
   ArrowUpNarrowWide,
   Layers,
   List,
+  Clock,
 } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useTranslation } from "react-i18next";
@@ -69,14 +70,16 @@ export const MailListPane = React.memo(function MailListPane({
 
   const currentMailbox = mailboxes.find((m) => m.id === selectedMailboxId);
 
-  // Virtual folder filter
-  const virtualFilter = virtualFolder
-    ? { hasKeyword: virtualFolder === "scheduled" ? "$scheduled" : "$snoozed" }
-    : undefined;
-  const effectiveMailboxId = virtualFolder ? null : selectedMailboxId;
   const mailboxName = virtualFolder
     ? (virtualFolder === "scheduled" ? t("folder.scheduled") : t("folder.snoozed"))
     : (currentMailbox?.name ?? "Inbox");
+
+  // Use a stable filter for virtual folders to avoid reference instability
+  const virtualFilter = useMemo(() => {
+    if (!virtualFolder) return undefined;
+    return { hasKeyword: virtualFolder === "scheduled" ? "$scheduled" : "$snoozed" };
+  }, [virtualFolder]);
+  const effectiveMailboxId = virtualFolder ? null : selectedMailboxId;
 
   const {
     emails,
@@ -248,7 +251,7 @@ export const MailListPane = React.memo(function MailListPane({
             className="h-full"
           />
         ) : !searchActive && !displayLoading && displayEmails.length === 0 ? (
-          <ContextualEmptyState mailboxRole={currentMailbox?.role ?? null} />
+          <ContextualEmptyState mailboxRole={currentMailbox?.role ?? null} virtualFolder={virtualFolder} />
         ) : (
           <MessageList
             emails={displayEmails}
@@ -281,8 +284,30 @@ export const MailListPane = React.memo(function MailListPane({
   );
 });
 
-function ContextualEmptyState({ mailboxRole }: { mailboxRole: string | null }) {
+function ContextualEmptyState({ mailboxRole, virtualFolder }: { mailboxRole: string | null; virtualFolder?: string | null }) {
   const { t } = useTranslation();
+
+  if (virtualFolder === "scheduled") {
+    return (
+      <EmptyState
+        icon={<Clock size={48} strokeWidth={1} />}
+        title={t("folder.scheduled")}
+        description={t("emptyState.folderEmptyDesc")}
+        className="h-full"
+      />
+    );
+  }
+  if (virtualFolder === "snoozed") {
+    return (
+      <EmptyState
+        icon={<Clock size={48} strokeWidth={1} />}
+        title={t("folder.snoozed")}
+        description={t("emptyState.folderEmptyDesc")}
+        className="h-full"
+      />
+    );
+  }
+
   switch (mailboxRole) {
     case "inbox":
       return (
