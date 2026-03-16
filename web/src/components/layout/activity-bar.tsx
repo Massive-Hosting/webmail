@@ -29,39 +29,21 @@ export const ActivityBar = React.memo(function ActivityBar() {
       <div className="activity-bar">
         <div className="activity-bar__top">
           <ActivityBarIcon
-            icon={
-              <Mail
-                size={20}
-                fill={mailActive ? ICON_ACTIVE_COLORS.mail : "none"}
-                strokeWidth={mailActive ? 1.5 : 2}
-              />
-            }
+            icon={<Mail size={20} />}
             label={t("nav.mail")}
             active={mailActive}
             activeColor={ICON_ACTIVE_COLORS.mail}
             onClick={() => setActiveView("mail")}
           />
           <ActivityBarIcon
-            icon={
-              <Users
-                size={20}
-                fill={contactsActive ? ICON_ACTIVE_COLORS.contacts : "none"}
-                strokeWidth={contactsActive ? 1.5 : 2}
-              />
-            }
+            icon={<Users size={20} />}
             label={t("nav.contacts")}
             active={contactsActive}
             activeColor={ICON_ACTIVE_COLORS.contacts}
             onClick={() => setActiveView("contacts")}
           />
           <ActivityBarIcon
-            icon={
-              <Calendar
-                size={20}
-                fill={calendarActive ? ICON_ACTIVE_COLORS.calendar : "none"}
-                strokeWidth={calendarActive ? 1.5 : 2}
-              />
-            }
+            icon={<Calendar size={20} />}
             label={t("nav.calendar")}
             active={calendarActive}
             activeColor={ICON_ACTIVE_COLORS.calendar}

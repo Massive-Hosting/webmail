@@ -1,9 +1,20 @@
-/** Login page with centered card — premium design */
+/** Premium split-screen login page */
 
 import React, { useState, useCallback } from "react";
 import { login } from "@/api/client.ts";
 import type { ApiError } from "@/api/client.ts";
-import { Mail, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Loader2,
+  AlertCircle,
+  ArrowRight,
+  Sparkles,
+  ShieldCheck,
+  CalendarDays,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { LANGUAGES } from "@/i18n/index.ts";
 import { StyledSelect } from "@/components/ui/styled-select.tsx";
@@ -20,6 +31,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shakeError, setShakeError] = useState(false);
 
   const validateEmail = (value: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -29,14 +41,17 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
     async (e: React.FormEvent) => {
       e.preventDefault();
       setError(null);
+      setShakeError(false);
 
       if (!validateEmail(email)) {
         setError(t("login.invalidEmail"));
+        setShakeError(true);
         return;
       }
 
       if (!password) {
         setError(t("login.enterPassword"));
+        setShakeError(true);
         return;
       }
 
@@ -47,6 +62,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
         onLoginSuccess();
       } catch (err) {
         const apiErr = err as ApiError;
+        setShakeError(true);
         if (apiErr.status === 429) {
           setError(t("login.rateLimited"));
         } else if (apiErr.status === 401) {
@@ -58,239 +74,176 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
         setIsSubmitting(false);
       }
     },
-    [email, password, rememberMe, onLoginSuccess],
+    [email, password, rememberMe, onLoginSuccess, t],
   );
 
+  const features = [
+    { icon: Sparkles, text: t("login.feature1") },
+    { icon: ShieldCheck, text: t("login.feature2") },
+    { icon: CalendarDays, text: t("login.feature3") },
+  ];
+
   return (
-    <div
-      className="flex items-center justify-center min-h-dvh p-4"
-      style={{
-        background: "linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-primary) 50%, var(--color-bg-secondary) 100%)",
-      }}
-    >
-      {/* Subtle decorative gradient orb */}
-      <div
-        className="fixed top-0 left-1/2 -translate-x-1/2 pointer-events-none"
-        style={{
-          width: 600,
-          height: 400,
-          background: "radial-gradient(ellipse at center, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
-          filter: "blur(40px)",
-        }}
-      />
-
-      <div
-        className="w-full max-w-sm animate-fade-in relative"
-        style={{
-          backgroundColor: "var(--color-bg-elevated)",
-          boxShadow: "var(--shadow-xl)",
-          border: "1px solid var(--color-border-primary)",
-          borderRadius: "var(--radius-lg)",
-          padding: "36px 32px 32px",
-        }}
-      >
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div
-            className="flex items-center justify-center w-12 h-12 mb-4"
-            style={{
-              backgroundColor: "var(--color-bg-accent)",
-              borderRadius: "var(--radius-lg)",
-              boxShadow: "0 4px 12px rgba(59, 130, 246, 0.25)",
-            }}
-          >
-            <Mail size={22} style={{ color: "var(--color-text-inverse)" }} />
+    <div className="login-page">
+      {/* Left hero panel */}
+      <div className="login-hero">
+        <div className="login-hero__gradient" />
+        <div className="login-hero__content">
+          {/* Logo */}
+          <div className="login-hero__logo">
+            <img src="/logo.png" alt="Webmail" className="login-hero__logo-img" />
+            <span className="login-hero__logo-text">Webmail</span>
           </div>
-          <h1
-            className="text-xl font-semibold"
-            style={{ color: "var(--color-text-primary)", letterSpacing: "-0.01em" }}
-          >
-            {t("login.signIn")}
-          </h1>
-          <p
-            className="text-sm mt-1.5"
-            style={{ color: "var(--color-text-secondary)" }}
-          >
-            {t("login.subtitle")}
-          </p>
+
+          {/* Tagline */}
+          <div className="login-hero__tagline-area">
+            <h1 className="login-hero__tagline">{t("login.tagline")}</h1>
+            <p className="login-hero__tagline-sub">{t("login.subtitle")}</p>
+          </div>
+
+          {/* Features */}
+          <div className="login-hero__features">
+            {features.map((f, i) => (
+              <div key={i} className="login-hero__feature">
+                <div className="login-hero__feature-icon">
+                  <f.icon size={18} />
+                </div>
+                <span className="login-hero__feature-text">{f.text}</span>
+              </div>
+            ))}
+          </div>
         </div>
-
-        {/* Error */}
-        {error && (
-          <div
-            className="flex items-start gap-2.5 px-3.5 py-3 mb-5 text-sm animate-fade-in"
-            style={{
-              backgroundColor: "rgba(220, 38, 38, 0.06)",
-              color: "var(--color-text-danger)",
-              border: "1px solid rgba(220, 38, 38, 0.12)",
-              borderRadius: "var(--radius-md)",
-              lineHeight: "1.4",
-            }}
-          >
-            <AlertCircle size={16} className="shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          {/* Email */}
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium mb-2"
-              style={{ color: "var(--color-text-primary)" }}
-            >
-              {t("login.emailLabel")}
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t("login.emailPlaceholder")}
-              className="w-full h-10 px-3 text-sm outline-none"
-              style={{
-                backgroundColor: "var(--color-bg-primary)",
-                color: "var(--color-text-primary)",
-                border: "1px solid var(--color-border-primary)",
-                borderRadius: "var(--radius-md)",
-                transition: "border-color 150ms ease, box-shadow 150ms ease",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = "var(--color-border-focus)";
-                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.1)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = "var(--color-border-primary)";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            />
-          </div>
-
-          {/* Password */}
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium mb-2"
-              style={{ color: "var(--color-text-primary)" }}
-            >
-              {t("login.passwordLabel")}
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={t("login.passwordPlaceholder")}
-                className="w-full h-10 px-3 pr-10 text-sm outline-none"
-                style={{
-                  backgroundColor: "var(--color-bg-primary)",
-                  color: "var(--color-text-primary)",
-                  border: "1px solid var(--color-border-primary)",
-                  borderRadius: "var(--radius-md)",
-                  transition: "border-color 150ms ease, box-shadow 150ms ease",
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "var(--color-border-focus)";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.1)";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "var(--color-border-primary)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors duration-150 hover:bg-[var(--color-bg-tertiary)]"
-                style={{ color: "var(--color-text-tertiary)" }}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </div>
-
-          {/* Remember me */}
-          <div className="flex items-center gap-2.5">
-            <input
-              id="remember"
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="w-4 h-4 rounded accent-[var(--color-bg-accent)]"
-              style={{ borderRadius: "4px" }}
-            />
-            <label
-              htmlFor="remember"
-              className="text-sm"
-              style={{ color: "var(--color-text-secondary)" }}
-            >
-              {t("login.rememberMe")}
-            </label>
-          </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex items-center justify-center h-10 text-sm font-medium disabled:opacity-60"
-            style={{
-              backgroundColor: "var(--color-bg-accent)",
-              color: "var(--color-text-inverse)",
-              borderRadius: "var(--radius-md)",
-              transition: "background-color 150ms ease, transform 100ms ease, box-shadow 150ms ease",
-              boxShadow: "0 1px 3px rgba(59, 130, 246, 0.2)",
-            }}
-            onMouseOver={(e) => {
-              if (!isSubmitting) {
-                e.currentTarget.style.backgroundColor = "var(--color-bg-accent-hover)";
-                e.currentTarget.style.boxShadow = "0 2px 8px rgba(59, 130, 246, 0.3)";
-              }
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = "var(--color-bg-accent)";
-              e.currentTarget.style.boxShadow = "0 1px 3px rgba(59, 130, 246, 0.2)";
-            }}
-            onMouseDown={(e) => {
-              if (!isSubmitting) {
-                e.currentTarget.style.transform = "scale(0.98)";
-              }
-            }}
-            onMouseUp={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-            }}
-          >
-            {isSubmitting ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              t("login.signInButton")
-            )}
-          </button>
-        </form>
       </div>
 
-      {/* Language selector */}
-      <div
-        className="fixed bottom-4 right-4"
-        style={{ zIndex: 10 }}
-      >
-        <StyledSelect
-          value={i18n.language}
-          onValueChange={(v) => {
-            i18n.changeLanguage(v);
-            localStorage.setItem("language", v);
-          }}
-          options={LANGUAGES.map((lang) => ({
-            value: lang.code,
-            label: lang.label,
-          }))}
-        />
+      {/* Right form panel */}
+      <div className="login-form-panel">
+        <div className="login-form-card">
+          {/* Mobile logo (hidden on desktop) */}
+          <div className="login-form-card__mobile-logo">
+            <img src="/logo.png" alt="Webmail" className="login-hero__logo-img" />
+            <span className="login-hero__logo-text" style={{ color: "var(--color-text-primary)" }}>
+              Webmail
+            </span>
+          </div>
+
+          {/* Heading */}
+          <div className="login-form-card__header">
+            <h2 className="login-form-card__title">{t("login.welcomeBack")}</h2>
+            <p className="login-form-card__subtitle">{t("login.subtitle")}</p>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div
+              className={`login-form-card__error ${shakeError ? "login-shake" : ""}`}
+              onAnimationEnd={() => setShakeError(false)}
+            >
+              <AlertCircle size={16} className="shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="login-form">
+            {/* Email */}
+            <div className="login-input-group">
+              <label htmlFor="login-email" className="login-input-label">
+                {t("login.emailLabel")}
+              </label>
+              <div className="login-input-wrapper">
+                <Mail size={18} className="login-input-icon" />
+                <input
+                  id="login-email"
+                  type="email"
+                  autoComplete="email"
+                  autoFocus
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t("login.emailPlaceholder")}
+                  className="login-input"
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div className="login-input-group">
+              <label htmlFor="login-password" className="login-input-label">
+                {t("login.passwordLabel")}
+              </label>
+              <div className="login-input-wrapper">
+                <Lock size={18} className="login-input-icon" />
+                <input
+                  id="login-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t("login.passwordPlaceholder")}
+                  className="login-input login-input--password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="login-input-toggle"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Remember me */}
+            <div className="login-remember">
+              <input
+                id="login-remember"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="login-remember__checkbox"
+              />
+              <label htmlFor="login-remember" className="login-remember__label">
+                {t("login.rememberMe")}
+              </label>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="login-submit"
+            >
+              {isSubmitting ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <>
+                  <span>{t("login.signInButton")}</span>
+                  <ArrowRight size={16} className="login-submit__arrow" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Footer */}
+          <div className="login-form-card__footer">
+            <div className="login-form-card__powered">
+              {t("login.poweredBy")} &middot; JMAP
+            </div>
+            <div className="login-form-card__lang">
+              <StyledSelect
+                value={i18n.language}
+                onValueChange={(v) => {
+                  i18n.changeLanguage(v);
+                  localStorage.setItem("language", v);
+                }}
+                options={LANGUAGES.map((lang) => ({
+                  value: lang.code,
+                  label: lang.label,
+                }))}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
