@@ -103,7 +103,7 @@
 }
 
 .message-list-item[data-dragging] {
-  opacity: 0.5;
+  opacity: 0.7;
 }
 
 .message-list-item:hover {
