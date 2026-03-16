@@ -1,6 +1,6 @@
 /** Day view: Single column with hourly rows */
 
-import React, { useMemo, useCallback, useEffect, useRef } from "react";
+import React, { useMemo, useCallback, useEffect, useRef, useState } from "react";
 import type { CalendarEvent, Calendar } from "@/types/calendar.ts";
 import {
   isToday,
@@ -17,6 +17,7 @@ interface DayViewProps {
   calendars: Calendar[];
   onClickSlot: (date: Date, hour: number) => void;
   onClickEvent: (event: CalendarEvent, anchor: HTMLElement) => void;
+  onEventTimeChange?: (event: CalendarEvent, newStart: string) => void;
 }
 
 const START_HOUR = 7;
@@ -30,6 +31,7 @@ export const DayView = React.memo(function DayView({
   calendars,
   onClickSlot,
   onClickEvent,
+  onEventTimeChange,
 }: DayViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const today = isToday(currentDate);
@@ -131,14 +133,74 @@ export const DayView = React.memo(function DayView({
     return result;
   }, []);
 
+  // Drag state for moving events
+  const [dragState, setDragState] = useState<{
+    eventId: string;
+    initialY: number;
+    initialStartMinutes: number;
+    currentDeltaMinutes: number;
+  } | null>(null);
+
   const handleSlotClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
+      if (dragState) return;
       const rect = e.currentTarget.getBoundingClientRect();
       const y = e.clientY - rect.top;
       const hour = Math.floor(y / HOUR_HEIGHT) + START_HOUR;
       onClickSlot(currentDate, Math.min(hour, END_HOUR - 1));
     },
-    [currentDate, onClickSlot],
+    [currentDate, onClickSlot, dragState],
+  );
+
+  const handleDragStart = useCallback(
+    (event: CalendarEvent, initialY: number) => {
+      const start = parseISO(event.start);
+      const startMin = (start.getHours() - START_HOUR) * 60 + start.getMinutes();
+      setDragState({
+        eventId: event.id,
+        initialY,
+        initialStartMinutes: startMin,
+        currentDeltaMinutes: 0,
+      });
+    },
+    [],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!dragState) return;
+      const deltaY = e.clientY - dragState.initialY;
+      const deltaMinutes = Math.round((deltaY / HOUR_HEIGHT) * 60 / 15) * 15;
+      setDragState((prev) => prev ? { ...prev, currentDeltaMinutes: deltaMinutes } : null);
+    },
+    [dragState],
+  );
+
+  const handlePointerUp = useCallback(
+    (_e: React.PointerEvent<HTMLDivElement>) => {
+      if (!dragState || !onEventTimeChange) {
+        setDragState(null);
+        return;
+      }
+
+      if (dragState.currentDeltaMinutes !== 0) {
+        const draggedEvent = timedEvents.find((ev) => ev.id === dragState.eventId);
+        if (draggedEvent) {
+          const newStartMinutes = dragState.initialStartMinutes + dragState.currentDeltaMinutes;
+          const clampedMinutes = Math.max(0, Math.min(newStartMinutes, (END_HOUR - START_HOUR) * 60 - 15));
+          const totalMinutes = clampedMinutes + START_HOUR * 60;
+          const h = Math.floor(totalMinutes / 60);
+          const m = totalMinutes % 60;
+
+          const dateStr = draggedEvent.start.substring(0, 10);
+          const newStart = `${dateStr}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
+          onEventTimeChange(draggedEvent, newStart);
+        }
+      }
+
+      setDragState(null);
+    },
+    [dragState, timedEvents, onEventTimeChange],
   );
 
   return (
@@ -220,6 +282,8 @@ export const DayView = React.memo(function DayView({
           <div
             className="flex-1 relative cursor-pointer"
             onClick={handleSlotClick}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
           >
             {/* Hour lines */}
             {hours.map((h) => (
@@ -236,23 +300,39 @@ export const DayView = React.memo(function DayView({
             {/* Events */}
             {positioned.map(({ event, top, height, left, width }) => {
               const color = getEventColor(event, calendars);
+              const isDragging = dragState?.eventId === event.id;
+              const dragOffset = isDragging
+                ? (dragState.currentDeltaMinutes / 60) * HOUR_HEIGHT
+                : 0;
+
               return (
                 <button
                   key={event.id}
                   className="absolute rounded px-2 py-1 text-left overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
                   style={{
-                    top,
+                    top: top + dragOffset,
                     height: Math.max(height - 2, 22),
                     left,
                     width,
                     backgroundColor: color + "25",
                     borderLeft: `3px solid ${color}`,
                     color: color,
-                    zIndex: 1,
+                    zIndex: isDragging ? 20 : 1,
+                    opacity: isDragging ? 0.85 : undefined,
+                    boxShadow: isDragging ? "0 4px 12px rgba(0,0,0,0.15)" : undefined,
+                    transition: isDragging ? "none" : "opacity 0.15s",
+                    touchAction: "none",
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
                     onClickEvent(event, e.currentTarget);
+                  }}
+                  onPointerDown={(e) => {
+                    if (!onEventTimeChange) return;
+                    e.stopPropagation();
+                    e.preventDefault();
+                    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+                    handleDragStart(event, e.clientY);
                   }}
                   title={event.title}
                 >

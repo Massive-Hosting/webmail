@@ -47,6 +47,22 @@ export async function startImportMailbox(params: {
   return apiPost<TaskResponse>("/api/tasks/import-mailbox", params);
 }
 
+export async function startScheduledSend(params: {
+  emailId: string;
+  identityId: string;
+  sendAt: string;
+}): Promise<TaskResponse> {
+  return apiPost<TaskResponse>("/api/tasks/schedule-send", params);
+}
+
+export async function startSnooze(params: {
+  emailId: string;
+  mailboxId: string;
+  until: string;
+}): Promise<TaskResponse> {
+  return apiPost<TaskResponse>("/api/tasks/snooze", params);
+}
+
 export async function getTaskStatus(taskId: string): Promise<TaskStatusResponse> {
   return apiGet<TaskStatusResponse>(`/api/tasks/${encodeURIComponent(taskId)}`);
 }

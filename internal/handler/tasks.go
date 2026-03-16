@@ -271,6 +271,106 @@ func (h *TaskHandler) ImportMailbox(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusAccepted, taskResponse{TaskID: taskID, Status: "running"})
 }
 
+// ScheduleSend handles POST /api/tasks/schedule-send.
+func (h *TaskHandler) ScheduleSend(w http.ResponseWriter, r *http.Request) {
+	creds := h.credsFromSession(r)
+	if creds == nil {
+		writeJSON(w, http.StatusUnauthorized, errorResponse{"unauthorized"})
+		return
+	}
+
+	var req struct {
+		EmailID    string `json:"emailId"`
+		IdentityID string `json:"identityId"`
+		SendAt     string `json:"sendAt"` // RFC 3339
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 1*1024*1024)).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"invalid_request"})
+		return
+	}
+
+	if req.EmailID == "" || req.SendAt == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"missing_fields"})
+		return
+	}
+
+	sendAt, err := time.Parse(time.RFC3339, req.SendAt)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"invalid_send_at"})
+		return
+	}
+
+	taskID := h.generateTaskID("schedule-send", creds.Email)
+
+	_, err = h.temporal.ExecuteWorkflow(r.Context(), client.StartWorkflowOptions{
+		ID:        taskID,
+		TaskQueue: worker.TaskQueue,
+	}, workflow.ScheduledSendWorkflow, workflow.ScheduledSendParams{
+		Creds:         *creds,
+		EmailID:       req.EmailID,
+		IdentityID:    req.IdentityID,
+		ScheduledTime: sendAt,
+		TaskID:        taskID,
+	})
+	if err != nil {
+		h.log.Error().Err(err).Msg("failed to start schedule-send workflow")
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"workflow_start_failed"})
+		return
+	}
+
+	writeJSON(w, http.StatusAccepted, taskResponse{TaskID: taskID, Status: "running"})
+}
+
+// Snooze handles POST /api/tasks/snooze.
+func (h *TaskHandler) Snooze(w http.ResponseWriter, r *http.Request) {
+	creds := h.credsFromSession(r)
+	if creds == nil {
+		writeJSON(w, http.StatusUnauthorized, errorResponse{"unauthorized"})
+		return
+	}
+
+	var req struct {
+		EmailID   string `json:"emailId"`
+		MailboxID string `json:"mailboxId"`
+		Until     string `json:"until"` // RFC 3339
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 1*1024*1024)).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"invalid_request"})
+		return
+	}
+
+	if req.EmailID == "" || req.Until == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"missing_fields"})
+		return
+	}
+
+	until, err := time.Parse(time.RFC3339, req.Until)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"invalid_until"})
+		return
+	}
+
+	taskID := h.generateTaskID("snooze", creds.Email)
+
+	_, err = h.temporal.ExecuteWorkflow(r.Context(), client.StartWorkflowOptions{
+		ID:        taskID,
+		TaskQueue: worker.TaskQueue,
+	}, workflow.SnoozeEmailWorkflow, workflow.SnoozeParams{
+		Creds:     *creds,
+		EmailID:   req.EmailID,
+		MailboxID: req.MailboxID,
+		UntilTime: until,
+		TaskID:    taskID,
+	})
+	if err != nil {
+		h.log.Error().Err(err).Msg("failed to start snooze workflow")
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"workflow_start_failed"})
+		return
+	}
+
+	writeJSON(w, http.StatusAccepted, taskResponse{TaskID: taskID, Status: "running"})
+}
+
 // GetTaskStatus handles GET /api/tasks/{taskId}.
 func (h *TaskHandler) GetTaskStatus(w http.ResponseWriter, r *http.Request) {
 	sess := middleware.SessionFromContext(r.Context())

@@ -1,7 +1,7 @@
 /** Inline contact edit form */
 
-import React, { useState, useCallback } from "react";
-import { Plus, X, Save, XCircle } from "lucide-react";
+import React, { useState, useCallback, useRef } from "react";
+import { Plus, X, Save, XCircle, Camera } from "lucide-react";
 import type { Contact, ContactEmail, ContactPhone, ContactAddress, ContactUrl } from "@/types/contacts.ts";
 import { getContactDisplayName, getContactInitials } from "@/hooks/use-contacts.ts";
 import { getAvatarColor } from "@/lib/format.ts";
@@ -53,10 +53,52 @@ export const ContactForm = React.memo(function ContactForm({
   const [orgTitle, setOrgTitle] = useState(contact?.organization?.title ?? "");
   const [notes, setNotes] = useState(contact?.notes ?? "");
   const [birthday, setBirthday] = useState(contact?.birthday ?? "");
+  const [avatarBlobId, setAvatarBlobId] = useState<string | undefined>(
+    contact?.avatar?.blobId,
+  );
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const displayName = fullName || `${givenName} ${surname}`.trim() || emails[0]?.address || "New Contact";
   const initials = displayName[0]?.toUpperCase() ?? "?";
   const avatarColor = getAvatarColor(emails[0]?.address || displayName);
+  const avatarUrl = avatarBlobId ? `/api/blob/${avatarBlobId}/inline` : undefined;
+
+  const handlePhotoUpload = useCallback(async (file: File) => {
+    setIsUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file, file.name);
+      const response = await fetch("/api/blob/upload", {
+        method: "POST",
+        credentials: "same-origin",
+        body: formData,
+      });
+      if (!response.ok) throw new Error("Upload failed");
+      const result = await response.json();
+      setAvatarBlobId(result.blobId);
+    } catch {
+      toast.error("Failed to upload photo");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  }, []);
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        handlePhotoUpload(file);
+      }
+      // Reset so the same file can be re-selected
+      e.target.value = "";
+    },
+    [handlePhotoUpload],
+  );
+
+  const handleRemovePhoto = useCallback(() => {
+    setAvatarBlobId(undefined);
+  }, []);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -86,6 +128,7 @@ export const ContactForm = React.memo(function ContactForm({
         urls: urls.filter((u) => u.url.trim()),
         notes: notes || undefined,
         birthday: birthday || undefined,
+        avatar: avatarBlobId ? { blobId: avatarBlobId } : undefined,
       };
 
       if (orgName || orgDepartment || orgTitle) {
@@ -102,7 +145,7 @@ export const ContactForm = React.memo(function ContactForm({
       fullName, givenName, surname, prefix, suffix,
       emails, phones, addresses, urls,
       orgName, orgDepartment, orgTitle, notes, birthday,
-      onSave,
+      avatarBlobId, onSave,
     ],
   );
 
@@ -110,16 +153,58 @@ export const ContactForm = React.memo(function ContactForm({
     <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-y-auto">
       {/* Header */}
       <div className="flex flex-col items-center pt-8 pb-4 px-6">
-        <div
-          className="inline-flex items-center justify-center rounded-full text-white font-semibold mb-4"
-          style={{
-            width: 80,
-            height: 80,
-            backgroundColor: avatarColor,
-            fontSize: 32,
-          }}
-        >
-          {initials}
+        <div className="relative mb-4">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="relative rounded-full overflow-hidden cursor-pointer group"
+            style={{ width: 80, height: 80 }}
+            title={t("contacts.uploadPhoto")}
+            disabled={isUploadingPhoto}
+          >
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center text-white font-semibold"
+                style={{ backgroundColor: avatarColor, fontSize: 32 }}
+              >
+                {initials}
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+              <Camera
+                size={20}
+                className="text-white opacity-0 group-hover:opacity-100 transition-opacity"
+              />
+            </div>
+            {isUploadingPhoto && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </button>
+          {avatarUrl && (
+            <button
+              type="button"
+              onClick={handleRemovePhoto}
+              className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm"
+              title={t("contacts.removePhoto")}
+            >
+              <X size={12} />
+            </button>
+          )}
         </div>
       </div>
 

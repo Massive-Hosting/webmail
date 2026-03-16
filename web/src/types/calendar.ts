@@ -54,12 +54,19 @@ export interface Alert {
   action: "display" | "email";
 }
 
+export interface CalendarSharePermission {
+  mayReadItems: boolean;
+  mayUpdateItems?: boolean;
+  mayDelete?: boolean;
+}
+
 export interface Calendar {
   id: string;
   name: string;
   color?: string;
   isVisible?: boolean;
   isDefault?: boolean;
+  shareWith?: Record<string, CalendarSharePermission>;
 }
 
 /** Data for creating a new calendar event (without id) */

@@ -41,6 +41,7 @@ interface MessageListProps {
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
   onProperties?: (email: EmailListItem) => void;
+  onPrint?: (email: EmailListItem) => void;
 }
 
 /** Component that fetches and renders thread children when a thread is expanded */
@@ -60,6 +61,7 @@ function ExpandedThreadChildren({
   onArchive,
   onDelete,
   onProperties,
+  onPrint,
   currentMailboxId,
 }: {
   threadId: string;
@@ -77,6 +79,7 @@ function ExpandedThreadChildren({
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
   onProperties?: (email: EmailListItem) => void;
+  onPrint?: (email: EmailListItem) => void;
   currentMailboxId?: string | null;
 }) {
   const { emails, isLoading } = useThreadMessages(threadId);
@@ -120,6 +123,7 @@ function ExpandedThreadChildren({
           onArchive={onArchive}
           onDelete={onDelete}
           onProperties={onProperties}
+          onPrint={onPrint}
           selectedEmailIds={selectedEmailIds}
           currentMailboxId={currentMailboxId}
         />
@@ -143,6 +147,7 @@ export const MessageList = React.memo(function MessageList({
   onArchive,
   onDelete,
   onProperties,
+  onPrint,
 }: MessageListProps) {
   const { t, i18n } = useTranslation();
   const parentRef = useRef<HTMLDivElement>(null);
@@ -359,6 +364,7 @@ export const MessageList = React.memo(function MessageList({
                 onArchive={onArchive}
                 onDelete={onDelete}
                 onProperties={onProperties}
+                onPrint={onPrint}
                 selectedEmailIds={selectedEmailIds}
                 currentMailboxId={selectedMailboxId}
               />
@@ -385,6 +391,7 @@ export const MessageList = React.memo(function MessageList({
                   onArchive={onArchive}
                   onDelete={onDelete}
                   onProperties={onProperties}
+                  onPrint={onPrint}
                   selectedEmailIds={selectedEmailIds}
                   currentMailboxId={selectedMailboxId}
                 />
@@ -406,6 +413,7 @@ export const MessageList = React.memo(function MessageList({
                   onArchive={onArchive}
                   onDelete={onDelete}
                   onProperties={onProperties}
+                  onPrint={onPrint}
                   currentMailboxId={selectedMailboxId}
                 />
               )}

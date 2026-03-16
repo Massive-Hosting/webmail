@@ -25,7 +25,7 @@ async function jmapCalendarRequest(
 
 // ---- Calendar operations ----
 
-const CALENDAR_PROPERTIES = ["id", "name", "color", "isVisible", "isDefault"];
+const CALENDAR_PROPERTIES = ["id", "name", "color", "isVisible", "isDefault", "shareWith"];
 
 /** Fetch all calendars */
 export async function fetchCalendars(): Promise<Calendar[]> {

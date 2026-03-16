@@ -2,8 +2,8 @@
 
 import React, { useCallback } from "react";
 import * as Popover from "@radix-ui/react-popover";
-import { X, Edit2, Trash2, MapPin, Clock, Calendar as CalendarIcon, Users } from "lucide-react";
-import type { CalendarEvent, Calendar } from "@/types/calendar.ts";
+import { X, Edit2, Trash2, MapPin, Clock, Calendar as CalendarIcon, Users, Check, HelpCircle } from "lucide-react";
+import type { CalendarEvent, Calendar, Participant } from "@/types/calendar.ts";
 import { format, parseISO, getEventEnd, getEventColor, formatEventTime } from "@/hooks/use-calendar.ts";
 import { useTranslation } from "react-i18next";
 
@@ -14,6 +14,42 @@ interface EventPopoverProps {
   onClose: () => void;
   onEdit: (event: CalendarEvent) => void;
   onDelete: (eventId: string) => void;
+}
+
+function RsvpIcon({ status }: { status?: Participant["participationStatus"] }) {
+  switch (status) {
+    case "accepted":
+      return (
+        <Check size={12} style={{ color: "#22c55e" }} />
+      );
+    case "declined":
+      return (
+        <X size={12} style={{ color: "#ef4444" }} />
+      );
+    case "tentative":
+      return (
+        <HelpCircle size={12} style={{ color: "#eab308" }} />
+      );
+    case "needs-action":
+    default:
+      return (
+        <Clock size={12} style={{ color: "#9ca3af" }} />
+      );
+  }
+}
+
+function rsvpLabel(status: Participant["participationStatus"] | undefined, t: (key: string) => string): string {
+  switch (status) {
+    case "accepted":
+      return t("calendar.accepted");
+    case "declined":
+      return t("calendar.declined");
+    case "tentative":
+      return t("calendar.tentative");
+    case "needs-action":
+    default:
+      return t("calendar.needsAction");
+  }
 }
 
 export const EventPopover = React.memo(function EventPopover({
@@ -170,7 +206,7 @@ export const EventPopover = React.memo(function EventPopover({
                 </div>
               )}
 
-              {/* Participants */}
+              {/* Participants with RSVP status */}
               {participants.length > 0 && (
                 <div className="flex items-start gap-2 mt-1">
                   <Users
@@ -178,22 +214,29 @@ export const EventPopover = React.memo(function EventPopover({
                     className="mt-0.5 shrink-0"
                     style={{ color: "var(--color-text-tertiary)" }}
                   />
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-col gap-1">
+                    <span
+                      className="text-[10px] font-medium uppercase tracking-wide"
+                      style={{ color: "var(--color-text-tertiary)" }}
+                    >
+                      {t("calendar.attendees")}
+                    </span>
                     {participants.map((p, i) => (
                       <div
                         key={i}
-                        className="text-xs"
+                        className="flex items-center gap-1.5 text-xs"
                         style={{ color: "var(--color-text-secondary)" }}
                       >
-                        {p.name ?? p.email}
-                        {p.participationStatus &&
-                          p.participationStatus !== "needs-action" && (
-                            <span
-                              className="ml-1 opacity-60"
-                            >
-                              ({p.participationStatus})
-                            </span>
-                          )}
+                        <RsvpIcon status={p.participationStatus} />
+                        <span className="truncate">
+                          {p.name ?? p.email}
+                        </span>
+                        <span
+                          className="ml-auto shrink-0 text-[10px]"
+                          style={{ color: "var(--color-text-tertiary)" }}
+                        >
+                          {rsvpLabel(p.participationStatus, t)}
+                        </span>
                       </div>
                     ))}
                   </div>

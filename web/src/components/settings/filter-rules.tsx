@@ -28,6 +28,7 @@ import {
   X,
   Save,
   Filter,
+  Code2,
 } from "lucide-react";
 import { useFilterRules } from "@/hooks/use-filter-rules.ts";
 import { StyledSelect } from "@/components/ui/styled-select.tsx";
@@ -43,11 +44,13 @@ import {
   createEmptyRule,
 } from "@/types/filter-rules.ts";
 import { useTranslation } from "react-i18next";
+import { SieveEditor } from "./sieve-editor.tsx";
 
 /** Main filter rules panel */
 export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
   const { t } = useTranslation();
   const { rules, isLoading, saveRules, isSaving } = useFilterRules();
+  const [showSieve, setShowSieve] = useState(false);
   const [localRules, setLocalRules] = useState<FilterRule[] | null>(null);
   const [editingRule, setEditingRule] = useState<FilterRule | null>(null);
   const [showEditor, setShowEditor] = useState(false);
@@ -154,6 +157,24 @@ export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
     );
   }
 
+  if (showSieve) {
+    return (
+      <div>
+        <div className="px-6 pt-4">
+          <button
+            onClick={() => setShowSieve(false)}
+            className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
+            style={{ color: "var(--color-text-accent)" }}
+          >
+            <Filter size={14} />
+            {t("filterRules.title")}
+          </button>
+        </div>
+        <SieveEditor />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-2xl">
       <div className="flex items-center justify-between mb-4">
@@ -166,6 +187,18 @@ export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
             {t("filterRules.title")}
           </h2>
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowSieve(true)}
+            className="flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md transition-colors"
+            style={{
+              backgroundColor: "var(--color-bg-tertiary)",
+              color: "var(--color-text-secondary)",
+            }}
+          >
+            <Code2 size={14} />
+            {t("sieve.advanced")}
+          </button>
         <button
           onClick={handleAddRule}
           className="flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md transition-colors"
@@ -177,6 +210,7 @@ export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
           <Plus size={16} />
           {t("filterRules.newRule")}
         </button>
+        </div>
       </div>
 
       <p

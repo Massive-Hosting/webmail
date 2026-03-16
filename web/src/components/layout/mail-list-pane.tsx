@@ -13,6 +13,7 @@ import { useCompose } from "@/components/mail/compose/use-compose.ts";
 import { EmailPropertiesDialog } from "@/components/mail/email-properties-dialog.tsx";
 import { useMessage } from "@/hooks/use-message.ts";
 import { fetchEmail, fetchIdentities } from "@/api/mail.ts";
+import { printEmail } from "@/lib/print.ts";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search,
@@ -120,6 +121,11 @@ export const MailListPane = React.memo(function MailListPane({
     const fullEmail = await fetchEmail(emailItem.id);
     if (fullEmail) openCompose({ mode: "forward", email: fullEmail, identity: defaultIdentity });
   }, [openCompose, defaultIdentity]);
+
+  const handlePrint = useCallback(async (emailItem: EmailListItem) => {
+    const fullEmail = await fetchEmail(emailItem.id);
+    if (fullEmail) printEmail(fullEmail);
+  }, []);
 
   const handleArchive = useCallback((emailIds: string[]) => {
     if (archiveMailbox && selectedMailboxId) {
@@ -250,6 +256,7 @@ export const MailListPane = React.memo(function MailListPane({
             onArchive={handleArchive}
             onDelete={handleDelete}
             onProperties={handleProperties}
+            onPrint={handlePrint}
           />
         )}
       </div>

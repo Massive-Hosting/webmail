@@ -1169,6 +1169,79 @@ export async function setVacationResponse(params: Partial<VacationResponse>): Pr
   }
 }
 
+// ---- Sieve script operations ----
+
+const JMAP_USING_SIEVE = [
+  ...JMAP_USING,
+  "urn:ietf:params:jmap:sieve",
+];
+
+export interface SieveScript {
+  id: string;
+  name: string;
+  content: string;
+  isActive: boolean;
+}
+
+/** Fetch the active Sieve script (or first available) */
+export async function fetchSieveScript(): Promise<SieveScript | null> {
+  const request: JMAPRequest = {
+    using: JMAP_USING_SIEVE,
+    methodCalls: [
+      [
+        "SieveScript/get",
+        {
+          properties: ["id", "name", "content", "isActive"],
+        },
+        "s0",
+      ],
+    ],
+  };
+
+  const response = await jmapRequest(request);
+  const [, result] = response.methodResponses[0];
+  const list = (result as { list: SieveScript[] }).list;
+
+  if (list.length === 0) return null;
+
+  // Prefer the active script
+  const active = list.find((s) => s.isActive);
+  return active ?? list[0];
+}
+
+/** Update a Sieve script's content */
+export async function updateSieveScript(id: string, content: string): Promise<void> {
+  const request: JMAPRequest = {
+    using: JMAP_USING_SIEVE,
+    methodCalls: [
+      [
+        "SieveScript/set",
+        {
+          update: {
+            [id]: { content },
+          },
+        },
+        "s0",
+      ],
+    ],
+  };
+
+  const response = await jmapRequest(request);
+  const [method, result] = response.methodResponses[0];
+  if (method === "error") {
+    throw new Error(
+      (result as { description?: string }).description ?? "Failed to update Sieve script",
+    );
+  }
+  const setResult = result as {
+    notUpdated?: Record<string, { type: string; description?: string }>;
+  };
+  if (setResult.notUpdated?.[id]) {
+    const err = setResult.notUpdated[id];
+    throw new Error(err.description ?? err.type ?? "Failed to update Sieve script");
+  }
+}
+
 // ---- Email headers (for properties dialog) ----
 
 /** Header property names to request from JMAP */

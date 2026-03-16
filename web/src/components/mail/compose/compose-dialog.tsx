@@ -16,7 +16,13 @@ import {
   AlertTriangle,
   Sparkles,
   FileSignature,
+  ChevronDown,
+  Clock,
+  CalendarClock,
+  FileText,
+  BookmarkPlus,
 } from "lucide-react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   useComposeStore,
   type DraftState,
@@ -25,6 +31,8 @@ import { ComposeEditor, toEmailSafeHTML } from "./editor.tsx";
 import { RecipientInput } from "./recipient-input.tsx";
 import { AttachmentList, DragDropZone, useAttachmentUpload } from "./attachment-list.tsx";
 import { sendEmail, saveDraft, destroyDraft, fetchIdentities, fetchMailboxes } from "@/api/mail.ts";
+import { startScheduledSend } from "@/api/tasks.ts";
+import { addHours, setHours, setMinutes, setSeconds, addDays, nextMonday, isPast } from "date-fns";
 import type { Email, Identity } from "@/types/mail.ts";
 import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 import { toast } from "sonner";
@@ -68,6 +76,8 @@ export const ComposePanel = React.memo(function ComposePanel({
   const undoSendToastIdRef = useRef<string | number | undefined>(undefined);
   const queryClient = useQueryClient();
   const undoSendDelay = useSettingsStore((s) => s.undoSendDelay);
+  const emailTemplates = useSettingsStore((s) => s.emailTemplates);
+  const addTemplate = useSettingsStore((s) => s.addTemplate);
 
   const { findByRole } = useMailboxes();
 
@@ -428,6 +438,82 @@ export const ComposePanel = React.memo(function ComposePanel({
     await executeSend();
   }, [draftId, executeSend, undoSendDelay, pgpEncrypt, pgpIsUnlocked, pgpPrivateKey, pgpPassphrase, confirm, t]);
 
+  const handleScheduleSend = useCallback(async (scheduledTime: Date) => {
+    const currentDraft = useComposeStore.getState().drafts.get(draftId);
+    if (!currentDraft) return;
+
+    // Validate recipients
+    const validTo = currentDraft.to.filter((r) => r.isValid);
+    const validCc = currentDraft.cc.filter((r) => r.isValid);
+    const validBcc = currentDraft.bcc.filter((r) => r.isValid);
+
+    if (validTo.length === 0 && validCc.length === 0 && validBcc.length === 0) {
+      toast.error(t("compose.addRecipient"));
+      return;
+    }
+
+    // Save draft first to ensure we have an emailId.
+    let mailboxId = currentDraft.draftsMailboxId ?? findByRole("drafts")?.id;
+    if (!mailboxId) {
+      const mailboxes = await fetchMailboxes();
+      const draftsBox = mailboxes.find((m) => m.role === "drafts");
+      mailboxId = draftsBox?.id;
+    }
+    if (!mailboxId) {
+      toast.error(t("compose.failedToSaveDraft"));
+      return;
+    }
+
+    updateDraft(draftId, { saving: true });
+
+    try {
+      const emailId = await saveDraft({
+        emailId: currentDraft.emailId,
+        mailboxId,
+        from: currentDraft.from,
+        to: validTo,
+        cc: validCc,
+        bcc: validBcc,
+        subject: currentDraft.subject,
+        bodyHTML: currentDraft.bodyHTML,
+        bodyText: currentDraft.bodyText || stripHtml(currentDraft.bodyHTML),
+        attachments: currentDraft.attachments.filter(
+          (a) => a.status === "complete" && a.blobId,
+        ),
+        inReplyTo: currentDraft.inReplyTo,
+        references: currentDraft.references,
+      });
+
+      const savedEmailId = emailId ?? currentDraft.emailId;
+      if (!savedEmailId) {
+        toast.error(t("compose.failedToSaveDraft"));
+        updateDraft(draftId, { saving: false });
+        return;
+      }
+
+      // Get identity ID for submission.
+      const identityId = currentDraft.from?.id ?? "";
+
+      await startScheduledSend({
+        emailId: savedEmailId,
+        identityId,
+        sendAt: scheduledTime.toISOString(),
+      });
+
+      closeDraft(draftId);
+
+      toast.success(t("action.emailScheduled", {
+        time: format(scheduledTime, "PPp"),
+      }), { duration: 4000 });
+
+      queryClient.invalidateQueries({ queryKey: ["emails"] });
+      queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
+    } catch (err) {
+      updateDraft(draftId, { saving: false });
+      toast.error(t("tasks.failedToStart"));
+    }
+  }, [draftId, findByRole, closeDraft, updateDraft, queryClient, t]);
+
   // Clean up undo send timer on unmount
   useEffect(() => {
     return () => {
@@ -556,6 +642,32 @@ export const ComposePanel = React.memo(function ComposePanel({
 
     updateDraft(draftId, { bodyHTML });
   }, [draftId, updateDraft, t]);
+
+  const handleApplyTemplate = useCallback(
+    (templateId: string) => {
+      const template = emailTemplates.find((tpl) => tpl.id === templateId);
+      if (!template) return;
+      updateDraft(draftId, {
+        subject: template.subject,
+        bodyHTML: template.body,
+      });
+      toast.success(t("templates.applied"));
+    },
+    [draftId, emailTemplates, updateDraft, t],
+  );
+
+  const handleSaveAsTemplate = useCallback(() => {
+    const currentDraft = useComposeStore.getState().drafts.get(draftId);
+    if (!currentDraft) return;
+    const name = window.prompt(t("templates.templateName"));
+    if (!name?.trim()) return;
+    addTemplate({
+      name: name.trim(),
+      subject: currentDraft.subject,
+      body: currentDraft.bodyHTML,
+    });
+    toast.success(t("templates.saved"));
+  }, [draftId, addTemplate, t]);
 
   // Keyboard shortcut: Ctrl+Enter to send
   useEffect(() => {
@@ -786,19 +898,126 @@ export const ComposePanel = React.memo(function ComposePanel({
         {/* Bottom toolbar */}
         <div className="compose-dialog__toolbar">
           <div className="compose-dialog__toolbar-left">
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={draft.saving}
-              className="compose-dialog__send-btn"
-            >
-              {draft.saving ? (
-                <Loader2 size={15} className="animate-spin" />
-              ) : (
-                <Send size={15} />
-              )}
-              {t("compose.send")}
-            </button>
+            <div className="flex items-center">
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={draft.saving}
+                className="compose-dialog__send-btn"
+                style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
+              >
+                {draft.saving ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Send size={15} />
+                )}
+                {t("compose.send")}
+              </button>
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <button
+                    type="button"
+                    disabled={draft.saving}
+                    className="compose-dialog__send-btn"
+                    style={{
+                      borderTopLeftRadius: 0,
+                      borderBottomLeftRadius: 0,
+                      borderLeft: "1px solid rgba(255,255,255,0.2)",
+                      paddingLeft: 4,
+                      paddingRight: 4,
+                      minWidth: "unset",
+                    }}
+                    title={t("action.sendLater")}
+                  >
+                    <ChevronDown size={14} />
+                  </button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    className="action-bar__dropdown"
+                    sideOffset={4}
+                    align="start"
+                  >
+                    <DropdownMenu.Label
+                      className="px-2.5 py-1.5 text-xs font-semibold"
+                      style={{ color: "var(--color-text-secondary)" }}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <CalendarClock size={13} />
+                        {t("action.scheduleSend")}
+                      </div>
+                    </DropdownMenu.Label>
+                    <DropdownMenu.Item
+                      className="action-bar__dropdown-item"
+                      onSelect={() => handleScheduleSend(addHours(new Date(), 1))}
+                    >
+                      {t("action.inOneHour")}
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item
+                      className="action-bar__dropdown-item"
+                      onSelect={() => handleScheduleSend(addHours(new Date(), 2))}
+                    >
+                      {t("action.inTwoHours")}
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item
+                      className="action-bar__dropdown-item"
+                      onSelect={() => {
+                        const tomorrow = addDays(new Date(), 1);
+                        handleScheduleSend(setSeconds(setMinutes(setHours(tomorrow, 9), 0), 0));
+                      }}
+                    >
+                      {t("action.tomorrowMorning")}
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item
+                      className="action-bar__dropdown-item"
+                      onSelect={() => {
+                        let monday = nextMonday(new Date());
+                        handleScheduleSend(setSeconds(setMinutes(setHours(monday, 9), 0), 0));
+                      }}
+                    >
+                      {t("action.mondayMorning")}
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Separator
+                      className="my-1"
+                      style={{ borderTop: "1px solid var(--color-border-primary)" }}
+                    />
+                    <DropdownMenu.Item
+                      className="action-bar__dropdown-item"
+                      onSelect={() => {
+                        const input = document.createElement("input");
+                        input.type = "datetime-local";
+                        input.min = new Date().toISOString().slice(0, 16);
+                        input.style.position = "fixed";
+                        input.style.opacity = "0";
+                        document.body.appendChild(input);
+                        input.addEventListener("change", () => {
+                          if (input.value) {
+                            const date = new Date(input.value);
+                            if (!isPast(date)) {
+                              handleScheduleSend(date);
+                            } else {
+                              toast.error("Please select a future date and time.");
+                            }
+                          }
+                          document.body.removeChild(input);
+                        });
+                        input.addEventListener("blur", () => {
+                          setTimeout(() => {
+                            if (document.body.contains(input)) {
+                              document.body.removeChild(input);
+                            }
+                          }, 300);
+                        });
+                        input.showPicker();
+                      }}
+                    >
+                      <Clock size={13} style={{ marginRight: 4 }} />
+                      {t("action.pickDateTime")}
+                    </DropdownMenu.Item>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+            </div>
 
             <button
               type="button"
@@ -820,6 +1039,64 @@ export const ComposePanel = React.memo(function ComposePanel({
                 }
               }}
             />
+
+            {/* Templates dropdown */}
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button
+                  type="button"
+                  className="compose-dialog__attach-btn"
+                  title={t("templates.templates")}
+                >
+                  <FileText size={16} />
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  className="action-bar__dropdown"
+                  sideOffset={4}
+                  align="start"
+                >
+                  <DropdownMenu.Label
+                    className="px-2.5 py-1.5 text-xs font-semibold"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    {t("templates.templates")}
+                  </DropdownMenu.Label>
+                  {emailTemplates.length === 0 ? (
+                    <DropdownMenu.Item
+                      className="action-bar__dropdown-item"
+                      disabled
+                    >
+                      <span style={{ color: "var(--color-text-tertiary)", fontSize: "12px" }}>
+                        {t("templates.noTemplatesCompose")}
+                      </span>
+                    </DropdownMenu.Item>
+                  ) : (
+                    emailTemplates.map((tpl) => (
+                      <DropdownMenu.Item
+                        key={tpl.id}
+                        className="action-bar__dropdown-item"
+                        onSelect={() => handleApplyTemplate(tpl.id)}
+                      >
+                        {tpl.name}
+                      </DropdownMenu.Item>
+                    ))
+                  )}
+                  <DropdownMenu.Separator
+                    className="my-1"
+                    style={{ borderTop: "1px solid var(--color-border-primary)" }}
+                  />
+                  <DropdownMenu.Item
+                    className="action-bar__dropdown-item"
+                    onSelect={handleSaveAsTemplate}
+                  >
+                    <BookmarkPlus size={13} style={{ marginRight: 4 }} />
+                    {t("templates.saveAsCurrent")}
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
 
             {/* AI Assist button — opens the copilot panel */}
             {aiEnabled && (

@@ -26,6 +26,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useTasks } from "@/hooks/use-tasks.ts";
+import { useSettingsStore } from "@/stores/settings-store.ts";
+
+const FOLDER_COLORS = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16"];
 
 const ROLE_ICONS: Record<string, React.ReactNode> = {
   inbox: <Inbox size={16} />,
@@ -345,6 +348,8 @@ const FolderItem = React.memo(function FolderItem({
   onImportToFolder?: (mailboxId: string) => void;
 }) {
   const { t } = useTranslation();
+  const folderColor = useSettingsStore((s) => s.folderColors[mailbox.id]);
+  const setFolderColor = useSettingsStore((s) => s.setFolderColor);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(mailbox.name);
   const [isDropTarget, setIsDropTarget] = useState(false);
@@ -432,6 +437,70 @@ const FolderItem = React.memo(function FolderItem({
       >
         {t("folder.markAllAsRead")}
       </ContextMenu.Item>
+      <ContextMenu.Sub>
+        <ContextMenu.SubTrigger
+          className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+          style={{
+            color: "var(--color-text-primary)",
+            borderRadius: "var(--radius-sm)",
+          }}
+        >
+          <span className="flex-1">{t("folder.color")}</span>
+          {folderColor && (
+            <div
+              className="w-3 h-3 rounded-full ml-2 shrink-0"
+              style={{ backgroundColor: folderColor }}
+            />
+          )}
+        </ContextMenu.SubTrigger>
+        <ContextMenu.Portal>
+          <ContextMenu.SubContent
+            className="p-2 animate-scale-in"
+            style={{
+              backgroundColor: "var(--color-bg-elevated)",
+              border: "1px solid var(--color-border-primary)",
+              boxShadow: "var(--shadow-lg)",
+              borderRadius: "var(--radius-md)",
+              zIndex: 50,
+            }}
+          >
+            <div className="grid grid-cols-4 gap-1.5">
+              {FOLDER_COLORS.map((c) => (
+                <ContextMenu.Item
+                  key={c}
+                  className="w-6 h-6 rounded-full cursor-pointer outline-none flex items-center justify-center transition-transform hover:scale-110"
+                  style={{ backgroundColor: c }}
+                  onSelect={() => setFolderColor(mailbox.id, c)}
+                >
+                  {c === folderColor && (
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </ContextMenu.Item>
+              ))}
+            </div>
+            {folderColor && (
+              <>
+                <div
+                  className="my-1.5"
+                  style={{ borderTop: "1px solid var(--color-border-primary)" }}
+                />
+                <ContextMenu.Item
+                  className="flex items-center justify-center px-2.5 py-1 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 text-xs"
+                  style={{
+                    color: "var(--color-text-secondary)",
+                    borderRadius: "var(--radius-sm)",
+                  }}
+                  onSelect={() => setFolderColor(mailbox.id, null)}
+                >
+                  {t("folder.noColor")}
+                </ContextMenu.Item>
+              </>
+            )}
+          </ContextMenu.SubContent>
+        </ContextMenu.Portal>
+      </ContextMenu.Sub>
       {!isRoleFolder && (
         <>
           <ContextMenu.Item
@@ -599,6 +668,16 @@ const FolderItem = React.memo(function FolderItem({
                 <ChevronRight size={13} style={{ color: "var(--color-text-tertiary)" }} />
               )}
             </span>
+          )}
+          {folderColor && (
+            <span
+              className="shrink-0 rounded-full"
+              style={{
+                width: 6,
+                height: 6,
+                backgroundColor: folderColor,
+              }}
+            />
           )}
           <span
             className="shrink-0"

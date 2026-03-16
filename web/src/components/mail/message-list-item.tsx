@@ -5,9 +5,12 @@ import type { EmailListItem } from "@/types/mail.ts";
 import { isUnread, isFlagged } from "@/types/mail.ts";
 import { Avatar } from "@/components/ui/avatar.tsx";
 import { formatMessageDate, formatAddress } from "@/lib/format.ts";
-import { Star, Paperclip, ChevronRight, ChevronDown } from "lucide-react";
+import { Star, Paperclip, ChevronRight, ChevronDown, Printer, Clock } from "lucide-react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { useTranslation } from "react-i18next";
+import { addHours, setHours, setMinutes, setSeconds, addDays, nextMonday, isPast, format } from "date-fns";
+import { startSnooze } from "@/api/tasks.ts";
+import { toast } from "sonner";
 
 interface MessageListItemProps {
   email: EmailListItem;
@@ -23,6 +26,7 @@ interface MessageListItemProps {
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
   onProperties?: (email: EmailListItem) => void;
+  onPrint?: (email: EmailListItem) => void;
   /** IDs of all multi-selected emails (for drag-and-drop) */
   selectedEmailIds?: ReadonlySet<string>;
   /** Current mailbox ID (for drag-and-drop source) */
@@ -44,6 +48,7 @@ export const MessageListItem = React.memo(
     onArchive,
     onDelete,
     onProperties,
+    onPrint,
     selectedEmailIds,
     currentMailboxId,
   }: MessageListItemProps) {
@@ -136,6 +141,13 @@ export const MessageListItem = React.memo(
 
             {/* Right-side indicators */}
             <div className="message-list-item__actions">
+              {email.keywords["$snoozed"] && (
+                <Clock
+                  size={14}
+                  className="message-list-item__attachment-icon"
+                  style={{ color: "var(--color-accent)" }}
+                />
+              )}
               {email.hasAttachment && (
                 <Paperclip
                   size={14}
@@ -161,6 +173,7 @@ export const MessageListItem = React.memo(
           email={email}
           unread={unread}
           flagged={flagged}
+          currentMailboxId={currentMailboxId}
           onReply={onReply}
           onReplyAll={onReplyAll}
           onForward={onForward}
@@ -169,6 +182,7 @@ export const MessageListItem = React.memo(
           onArchive={onArchive}
           onDelete={onDelete}
           onProperties={onProperties}
+          onPrint={onPrint}
         />
       </ContextMenu.Root>
     );
@@ -185,6 +199,7 @@ export const MessageListItem = React.memo(
     prev.onArchive === next.onArchive &&
     prev.onDelete === next.onDelete &&
     prev.onProperties === next.onProperties &&
+    prev.onPrint === next.onPrint &&
     prev.selectedEmailIds === next.selectedEmailIds &&
     prev.currentMailboxId === next.currentMailboxId,
 );
@@ -208,6 +223,7 @@ interface ThreadHeaderItemProps {
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
   onProperties?: (email: EmailListItem) => void;
+  onPrint?: (email: EmailListItem) => void;
   selectedEmailIds?: ReadonlySet<string>;
   currentMailboxId?: string | null;
 }
@@ -228,6 +244,7 @@ export const ThreadHeaderItem = React.memo(
     onArchive,
     onDelete,
     onProperties,
+    onPrint,
     selectedEmailIds,
     currentMailboxId,
   }: ThreadHeaderItemProps) {
@@ -348,6 +365,7 @@ export const ThreadHeaderItem = React.memo(
           email={email}
           unread={unread}
           flagged={flagged}
+          currentMailboxId={currentMailboxId}
           onReply={onReply}
           onReplyAll={onReplyAll}
           onForward={onForward}
@@ -356,6 +374,7 @@ export const ThreadHeaderItem = React.memo(
           onArchive={onArchive}
           onDelete={onDelete}
           onProperties={onProperties}
+          onPrint={onPrint}
         />
       </ContextMenu.Root>
     );
@@ -390,6 +409,7 @@ interface ThreadChildItemProps {
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
   onProperties?: (email: EmailListItem) => void;
+  onPrint?: (email: EmailListItem) => void;
   selectedEmailIds?: ReadonlySet<string>;
   currentMailboxId?: string | null;
 }
@@ -411,6 +431,7 @@ export const ThreadChildItem = React.memo(
     onArchive,
     onDelete,
     onProperties,
+    onPrint,
     selectedEmailIds,
     currentMailboxId,
   }: ThreadChildItemProps) {
@@ -499,6 +520,13 @@ export const ThreadChildItem = React.memo(
 
             {/* Right-side indicators */}
             <div className="message-list-item__actions">
+              {email.keywords["$snoozed"] && (
+                <Clock
+                  size={14}
+                  className="message-list-item__attachment-icon"
+                  style={{ color: "var(--color-accent)" }}
+                />
+              )}
               {email.hasAttachment && (
                 <Paperclip
                   size={14}
@@ -524,6 +552,7 @@ export const ThreadChildItem = React.memo(
           email={email}
           unread={unread}
           flagged={flagged}
+          currentMailboxId={currentMailboxId}
           onReply={onReply}
           onReplyAll={onReplyAll}
           onForward={onForward}
@@ -532,6 +561,7 @@ export const ThreadChildItem = React.memo(
           onArchive={onArchive}
           onDelete={onDelete}
           onProperties={onProperties}
+          onPrint={onPrint}
         />
       </ContextMenu.Root>
     );
@@ -550,6 +580,7 @@ export const ThreadChildItem = React.memo(
     prev.onArchive === next.onArchive &&
     prev.onDelete === next.onDelete &&
     prev.onProperties === next.onProperties &&
+    prev.onPrint === next.onPrint &&
     prev.selectedEmailIds === next.selectedEmailIds &&
     prev.currentMailboxId === next.currentMailboxId,
 );
@@ -562,6 +593,7 @@ function MessageContextMenu({
   email,
   unread,
   flagged,
+  currentMailboxId,
   onReply,
   onReplyAll,
   onForward,
@@ -570,10 +602,12 @@ function MessageContextMenu({
   onArchive,
   onDelete,
   onProperties,
+  onPrint,
 }: {
   email: EmailListItem;
   unread: boolean;
   flagged: boolean;
+  currentMailboxId?: string | null;
   onReply?: (email: EmailListItem) => void;
   onReplyAll?: (email: EmailListItem) => void;
   onForward?: (email: EmailListItem) => void;
@@ -582,8 +616,21 @@ function MessageContextMenu({
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
   onProperties?: (email: EmailListItem) => void;
+  onPrint?: (email: EmailListItem) => void;
 }) {
   const { t } = useTranslation();
+
+  const handleSnooze = useCallback((until: Date) => {
+    startSnooze({
+      emailId: email.id,
+      mailboxId: currentMailboxId ?? "",
+      until: until.toISOString(),
+    }).then(() => {
+      toast.success(t("action.snoozeSet", { time: format(until, "PPp") }));
+    }).catch(() => {
+      toast.error(t("tasks.failedToStart"));
+    });
+  }, [email.id, currentMailboxId, t]);
 
   return (
     <ContextMenu.Portal>
@@ -644,12 +691,110 @@ function MessageContextMenu({
           style={{ borderTop: "1px solid var(--color-border-primary)" }}
         />
 
+        <ContextMenu.Sub>
+          <ContextMenu.SubTrigger
+            className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+            style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+          >
+            <Clock size={14} />
+            {t("action.snooze")}
+          </ContextMenu.SubTrigger>
+          <ContextMenu.Portal>
+            <ContextMenu.SubContent
+              className="min-w-[160px] p-1 text-sm"
+              style={{
+                backgroundColor: "var(--color-bg-elevated)",
+                border: "1px solid var(--color-border-primary)",
+                boxShadow: "var(--shadow-lg)",
+                borderRadius: "var(--radius-md)",
+                zIndex: 51,
+              }}
+            >
+              <ContextMenu.Item
+                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+                style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+                onSelect={() => {
+                  const now = new Date();
+                  const hour = now.getHours();
+                  handleSnooze(hour >= 15 ? addHours(now, 3) : setSeconds(setMinutes(setHours(now, 18), 0), 0));
+                }}
+              >
+                {t("action.laterToday")}
+              </ContextMenu.Item>
+              <ContextMenu.Item
+                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+                style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+                onSelect={() => {
+                  const tomorrow = addDays(new Date(), 1);
+                  handleSnooze(setSeconds(setMinutes(setHours(tomorrow, 9), 0), 0));
+                }}
+              >
+                {t("action.tomorrowMorning")}
+              </ContextMenu.Item>
+              <ContextMenu.Item
+                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+                style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+                onSelect={() => {
+                  const monday = nextMonday(new Date());
+                  handleSnooze(setSeconds(setMinutes(setHours(monday, 9), 0), 0));
+                }}
+              >
+                {t("action.mondayMorning")}
+              </ContextMenu.Item>
+              <ContextMenu.Separator
+                className="my-1"
+                style={{ borderTop: "1px solid var(--color-border-primary)" }}
+              />
+              <ContextMenu.Item
+                className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+                style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+                onSelect={() => {
+                  const input = document.createElement("input");
+                  input.type = "datetime-local";
+                  input.min = new Date().toISOString().slice(0, 16);
+                  input.style.position = "fixed";
+                  input.style.opacity = "0";
+                  document.body.appendChild(input);
+                  input.addEventListener("change", () => {
+                    if (input.value) {
+                      const date = new Date(input.value);
+                      if (!isPast(date)) {
+                        handleSnooze(date);
+                      }
+                    }
+                    document.body.removeChild(input);
+                  });
+                  input.addEventListener("blur", () => {
+                    setTimeout(() => {
+                      if (document.body.contains(input)) {
+                        document.body.removeChild(input);
+                      }
+                    }, 300);
+                  });
+                  input.showPicker();
+                }}
+              >
+                <Clock size={13} />
+                {t("action.pickDateTime")}
+              </ContextMenu.Item>
+            </ContextMenu.SubContent>
+          </ContextMenu.Portal>
+        </ContextMenu.Sub>
+
         <ContextMenu.Item
           className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
           style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
           onSelect={() => onArchive?.([email.id])}
         >
           {t("action.archive")}
+        </ContextMenu.Item>
+        <ContextMenu.Item
+          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+          style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+          onSelect={() => onPrint?.(email)}
+        >
+          <Printer size={14} />
+          {t("action.print")}
         </ContextMenu.Item>
         <ContextMenu.Item
           className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"

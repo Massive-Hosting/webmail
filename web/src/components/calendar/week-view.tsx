@@ -1,6 +1,6 @@
 /** Week view: 7-column time grid with hourly rows */
 
-import React, { useMemo, useCallback, useEffect, useRef } from "react";
+import React, { useMemo, useCallback, useEffect, useRef, useState } from "react";
 import type { CalendarEvent, Calendar } from "@/types/calendar.ts";
 import {
   startOfWeek,
@@ -23,6 +23,7 @@ interface WeekViewProps {
   calendars: Calendar[];
   onClickSlot: (date: Date, hour: number) => void;
   onClickEvent: (event: CalendarEvent, anchor: HTMLElement) => void;
+  onEventTimeChange?: (event: CalendarEvent, newStart: string) => void;
 }
 
 const START_HOUR = 7;
@@ -36,6 +37,7 @@ export const WeekView = React.memo(function WeekView({
   calendars,
   onClickSlot,
   onClickEvent,
+  onEventTimeChange,
 }: WeekViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const weekStart = useMemo(
@@ -210,6 +212,7 @@ export const WeekView = React.memo(function WeekView({
                 hours={hours}
                 onClickSlot={onClickSlot}
                 onClickEvent={onClickEvent}
+                onEventTimeChange={onEventTimeChange}
               />
             );
           })}
@@ -247,6 +250,7 @@ interface DayColumnProps {
   hours: number[];
   onClickSlot: (date: Date, hour: number) => void;
   onClickEvent: (event: CalendarEvent, anchor: HTMLElement) => void;
+  onEventTimeChange?: (event: CalendarEvent, newStart: string) => void;
 }
 
 const DayColumn = React.memo(function DayColumn({
@@ -257,18 +261,81 @@ const DayColumn = React.memo(function DayColumn({
   hours,
   onClickSlot,
   onClickEvent,
+  onEventTimeChange,
 }: DayColumnProps) {
   // Compute layout for overlapping events
   const positioned = useMemo(() => layoutEvents(events), [events]);
 
+  // Drag state for moving events
+  const [dragState, setDragState] = useState<{
+    eventId: string;
+    initialY: number;
+    initialStartMinutes: number;
+    currentDeltaMinutes: number;
+  } | null>(null);
+
   const handleSlotClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
+      // Don't fire slot click if we just finished a drag
+      if (dragState) return;
       const rect = e.currentTarget.getBoundingClientRect();
       const y = e.clientY - rect.top;
       const hour = Math.floor(y / HOUR_HEIGHT) + START_HOUR;
       onClickSlot(day, Math.min(hour, END_HOUR - 1));
     },
-    [day, onClickSlot],
+    [day, onClickSlot, dragState],
+  );
+
+  const handleDragStart = useCallback(
+    (event: CalendarEvent, initialY: number) => {
+      const start = parseISO(event.start);
+      const startMin = (start.getHours() - START_HOUR) * 60 + start.getMinutes();
+      setDragState({
+        eventId: event.id,
+        initialY,
+        initialStartMinutes: startMin,
+        currentDeltaMinutes: 0,
+      });
+    },
+    [],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!dragState) return;
+      const deltaY = e.clientY - dragState.initialY;
+      const deltaMinutes = Math.round((deltaY / HOUR_HEIGHT) * 60 / 15) * 15; // snap to 15 min
+      setDragState((prev) => prev ? { ...prev, currentDeltaMinutes: deltaMinutes } : null);
+    },
+    [dragState],
+  );
+
+  const handlePointerUp = useCallback(
+    (_e: React.PointerEvent<HTMLDivElement>) => {
+      if (!dragState || !onEventTimeChange) {
+        setDragState(null);
+        return;
+      }
+
+      if (dragState.currentDeltaMinutes !== 0) {
+        const draggedEvent = events.find((ev) => ev.id === dragState.eventId);
+        if (draggedEvent) {
+          const newStartMinutes = dragState.initialStartMinutes + dragState.currentDeltaMinutes;
+          const clampedMinutes = Math.max(0, Math.min(newStartMinutes, (END_HOUR - START_HOUR) * 60 - 15));
+          const totalMinutes = clampedMinutes + START_HOUR * 60;
+          const h = Math.floor(totalMinutes / 60);
+          const m = totalMinutes % 60;
+
+          // Reconstruct the start datetime with the same date
+          const dateStr = draggedEvent.start.substring(0, 10);
+          const newStart = `${dateStr}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
+          onEventTimeChange(draggedEvent, newStart);
+        }
+      }
+
+      setDragState(null);
+    },
+    [dragState, events, onEventTimeChange],
   );
 
   return (
@@ -279,19 +346,30 @@ const DayColumn = React.memo(function DayColumn({
         backgroundColor: today ? "var(--color-bg-tertiary)" : undefined,
       }}
       onClick={handleSlotClick}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
     >
-      {positioned.map(({ event, top, height, left, width }) => (
-        <TimedEventBlock
-          key={event.id}
-          event={event}
-          calendars={calendars}
-          top={top}
-          height={height}
-          left={left}
-          width={width}
-          onClick={onClickEvent}
-        />
-      ))}
+      {positioned.map(({ event, top, height, left, width }) => {
+        const isDragging = dragState?.eventId === event.id;
+        const dragOffset = isDragging
+          ? (dragState.currentDeltaMinutes / 60) * HOUR_HEIGHT
+          : 0;
+
+        return (
+          <TimedEventBlock
+            key={event.id}
+            event={event}
+            calendars={calendars}
+            top={top + dragOffset}
+            height={height}
+            left={left}
+            width={width}
+            onClick={onClickEvent}
+            onDragStart={handleDragStart}
+            isDragging={isDragging}
+          />
+        );
+      })}
     </div>
   );
 });
@@ -369,6 +447,8 @@ interface TimedEventBlockProps {
   left: string;
   width: string;
   onClick: (event: CalendarEvent, anchor: HTMLElement) => void;
+  onDragStart?: (event: CalendarEvent, initialY: number) => void;
+  isDragging?: boolean;
 }
 
 const TimedEventBlock = React.memo(function TimedEventBlock({
@@ -379,6 +459,8 @@ const TimedEventBlock = React.memo(function TimedEventBlock({
   left,
   width,
   onClick,
+  onDragStart,
+  isDragging,
 }: TimedEventBlockProps) {
   const color = getEventColor(event, calendars);
 
@@ -388,6 +470,17 @@ const TimedEventBlock = React.memo(function TimedEventBlock({
       onClick(event, e.currentTarget);
     },
     [event, onClick],
+  );
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent<HTMLButtonElement>) => {
+      if (!onDragStart) return;
+      e.stopPropagation();
+      e.preventDefault();
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      onDragStart(event, e.clientY);
+    },
+    [event, onDragStart],
   );
 
   return (
@@ -401,9 +494,14 @@ const TimedEventBlock = React.memo(function TimedEventBlock({
         backgroundColor: color + "30",
         borderLeft: `3px solid ${color}`,
         color: color,
-        zIndex: 1,
+        zIndex: isDragging ? 20 : 1,
+        opacity: isDragging ? 0.85 : undefined,
+        boxShadow: isDragging ? "0 4px 12px rgba(0,0,0,0.15)" : undefined,
+        transition: isDragging ? "none" : "opacity 0.15s",
+        touchAction: "none",
       }}
       onClick={handleClick}
+      onPointerDown={handlePointerDown}
       title={event.title}
     >
       <div className="text-[11px] font-medium truncate">{event.title}</div>

@@ -79,15 +79,23 @@ export const ContactDetail = React.memo(function ContactDetail({
       {/* Header / Avatar */}
       <div className="flex flex-col items-center pt-8 pb-6 px-6">
         <div
-          className="inline-flex items-center justify-center rounded-full text-white font-semibold mb-4"
+          className="inline-flex items-center justify-center rounded-full text-white font-semibold mb-4 overflow-hidden"
           style={{
             width: 80,
             height: 80,
-            backgroundColor: avatarColor,
+            backgroundColor: contact.avatar?.blobId ? undefined : avatarColor,
             fontSize: 32,
           }}
         >
-          {initials}
+          {contact.avatar?.blobId ? (
+            <img
+              src={`/api/blob/${contact.avatar.blobId}/inline`}
+              alt={displayName}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            initials
+          )}
         </div>
         <h2
           className="text-xl font-semibold text-center"

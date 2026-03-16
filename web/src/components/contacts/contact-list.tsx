@@ -311,15 +311,23 @@ const ContactRow = React.memo(function ContactRow({
     >
       {/* Avatar */}
       <div
-        className="inline-flex items-center justify-center rounded-full text-white font-medium shrink-0"
+        className="inline-flex items-center justify-center rounded-full text-white font-medium shrink-0 overflow-hidden"
         style={{
           width: 36,
           height: 36,
-          backgroundColor: avatarColor,
+          backgroundColor: contact.avatar?.blobId ? undefined : avatarColor,
           fontSize: 14,
         }}
       >
-        {initials}
+        {contact.avatar?.blobId ? (
+          <img
+            src={`/api/blob/${contact.avatar.blobId}/inline`}
+            alt={displayName}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          initials
+        )}
       </div>
 
       {/* Name and email */}

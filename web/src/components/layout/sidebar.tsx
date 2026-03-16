@@ -1,7 +1,8 @@
 /** Sidebar with folder tree — premium design */
 
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useState, useCallback, useRef, useEffect } from "react";
 import { FolderTree } from "@/components/mail/folder-tree.tsx";
+import { SavedSearchesList } from "@/components/mail/saved-searches-list.tsx";
 import { useUIStore } from "@/stores/ui-store.ts";
 
 const AgendaSidebar = lazy(() =>
@@ -41,6 +42,7 @@ export const Sidebar = React.memo(function Sidebar() {
         {!sidebarCollapsed && (
           <>
             <FolderTree />
+            <SavedSearchesList />
             <div
               className="mx-3 my-1"
               style={{ borderTop: "1px solid var(--color-border-primary)" }}

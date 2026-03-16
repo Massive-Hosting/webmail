@@ -12,6 +12,19 @@ export type DefaultReplyMode = "reply" | "reply-all";
 export type ExternalImages = "never" | "ask" | "always";
 export type StartPage = "inbox" | "last";
 
+export interface SavedSearch {
+  id: string;
+  name: string;
+  query: string;
+}
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body: string; // HTML
+}
+
 export interface NotificationPrefs {
   enabled: boolean;
   sound: boolean;
@@ -35,6 +48,9 @@ export interface Preferences {
     sidebar: number;
     messageList: number;
   };
+  folderColors: Record<string, string>;
+  savedSearches: SavedSearch[];
+  emailTemplates: EmailTemplate[];
 }
 
 const DEFAULT_PREFERENCES: Preferences = {
@@ -58,6 +74,9 @@ const DEFAULT_PREFERENCES: Preferences = {
     sidebar: 240,
     messageList: 380,
   },
+  folderColors: {},
+  savedSearches: [],
+  emailTemplates: [],
 };
 
 interface SettingsState extends Preferences {
@@ -81,6 +100,13 @@ interface SettingsState extends Preferences {
   setNotifications: (prefs: Partial<NotificationPrefs>) => void;
   addTrustedImageDomain: (domain: string) => void;
   setPanelSizes: (sizes: Partial<Preferences["panelSizes"]>) => void;
+  setFolderColor: (mailboxId: string, color: string | null) => void;
+  addSavedSearch: (name: string, query: string) => void;
+  removeSavedSearch: (id: string) => void;
+  renameSavedSearch: (id: string, name: string) => void;
+  addTemplate: (template: Omit<EmailTemplate, "id">) => void;
+  updateTemplate: (id: string, updates: Partial<Omit<EmailTemplate, "id">>) => void;
+  removeTemplate: (id: string) => void;
 
   /** Load preferences from server, merging with defaults */
   loadFromServer: () => Promise<void>;
@@ -156,6 +182,9 @@ function getPreferences(state: SettingsState): Preferences {
     notifications: state.notifications,
     trustedImageDomains: state.trustedImageDomains,
     panelSizes: state.panelSizes,
+    folderColors: state.folderColors,
+    savedSearches: state.savedSearches,
+    emailTemplates: state.emailTemplates,
   };
 }
 
@@ -246,6 +275,60 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     debouncedSaveToServer(getPreferences(get()));
   },
 
+  setFolderColor: (mailboxId, color) => {
+    const current = get().folderColors;
+    const folderColors = { ...current };
+    if (color === null) {
+      delete folderColors[mailboxId];
+    } else {
+      folderColors[mailboxId] = color;
+    }
+    set({ folderColors });
+    debouncedSaveToServer(getPreferences(get()));
+  },
+
+  addSavedSearch: (name, query) => {
+    const id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    const savedSearches = [...get().savedSearches, { id, name, query }];
+    set({ savedSearches });
+    debouncedSaveToServer(getPreferences(get()));
+  },
+
+  removeSavedSearch: (id) => {
+    const savedSearches = get().savedSearches.filter((s) => s.id !== id);
+    set({ savedSearches });
+    debouncedSaveToServer(getPreferences(get()));
+  },
+
+  renameSavedSearch: (id, name) => {
+    const savedSearches = get().savedSearches.map((s) =>
+      s.id === id ? { ...s, name } : s,
+    );
+    set({ savedSearches });
+    debouncedSaveToServer(getPreferences(get()));
+  },
+
+  addTemplate: (template) => {
+    const id = crypto.randomUUID();
+    const emailTemplates = [...get().emailTemplates, { ...template, id }];
+    set({ emailTemplates });
+    debouncedSaveToServer(getPreferences(get()));
+  },
+
+  updateTemplate: (id, updates) => {
+    const emailTemplates = get().emailTemplates.map((t) =>
+      t.id === id ? { ...t, ...updates } : t,
+    );
+    set({ emailTemplates });
+    debouncedSaveToServer(getPreferences(get()));
+  },
+
+  removeTemplate: (id) => {
+    const emailTemplates = get().emailTemplates.filter((t) => t.id !== id);
+    set({ emailTemplates });
+    debouncedSaveToServer(getPreferences(get()));
+  },
+
   loadFromServer: async () => {
     set({ loading: true });
     try {
@@ -282,6 +365,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           ...DEFAULT_PREFERENCES.panelSizes,
           ...(serverPrefs.panelSizes ?? {}),
         },
+        folderColors: {
+          ...DEFAULT_PREFERENCES.folderColors,
+          ...(serverPrefs.folderColors ?? {}),
+        },
       };
 
       set({ ...merged, loaded: true, loading: false });
@@ -314,6 +401,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
             panelSizes: {
               ...DEFAULT_PREFERENCES.panelSizes,
               ...(parsed.panelSizes ?? {}),
+            },
+            folderColors: {
+              ...DEFAULT_PREFERENCES.folderColors,
+              ...(parsed.folderColors ?? {}),
             },
           };
           set({ ...merged, loaded: true, loading: false });

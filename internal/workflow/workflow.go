@@ -413,6 +413,144 @@ func ImportMailboxWorkflow(ctx workflow.Context, params ImportMailboxParams) (*I
 	return &ImportMailboxResult{ImportedCount: imported}, nil
 }
 
+// ScheduledSendParams defines input for ScheduledSendWorkflow.
+type ScheduledSendParams struct {
+	Creds         activity.Credentials
+	EmailID       string
+	IdentityID    string
+	ScheduledTime time.Time
+	TaskID        string
+}
+
+// ScheduledSendWorkflow sleeps until the scheduled time, then sends the email.
+func ScheduledSendWorkflow(ctx workflow.Context, params ScheduledSendParams) error {
+	var a *activity.Activities
+
+	// Publish initial progress.
+	ctx = workflow.WithActivityOptions(ctx, activityOptions())
+	_ = workflow.ExecuteActivity(ctx, a.PublishProgress, activity.ProgressParams{
+		Email:    params.Creds.Email,
+		TaskID:   params.TaskID,
+		TaskType: "schedule-send",
+		Progress: 0.1,
+		Detail:   fmt.Sprintf("Email scheduled for %s", params.ScheduledTime.Format(time.RFC3339)),
+		Status:   "running",
+	}).Get(ctx, nil)
+
+	// Sleep until scheduled time.
+	sleepDuration := params.ScheduledTime.Sub(workflow.Now(ctx))
+	if sleepDuration > 0 {
+		if err := workflow.Sleep(ctx, sleepDuration); err != nil {
+			return err
+		}
+	}
+
+	// Send the email via JMAP EmailSubmission/set.
+	err := workflow.ExecuteActivity(ctx, a.JMAPSendEmail, activity.JMAPSendEmailParams{
+		Creds:      params.Creds,
+		EmailID:    params.EmailID,
+		IdentityID: params.IdentityID,
+	}).Get(ctx, nil)
+	if err != nil {
+		// Publish failure.
+		_ = workflow.ExecuteActivity(ctx, a.PublishProgress, activity.ProgressParams{
+			Email:    params.Creds.Email,
+			TaskID:   params.TaskID,
+			TaskType: "schedule-send",
+			Progress: 1.0,
+			Detail:   fmt.Sprintf("Failed to send scheduled email: %v", err),
+			Status:   "failed",
+		}).Get(ctx, nil)
+		return err
+	}
+
+	// Publish completion.
+	_ = workflow.ExecuteActivity(ctx, a.PublishProgress, activity.ProgressParams{
+		Email:    params.Creds.Email,
+		TaskID:   params.TaskID,
+		TaskType: "schedule-send",
+		Progress: 1.0,
+		Detail:   "Scheduled email sent",
+		Status:   "completed",
+	}).Get(ctx, nil)
+
+	return nil
+}
+
+// SnoozeParams defines input for SnoozeEmailWorkflow.
+type SnoozeParams struct {
+	Creds     activity.Credentials
+	EmailID   string
+	MailboxID string
+	UntilTime time.Time
+	TaskID    string
+}
+
+// SnoozeEmailWorkflow sets the $snoozed keyword, sleeps, then removes it and marks unread.
+func SnoozeEmailWorkflow(ctx workflow.Context, params SnoozeParams) error {
+	ctx = workflow.WithActivityOptions(ctx, activityOptions())
+	var a *activity.Activities
+
+	// Set $snoozed keyword on the email.
+	updates := map[string]map[string]interface{}{
+		params.EmailID: {
+			"keywords/$snoozed": true,
+		},
+	}
+	err := workflow.ExecuteActivity(ctx, a.JMAPBatchUpdate, activity.JMAPBatchUpdateParams{
+		Creds:   params.Creds,
+		Updates: updates,
+	}).Get(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("setting snoozed keyword: %w", err)
+	}
+
+	// Publish progress.
+	_ = workflow.ExecuteActivity(ctx, a.PublishProgress, activity.ProgressParams{
+		Email:    params.Creds.Email,
+		TaskID:   params.TaskID,
+		TaskType: "snooze",
+		Progress: 0.5,
+		Detail:   fmt.Sprintf("Snoozed until %s", params.UntilTime.Format(time.RFC3339)),
+		Status:   "running",
+	}).Get(ctx, nil)
+
+	// Sleep until snooze time.
+	sleepDuration := params.UntilTime.Sub(workflow.Now(ctx))
+	if sleepDuration > 0 {
+		if err := workflow.Sleep(ctx, sleepDuration); err != nil {
+			return err
+		}
+	}
+
+	// Remove $snoozed keyword and mark as unread.
+	wakeUpdates := map[string]map[string]interface{}{
+		params.EmailID: {
+			"keywords/$snoozed": nil,
+			"keywords/$seen":    false,
+		},
+	}
+	err = workflow.ExecuteActivity(ctx, a.JMAPBatchUpdate, activity.JMAPBatchUpdateParams{
+		Creds:   params.Creds,
+		Updates: wakeUpdates,
+	}).Get(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("removing snoozed keyword: %w", err)
+	}
+
+	// Publish completion.
+	_ = workflow.ExecuteActivity(ctx, a.PublishProgress, activity.ProgressParams{
+		Email:    params.Creds.Email,
+		TaskID:   params.TaskID,
+		TaskType: "snooze",
+		Progress: 1.0,
+		Detail:   "Snooze ended, email marked unread",
+		Status:   "completed",
+	}).Get(ctx, nil)
+
+	return nil
+}
+
 // uploadBlobParams for the UploadBlob activity.
 type uploadBlobParams struct {
 	Creds       activity.Credentials

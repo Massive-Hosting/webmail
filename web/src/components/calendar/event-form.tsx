@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, Plus, Trash2, MapPin, Clock, Users, Bell, Palette, Repeat } from "lucide-react";
+import { X, Plus, Trash2, MapPin, Clock, Users, Bell, Palette, Repeat, Check, HelpCircle } from "lucide-react";
 import type {
   CalendarEvent,
   CalendarEventCreate,
@@ -127,11 +127,11 @@ export const EventForm = React.memo(function EventForm({
 
   // Attendee management
   const [attendeeInput, setAttendeeInput] = useState("");
-  const [attendees, setAttendees] = useState<Array<{ name: string; email: string }>>(() => {
+  const [attendees, setAttendees] = useState<Array<{ name: string; email: string; participationStatus?: Participant["participationStatus"] }>>(() => {
     if (!event?.participants) return [];
     return Object.values(event.participants)
       .filter((p) => p.roles?.attendee)
-      .map((p) => ({ name: p.name ?? "", email: p.email ?? "" }));
+      .map((p) => ({ name: p.name ?? "", email: p.email ?? "", participationStatus: p.participationStatus }));
   });
 
   // Sync form state when event prop changes (e.g., opening edit dialog).
@@ -185,7 +185,7 @@ export const EventForm = React.memo(function EventForm({
       setAttendees(
         Object.values(event.participants)
           .filter((p) => p.roles?.attendee)
-          .map((p) => ({ name: p.name ?? "", email: p.email ?? "" })),
+          .map((p) => ({ name: p.name ?? "", email: p.email ?? "", participationStatus: p.participationStatus })),
       );
     }
   }, [event, open, calendars, defaultDate, defaultHour]);
@@ -571,6 +571,19 @@ export const EventForm = React.memo(function EventForm({
                         key={a.email}
                         className="flex items-center gap-2 text-sm"
                       >
+                        {isEditing && a.participationStatus && (
+                          <span className="shrink-0" title={
+                            a.participationStatus === "accepted" ? t("calendar.accepted")
+                              : a.participationStatus === "declined" ? t("calendar.declined")
+                              : a.participationStatus === "tentative" ? t("calendar.tentative")
+                              : t("calendar.needsAction")
+                          }>
+                            {a.participationStatus === "accepted" && <Check size={13} style={{ color: "#22c55e" }} />}
+                            {a.participationStatus === "declined" && <X size={13} style={{ color: "#ef4444" }} />}
+                            {a.participationStatus === "tentative" && <HelpCircle size={13} style={{ color: "#eab308" }} />}
+                            {a.participationStatus === "needs-action" && <Clock size={13} style={{ color: "#9ca3af" }} />}
+                          </span>
+                        )}
                         <span
                           className="flex-1 truncate"
                           style={{ color: "var(--color-text-secondary)" }}

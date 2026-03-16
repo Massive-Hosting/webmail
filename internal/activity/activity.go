@@ -446,3 +446,82 @@ func (a *Activities) doJMAPRequestWithResponse(ctx context.Context, creds Creden
 type jmapResponse struct {
 	MethodResponses [][]interface{} `json:"methodResponses"`
 }
+
+// JMAPSendEmailParams defines parameters for sending an email via EmailSubmission/set.
+type JMAPSendEmailParams struct {
+	Creds      Credentials
+	EmailID    string
+	IdentityID string
+}
+
+// JMAPSendEmail sends an existing draft email via JMAP EmailSubmission/set.
+func (a *Activities) JMAPSendEmail(ctx context.Context, params JMAPSendEmailParams) error {
+	request := map[string]interface{}{
+		"using": []string{
+			"urn:ietf:params:jmap:core",
+			"urn:ietf:params:jmap:mail",
+			"urn:ietf:params:jmap:submission",
+		},
+		"methodCalls": []interface{}{
+			[]interface{}{
+				"EmailSubmission/set",
+				map[string]interface{}{
+					"accountId": params.Creds.AccountID,
+					"create": map[string]interface{}{
+						"sub": map[string]interface{}{
+							"emailId":    params.EmailID,
+							"identityId": params.IdentityID,
+						},
+					},
+					"onSuccessUpdateEmail": map[string]interface{}{
+						"#sub": map[string]interface{}{
+							"keywords/$draft": nil,
+							"keywords/$seen":  true,
+						},
+					},
+				},
+				"0",
+			},
+		},
+	}
+
+	respBody, err := a.doJMAPRequestWithResponse(ctx, params.Creds, request)
+	if err != nil {
+		return fmt.Errorf("JMAP EmailSubmission/set failed: %w", err)
+	}
+
+	var resp jmapResponse
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return fmt.Errorf("parsing JMAP response: %w", err)
+	}
+
+	// Check for errors in method responses.
+	for _, methodResp := range resp.MethodResponses {
+		if len(methodResp) < 2 {
+			continue
+		}
+		methodName, _ := methodResp[0].(string)
+		if methodName == "error" {
+			result, _ := methodResp[1].(map[string]interface{})
+			desc, _ := result["description"].(string)
+			return fmt.Errorf("JMAP error: %s", desc)
+		}
+		result, ok := methodResp[1].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if notCreated, ok := result["notCreated"].(map[string]interface{}); ok && len(notCreated) > 0 {
+			for _, v := range notCreated {
+				errObj, _ := v.(map[string]interface{})
+				desc, _ := errObj["description"].(string)
+				typ, _ := errObj["type"].(string)
+				if desc != "" {
+					return fmt.Errorf("EmailSubmission failed: %s", desc)
+				}
+				return fmt.Errorf("EmailSubmission failed: %s", typ)
+			}
+		}
+	}
+
+	return nil
+}

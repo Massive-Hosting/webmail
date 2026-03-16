@@ -394,15 +394,23 @@ function AutocompleteItem({
     >
       {/* Mini avatar */}
       <div
-        className="inline-flex items-center justify-center rounded-full text-white font-medium shrink-0"
+        className="inline-flex items-center justify-center rounded-full text-white font-medium shrink-0 overflow-hidden"
         style={{
           width: 24,
           height: 24,
-          backgroundColor: avatarColor,
+          backgroundColor: suggestion.contact?.avatar?.blobId ? undefined : avatarColor,
           fontSize: 10,
         }}
       >
-        {initials}
+        {suggestion.contact?.avatar?.blobId ? (
+          <img
+            src={`/api/blob/${suggestion.contact.avatar.blobId}/inline`}
+            alt={suggestion.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          initials
+        )}
       </div>
 
       {/* Name and email */}

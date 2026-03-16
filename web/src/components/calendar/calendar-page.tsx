@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Plus,
   Upload,
+  Users,
 } from "lucide-react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { ResizeHandle } from "@/components/layout/resize-handle.tsx";
@@ -21,12 +22,14 @@ import {
   useCalendarNavigation,
 } from "@/hooks/use-calendar.ts";
 import type {
+  Calendar,
   CalendarEvent,
   CalendarEventCreate,
   CalendarEventUpdate,
   CalendarViewMode,
 } from "@/types/calendar.ts";
 import { importICS } from "./ics-import.ts";
+import { ShareCalendarDialog } from "./share-calendar-dialog.tsx";
 import { EmptyState } from "@/components/ui/empty-state.tsx";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
@@ -51,6 +54,9 @@ export const CalendarPage = React.memo(function CalendarPage() {
 
   // Track which calendar ID is newly created (should enter rename mode)
   const [newCalendarId, setNewCalendarId] = useState<string | null>(null);
+
+  // Share calendar dialog state
+  const [shareCalendar, setShareCalendar] = useState<Calendar | null>(null);
 
   // Sidebar width (resizable, persisted)
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -216,6 +222,14 @@ export const CalendarPage = React.memo(function CalendarPage() {
     [createEvent, updateEvent],
   );
 
+  // Drag-and-drop: change event time
+  const handleEventTimeChange = useCallback(
+    (event: CalendarEvent, newStart: string) => {
+      updateEvent(event.id, { start: newStart });
+    },
+    [updateEvent],
+  );
+
   // Delete
   const handleDelete = useCallback(
     (eventId: string) => {
@@ -341,6 +355,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
               onRename={(name) => updateCalendar(cal.id, { name })}
               onChangeColor={(color) => updateCalendar(cal.id, { color })}
               onDelete={() => deleteCalendar(cal.id)}
+              onShare={() => setShareCalendar(cal)}
               autoRename={cal.id === newCalendarId}
               onAutoRenameDone={() => setNewCalendarId(null)}
             />
@@ -452,6 +467,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
               calendars={calendars}
               onClickSlot={handleClickSlot}
               onClickEvent={handleClickEvent}
+              onEventTimeChange={handleEventTimeChange}
             />
           )}
           {viewMode === "day" && (
@@ -461,6 +477,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
               calendars={calendars}
               onClickSlot={handleClickSlot}
               onClickEvent={handleClickEvent}
+              onEventTimeChange={handleEventTimeChange}
             />
           )}
         </div>
@@ -488,6 +505,15 @@ export const CalendarPage = React.memo(function CalendarPage() {
         onSave={handleSave}
         onDelete={handleDelete}
       />
+
+      {/* Share calendar dialog */}
+      {shareCalendar && (
+        <ShareCalendarDialog
+          open={!!shareCalendar}
+          onOpenChange={(open) => { if (!open) setShareCalendar(null); }}
+          calendar={shareCalendar}
+        />
+      )}
     </div>
   );
 });
@@ -506,15 +532,17 @@ function CalendarSidebarItem({
   onRename,
   onChangeColor,
   onDelete,
+  onShare,
   autoRename,
   onAutoRenameDone,
 }: {
-  calendar: { id: string; name: string; color?: string; isDefault?: boolean };
+  calendar: Calendar;
   hidden: boolean;
   onToggleVisibility: () => void;
   onRename: (name: string) => void;
   onChangeColor: (color: string) => void;
   onDelete: () => void;
+  onShare: () => void;
   autoRename?: boolean;
   onAutoRenameDone?: () => void;
 }) {
@@ -613,6 +641,14 @@ function CalendarSidebarItem({
             )}
           </div>
           <span className="truncate">{calendar.name}</span>
+          {calendar.shareWith && Object.keys(calendar.shareWith).length > 0 && (
+            <Users
+              size={10}
+              className="shrink-0 ml-auto"
+              style={{ color: "var(--color-text-tertiary)" }}
+              title={t("calendar.shared")}
+            />
+          )}
         </button>
       </ContextMenu.Trigger>
 
@@ -639,6 +675,17 @@ function CalendarSidebarItem({
             }}
           >
             {t("calendar.rename")}
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+            style={{
+              color: "var(--color-text-primary)",
+              borderRadius: "var(--radius-sm)",
+            }}
+            onSelect={onShare}
+          >
+            <Users size={13} />
+            {t("calendar.share")}
           </ContextMenu.Item>
           <ContextMenu.Sub>
             <ContextMenu.SubTrigger

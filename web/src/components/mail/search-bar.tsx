@@ -14,8 +14,10 @@ import {
   User,
   AtSign,
   FileText,
+  Bookmark,
 } from "lucide-react";
 import { useSearchStore } from "@/stores/search-store.ts";
+import { useSettingsStore } from "@/stores/settings-store.ts";
 import { useTranslation } from "react-i18next";
 
 interface SearchBarProps {
@@ -55,6 +57,8 @@ export const SearchBar = React.memo(function SearchBar({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  const addSavedSearch = useSettingsStore((s) => s.addSavedSearch);
 
   const query = useSearchStore((s) => s.query);
   const isSearchActive = useSearchStore((s) => s.isSearchActive);
@@ -104,6 +108,15 @@ export const SearchBar = React.memo(function SearchBar({
     },
     [localQuery, executeSearch],
   );
+
+  const handleSaveSearch = useCallback(() => {
+    const trimmed = localQuery.trim();
+    if (!trimmed) return;
+    const name = window.prompt(t("search.searchName"), trimmed);
+    if (name !== null && name.trim()) {
+      addSavedSearch(name.trim(), trimmed);
+    }
+  }, [localQuery, addSavedSearch, t]);
 
   const handleClear = useCallback(() => {
     setLocalQuery("");
@@ -227,15 +240,26 @@ export const SearchBar = React.memo(function SearchBar({
         {/* Right side buttons */}
         <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
           {localQuery && (
-            <button
-              type="button"
-              onClick={handleClear}
-              className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150"
-              style={{ color: "var(--color-text-tertiary)" }}
-              title={t("search.clearSearchEsc")}
-            >
-              <X size={14} />
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleSaveSearch}
+                className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150"
+                style={{ color: "var(--color-text-tertiary)" }}
+                title={t("search.saveSearch")}
+              >
+                <Bookmark size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={handleClear}
+                className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150"
+                style={{ color: "var(--color-text-tertiary)" }}
+                title={t("search.clearSearchEsc")}
+              >
+                <X size={14} />
+              </button>
+            </>
           )}
           <button
             type="button"

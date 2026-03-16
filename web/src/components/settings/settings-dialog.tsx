@@ -15,6 +15,8 @@ import {
   HardDrive,
   Shield,
   Palmtree,
+  Users,
+  FileText,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { FilterRulesPanel } from "./filter-rules.tsx";
@@ -26,6 +28,8 @@ import { KeyboardSettings } from "./keyboard-settings.tsx";
 import { NotificationSettings } from "./notification-settings.tsx";
 import { StorageSettings } from "./storage-settings.tsx";
 import { VacationSettings } from "./vacation-settings.tsx";
+import { AccountsSettings } from "./accounts-settings.tsx";
+import { TemplateSettings } from "./template-settings.tsx";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -99,6 +103,10 @@ export const SettingsDialog = React.memo(function SettingsDialog({
                 <PenLine size={14} />
                 {t("settingsDialog.signatures")}
               </TabTrigger>
+              <TabTrigger value="templates">
+                <FileText size={14} />
+                {t("settingsDialog.templates")}
+              </TabTrigger>
               <TabTrigger value="vacation">
                 <Palmtree size={14} />
                 {t("settingsDialog.vacation")}
@@ -123,6 +131,10 @@ export const SettingsDialog = React.memo(function SettingsDialog({
                 <Shield size={14} />
                 {t("settingsDialog.security")}
               </TabTrigger>
+              <TabTrigger value="accounts">
+                <Users size={14} />
+                {t("settingsDialog.accounts")}
+              </TabTrigger>
             </Tabs.List>
 
             <div className="flex-1 overflow-y-auto">
@@ -134,6 +146,9 @@ export const SettingsDialog = React.memo(function SettingsDialog({
               </Tabs.Content>
               <Tabs.Content value="signatures">
                 <SignatureSettings />
+              </Tabs.Content>
+              <Tabs.Content value="templates">
+                <TemplateSettings />
               </Tabs.Content>
               <Tabs.Content value="vacation">
                 <VacationSettings />
@@ -152,6 +167,9 @@ export const SettingsDialog = React.memo(function SettingsDialog({
               </Tabs.Content>
               <Tabs.Content value="security">
                 <PGPSettingsPanel />
+              </Tabs.Content>
+              <Tabs.Content value="accounts">
+                <AccountsSettings />
               </Tabs.Content>
             </div>
           </Tabs.Root>

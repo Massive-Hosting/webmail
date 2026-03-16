@@ -133,6 +133,11 @@ function toJSContact(contact: ContactCreate | ContactUpdate): JSContactCard {
     card.addresses = addresses;
   }
 
+  // Avatar
+  if (contact.avatar !== undefined) {
+    card.avatar = contact.avatar;
+  }
+
   // Notes
   if (contact.notes) card.notes = contact.notes;
 

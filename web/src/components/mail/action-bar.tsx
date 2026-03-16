@@ -13,7 +13,11 @@ import {
   Mail,
   MailOpen,
   Star,
+  Clock,
 } from "lucide-react";
+import { addHours, setHours, setMinutes, setSeconds, addDays, nextMonday, isPast, format } from "date-fns";
+import { startSnooze } from "@/api/tasks.ts";
+import { toast } from "sonner";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useTranslation } from "react-i18next";
@@ -45,6 +49,7 @@ export interface ActionBarProps {
   onForward: (emailItem: EmailListItem) => void;
   onMarkRead: (emailIds: string[], seen: boolean) => void;
   onStar: (emailId: string, flagged: boolean) => void;
+  onSnooze?: (emailId: string, mailboxId: string, until: Date) => void;
 }
 
 export const ActionBar = React.memo(function ActionBar({
@@ -64,6 +69,7 @@ export const ActionBar = React.memo(function ActionBar({
   onForward,
   onMarkRead,
   onStar,
+  onSnooze,
 }: ActionBarProps) {
   const { t } = useTranslation();
   const selectionCount = selectedEmailIds.size;
@@ -112,6 +118,33 @@ export const ActionBar = React.memo(function ActionBar({
   const handleToggleStar = useCallback(() => {
     if (singleEmail) onStar(singleEmail.id, !isStarred);
   }, [singleEmail, isStarred, onStar]);
+
+  const handleSnooze = useCallback((until: Date) => {
+    if (!singleEmail || !currentMailboxId) return;
+    if (onSnooze) {
+      onSnooze(singleEmail.id, currentMailboxId, until);
+    } else {
+      // Fallback: call API directly.
+      startSnooze({
+        emailId: singleEmail.id,
+        mailboxId: currentMailboxId,
+        until: until.toISOString(),
+      }).then(() => {
+        toast.success(t("action.snoozeSet", { time: format(until, "PPp") }));
+      }).catch(() => {
+        toast.error(t("tasks.failedToStart"));
+      });
+    }
+  }, [singleEmail, currentMailboxId, onSnooze, t]);
+
+  const getSnoozeTimeForLaterToday = useCallback((): Date => {
+    const now = new Date();
+    const hour = now.getHours();
+    if (hour >= 15) {
+      return addHours(now, 3);
+    }
+    return setSeconds(setMinutes(setHours(now, 18), 0), 0);
+  }, []);
 
   const handleReply = useCallback(() => {
     if (singleEmail) onReply(singleEmail);
@@ -251,6 +284,95 @@ export const ActionBar = React.memo(function ActionBar({
           onClick={handleToggleStar}
           disabled={!isSingleSelected}
         />
+
+        {/* Snooze dropdown */}
+        <DropdownMenu.Root>
+          <Tooltip.Root>
+            <Tooltip.Trigger asChild>
+              <DropdownMenu.Trigger asChild>
+                <button
+                  className="action-bar__btn"
+                  disabled={!isSingleSelected}
+                >
+                  <Clock size={18} />
+                  <span className="action-bar__btn-label">{t("action.snooze")}</span>
+                </button>
+              </DropdownMenu.Trigger>
+            </Tooltip.Trigger>
+            <Tooltip.Content className="tooltip-content" sideOffset={5}>
+              {t("action.snooze")}
+            </Tooltip.Content>
+          </Tooltip.Root>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content
+              className="action-bar__dropdown"
+              sideOffset={4}
+              align="start"
+            >
+              <DropdownMenu.Item
+                className="action-bar__dropdown-item"
+                onSelect={() => handleSnooze(getSnoozeTimeForLaterToday())}
+              >
+                {t("action.laterToday")}
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                className="action-bar__dropdown-item"
+                onSelect={() => {
+                  const tomorrow = addDays(new Date(), 1);
+                  handleSnooze(setSeconds(setMinutes(setHours(tomorrow, 9), 0), 0));
+                }}
+              >
+                {t("action.tomorrowMorning")}
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                className="action-bar__dropdown-item"
+                onSelect={() => {
+                  const monday = nextMonday(new Date());
+                  handleSnooze(setSeconds(setMinutes(setHours(monday, 9), 0), 0));
+                }}
+              >
+                {t("action.mondayMorning")}
+              </DropdownMenu.Item>
+              <DropdownMenu.Separator
+                className="my-1"
+                style={{ borderTop: "1px solid var(--color-border-primary)" }}
+              />
+              <DropdownMenu.Item
+                className="action-bar__dropdown-item"
+                onSelect={() => {
+                  const input = document.createElement("input");
+                  input.type = "datetime-local";
+                  input.min = new Date().toISOString().slice(0, 16);
+                  input.style.position = "fixed";
+                  input.style.opacity = "0";
+                  document.body.appendChild(input);
+                  input.addEventListener("change", () => {
+                    if (input.value) {
+                      const date = new Date(input.value);
+                      if (!isPast(date)) {
+                        handleSnooze(date);
+                      } else {
+                        toast.error("Please select a future date and time.");
+                      }
+                    }
+                    document.body.removeChild(input);
+                  });
+                  input.addEventListener("blur", () => {
+                    setTimeout(() => {
+                      if (document.body.contains(input)) {
+                        document.body.removeChild(input);
+                      }
+                    }, 300);
+                  });
+                  input.showPicker();
+                }}
+              >
+                <Clock size={13} style={{ marginRight: 4 }} />
+                {t("action.pickDateTime")}
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
 
         {/* Selection count for multi-select */}
         {selectionCount > 1 && (

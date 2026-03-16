@@ -190,6 +190,8 @@ func main() {
 				r.Post("/tasks/bulk-mark-read", taskHandler.BulkMarkRead)
 				r.Post("/tasks/export-mailbox", taskHandler.ExportMailbox)
 				r.Post("/tasks/import-mailbox", taskHandler.ImportMailbox)
+				r.Post("/tasks/schedule-send", taskHandler.ScheduleSend)
+				r.Post("/tasks/snooze", taskHandler.Snooze)
 				r.Get("/tasks/{taskId}", taskHandler.GetTaskStatus)
 			}
 
