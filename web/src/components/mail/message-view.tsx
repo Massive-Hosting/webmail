@@ -121,13 +121,24 @@ function MessageContent({ email }: { email: Email }) {
     return null;
   }, [email.textBody, email.bodyValues]);
 
+  // Build CID → blob URL map for resolving inline images
+  const cidMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const att of email.attachments ?? []) {
+      if (att.cid && att.blobId) {
+        map.set(att.cid, `/api/blob/${att.blobId}/inline`);
+      }
+    }
+    return map;
+  }, [email.attachments]);
+
   // Sanitize HTML
   const sanitized = useMemo(() => {
     if (bodyHtml) {
-      return sanitizeEmailHtml(bodyHtml);
+      return sanitizeEmailHtml(bodyHtml, cidMap);
     }
     return null;
-  }, [bodyHtml]);
+  }, [bodyHtml, cidMap]);
 
   // Process text body
   const processedText = useMemo(() => {

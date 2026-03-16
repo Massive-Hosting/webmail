@@ -98,8 +98,16 @@ export interface SanitizeResult {
   hasExternalImages: boolean;
 }
 
-/** Sanitize HTML email content */
-export function sanitizeEmailHtml(html: string): SanitizeResult {
+/**
+ * Sanitize HTML email content.
+ * @param cidMap - Map of Content-ID to blob URL for resolving inline images.
+ *                 Keys should be bare CIDs (without angle brackets), e.g. "image001.png@01DA..."
+ *                 Values should be blob URLs like "/api/blob/{blobId}/inline"
+ */
+export function sanitizeEmailHtml(
+  html: string,
+  cidMap?: Map<string, string>,
+): SanitizeResult {
   let hasExternalImages = false;
 
   // Configure DOMPurify hooks for this sanitization
@@ -110,10 +118,23 @@ export function sanitizeEmailHtml(html: string): SanitizeResult {
       node.setAttribute("rel", "noopener noreferrer");
     }
 
-    // Handle external images
+    // Handle images
     if (node.tagName === "IMG") {
       const src = node.getAttribute("src") || "";
-      if (src && !src.startsWith("data:") && !src.startsWith("cid:")) {
+
+      // Resolve cid: references to blob URLs
+      if (src.startsWith("cid:") && cidMap) {
+        const cid = src.slice(4); // strip "cid:"
+        const blobUrl = cidMap.get(cid);
+        if (blobUrl) {
+          node.setAttribute("src", blobUrl);
+        } else {
+          // Unknown CID — hide the broken image
+          node.removeAttribute("src");
+          node.setAttribute("alt", node.getAttribute("alt") || "[Image]");
+        }
+      } else if (src && !src.startsWith("data:") && !src.startsWith("/api/blob/")) {
+        // External image — block and offer to load
         hasExternalImages = true;
         node.setAttribute("data-external-src", src);
         node.removeAttribute("src");
