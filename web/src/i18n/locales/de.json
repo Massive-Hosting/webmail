@@ -337,6 +337,8 @@
   "contacts.newGroup": "Neue Gruppe",
   "contacts.groupName": "Gruppenname...",
   "contacts.allContacts": "Alle Kontakte",
+  "contacts.renameGroup": "Umbenennen",
+  "contacts.deleteGroup": "Gruppe löschen",
   "calendar.newEvent": "Neuer Termin",
   "calendar.calendars": "Kalender",
   "calendar.previous": "Zurück",

@@ -97,6 +97,29 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
           return { ...email, keywords };
         }),
       );
+      // Also optimistically update thread-list caches (for expanded thread children)
+      queryClient.setQueriesData<{ thread: unknown; emails: EmailListItem[] }>(
+        { queryKey: ["thread-list"] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            emails: old.emails.map((e) =>
+              e.id === params.emailId
+                ? (() => {
+                    const keywords = { ...e.keywords };
+                    if (params.flagged) {
+                      keywords["$flagged"] = true;
+                    } else {
+                      delete keywords["$flagged"];
+                    }
+                    return { ...e, keywords };
+                  })()
+                : e,
+            ),
+          };
+        },
+      );
       return { prev };
     },
     onError: (_err, _params, context) => {
@@ -107,6 +130,7 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["emails"] });
+      queryClient.invalidateQueries({ queryKey: ["thread-list"] });
     },
   });
 

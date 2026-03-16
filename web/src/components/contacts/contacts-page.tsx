@@ -18,9 +18,33 @@ import { importVCards, exportVCards } from "./import-export.tsx";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useCompose } from "@/components/mail/compose/use-compose.ts";
+import { ResizeHandle } from "@/components/layout/resize-handle.tsx";
 
 export const ContactsPage = React.memo(function ContactsPage() {
   const { t } = useTranslation();
+  // Sidebar width (resizable, persisted)
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    try {
+      const stored = localStorage.getItem("webmail:contactsSidebarWidth");
+      if (stored) return Math.max(150, Math.min(350, Number(stored)));
+    } catch {
+      // ignore
+    }
+    return 220;
+  });
+
+  const handleSidebarResize = useCallback((delta: number) => {
+    setSidebarWidth((prev) => {
+      const next = Math.max(150, Math.min(350, prev + delta));
+      try {
+        localStorage.setItem("webmail:contactsSidebarWidth", String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
@@ -179,8 +203,9 @@ export const ContactsPage = React.memo(function ContactsPage() {
     <div className="flex h-full overflow-hidden">
       {/* Groups sidebar */}
       <div
-        className="w-48 shrink-0 flex flex-col overflow-y-auto"
+        className="shrink-0 flex flex-col overflow-y-auto overflow-x-hidden"
         style={{
+          width: sidebarWidth,
           backgroundColor: "var(--color-bg-secondary)",
           borderRight: "1px solid var(--color-border-primary)",
         }}
@@ -228,6 +253,14 @@ export const ContactsPage = React.memo(function ContactsPage() {
           onDeleteGroup={deleteAddressBook}
         />
       </div>
+
+      <ResizeHandle
+        onResize={handleSidebarResize}
+        onDoubleClick={() => {
+          setSidebarWidth(220);
+          try { localStorage.setItem("webmail:contactsSidebarWidth", "220"); } catch { /* ignore */ }
+        }}
+      />
 
       {/* Contact list */}
       <div

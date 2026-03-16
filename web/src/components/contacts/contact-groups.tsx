@@ -1,7 +1,8 @@
 /** Contact groups (address books) sidebar section */
 
-import React, { useState, useCallback } from "react";
-import { Users, Plus, Pencil, Trash2, Check, X } from "lucide-react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import { Users, Plus, Check, X } from "lucide-react";
+import * as ContextMenu from "@radix-ui/react-context-menu";
 import type { AddressBook } from "@/types/contacts.ts";
 import { useTranslation } from "react-i18next";
 
@@ -29,8 +30,6 @@ export const ContactGroups = React.memo(function ContactGroups({
   const { t } = useTranslation();
   const [isCreating, setIsCreating] = useState(false);
   const [newName, setNewName] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
 
   const handleCreate = useCallback(() => {
     if (newName.trim()) {
@@ -39,16 +38,6 @@ export const ContactGroups = React.memo(function ContactGroups({
       setIsCreating(false);
     }
   }, [newName, onCreateGroup]);
-
-  const handleRename = useCallback(
-    (id: string) => {
-      if (editName.trim()) {
-        onRenameGroup(id, editName.trim());
-        setEditingId(null);
-      }
-    },
-    [editName, onRenameGroup],
-  );
 
   return (
     <div className="flex flex-col">
@@ -85,7 +74,7 @@ export const ContactGroups = React.memo(function ContactGroups({
             }}
             placeholder={t("contacts.groupName")}
             autoFocus
-            className="flex-1 text-xs px-2 py-1 rounded border outline-none bg-transparent"
+            className="flex-1 text-xs px-2 py-1 rounded border outline-none bg-transparent min-w-0"
             style={{
               color: "var(--color-text-primary)",
               borderColor: "var(--color-border-primary)",
@@ -118,54 +107,17 @@ export const ContactGroups = React.memo(function ContactGroups({
       />
 
       {/* Address books */}
-      {addressBooks.map((book) =>
-        editingId === book.id ? (
-          <div key={book.id} className="flex items-center gap-1 px-3 py-1.5">
-            <input
-              type="text"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleRename(book.id);
-                if (e.key === "Escape") setEditingId(null);
-              }}
-              autoFocus
-              className="flex-1 text-xs px-2 py-1 rounded border outline-none bg-transparent"
-              style={{
-                color: "var(--color-text-primary)",
-                borderColor: "var(--color-border-primary)",
-              }}
-            />
-            <button
-              onClick={() => handleRename(book.id)}
-              className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
-              style={{ color: "var(--color-text-accent)" }}
-            >
-              <Check size={12} />
-            </button>
-            <button
-              onClick={() => setEditingId(null)}
-              className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
-              style={{ color: "var(--color-text-tertiary)" }}
-            >
-              <X size={12} />
-            </button>
-          </div>
-        ) : (
-          <GroupItem
-            key={book.id}
-            label={book.name}
-            count={contactCounts[book.id] ?? 0}
-            isActive={selectedGroupId === book.id}
-            onClick={() => onSelectGroup(book.id)}
-            onRename={() => {
-              setEditingId(book.id);
-              setEditName(book.name);
-            }}
-            onDelete={book.isDefault ? undefined : () => onDeleteGroup(book.id)}
-          />
-        ),
-      )}
+      {addressBooks.map((book) => (
+        <GroupItem
+          key={book.id}
+          label={book.name}
+          count={contactCounts[book.id] ?? 0}
+          isActive={selectedGroupId === book.id}
+          onClick={() => onSelectGroup(book.id)}
+          onRename={(name) => onRenameGroup(book.id, name)}
+          onDelete={book.isDefault ? undefined : () => onDeleteGroup(book.id)}
+        />
+      ))}
     </div>
   );
 });
@@ -184,10 +136,60 @@ function GroupItem({
   count: number;
   isActive: boolean;
   onClick: () => void;
-  onRename?: () => void;
+  onRename?: (name: string) => void;
   onDelete?: () => void;
 }) {
-  return (
+  const { t } = useTranslation();
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(label);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isRenaming && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [isRenaming]);
+
+  const handleRenameSubmit = useCallback(() => {
+    if (renameValue.trim() && renameValue.trim() !== label) {
+      onRename?.(renameValue.trim());
+    }
+    setIsRenaming(false);
+  }, [renameValue, label, onRename]);
+
+  if (isRenaming) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 overflow-hidden">
+        {icon && (
+          <span className="shrink-0" style={{ color: "var(--color-text-tertiary)" }}>{icon}</span>
+        )}
+        <input
+          ref={renameInputRef}
+          type="text"
+          value={renameValue}
+          onChange={(e) => setRenameValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleRenameSubmit();
+            if (e.key === "Escape") setIsRenaming(false);
+          }}
+          onBlur={handleRenameSubmit}
+          className="flex-1 min-w-0 h-5 px-1 text-xs outline-none"
+          style={{
+            backgroundColor: "var(--color-bg-tertiary)",
+            color: "var(--color-text-primary)",
+            border: "1px solid var(--color-border-focus)",
+            borderRadius: "var(--radius-sm)",
+            boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.08)",
+          }}
+        />
+      </div>
+    );
+  }
+
+  const hasContextMenu = onRename || onDelete;
+
+  const content = (
     <div
       className="flex items-center gap-2 px-3 py-1.5 cursor-pointer group transition-colors duration-100"
       style={{
@@ -214,35 +216,67 @@ function GroupItem({
       >
         {count}
       </span>
-      {/* Edit/delete only visible on hover */}
-      {(onRename || onDelete) && (
-        <div className="hidden group-hover:flex items-center gap-0.5">
+    </div>
+  );
+
+  if (!hasContextMenu) {
+    return content;
+  }
+
+  return (
+    <ContextMenu.Root>
+      <ContextMenu.Trigger asChild>
+        {content}
+      </ContextMenu.Trigger>
+
+      <ContextMenu.Portal>
+        <ContextMenu.Content
+          className="min-w-[140px] p-1 text-sm animate-scale-in"
+          style={{
+            backgroundColor: "var(--color-bg-elevated)",
+            border: "1px solid var(--color-border-primary)",
+            boxShadow: "var(--shadow-lg)",
+            borderRadius: "var(--radius-md)",
+            zIndex: 50,
+          }}
+        >
           {onRename && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onRename();
+            <ContextMenu.Item
+              className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+              style={{
+                color: "var(--color-text-primary)",
+                borderRadius: "var(--radius-sm)",
               }}
-              className="p-0.5 rounded hover:bg-[var(--color-bg-tertiary)]"
-              style={{ color: "var(--color-text-tertiary)" }}
+              onSelect={() => {
+                setRenameValue(label);
+                setIsRenaming(true);
+              }}
             >
-              <Pencil size={10} />
-            </button>
+              {t("contacts.renameGroup")}
+            </ContextMenu.Item>
           )}
           {onDelete && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="p-0.5 rounded hover:bg-[var(--color-bg-tertiary)]"
-              style={{ color: "var(--color-text-error, #dc2626)" }}
-            >
-              <Trash2 size={10} />
-            </button>
+            <>
+              {onRename && (
+                <ContextMenu.Separator
+                  className="my-1"
+                  style={{ borderTop: "1px solid var(--color-border-primary)" }}
+                />
+              )}
+              <ContextMenu.Item
+                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+                style={{
+                  color: "var(--color-text-danger)",
+                  borderRadius: "var(--radius-sm)",
+                }}
+                onSelect={onDelete}
+              >
+                {t("contacts.deleteGroup")}
+              </ContextMenu.Item>
+            </>
           )}
-        </div>
-      )}
-    </div>
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
   );
 }

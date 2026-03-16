@@ -337,6 +337,8 @@
   "contacts.newGroup": "New group",
   "contacts.groupName": "Group name...",
   "contacts.allContacts": "All Contacts",
+  "contacts.renameGroup": "Rename",
+  "contacts.deleteGroup": "Delete group",
   "calendar.newEvent": "New Event",
   "calendar.calendars": "Calendars",
   "calendar.previous": "Previous",

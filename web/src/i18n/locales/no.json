@@ -337,6 +337,8 @@
   "contacts.newGroup": "Ny gruppe",
   "contacts.groupName": "Gruppenavn...",
   "contacts.allContacts": "Alle kontakter",
+  "contacts.renameGroup": "Gi nytt navn",
+  "contacts.deleteGroup": "Slett gruppe",
   "calendar.newEvent": "Ny hendelse",
   "calendar.calendars": "Kalendere",
   "calendar.previous": "Forrige",

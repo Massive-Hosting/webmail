@@ -10,6 +10,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
+import { ResizeHandle } from "@/components/layout/resize-handle.tsx";
 import { MonthView } from "./month-view.tsx";
 import { WeekView } from "./week-view.tsx";
 import { DayView } from "./day-view.tsx";
@@ -46,6 +47,29 @@ export const CalendarPage = React.memo(function CalendarPage() {
   } = useCalendarNavigation("month");
 
   const { calendars, updateCalendar, deleteCalendar } = useCalendars();
+
+  // Sidebar width (resizable, persisted)
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    try {
+      const stored = localStorage.getItem("webmail:calendarSidebarWidth");
+      if (stored) return Math.max(150, Math.min(350, Number(stored)));
+    } catch {
+      // ignore
+    }
+    return 220;
+  });
+
+  const handleSidebarResize = useCallback((delta: number) => {
+    setSidebarWidth((prev) => {
+      const next = Math.max(150, Math.min(350, prev + delta));
+      try {
+        localStorage.setItem("webmail:calendarSidebarWidth", String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, []);
 
   // Track visible calendars
   const [hiddenCalendarIds, setHiddenCalendarIds] = useState<Set<string>>(
@@ -234,8 +258,9 @@ export const CalendarPage = React.memo(function CalendarPage() {
     <div className="flex h-full overflow-hidden">
       {/* Calendar sidebar - calendar list */}
       <div
-        className="w-48 shrink-0 flex flex-col overflow-y-auto"
+        className="shrink-0 flex flex-col overflow-y-auto overflow-x-hidden"
         style={{
+          width: sidebarWidth,
           backgroundColor: "var(--color-bg-secondary)",
           borderRight: "1px solid var(--color-border-primary)",
         }}
@@ -273,6 +298,14 @@ export const CalendarPage = React.memo(function CalendarPage() {
           ))}
         </div>
       </div>
+
+      <ResizeHandle
+        onResize={handleSidebarResize}
+        onDoubleClick={() => {
+          setSidebarWidth(220);
+          try { localStorage.setItem("webmail:calendarSidebarWidth", "220"); } catch { /* ignore */ }
+        }}
+      />
 
       {/* Main calendar area */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -445,7 +478,7 @@ function CalendarSidebarItem({
 
   if (isRenaming) {
     return (
-      <div className="flex items-center gap-2 px-2 py-1.5 rounded text-xs">
+      <div className="flex items-center gap-2 px-2 py-1.5 rounded text-xs overflow-hidden">
         <div
           className="w-3 h-3 rounded-sm shrink-0"
           style={{
@@ -463,7 +496,7 @@ function CalendarSidebarItem({
             if (e.key === "Escape") setIsRenaming(false);
           }}
           onBlur={handleRenameSubmit}
-          className="flex-1 h-5 px-1 text-xs outline-none"
+          className="flex-1 min-w-0 h-5 px-1 text-xs outline-none"
           style={{
             backgroundColor: "var(--color-bg-tertiary)",
             color: "var(--color-text-primary)",
