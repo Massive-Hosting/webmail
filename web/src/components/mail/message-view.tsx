@@ -37,8 +37,13 @@ import {
   FileArchive,
   Info,
   Printer,
+  UserPlus,
+  Copy,
+  Mail,
 } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import * as ContextMenu from "@radix-ui/react-context-menu";
+import { useUIStore } from "@/stores/ui-store.ts";
 import { PGPStatusBar, EncryptedPlaceholder, usePGPMessage } from "@/components/mail/pgp-message.tsx";
 import { detectPGPContent } from "@/lib/pgp-detect.ts";
 import { InvitationCard } from "@/components/calendar/invitation-card.tsx";
@@ -195,21 +200,27 @@ function MessageContent({ email }: { email: Email }) {
             </div>
             <div className="message-view__sender-info">
               <div className="message-view__sender-name-line">
-                <span className="message-view__sender-name">
-                  {formatAddress(sender)}
-                </span>
-                <span className="message-view__sender-email">
-                  &lt;{sender.email}&gt;
-                </span>
+                <AddressContextMenu address={sender}>
+                  <span className="message-view__sender-name" style={{ cursor: "context-menu" }}>
+                    {formatAddress(sender)}
+                  </span>
+                </AddressContextMenu>
+                <AddressContextMenu address={sender}>
+                  <span className="message-view__sender-email" style={{ cursor: "context-menu" }}>
+                    &lt;{sender.email}&gt;
+                  </span>
+                </AddressContextMenu>
               </div>
 
               {/* Recipients as chips */}
               <div className="message-view__recipients">
                 <span className="message-view__recipients-label">{t("messageView.to")}</span>
                 {visibleRecipients.map((a, i) => (
-                  <span key={i} className="message-view__recipient-chip">
-                    {formatAddress(a)}
-                  </span>
+                  <AddressContextMenu key={i} address={a}>
+                    <span className="message-view__recipient-chip" style={{ cursor: "context-menu" }}>
+                      {formatAddress(a)}
+                    </span>
+                  </AddressContextMenu>
                 ))}
                 {hiddenCount > 0 && !showAllRecipients && (
                   <button
@@ -424,6 +435,90 @@ function getFileIcon(mimeType: string): React.ReactNode {
   if (mimeType.includes("zip") || mimeType.includes("archive"))
     return <FileArchive size={18} />;
   return <File size={18} />;
+}
+
+/** Right-click context menu for email addresses in the reading pane */
+function AddressContextMenu({
+  address,
+  children,
+}: {
+  address: { name: string | null; email: string };
+  children: React.ReactNode;
+}) {
+  const { t } = useTranslation();
+  const setActiveView = useUIStore((s) => s.setActiveView);
+  const { open: openCompose } = useCompose();
+
+  const handleAddToContacts = useCallback(() => {
+    sessionStorage.setItem("newContactEmail", address.email);
+    if (address.name) {
+      sessionStorage.setItem("newContactName", address.name);
+    }
+    setActiveView("contacts");
+  }, [address, setActiveView]);
+
+  const handleCopyEmail = useCallback(() => {
+    navigator.clipboard.writeText(address.email).catch(() => {});
+  }, [address.email]);
+
+  const handleCompose = useCallback(() => {
+    openCompose({
+      mode: "new",
+      to: [address],
+    });
+  }, [address, openCompose]);
+
+  const itemClassName =
+    "flex items-center gap-2 px-2.5 py-1.5 text-xs cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150";
+  const itemStyle = {
+    color: "var(--color-text-primary)",
+    borderRadius: "var(--radius-sm)",
+  };
+
+  return (
+    <ContextMenu.Root>
+      <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content
+          className="z-50 min-w-[180px] rounded-lg py-1"
+          style={{
+            backgroundColor: "var(--color-bg-elevated)",
+            border: "1px solid var(--color-border-primary)",
+            boxShadow: "var(--shadow-lg)",
+          }}
+        >
+          <ContextMenu.Item
+            className={itemClassName}
+            style={itemStyle}
+            onSelect={handleAddToContacts}
+          >
+            <UserPlus size={14} />
+            {t("contextMenu.addToContacts", { defaultValue: "Add to contacts" })}
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            className={itemClassName}
+            style={itemStyle}
+            onSelect={handleCompose}
+          >
+            <Mail size={14} />
+            {t("contextMenu.composeEmail", { defaultValue: "Send email" })}
+          </ContextMenu.Item>
+          <ContextMenu.Separator
+            className="my-1"
+            style={{ borderTop: "1px solid var(--color-border-secondary)" }}
+          />
+          <ContextMenu.Item
+            className={itemClassName}
+            style={itemStyle}
+            onSelect={handleCopyEmail}
+          >
+            <Copy size={14} />
+            {t("contextMenu.copyEmail", { defaultValue: "Copy email address" })}
+          </ContextMenu.Item>
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
+  );
 }
 
 function MessageViewSkeleton() {
