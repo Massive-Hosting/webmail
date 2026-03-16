@@ -464,7 +464,7 @@ function AddressContextMenu({
   const handleCompose = useCallback(() => {
     openCompose({
       mode: "new",
-      to: [address],
+      prefillTo: [address],
     });
   }, [address, openCompose]);
 
