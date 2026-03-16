@@ -96,15 +96,20 @@ export function parseReceivedHeaders(headers: string[]): ReceivedHop[] {
 }
 
 /**
- * Parse Authentication-Results header for SPF, DKIM, DMARC.
+ * Parse Authentication-Results and ARC-Authentication-Results headers
+ * for SPF, DKIM, DMARC, and ARC status.
  *
- * Example:
+ * Accepts an array of header values (there may be multiple Authentication-Results
+ * headers from different servers in the chain). Scans all of them and picks the
+ * first definitive result for each mechanism.
+ *
+ * Example header:
  *   mx.google.com;
  *   spf=pass (google.com: domain of user@example.com designates 203.0.113.50 as permitted sender) smtp.mailfrom=user@example.com;
  *   dkim=pass header.i=@example.com header.s=selector;
  *   dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=example.com
  */
-export function parseAuthResults(header: string | undefined, receivedHeaders?: string[]): AuthResults {
+export function parseAuthResults(headers: string[], receivedHeaders?: string[]): AuthResults {
   const results: AuthResults = {
     spf: { result: "unknown" },
     dkim: { result: "unknown" },
@@ -112,39 +117,50 @@ export function parseAuthResults(header: string | undefined, receivedHeaders?: s
     arc: { result: "unknown" },
   };
 
-  if (!header) return results;
+  if (headers.length === 0) return results;
 
-  // SPF
-  const spfMatch = header.match(/spf\s*=\s*(pass|fail|softfail|neutral|none|temperror|permerror)/i);
-  if (spfMatch) {
-    results.spf = {
-      result: normalizeResult(spfMatch[1]),
-      detail: extractDetail(header, "spf"),
-    };
-  }
+  // Scan all Authentication-Results headers, take the first definitive result for each
+  for (const header of headers) {
+    // SPF
+    if (results.spf.result === "unknown") {
+      const spfMatch = header.match(/spf\s*=\s*(pass|fail|softfail|neutral|none|temperror|permerror)/i);
+      if (spfMatch) {
+        results.spf = {
+          result: normalizeResult(spfMatch[1]),
+          detail: extractDetail(header, "spf"),
+        };
+      }
+    }
 
-  // DKIM
-  const dkimMatch = header.match(/dkim\s*=\s*(pass|fail|none|neutral|temperror|permerror)/i);
-  if (dkimMatch) {
-    results.dkim = {
-      result: normalizeResult(dkimMatch[1]),
-      detail: extractDetail(header, "dkim"),
-    };
-  }
+    // DKIM
+    if (results.dkim.result === "unknown") {
+      const dkimMatch = header.match(/dkim\s*=\s*(pass|fail|none|neutral|temperror|permerror)/i);
+      if (dkimMatch) {
+        results.dkim = {
+          result: normalizeResult(dkimMatch[1]),
+          detail: extractDetail(header, "dkim"),
+        };
+      }
+    }
 
-  // DMARC
-  const dmarcMatch = header.match(/dmarc\s*=\s*(pass|fail|none|bestguesspass|temperror|permerror)/i);
-  if (dmarcMatch) {
-    results.dmarc = {
-      result: normalizeResult(dmarcMatch[1]),
-      detail: extractDetail(header, "dmarc"),
-    };
-  }
+    // DMARC
+    if (results.dmarc.result === "unknown") {
+      const dmarcMatch = header.match(/dmarc\s*=\s*(pass|fail|none|bestguesspass|temperror|permerror)/i);
+      if (dmarcMatch) {
+        results.dmarc = {
+          result: normalizeResult(dmarcMatch[1]),
+          detail: extractDetail(header, "dmarc"),
+        };
+      }
+    }
 
-  // ARC
-  const arcMatch = header.match(/arc\s*=\s*(pass|fail|none)/i);
-  if (arcMatch) {
-    results.arc = { result: normalizeResult(arcMatch[1]) };
+    // ARC (from ARC-Authentication-Results or Authentication-Results)
+    if (results.arc.result === "unknown") {
+      const arcMatch = header.match(/arc\s*=\s*(pass|fail|none)/i);
+      if (arcMatch) {
+        results.arc = { result: normalizeResult(arcMatch[1]) };
+      }
+    }
   }
 
   // TLS version from Received headers

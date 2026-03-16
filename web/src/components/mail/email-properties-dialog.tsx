@@ -172,7 +172,17 @@ function OverviewTab({ email, headersData }: OverviewTabProps) {
     return parseReceivedHeaders([receivedRaw]);
   }, [receivedRaw, headersData?.rawHeaders]);
 
-  const authHeader = headersData?.headerValues?.["Authentication-Results"] ?? undefined;
+  // Collect ALL Authentication-Results and ARC-Authentication-Results headers from rawHeaders
+  const authHeaders = useMemo(() => {
+    if (!headersData?.rawHeaders) return [];
+    return headersData.rawHeaders
+      .filter((h) => {
+        const name = h.name.toLowerCase();
+        return name === "authentication-results" || name === "arc-authentication-results";
+      })
+      .map((h) => h.value);
+  }, [headersData?.rawHeaders]);
+
   const receivedStrings = useMemo(() => {
     if (headersData?.rawHeaders) {
       return headersData.rawHeaders
@@ -183,8 +193,8 @@ function OverviewTab({ email, headersData }: OverviewTabProps) {
   }, [headersData?.rawHeaders, receivedRaw]);
 
   const authResults = useMemo(
-    () => parseAuthResults(authHeader, receivedStrings),
-    [authHeader, receivedStrings],
+    () => parseAuthResults(authHeaders, receivedStrings),
+    [authHeaders, receivedStrings],
   );
 
   const messageId = headersData?.headerValues?.["Message-ID"]?.trim() ?? null;
@@ -492,7 +502,9 @@ function SecurityRow({ label, status }: { label: string; status: AuthStatus }) {
       color = "var(--color-warning, #eab308)";
       text = t("properties.notPresent");
       break;
+    case "unknown":
     default:
+      // No Authentication-Results header found at all
       icon = <AlertTriangle size={14} />;
       color = "var(--color-text-tertiary)";
       text = t("properties.notPresent");
