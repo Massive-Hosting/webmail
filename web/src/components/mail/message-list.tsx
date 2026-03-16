@@ -200,6 +200,21 @@ export const MessageList = React.memo(function MessageList({
   // complexity with dynamic row counts. Instead, the thread children render
   // as a normal flow below their header.
 
+  // Build a flat list of all visible email IDs (including expanded thread children)
+  // for shift+click range selection
+  const visibleEmailIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const row of rows) {
+      if (row.type === "message" || row.type === "thread-header") {
+        ids.push(row.email.id);
+      }
+      // Thread children are rendered by ExpandedThreadChildren and aren't in rows,
+      // but they DO call handleItemClick. We'll handle this by falling back to
+      // simple toggle when a child isn't in the visible list.
+    }
+    return ids;
+  }, [rows]);
+
   const handleItemClick = useCallback(
     (email: EmailListItem, event: React.MouseEvent) => {
       if (event.ctrlKey || event.metaKey) {
@@ -207,12 +222,15 @@ export const MessageList = React.memo(function MessageList({
       } else if (event.shiftKey) {
         event.preventDefault();
         if (lastClickedEmailId) {
-          const startIdx = emails.findIndex((e) => e.id === lastClickedEmailId);
-          const endIdx = emails.findIndex((e) => e.id === email.id);
+          const startIdx = visibleEmailIds.indexOf(lastClickedEmailId);
+          const endIdx = visibleEmailIds.indexOf(email.id);
           if (startIdx !== -1 && endIdx !== -1) {
             const min = Math.min(startIdx, endIdx);
             const max = Math.max(startIdx, endIdx);
-            selectEmailRange(emails.slice(min, max + 1).map((e) => e.id));
+            selectEmailRange(visibleEmailIds.slice(min, max + 1));
+          } else {
+            // One of the IDs not in visible list (e.g., thread child) — toggle instead
+            toggleEmailSelection(email.id);
           }
         } else {
           setSelectedEmail(email.id, email.threadId);
@@ -221,7 +239,7 @@ export const MessageList = React.memo(function MessageList({
         setSelectedEmail(email.id, email.threadId);
       }
     },
-    [lastClickedEmailId, emails, setSelectedEmail, toggleEmailSelection, selectEmailRange],
+    [lastClickedEmailId, visibleEmailIds, setSelectedEmail, toggleEmailSelection, selectEmailRange],
   );
 
   const handleThreadHeaderClick = useCallback(
