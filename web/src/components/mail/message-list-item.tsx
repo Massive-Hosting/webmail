@@ -5,7 +5,21 @@ import type { EmailListItem } from "@/types/mail.ts";
 import { isUnread, isFlagged } from "@/types/mail.ts";
 import { Avatar } from "@/components/ui/avatar.tsx";
 import { formatMessageDate, formatAddress } from "@/lib/format.ts";
-import { Star, Paperclip, ChevronRight, ChevronDown, Printer, Clock } from "lucide-react";
+import {
+  Star,
+  Paperclip,
+  ChevronRight,
+  ChevronDown,
+  Printer,
+  Clock,
+  Reply,
+  ReplyAll,
+  Forward,
+  MailOpen,
+  Mail,
+  Archive,
+  Trash2,
+} from "lucide-react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { useTranslation } from "react-i18next";
 import { DateTimePickerDialog } from "@/components/ui/datetime-picker-dialog.tsx";
@@ -648,24 +662,27 @@ function MessageContextMenu({
         }}
       >
         <ContextMenu.Item
-          className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
           style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
           onSelect={() => onReply?.(email)}
         >
+          <Reply size={14} />
           {t("action.reply")}
         </ContextMenu.Item>
         <ContextMenu.Item
-          className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
           style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
           onSelect={() => onReplyAll?.(email)}
         >
+          <ReplyAll size={14} />
           {t("action.replyAll")}
         </ContextMenu.Item>
         <ContextMenu.Item
-          className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
           style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
           onSelect={() => onForward?.(email)}
         >
+          <Forward size={14} />
           {t("action.forward")}
         </ContextMenu.Item>
 
@@ -675,17 +692,19 @@ function MessageContextMenu({
         />
 
         <ContextMenu.Item
-          className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
           style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
           onSelect={() => onMarkRead?.([email.id], unread)}
         >
+          {unread ? <MailOpen size={14} /> : <Mail size={14} />}
           {unread ? t("action.markAsRead") : t("action.markAsUnread")}
         </ContextMenu.Item>
         <ContextMenu.Item
-          className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
           style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
           onSelect={() => onStar(email.id, !flagged)}
         >
+          <Star size={14} />
           {flagged ? t("action.unstar") : t("action.star")}
         </ContextMenu.Item>
 
@@ -763,10 +782,11 @@ function MessageContextMenu({
         </ContextMenu.Sub>
 
         <ContextMenu.Item
-          className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
           style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
           onSelect={() => onArchive?.([email.id])}
         >
+          <Archive size={14} />
           {t("action.archive")}
         </ContextMenu.Item>
         <ContextMenu.Item
@@ -778,10 +798,11 @@ function MessageContextMenu({
           {t("action.print")}
         </ContextMenu.Item>
         <ContextMenu.Item
-          className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
           style={{ color: "var(--color-text-danger)", borderRadius: "var(--radius-sm)" }}
           onSelect={() => onDelete?.([email.id])}
         >
+          <Trash2 size={14} />
           {t("action.delete")}
         </ContextMenu.Item>
       </ContextMenu.Content>
