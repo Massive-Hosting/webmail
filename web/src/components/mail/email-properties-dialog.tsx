@@ -57,9 +57,10 @@ export const EmailPropertiesDialog = React.memo(function EmailPropertiesDialog({
           style={{ backgroundColor: "var(--color-bg-overlay)" }}
         />
         <Dialog.Content
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-h-[80vh] overflow-y-auto rounded-lg"
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full rounded-lg flex flex-col"
           style={{
-            maxWidth: 700,
+            maxWidth: 800,
+            height: "80vh",
             backgroundColor: "var(--color-bg-elevated)",
             boxShadow: "var(--shadow-elevated)",
             border: "1px solid var(--color-border-primary)",
@@ -95,7 +96,7 @@ export const EmailPropertiesDialog = React.memo(function EmailPropertiesDialog({
               <TabTrigger value="raw">{t("properties.rawHeaders")}</TabTrigger>
             </Tabs.List>
 
-            <Tabs.Content value="overview" className="px-6 py-4">
+            <Tabs.Content value="overview" className="px-6 py-4 flex-1 overflow-y-auto">
               {isLoading ? (
                 <div
                   className="py-8 text-center text-sm"
@@ -108,7 +109,7 @@ export const EmailPropertiesDialog = React.memo(function EmailPropertiesDialog({
               )}
             </Tabs.Content>
 
-            <Tabs.Content value="raw" className="px-6 py-4">
+            <Tabs.Content value="raw" className="px-6 py-4 flex-1 overflow-y-auto">
               {isLoading ? (
                 <div
                   className="py-8 text-center text-sm"
