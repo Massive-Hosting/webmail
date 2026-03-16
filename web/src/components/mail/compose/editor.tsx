@@ -1,6 +1,6 @@
 /** Tiptap rich text editor for compose */
 
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, BubbleMenu } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
@@ -211,7 +211,21 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       Highlight.configure({
         multicolor: true,
       }),
-      Image.configure({
+      Image.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            style: {
+              default: null,
+              parseHTML: (element) => element.getAttribute("style"),
+              renderHTML: (attributes) => {
+                if (!attributes.style) return {};
+                return { style: attributes.style };
+              },
+            },
+          };
+        },
+      }).configure({
         inline: true,
         allowBase64: false,
       }),
@@ -497,11 +511,123 @@ export const ComposeEditor = React.memo(function ComposeEditor({
         </div>
       )}
 
+      {/* Image resize toolbar */}
+      {editor && (
+        <BubbleMenu
+          editor={editor}
+          tippyOptions={{ duration: 150, placement: "bottom" }}
+          shouldShow={({ editor }) => editor.isActive("image")}
+        >
+          <ImageResizeToolbar editor={editor} />
+        </BubbleMenu>
+      )}
+
       {/* Editor area */}
       <EditorContent editor={editor} />
     </div>
   );
 });
+
+function ImageResizeToolbar({ editor }: { editor: ReturnType<typeof useEditor> & {} }) {
+  const { t } = useTranslation();
+  const [showCustom, setShowCustom] = useState(false);
+  const [customWidth, setCustomWidth] = useState("");
+  const customInputRef = useRef<HTMLInputElement>(null);
+
+  const setImageWidth = useCallback(
+    (width: string) => {
+      editor.chain().focus().updateAttributes("image", { style: `width: ${width}` }).run();
+    },
+    [editor],
+  );
+
+  const sizes = [
+    { label: "25%", value: "25%" },
+    { label: "50%", value: "50%" },
+    { label: "75%", value: "75%" },
+    { label: "100%", value: "100%" },
+  ];
+
+  return (
+    <div
+      className="flex items-center gap-0.5 px-1.5 py-1 rounded-md shadow-lg text-xs"
+      style={{
+        backgroundColor: "var(--color-bg-elevated)",
+        border: "1px solid var(--color-border-primary)",
+      }}
+      onMouseDown={(e) => e.preventDefault()}
+    >
+      {sizes.map((s) => (
+        <button
+          key={s.value}
+          type="button"
+          className="px-2 py-0.5 rounded transition-colors hover:bg-[var(--color-bg-tertiary)]"
+          style={{ color: "var(--color-text-secondary)" }}
+          onClick={() => setImageWidth(s.value)}
+        >
+          {s.label}
+        </button>
+      ))}
+      <div
+        className="w-px h-4 mx-0.5"
+        style={{ backgroundColor: "var(--color-border-primary)" }}
+      />
+      {showCustom ? (
+        <form
+          className="flex items-center gap-1"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const val = parseInt(customWidth, 10);
+            if (val > 0) {
+              setImageWidth(customWidth.includes("%") || customWidth.includes("px") ? customWidth : `${val}px`);
+            }
+            setShowCustom(false);
+            setCustomWidth("");
+          }}
+        >
+          <input
+            ref={customInputRef}
+            type="text"
+            value={customWidth}
+            onChange={(e) => setCustomWidth(e.target.value)}
+            placeholder="e.g. 300px"
+            className="w-20 px-1.5 py-0.5 text-xs rounded outline-none"
+            style={{
+              backgroundColor: "var(--color-bg-tertiary)",
+              color: "var(--color-text-primary)",
+              border: "1px solid var(--color-border-secondary)",
+            }}
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setShowCustom(false);
+                setCustomWidth("");
+              }
+            }}
+          />
+          <button
+            type="submit"
+            className="px-1.5 py-0.5 rounded text-xs font-medium"
+            style={{ backgroundColor: "var(--color-bg-accent, #3b82f6)", color: "#fff" }}
+          >
+            OK
+          </button>
+        </form>
+      ) : (
+        <button
+          type="button"
+          className="px-2 py-0.5 rounded transition-colors hover:bg-[var(--color-bg-tertiary)]"
+          style={{ color: "var(--color-text-secondary)" }}
+          onClick={() => {
+            setShowCustom(true);
+          }}
+        >
+          {t("editor.customSize", "Custom")}
+        </button>
+      )}
+    </div>
+  );
+}
 
 function ToolbarButton({
   icon,

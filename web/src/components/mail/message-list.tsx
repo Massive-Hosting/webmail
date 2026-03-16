@@ -50,6 +50,7 @@ function ExpandedThreadChildren({
   rowHeight,
   onSelectMessage,
   selectedEmailId,
+  selectedEmailIds,
   onStar,
   onMouseEnter,
   onReply,
@@ -65,6 +66,7 @@ function ExpandedThreadChildren({
   rowHeight: number;
   onSelectMessage: (email: EmailListItem, event: React.MouseEvent) => void;
   selectedEmailId: string | null;
+  selectedEmailIds: ReadonlySet<string>;
   onStar: (emailId: string, flagged: boolean) => void;
   onMouseEnter?: (emailId: string) => void;
   onReply?: (email: EmailListItem) => void;
@@ -103,6 +105,7 @@ function ExpandedThreadChildren({
           key={email.id}
           email={email}
           isSelected={email.id === selectedEmailId}
+          isMultiSelected={selectedEmailIds.has(email.id)}
           isFirst={index === 0}
           isLast={index === emails.length - 1}
           onClick={onSelectMessage}
@@ -366,6 +369,7 @@ export const MessageList = React.memo(function MessageList({
                   rowHeight={rowHeight}
                   onSelectMessage={handleThreadChildSelect}
                   selectedEmailId={selectedEmailId}
+                  selectedEmailIds={selectedEmailIds}
                   onStar={onStarEmail}
                   onMouseEnter={handleMouseEnter}
                   onReply={onReply}

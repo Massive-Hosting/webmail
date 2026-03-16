@@ -313,6 +313,7 @@ export const ThreadHeaderItem = React.memo(
 interface ThreadChildItemProps {
   email: EmailListItem;
   isSelected: boolean;
+  isMultiSelected: boolean;
   isFirst: boolean;
   isLast: boolean;
   onClick: (email: EmailListItem, event: React.MouseEvent) => void;
@@ -331,6 +332,7 @@ export const ThreadChildItem = React.memo(
   function ThreadChildItem({
     email,
     isSelected,
+    isMultiSelected,
     isFirst,
     isLast,
     onClick,
@@ -357,12 +359,14 @@ export const ThreadChildItem = React.memo(
       [email.id, flagged, onStar],
     );
 
+    const active = isSelected || isMultiSelected;
+
     return (
       <ContextMenu.Root>
         <ContextMenu.Trigger asChild>
           <div
             className={`message-list-item message-list-item--thread-child group ${isLast ? "message-list-item--thread-child-last" : ""}`}
-            data-selected={isSelected || undefined}
+            data-selected={active || undefined}
             data-unread={unread || undefined}
             role="option"
             aria-selected={isSelected}
@@ -442,6 +446,7 @@ export const ThreadChildItem = React.memo(
   (prev, next) =>
     prev.email.id === next.email.id &&
     prev.isSelected === next.isSelected &&
+    prev.isMultiSelected === next.isMultiSelected &&
     prev.isFirst === next.isFirst &&
     prev.isLast === next.isLast &&
     prev.email.keywords === next.email.keywords &&

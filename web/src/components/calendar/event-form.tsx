@@ -295,7 +295,7 @@ export const EventForm = React.memo(function EventForm({
 
           <div className="flex flex-1 min-h-0 overflow-hidden">
             {/* Left column: form */}
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4 flex-1 px-6 pb-6 overflow-y-auto" style={{ minWidth: 0 }}>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4 flex-1 px-6 pt-1 pb-6 overflow-y-auto" style={{ minWidth: 0 }}>
               {/* Title */}
               <input
                 type="text"
