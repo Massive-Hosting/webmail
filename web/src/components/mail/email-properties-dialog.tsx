@@ -87,9 +87,9 @@ export const EmailPropertiesDialog = React.memo(function EmailPropertiesDialog({
             </Dialog.Close>
           </div>
 
-          <Tabs.Root defaultValue="overview">
+          <Tabs.Root defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
             <Tabs.List
-              className="flex px-6 gap-1"
+              className="flex px-6 gap-1 shrink-0"
               style={{ borderBottom: "1px solid var(--color-border-primary)" }}
             >
               <TabTrigger value="overview">{t("properties.overview")}</TabTrigger>
