@@ -1,6 +1,6 @@
 /** Outlook-style context-sensitive action bar above the message list */
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Pencil,
   Trash2,
@@ -23,6 +23,7 @@ import { updateEmails } from "@/api/mail.ts";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { DateTimePickerDialog } from "@/components/ui/datetime-picker-dialog.tsx";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useTranslation } from "react-i18next";
 import type { EmailListItem } from "@/types/mail.ts";
@@ -81,6 +82,7 @@ export const ActionBar = React.memo(function ActionBar({
 }: ActionBarProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [showSnoozePicker, setShowSnoozePicker] = useState(false);
   const selectionCount = selectedEmailIds.size;
   const hasSelection = selectionCount > 0;
   const isSingleSelected = selectionCount === 1;
@@ -398,32 +400,9 @@ export const ActionBar = React.memo(function ActionBar({
               />
               <DropdownMenu.Item
                 className="action-bar__dropdown-item"
-                onSelect={() => {
-                  const input = document.createElement("input");
-                  input.type = "datetime-local";
-                  input.min = new Date().toISOString().slice(0, 16);
-                  input.style.position = "fixed";
-                  input.style.opacity = "0";
-                  document.body.appendChild(input);
-                  input.addEventListener("change", () => {
-                    if (input.value) {
-                      const date = new Date(input.value);
-                      if (!isPast(date)) {
-                        handleSnooze(date);
-                      } else {
-                        toast.error("Please select a future date and time.");
-                      }
-                    }
-                    document.body.removeChild(input);
-                  });
-                  input.addEventListener("blur", () => {
-                    setTimeout(() => {
-                      if (document.body.contains(input)) {
-                        document.body.removeChild(input);
-                      }
-                    }, 300);
-                  });
-                  input.showPicker();
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setShowSnoozePicker(true);
                 }}
               >
                 <Clock size={13} style={{ marginRight: 4 }} />
@@ -443,6 +422,12 @@ export const ActionBar = React.memo(function ActionBar({
           </>
         )}
       </div>
+      <DateTimePickerDialog
+        open={showSnoozePicker}
+        onOpenChange={setShowSnoozePicker}
+        title={t("action.snooze")}
+        onConfirm={handleSnooze}
+      />
     </Tooltip.Provider>
   );
 });

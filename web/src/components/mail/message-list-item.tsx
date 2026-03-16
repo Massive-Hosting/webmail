@@ -8,6 +8,7 @@ import { formatMessageDate, formatAddress } from "@/lib/format.ts";
 import { Star, Paperclip, ChevronRight, ChevronDown, Printer, Clock } from "lucide-react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { useTranslation } from "react-i18next";
+import { DateTimePickerDialog } from "@/components/ui/datetime-picker-dialog.tsx";
 import { addHours, setHours, setMinutes, setSeconds, addDays, nextMonday, isPast, format } from "date-fns";
 import { startSnooze } from "@/api/tasks.ts";
 import { toast } from "sonner";
@@ -619,6 +620,7 @@ function MessageContextMenu({
   onPrint?: (email: EmailListItem) => void;
 }) {
   const { t } = useTranslation();
+  const [showSnoozePicker, setShowSnoozePicker] = useState(false);
 
   const handleSnooze = useCallback((until: Date) => {
     startSnooze({
@@ -633,6 +635,7 @@ function MessageContextMenu({
   }, [email.id, currentMailboxId, t]);
 
   return (
+    <>
     <ContextMenu.Portal>
       <ContextMenu.Content
         className="min-w-[180px] p-1 text-sm animate-scale-in"
@@ -748,30 +751,9 @@ function MessageContextMenu({
               <ContextMenu.Item
                 className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
                 style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
-                onSelect={() => {
-                  const input = document.createElement("input");
-                  input.type = "datetime-local";
-                  input.min = new Date().toISOString().slice(0, 16);
-                  input.style.position = "fixed";
-                  input.style.opacity = "0";
-                  document.body.appendChild(input);
-                  input.addEventListener("change", () => {
-                    if (input.value) {
-                      const date = new Date(input.value);
-                      if (!isPast(date)) {
-                        handleSnooze(date);
-                      }
-                    }
-                    document.body.removeChild(input);
-                  });
-                  input.addEventListener("blur", () => {
-                    setTimeout(() => {
-                      if (document.body.contains(input)) {
-                        document.body.removeChild(input);
-                      }
-                    }, 300);
-                  });
-                  input.showPicker();
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setShowSnoozePicker(true);
                 }}
               >
                 <Clock size={13} />
@@ -805,5 +787,12 @@ function MessageContextMenu({
         </ContextMenu.Item>
       </ContextMenu.Content>
     </ContextMenu.Portal>
+    <DateTimePickerDialog
+      open={showSnoozePicker}
+      onOpenChange={setShowSnoozePicker}
+      title={t("action.snooze")}
+      onConfirm={handleSnooze}
+    />
+    </>
   );
 }

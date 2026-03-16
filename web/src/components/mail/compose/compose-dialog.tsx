@@ -23,6 +23,7 @@ import {
   BookmarkPlus,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { DateTimePickerDialog } from "@/components/ui/datetime-picker-dialog.tsx";
 import {
   useComposeStore,
   type DraftState,
@@ -94,6 +95,7 @@ export const ComposePanel = React.memo(function ComposePanel({
   const [pgpEncrypt, setPgpEncrypt] = useState(false);
   const [missingKeyRecipients, setMissingKeyRecipients] = useState<string[]>([]);
   const [showMissingKeyDialog, setShowMissingKeyDialog] = useState(false);
+  const [showSchedulePicker, setShowSchedulePicker] = useState(false);
 
   // AI assistant — uses the copilot panel instead of an inline panel
   const aiEnabled = useAIEnabled();
@@ -974,32 +976,9 @@ export const ComposePanel = React.memo(function ComposePanel({
                     />
                     <DropdownMenu.Item
                       className="action-bar__dropdown-item"
-                      onSelect={() => {
-                        const input = document.createElement("input");
-                        input.type = "datetime-local";
-                        input.min = new Date().toISOString().slice(0, 16);
-                        input.style.position = "fixed";
-                        input.style.opacity = "0";
-                        document.body.appendChild(input);
-                        input.addEventListener("change", () => {
-                          if (input.value) {
-                            const date = new Date(input.value);
-                            if (!isPast(date)) {
-                              handleScheduleSend(date);
-                            } else {
-                              toast.error("Please select a future date and time.");
-                            }
-                          }
-                          document.body.removeChild(input);
-                        });
-                        input.addEventListener("blur", () => {
-                          setTimeout(() => {
-                            if (document.body.contains(input)) {
-                              document.body.removeChild(input);
-                            }
-                          }, 300);
-                        });
-                        input.showPicker();
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setShowSchedulePicker(true);
                       }}
                     >
                       <Clock size={13} style={{ marginRight: 4 }} />
@@ -1177,6 +1156,12 @@ export const ComposePanel = React.memo(function ComposePanel({
           </div>
         </div>
       )}
+      <DateTimePickerDialog
+        open={showSchedulePicker}
+        onOpenChange={setShowSchedulePicker}
+        title={t("action.scheduleSend")}
+        onConfirm={handleScheduleSend}
+      />
     </DragDropZone>
   );
 });
