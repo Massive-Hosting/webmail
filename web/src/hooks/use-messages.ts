@@ -44,7 +44,7 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
       return nextPosition;
     },
     initialPageParam: 0,
-    enabled: !!mailboxId || !!filter,
+    enabled: !!mailboxId || (filter != null && Object.keys(filter).length > 0),
     staleTime: 2 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     // When WebSocket is connected, disable polling — we get push updates.

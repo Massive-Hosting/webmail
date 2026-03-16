@@ -976,9 +976,8 @@ export const ComposePanel = React.memo(function ComposePanel({
                     />
                     <DropdownMenu.Item
                       className="action-bar__dropdown-item"
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setShowSchedulePicker(true);
+                      onSelect={() => {
+                        setTimeout(() => setShowSchedulePicker(true), 100);
                       }}
                     >
                       <Clock size={13} style={{ marginRight: 4 }} />

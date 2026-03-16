@@ -400,9 +400,8 @@ export const ActionBar = React.memo(function ActionBar({
               />
               <DropdownMenu.Item
                 className="action-bar__dropdown-item"
-                onSelect={(e) => {
-                  e.preventDefault();
-                  setShowSnoozePicker(true);
+                onSelect={() => {
+                  setTimeout(() => setShowSnoozePicker(true), 100);
                 }}
               >
                 <Clock size={13} style={{ marginRight: 4 }} />

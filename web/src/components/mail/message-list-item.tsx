@@ -751,9 +751,8 @@ function MessageContextMenu({
               <ContextMenu.Item
                 className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
                 style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
-                onSelect={(e) => {
-                  e.preventDefault();
-                  setShowSnoozePicker(true);
+                onSelect={() => {
+                  setTimeout(() => setShowSnoozePicker(true), 100);
                 }}
               >
                 <Clock size={13} />
