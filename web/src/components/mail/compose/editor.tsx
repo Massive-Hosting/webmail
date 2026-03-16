@@ -1,6 +1,7 @@
 /** Tiptap rich text editor for compose */
 
-import { useEditor, EditorContent, BubbleMenu } from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
@@ -515,7 +516,6 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       {editor && (
         <BubbleMenu
           editor={editor}
-          tippyOptions={{ duration: 150, placement: "bottom" }}
           shouldShow={({ editor }) => editor.isActive("image")}
         >
           <ImageResizeToolbar editor={editor} />
