@@ -408,6 +408,7 @@ function ActionButton({ icon, label, onClick }: { icon: React.ReactNode; label: 
         <button
           className="message-view__action-btn"
           onClick={onClick}
+          aria-label={label}
         >
           {icon}
         </button>
