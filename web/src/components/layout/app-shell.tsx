@@ -500,6 +500,9 @@ export function AppShell() {
         <Toolbar
           onSettings={handleOpenSettings}
           onAdvancedSearch={handleOpenAdvancedSearch}
+          aiEnabled={aiEnabled}
+          copilotOpen={copilotOpen}
+          onToggleCopilot={handleToggleCopilot}
         />
       </header>
       <div className="flex flex-1 overflow-hidden">
