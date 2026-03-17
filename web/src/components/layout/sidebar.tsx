@@ -28,7 +28,8 @@ export const Sidebar = React.memo(function Sidebar() {
   if (activeView !== "mail") return null;
 
   return (
-    <div
+    <nav
+      aria-label="Mailbox folders"
       className="flex flex-col shrink-0 h-full overflow-hidden"
       style={{
         width,
@@ -57,6 +58,6 @@ export const Sidebar = React.memo(function Sidebar() {
       </div>
 
       {/* Collapse toggle removed — activity bar has the toggle */}
-    </div>
+    </nav>
   );
 });

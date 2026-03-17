@@ -105,6 +105,9 @@ export const TaskTray = React.memo(function TaskTray() {
   return (
     <div
       className="fixed bottom-0 left-0 right-0 z-50"
+      role="status"
+      aria-live="polite"
+      aria-label="Background tasks"
       style={{
         backgroundColor: "var(--color-bg-elevated)",
         borderTop: "1px solid var(--color-border-primary)",
@@ -185,6 +188,11 @@ const TaskRow = React.memo(function TaskRow({ task, onDismiss }: TaskRowProps) {
           <div
             className="h-1.5 rounded-full mt-1 overflow-hidden"
             style={{ backgroundColor: "var(--color-bg-tertiary)" }}
+            role="progressbar"
+            aria-valuenow={Math.round(task.progress * 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={displayDetail}
           >
             <div
               className="h-full rounded-full transition-all duration-300"
@@ -203,6 +211,7 @@ const TaskRow = React.memo(function TaskRow({ task, onDismiss }: TaskRowProps) {
           className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
           style={{ color: "var(--color-text-accent)" }}
           title="Download export"
+          aria-label="Download export"
         >
           <Download size={14} />
         </button>
@@ -213,6 +222,7 @@ const TaskRow = React.memo(function TaskRow({ task, onDismiss }: TaskRowProps) {
           className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
           style={{ color: "var(--color-text-secondary)" }}
           title="Retry"
+          aria-label="Retry task"
         >
           <RotateCw size={14} />
         </button>
@@ -223,6 +233,7 @@ const TaskRow = React.memo(function TaskRow({ task, onDismiss }: TaskRowProps) {
         className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
         style={{ color: "var(--color-text-secondary)" }}
         title="Dismiss"
+        aria-label="Dismiss task"
       >
         <X size={14} />
       </button>

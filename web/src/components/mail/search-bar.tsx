@@ -219,7 +219,9 @@ export const SearchBar = React.memo(function SearchBar({
         <input
           ref={inputRef}
           id="search-input"
-          type="text"
+          type="search"
+          role="searchbox"
+          aria-label={t("search.placeholder")}
           value={localQuery}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
@@ -247,6 +249,7 @@ export const SearchBar = React.memo(function SearchBar({
                 className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150"
                 style={{ color: "var(--color-text-tertiary)" }}
                 title={t("search.saveSearch")}
+                aria-label={t("search.saveSearch")}
               >
                 <Bookmark size={14} />
               </button>
@@ -256,6 +259,7 @@ export const SearchBar = React.memo(function SearchBar({
                 className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150"
                 style={{ color: "var(--color-text-tertiary)" }}
                 title={t("search.clearSearchEsc")}
+                aria-label={t("search.clearSearchEsc")}
               >
                 <X size={14} />
               </button>
@@ -267,6 +271,7 @@ export const SearchBar = React.memo(function SearchBar({
             className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150"
             style={{ color: "var(--color-text-tertiary)" }}
             title={t("search.advancedSearch")}
+            aria-label={t("search.advancedSearch")}
           >
             <SlidersHorizontal size={14} />
           </button>
