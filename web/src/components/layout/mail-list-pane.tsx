@@ -76,8 +76,10 @@ export function MailListPane({
 
   // Use a stable filter for virtual folders to avoid reference instability
   const virtualFilter = useMemo(() => {
-    if (!virtualFolder) return undefined;
-    return { hasKeyword: virtualFolder === "scheduled" ? "$scheduled" : "$snoozed" };
+    if (virtualFolder === "scheduled") return { hasKeyword: "$scheduled" };
+    if (virtualFolder === "snoozed") return { hasKeyword: "$snoozed" };
+    // Normal mailbox view: hide snoozed emails
+    return { notKeyword: "$snoozed" };
   }, [virtualFolder]);
   const effectiveMailboxId = virtualFolder ? null : selectedMailboxId;
 

@@ -98,8 +98,10 @@ export function AppShell() {
 
   // Virtual folder filter for scheduled/snoozed views (memoized for stable reference)
   const virtualFilter = useMemo(() => {
-    if (!virtualFolder) return undefined;
-    return { hasKeyword: virtualFolder === "scheduled" ? "$scheduled" : "$snoozed" };
+    if (virtualFolder === "scheduled") return { hasKeyword: "$scheduled" };
+    if (virtualFolder === "snoozed") return { hasKeyword: "$snoozed" };
+    // Normal mailbox view: hide snoozed emails
+    return { notKeyword: "$snoozed" };
   }, [virtualFolder]);
   const effectiveMailboxId = virtualFolder ? null : selectedMailboxId;
 
