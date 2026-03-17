@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Massive Mail — The inbox you deserve.</title>
+<meta name="description" content="A modern, powerful webmail client with AI assistance, calendar, contacts, and enterprise-grade security.">
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        purple: {
+          DEFAULT: '#863bff',
+          50: '#f3eeff',
+          100: '#e4d8ff',
+          200: '#cdb5ff',
+          300: '#b08aff',
+          400: '#9a5eff',
+          500: '#863bff',
+          600: '#7a1fff',
+          700: '#6b0ef0',
+          800: '#5a0cc8',
+          900: '#4a0da3',
+        }
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+      }
+    }
+  }
+}
+</script>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #0a0a0f; color: #fff; overflow-x: hidden; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #0a0a0f; }
+::-webkit-scrollbar-thumb { background: #863bff40; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #863bff80; }
+
+/* Nav */
+.nav-blur { backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); background: rgba(10, 10, 15, 0.7); }
+.nav-visible { transform: translateY(0); opacity: 1; }
+.nav-hidden { transform: translateY(-100%); opacity: 0; }
+
+/* Hero gradient */
+.hero-gradient {
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(134, 59, 255, 0.35) 0%, rgba(134, 59, 255, 0.08) 50%, transparent 80%),
+              radial-gradient(ellipse 60% 40% at 80% 20%, rgba(71, 191, 255, 0.1) 0%, transparent 60%),
+              #0a0a0f;
+}
+
+/* Floating animation for hero screenshot */
+@keyframes float {
+  0%, 100% { transform: translateY(0) perspective(1200px) rotateX(2deg); }
+  50% { transform: translateY(-16px) perspective(1200px) rotateX(2deg); }
+}
+.hero-float { animation: float 6s ease-in-out infinite; }
+
+/* Glow pulse on hero image */
+.hero-glow {
+  box-shadow: 0 0 80px rgba(134, 59, 255, 0.25), 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* Section reveal animations */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+.reveal-delay-5 { transition-delay: 0.5s; }
+
+/* Browser frame */
+.browser-frame {
+  background: #1a1a24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.browser-frame:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 40px rgba(134, 59, 255, 0.2), 0 0 0 1px rgba(134, 59, 255, 0.15);
+}
+.browser-bar {
+  background: #12121a;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.browser-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.browser-dot-red { background: #ff5f57; }
+.browser-dot-yellow { background: #febc2e; }
+.browser-dot-green { background: #28c840; }
+.browser-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Glass card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.glass-card:hover {
+  border-color: rgba(134, 59, 255, 0.25);
+  box-shadow: 0 0 30px rgba(134, 59, 255, 0.08);
+}
+
+/* Section divider gradient */
+.section-gradient {
+  background: radial-gradient(ellipse 70% 30% at 50% 0%, rgba(134, 59, 255, 0.12) 0%, transparent 70%);
+}
+
+/* Feature label badge */
+.feature-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(134, 59, 255, 0.15);
+  color: #b08aff;
+  border: 1px solid rgba(134, 59, 255, 0.2);
+}
+
+/* Horizontal line accent */
+.accent-line {
+  width: 48px;
+  height: 3px;
+  background: linear-gradient(90deg, #863bff, #47bfff);
+  border-radius: 2px;
+}
+
+/* Purple gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #fff 0%, #cdb5ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Full-width section accent */
+.section-accent {
+  background: linear-gradient(180deg, #0a0a0f 0%, #0e0e18 50%, #0a0a0f 100%);
+}
+
+/* Mobile screenshot special framing */
+.mobile-frame {
+  max-width: 340px;
+  border-radius: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(134, 59, 255, 0.15);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+}
+.mobile-frame:hover {
+  transform: scale(1.03);
+  box-shadow: 0 12px 50px rgba(0, 0, 0, 0.5), 0 0 80px rgba(134, 59, 255, 0.25);
+}
+.mobile-frame img { display: block; width: 100%; height: auto; }
+
+/* Text bullet points */
+.feature-list li {
+  position: relative;
+  padding-left: 1.5rem;
+}
+.feature-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #863bff;
+}
+
+/* Tech stack cards */
+.tech-pill {
+  padding: 8px 20px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: rgba(134, 59, 255, 0.1);
+  border: 1px solid rgba(134, 59, 255, 0.15);
+  color: #cdb5ff;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.tech-pill:hover {
+  background: rgba(134, 59, 255, 0.2);
+  border-color: rgba(134, 59, 255, 0.35);
+}
+
+/* Active nav link */
+.nav-link { position: relative; transition: color 0.2s ease; }
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #863bff;
+  border-radius: 1px;
+  transition: width 0.3s ease;
+}
+.nav-link:hover::after,
+.nav-link.active::after { width: 100%; }
+.nav-link:hover { color: #fff; }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav id="nav" class="nav-blur fixed top-0 left-0 right-0 z-50 border-b border-white/5 transition-all duration-300 nav-visible">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <a href="#hero" class="flex items-center gap-3 group">
+      <img src="logo.svg" alt="Massive Mail" class="w-8 h-8 transition-transform duration-300 group-hover:scale-110">
+      <span class="font-bold text-lg tracking-tight">Massive Mail</span>
+    </a>
+    <div class="hidden md:flex items-center gap-8 text-sm text-white/50">
+      <a href="#mail" class="nav-link">Mail</a>
+      <a href="#ai" class="nav-link">AI</a>
+      <a href="#calendar" class="nav-link">Calendar</a>
+      <a href="#contacts" class="nav-link">Contacts</a>
+      <a href="#security" class="nav-link">Security</a>
+      <a href="#customization" class="nav-link">Customize</a>
+      <a href="#mobile" class="nav-link">Mobile</a>
+      <a href="#tech" class="nav-link">Tech</a>
+    </div>
+    <!-- Mobile hamburger -->
+    <button id="mobile-menu-btn" class="md:hidden p-2 text-white/60 hover:text-white" aria-label="Menu">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+  </div>
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="md:hidden hidden border-t border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl">
+    <div class="flex flex-col py-4 px-6 gap-4 text-sm text-white/60">
+      <a href="#mail" class="hover:text-white transition-colors">Mail</a>
+      <a href="#ai" class="hover:text-white transition-colors">AI</a>
+      <a href="#calendar" class="hover:text-white transition-colors">Calendar</a>
+      <a href="#contacts" class="hover:text-white transition-colors">Contacts</a>
+      <a href="#security" class="hover:text-white transition-colors">Security</a>
+      <a href="#customization" class="hover:text-white transition-colors">Customize</a>
+      <a href="#mobile" class="hover:text-white transition-colors">Mobile</a>
+      <a href="#tech" class="hover:text-white transition-colors">Tech</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section id="hero" class="hero-gradient relative min-h-screen flex flex-col items-center justify-center pt-24 pb-16 px-6">
+  <!-- Ambient orbs -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]"></div>
+    <div class="absolute bottom-1/3 right-1/4 w-72 h-72 bg-blue-500/8 rounded-full blur-[100px]"></div>
+  </div>
+
+  <div class="relative z-10 text-center max-w-4xl mx-auto mb-12">
+    <div class="flex items-center justify-center gap-4 mb-8">
+      <img src="logo.svg" alt="" class="w-14 h-14 md:w-16 md:h-16">
+      <h1 class="text-5xl md:text-7xl font-900 tracking-tight gradient-text">Massive Mail</h1>
+    </div>
+    <p class="text-xl md:text-2xl text-white/60 font-light max-w-xl mx-auto leading-relaxed">
+      The inbox you deserve.
+    </p>
+  </div>
+
+  <div class="relative z-10 w-full max-w-5xl mx-auto hero-float">
+    <div class="browser-frame hero-glow">
+      <div class="browser-bar">
+        <div class="browser-dot browser-dot-red"></div>
+        <div class="browser-dot browser-dot-yellow"></div>
+        <div class="browser-dot browser-dot-green"></div>
+      </div>
+      <img src="screenshots/02-inbox-three-pane.png" alt="Massive Mail inbox - three pane layout" loading="eager">
+    </div>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div class="relative z-10 mt-16 flex flex-col items-center gap-2 text-white/30 text-xs">
+    <span>Scroll to explore</span>
+    <svg class="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- MAIL -->
+<!-- ============================================================ -->
+<section id="mail" class="section-gradient py-32 px-6">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-20 reveal">
+      <span class="feature-badge">Mail</span>
+      <h2 class="text-4xl md:text-5xl font-800 mt-6 mb-4 gradient-text">Everything you need in an inbox</h2>
+      <p class="text-lg text-white/50 max-w-2xl mx-auto">A three-pane layout, rich compose, threaded conversations, scheduling, search, and more — all lightning fast.</p>
+    </div>
+
+    <!-- Three-pane hero -->
+    <div class="reveal mb-16">
+      <div class="browser-frame max-w-5xl mx-auto">
+        <div class="browser-bar">
+          <div class="browser-dot browser-dot-red"></div>
+          <div class="browser-dot browser-dot-yellow"></div>
+          <div class="browser-dot browser-dot-green"></div>
+        </div>
+        <img src="screenshots/02-inbox-three-pane.png" alt="Three-pane inbox layout" loading="lazy">
+      </div>
+      <p class="text-center text-white/40 text-sm mt-4">Classic three-pane layout — folders, message list, and reading pane</p>
+    </div>
+
+    <!-- Feature grid -->
+    <div class="grid md:grid-cols-2 gap-8 mb-12">
+      <!-- Compose -->
+      <div class="glass-card p-6 reveal reveal-delay-1">
+        <h3 class="text-lg font-semibold mb-3">Rich Compose</h3>
+        <p class="text-white/50 text-sm mb-4">Full-featured editor with formatting, attachments, signatures, and template support.</p>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/04-compose.png" alt="Compose email" loading="lazy">
+        </div>
+      </div>
+
+      <!-- Schedule Send -->
+      <div class="glass-card p-6 reveal reveal-delay-2">
+        <h3 class="text-lg font-semibold mb-3">Schedule Send</h3>
+        <p class="text-white/50 text-sm mb-4">Time your emails perfectly. Pick a date and time or choose a smart suggestion.</p>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/05-schedule-send.png" alt="Schedule send" loading="lazy">
+        </div>
+      </div>
+
+      <!-- Thread view -->
+      <div class="glass-card p-6 reveal reveal-delay-1">
+        <h3 class="text-lg font-semibold mb-3">Threaded Conversations</h3>
+        <p class="text-white/50 text-sm mb-4">Follow entire conversations in one view. Expand, collapse, and reply inline.</p>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/06-thread-view.png" alt="Thread view" loading="lazy">
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="glass-card p-6 reveal reveal-delay-2">
+        <h3 class="text-lg font-semibold mb-3">Powerful Search</h3>
+        <p class="text-white/50 text-sm mb-4">Find anything instantly with full-text search across all mailboxes.</p>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/07-search.png" alt="Search" loading="lazy">
+        </div>
+      </div>
+
+      <!-- Read/unread indicators -->
+      <div class="glass-card p-6 reveal reveal-delay-1">
+        <h3 class="text-lg font-semibold mb-3">Visual Indicators</h3>
+        <p class="text-white/50 text-sm mb-4">Clear read/unread states, flags, and labels help you stay on top of things.</p>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/21-read-unread-indicators.png" alt="Read and unread indicators" loading="lazy">
+        </div>
+      </div>
+
+      <!-- Context menu -->
+      <div class="glass-card p-6 reveal reveal-delay-2">
+        <h3 class="text-lg font-semibold mb-3">Context Menus</h3>
+        <p class="text-white/50 text-sm mb-4">Right-click for quick actions — snooze, print, move, label, and more.</p>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/09-message-context-menu.png" alt="Message context menu" loading="lazy">
+        </div>
+      </div>
+
+      <!-- Snoozed -->
+      <div class="glass-card p-6 reveal reveal-delay-1">
+        <h3 class="text-lg font-semibold mb-3">Snooze & Come Back Later</h3>
+        <p class="text-white/50 text-sm mb-4">Snooze messages to reappear when you need them. A dedicated folder keeps track.</p>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/20-snoozed-folder.png" alt="Snoozed folder" loading="lazy">
+        </div>
+      </div>
+
+      <!-- Saved Searches -->
+      <div class="glass-card p-6 reveal reveal-delay-2">
+        <h3 class="text-lg font-semibold mb-3">Saved Searches</h3>
+        <p class="text-white/50 text-sm mb-4">Pin your most-used searches right in the sidebar for one-click access.</p>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/23-saved-searches-sidebar.png" alt="Saved searches in sidebar" loading="lazy">
+        </div>
+      </div>
+    </div>
+
+    <!-- Extra features (text only) -->
+    <div class="glass-card p-8 max-w-3xl mx-auto reveal">
+      <h3 class="text-lg font-semibold mb-4">And so much more</h3>
+      <ul class="feature-list grid sm:grid-cols-2 gap-3 text-white/50 text-sm">
+        <li>Print emails with clean formatting</li>
+        <li>Drag-and-drop to move messages between folders</li>
+        <li>Undo send within a configurable window</li>
+        <li>Bulk select and batch operations</li>
+        <li>Export and import mailboxes</li>
+        <li>Folder colors for visual organization</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- AI ASSISTANT -->
+<!-- ============================================================ -->
+<section id="ai" class="section-accent py-32 px-6">
+  <div class="max-w-7xl mx-auto">
+    <div class="grid lg:grid-cols-2 gap-16 items-center">
+      <div class="reveal">
+        <span class="feature-badge">AI Copilot</span>
+        <h2 class="text-4xl md:text-5xl font-800 mt-6 mb-6 gradient-text">Your inbox,<br>supercharged with AI</h2>
+        <p class="text-lg text-white/50 leading-relaxed mb-6">
+          An integrated AI assistant that helps you write better emails faster. Summarize threads, generate replies, adjust tone, translate messages, and more — all without leaving your inbox.
+        </p>
+        <ul class="feature-list space-y-3 text-white/50">
+          <li>Draft and rewrite emails with natural language prompts</li>
+          <li>Summarize long threads in one click</li>
+          <li>Translate messages to any language</li>
+          <li>Adjust formality, tone, and length</li>
+          <li>Smart reply suggestions</li>
+        </ul>
+      </div>
+      <div class="reveal reveal-delay-2">
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/25-ai-copilot.png" alt="AI Copilot panel" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- CALENDAR -->
+<!-- ============================================================ -->
+<section id="calendar" class="section-gradient py-32 px-6">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-20 reveal">
+      <span class="feature-badge">Calendar</span>
+      <h2 class="text-4xl md:text-5xl font-800 mt-6 mb-4 gradient-text">Your schedule, beautifully organized</h2>
+      <p class="text-lg text-white/50 max-w-2xl mx-auto">Full-featured calendar with month and week views, event creation, and calendar sharing — integrated right into your mail.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="reveal reveal-delay-1">
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/10-calendar-month.png" alt="Calendar month view" loading="lazy">
+        </div>
+        <p class="text-center text-white/40 text-sm mt-3">Month view</p>
+      </div>
+
+      <div class="reveal reveal-delay-2">
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/11-calendar-week.png" alt="Calendar week view" loading="lazy">
+        </div>
+        <p class="text-center text-white/40 text-sm mt-3">Week view</p>
+      </div>
+
+      <div class="reveal reveal-delay-1">
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/12-calendar-event-form.png" alt="Event creation form" loading="lazy">
+        </div>
+        <p class="text-center text-white/40 text-sm mt-3">Create events with recurrence, reminders, and attendees</p>
+      </div>
+
+      <div class="reveal reveal-delay-2">
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/24-calendar-sharing.png" alt="Calendar sharing" loading="lazy">
+        </div>
+        <p class="text-center text-white/40 text-sm mt-3">Share calendars with colleagues</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- CONTACTS -->
+<!-- ============================================================ -->
+<section id="contacts" class="section-accent py-32 px-6">
+  <div class="max-w-7xl mx-auto">
+    <div class="grid lg:grid-cols-2 gap-16 items-center">
+      <div class="reveal reveal-delay-1 order-2 lg:order-1">
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/13-contacts.png" alt="Contacts" loading="lazy">
+        </div>
+      </div>
+      <div class="reveal order-1 lg:order-2">
+        <span class="feature-badge">Contacts</span>
+        <h2 class="text-4xl md:text-5xl font-800 mt-6 mb-6 gradient-text">All your people,<br>one place</h2>
+        <p class="text-lg text-white/50 leading-relaxed mb-6">
+          Manage contacts with rich profiles, groups, and seamless integration with compose autocomplete. Import and export via vCard.
+        </p>
+        <ul class="feature-list space-y-3 text-white/50">
+          <li>Search and filter contacts instantly</li>
+          <li>Autocomplete when composing emails</li>
+          <li>Contact groups and labels</li>
+          <li>vCard import/export</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECURITY -->
+<!-- ============================================================ -->
+<section id="security" class="section-gradient py-32 px-6">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-20 reveal">
+      <span class="feature-badge">Security</span>
+      <h2 class="text-4xl md:text-5xl font-800 mt-6 mb-4 gradient-text">Security you can trust</h2>
+      <p class="text-lg text-white/50 max-w-2xl mx-auto">Enterprise-grade email security with end-to-end encryption, authentication verification, HTML sanitization, and external image blocking.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8 mb-12">
+      <div class="glass-card p-6 reveal reveal-delay-1">
+        <h3 class="text-lg font-semibold mb-3">PGP Encryption</h3>
+        <p class="text-white/50 text-sm mb-4">Manage PGP keys, encrypt outgoing messages, and verify signed emails — built right in.</p>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/27-pgp-security.png" alt="PGP security settings" loading="lazy">
+        </div>
+      </div>
+
+      <div class="glass-card p-6 reveal reveal-delay-2">
+        <h3 class="text-lg font-semibold mb-3">Authentication Verification</h3>
+        <p class="text-white/50 text-sm mb-4">See SPF, DKIM, DMARC, and ARC results at a glance for every message.</p>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/18-message-details-security.png" alt="Message authentication details" loading="lazy">
+        </div>
+      </div>
+    </div>
+
+    <div class="glass-card p-8 max-w-3xl mx-auto reveal">
+      <ul class="feature-list grid sm:grid-cols-2 gap-3 text-white/50 text-sm">
+        <li>HTML sanitization against XSS</li>
+        <li>External image blocking by default</li>
+        <li>Per-sender trust allowlists</li>
+        <li>TLS-encrypted connections</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- CUSTOMIZATION -->
+<!-- ============================================================ -->
+<section id="customization" class="section-accent py-32 px-6">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-20 reveal">
+      <span class="feature-badge">Customization</span>
+      <h2 class="text-4xl md:text-5xl font-800 mt-6 mb-4 gradient-text">Make it yours</h2>
+      <p class="text-lg text-white/50 max-w-2xl mx-auto">Dark mode, custom signatures, email templates, filter rules, vacation responders, folder colors, and keyboard shortcuts — configure every detail.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="glass-card p-5 reveal reveal-delay-1">
+        <h3 class="text-sm font-semibold mb-3 text-white/80">Settings</h3>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/14-settings-general.png" alt="General settings" loading="lazy">
+        </div>
+      </div>
+
+      <div class="glass-card p-5 reveal reveal-delay-2">
+        <h3 class="text-sm font-semibold mb-3 text-white/80">Signatures</h3>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/15-settings-signatures.png" alt="Signature settings" loading="lazy">
+        </div>
+      </div>
+
+      <div class="glass-card p-5 reveal reveal-delay-3">
+        <h3 class="text-sm font-semibold mb-3 text-white/80">Templates</h3>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/17-settings-templates.png" alt="Template settings" loading="lazy">
+        </div>
+      </div>
+
+      <div class="glass-card p-5 reveal reveal-delay-1">
+        <h3 class="text-sm font-semibold mb-3 text-white/80">Filter Rules</h3>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/16-settings-filters.png" alt="Filter rules" loading="lazy">
+        </div>
+      </div>
+
+      <div class="glass-card p-5 reveal reveal-delay-2">
+        <h3 class="text-sm font-semibold mb-3 text-white/80">Vacation / Out of Office</h3>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/26-vacation-settings.png" alt="Vacation settings" loading="lazy">
+        </div>
+      </div>
+
+      <div class="glass-card p-5 reveal reveal-delay-3">
+        <h3 class="text-sm font-semibold mb-3 text-white/80">Folder Colors</h3>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/08-folder-context-menu.png" alt="Folder context menu with colors" loading="lazy">
+        </div>
+      </div>
+    </div>
+
+    <!-- Dark mode + Keyboard shortcuts -->
+    <div class="grid md:grid-cols-2 gap-8 mt-8">
+      <div class="glass-card p-6 reveal reveal-delay-1">
+        <h3 class="text-lg font-semibold mb-3">Dark Mode</h3>
+        <p class="text-white/50 text-sm mb-4">A gorgeous dark theme that's easy on the eyes, day or night.</p>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/03-dark-mode.png" alt="Dark mode" loading="lazy">
+        </div>
+      </div>
+
+      <div class="glass-card p-6 reveal reveal-delay-2">
+        <h3 class="text-lg font-semibold mb-3">Keyboard Shortcuts</h3>
+        <p class="text-white/50 text-sm mb-4">Navigate your entire inbox without touching the mouse. Gmail-style shortcuts built in.</p>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dot browser-dot-red"></div>
+            <div class="browser-dot browser-dot-yellow"></div>
+            <div class="browser-dot browser-dot-green"></div>
+          </div>
+          <img src="screenshots/19-keyboard-shortcuts.png" alt="Keyboard shortcuts" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- MOBILE -->
+<!-- ============================================================ -->
+<section id="mobile" class="section-gradient py-32 px-6">
+  <div class="max-w-7xl mx-auto">
+    <div class="grid lg:grid-cols-2 gap-16 items-center">
+      <div class="reveal">
+        <span class="feature-badge">Responsive</span>
+        <h2 class="text-4xl md:text-5xl font-800 mt-6 mb-6 gradient-text">Beautiful on<br>every screen</h2>
+        <p class="text-lg text-white/50 leading-relaxed mb-6">
+          Fully responsive design that adapts seamlessly from desktop to tablet to phone. Every feature works perfectly on any device — no native app required.
+        </p>
+        <ul class="feature-list space-y-3 text-white/50">
+          <li>Adaptive layout for any screen size</li>
+          <li>Touch-optimized interactions</li>
+          <li>Progressive Web App support</li>
+          <li>Works offline with service workers</li>
+        </ul>
+      </div>
+      <div class="reveal reveal-delay-2 flex justify-center">
+        <div class="mobile-frame">
+          <img src="screenshots/22-mobile-layout.png" alt="Mobile responsive layout" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- TECH STACK -->
+<!-- ============================================================ -->
+<section id="tech" class="section-accent py-32 px-6">
+  <div class="max-w-6xl mx-auto text-center">
+    <div class="reveal">
+      <span class="feature-badge">Under the Hood</span>
+      <h2 class="text-4xl md:text-5xl font-800 mt-6 mb-4 gradient-text">Built on modern foundations</h2>
+      <p class="text-lg text-white/50 max-w-2xl mx-auto mb-12">
+        Massive Mail is built with a modern, high-performance stack designed for speed, reliability, and real-time responsiveness.
+      </p>
+    </div>
+
+    <div class="flex flex-wrap justify-center gap-4 reveal reveal-delay-1">
+      <div class="tech-pill">JMAP Protocol</div>
+      <div class="tech-pill">React 19</div>
+      <div class="tech-pill">Go Backend</div>
+      <div class="tech-pill">Temporal Workflows</div>
+      <div class="tech-pill">WebSocket Push</div>
+      <div class="tech-pill">Stalwart Mail Server</div>
+    </div>
+
+    <div class="grid sm:grid-cols-3 gap-6 mt-16 max-w-4xl mx-auto">
+      <div class="glass-card p-6 reveal reveal-delay-1">
+        <div class="text-3xl font-bold text-purple-400 mb-2">&lt;100ms</div>
+        <div class="text-white/40 text-sm">Average response time</div>
+      </div>
+      <div class="glass-card p-6 reveal reveal-delay-2">
+        <div class="text-3xl font-bold text-purple-400 mb-2">Real-time</div>
+        <div class="text-white/40 text-sm">WebSocket push updates</div>
+      </div>
+      <div class="glass-card p-6 reveal reveal-delay-3">
+        <div class="text-3xl font-bold text-purple-400 mb-2">Open</div>
+        <div class="text-white/40 text-sm">Standards-based (JMAP, CalDAV, CardDAV)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- FOOTER -->
+<!-- ============================================================ -->
+<footer class="border-t border-white/5 py-16 px-6">
+  <div class="max-w-7xl mx-auto flex flex-col items-center gap-6">
+    <div class="flex items-center gap-3">
+      <img src="logo.svg" alt="Massive Mail" class="w-10 h-10">
+      <span class="text-xl font-bold tracking-tight">Massive Mail</span>
+    </div>
+    <p class="text-white/30 text-sm">Built by Massive Hosting</p>
+    <div class="accent-line"></div>
+  </div>
+</footer>
+
+<!-- ============================================================ -->
+<!-- SCRIPTS -->
+<!-- ============================================================ -->
+<script>
+// IntersectionObserver for reveal animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, {
+  threshold: 0.1,
+  rootMargin: '0px 0px -60px 0px'
+});
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Mobile menu toggle
+const menuBtn = document.getElementById('mobile-menu-btn');
+const mobileMenu = document.getElementById('mobile-menu');
+menuBtn.addEventListener('click', () => {
+  mobileMenu.classList.toggle('hidden');
+});
+// Close mobile menu on link click
+mobileMenu.querySelectorAll('a').forEach(a => {
+  a.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+});
+
+// Navbar hide/show on scroll
+let lastScrollY = 0;
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  const currentScrollY = window.scrollY;
+  if (currentScrollY > lastScrollY && currentScrollY > 100) {
+    nav.classList.add('nav-hidden');
+    nav.classList.remove('nav-visible');
+  } else {
+    nav.classList.remove('nav-hidden');
+    nav.classList.add('nav-visible');
+  }
+  lastScrollY = currentScrollY;
+}, { passive: true });
+</script>
+
+</body>
+</html>
