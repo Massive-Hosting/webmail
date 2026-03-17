@@ -277,6 +277,7 @@ export const AICopilot = React.memo(function AICopilot({
   return (
     <div
       className="ai-copilot-panel"
+      data-testid="ai-copilot-panel"
       style={{
         position: "relative",
         width: open ? 360 : 0,
