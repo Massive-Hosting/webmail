@@ -485,6 +485,7 @@ const TimedEventBlock = React.memo(function TimedEventBlock({
 
   return (
     <button
+      data-testid="calendar-event"
       className="absolute rounded px-1 py-0.5 text-left overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
       style={{
         top,
