@@ -194,7 +194,7 @@ function MessageContent({ email }: { email: Email }) {
 
   // Spam status from X-Spam-Status header
   const spamStatus = useMemo(() => {
-    const raw = (email as Record<string, unknown>)["header:X-Spam-Status:asRaw"];
+    const raw = (email as unknown as Record<string, unknown>)["header:X-Spam-Status:asRaw"];
     return parseSpamStatus(raw as string | null);
   }, [email]);
 
