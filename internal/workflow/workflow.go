@@ -422,12 +422,25 @@ type ScheduledSendParams struct {
 	TaskID        string
 }
 
-// ScheduledSendWorkflow sleeps until the scheduled time, then sends the email.
+// ScheduledSendWorkflow sets $scheduled keyword, sleeps until the scheduled time, then sends the email.
 func ScheduledSendWorkflow(ctx workflow.Context, params ScheduledSendParams) error {
 	var a *activity.Activities
+	ctx = workflow.WithActivityOptions(ctx, activityOptions())
+
+	// Set $scheduled keyword on the email so it appears in the Scheduled virtual folder.
+	err := workflow.ExecuteActivity(ctx, a.JMAPBatchUpdate, activity.JMAPBatchUpdateParams{
+		Creds: params.Creds,
+		Updates: map[string]map[string]interface{}{
+			params.EmailID: {
+				"keywords/$scheduled": true,
+			},
+		},
+	}).Get(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("setting scheduled keyword: %w", err)
+	}
 
 	// Publish initial progress.
-	ctx = workflow.WithActivityOptions(ctx, activityOptions())
 	_ = workflow.ExecuteActivity(ctx, a.PublishProgress, activity.ProgressParams{
 		Email:    params.Creds.Email,
 		TaskID:   params.TaskID,
@@ -446,12 +459,21 @@ func ScheduledSendWorkflow(ctx workflow.Context, params ScheduledSendParams) err
 	}
 
 	// Send the email via JMAP EmailSubmission/set.
-	err := workflow.ExecuteActivity(ctx, a.JMAPSendEmail, activity.JMAPSendEmailParams{
+	err = workflow.ExecuteActivity(ctx, a.JMAPSendEmail, activity.JMAPSendEmailParams{
 		Creds:      params.Creds,
 		EmailID:    params.EmailID,
 		IdentityID: params.IdentityID,
 	}).Get(ctx, nil)
 	if err != nil {
+		// Remove $scheduled keyword on failure so the draft is accessible again.
+		_ = workflow.ExecuteActivity(ctx, a.JMAPBatchUpdate, activity.JMAPBatchUpdateParams{
+			Creds: params.Creds,
+			Updates: map[string]map[string]interface{}{
+				params.EmailID: {
+					"keywords/$scheduled": nil,
+				},
+			},
+		}).Get(ctx, nil)
 		// Publish failure.
 		_ = workflow.ExecuteActivity(ctx, a.PublishProgress, activity.ProgressParams{
 			Email:    params.Creds.Email,

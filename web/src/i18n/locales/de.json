@@ -706,5 +706,11 @@
   "action.cancelSend": "Senden abbrechen",
   "action.sendCancelledSchedule": "Geplantes Senden abgebrochen",
   "action.unsnooze": "Zurückstellung aufheben",
-  "action.unsnoozed": "Zurückstellung aufgehoben"
+  "action.unsnoozed": "Zurückstellung aufgehoben",
+  "action.notSpam": "Kein Spam",
+  "action.reportSpam": "Als Spam melden",
+  "spam.flaggedBanner": "Diese Nachricht wurde als Spam markiert (Score {{score}}).",
+  "spam.trainedSpam": "Als Spam gemeldet",
+  "spam.trainedHam": "Als kein Spam markiert",
+  "spam.score": "Spam-Score: {{score}}"
 }

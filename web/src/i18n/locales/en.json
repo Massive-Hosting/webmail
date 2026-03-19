@@ -706,5 +706,11 @@
   "action.cancelSend": "Cancel send",
   "action.sendCancelledSchedule": "Scheduled send cancelled",
   "action.unsnooze": "Unsnooze",
-  "action.unsnoozed": "Email unsnoozed"
+  "action.unsnoozed": "Email unsnoozed",
+  "action.notSpam": "Not spam",
+  "action.reportSpam": "Report spam",
+  "spam.flaggedBanner": "This message was flagged as spam (score {{score}}).",
+  "spam.trainedSpam": "Reported as spam",
+  "spam.trainedHam": "Marked as not spam",
+  "spam.score": "Spam score: {{score}}"
 }

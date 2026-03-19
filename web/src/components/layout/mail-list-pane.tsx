@@ -78,8 +78,8 @@ export function MailListPane({
   const virtualFilter = useMemo(() => {
     if (virtualFolder === "scheduled") return { hasKeyword: "$scheduled" };
     if (virtualFolder === "snoozed") return { hasKeyword: "$snoozed" };
-    // Normal mailbox view: hide snoozed emails
-    return { notKeyword: "$snoozed" };
+    // Normal mailbox view: hide snoozed and scheduled emails
+    return { operator: "AND", conditions: [{ notKeyword: "$snoozed" }, { notKeyword: "$scheduled" }] };
   }, [virtualFolder]);
   const effectiveMailboxId = virtualFolder ? null : selectedMailboxId;
 

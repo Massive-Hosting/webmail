@@ -51,6 +51,7 @@ const EMAIL_FULL_PROPERTIES = [
   "textBody",
   "attachments",
   "headers",
+  "header:X-Spam-Status:asRaw",
 ];
 
 /** Fetch all mailboxes */
@@ -102,10 +103,18 @@ export async function fetchEmails(params: {
     collapseThreads = true,
   } = params;
 
-  const queryFilter: JMAPFilter = {
-    ...(mailboxId ? { inMailbox: mailboxId } : {}),
-    ...filter,
-  };
+  let queryFilter: JMAPFilter;
+  if (filter?.operator && filter?.conditions) {
+    // Compound filter: wrap with inMailbox in an AND if needed
+    queryFilter = mailboxId
+      ? { operator: "AND", conditions: [{ inMailbox: mailboxId }, filter] }
+      : filter;
+  } else {
+    queryFilter = {
+      ...(mailboxId ? { inMailbox: mailboxId } : {}),
+      ...filter,
+    };
+  }
 
   const request: JMAPRequest = {
     using: JMAP_USING,

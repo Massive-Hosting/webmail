@@ -35,7 +35,7 @@ func Start(ctx context.Context, cfg *config.Config, pool *pgxpool.Pool, rdb *red
 	w := worker.New(c, TaskQueue, worker.Options{})
 
 	// Register activities.
-	acts := activity.NewActivities(pool, rdb, log)
+	acts := activity.NewActivities(pool, rdb, log, cfg.SecretEncryptionKey)
 	w.RegisterActivity(acts)
 
 	// Register workflows.

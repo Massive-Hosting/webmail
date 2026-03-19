@@ -9,25 +9,34 @@ import (
 	"net/http"
 	"time"
 
+	"webmail/internal/credcrypt"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 )
 
+// decryptPassword decrypts the encrypted password from credentials.
+func (a *Activities) decryptPassword(creds Credentials) (string, error) {
+	return credcrypt.Decrypt(a.EncryptionKey, creds.EncryptedPassword)
+}
+
 // Activities holds dependencies for Temporal activity implementations.
 type Activities struct {
-	DB     *pgxpool.Pool
-	Valkey *redis.Client
-	Log    zerolog.Logger
-	Client *http.Client
+	DB            *pgxpool.Pool
+	Valkey        *redis.Client
+	Log           zerolog.Logger
+	Client        *http.Client
+	EncryptionKey []byte // AES-256 key for decrypting credentials
 }
 
 // NewActivities creates a new Activities struct.
-func NewActivities(db *pgxpool.Pool, valkey *redis.Client, log zerolog.Logger) *Activities {
+func NewActivities(db *pgxpool.Pool, valkey *redis.Client, log zerolog.Logger, encryptionKey []byte) *Activities {
 	return &Activities{
-		DB:     db,
-		Valkey: valkey,
-		Log:    log.With().Str("component", "activities").Logger(),
+		DB:            db,
+		Valkey:        valkey,
+		Log:           log.With().Str("component", "activities").Logger(),
+		EncryptionKey: encryptionKey,
 		Client: &http.Client{
 			Timeout: 30 * time.Second,
 			Transport: &http.Transport{
@@ -40,11 +49,13 @@ func NewActivities(db *pgxpool.Pool, valkey *redis.Client, log zerolog.Logger) *
 }
 
 // Credentials holds Stalwart connection info for a user.
+// Password is stored as an AES-256-GCM encrypted, base64-encoded string
+// to avoid plaintext credentials in Temporal's persistence store.
 type Credentials struct {
-	Email       string
-	Password    string
-	AccountID   string
-	StalwartURL string
+	Email             string
+	EncryptedPassword string
+	AccountID         string
+	StalwartURL       string
 }
 
 // ProgressParams defines parameters for publishing progress.
@@ -256,6 +267,11 @@ func (a *Activities) JMAPFetchEmailIds(ctx context.Context, params FetchIdsParam
 
 // JMAPFetchEmailBlobs downloads email blobs (RFC 5322 format) for export.
 func (a *Activities) JMAPFetchEmailBlobs(ctx context.Context, params FetchBlobsParams) ([]EmailBlob, error) {
+	password, err := a.decryptPassword(params.Creds)
+	if err != nil {
+		return nil, fmt.Errorf("decrypting credentials: %w", err)
+	}
+
 	// First, get the blobIds for each email
 	request := map[string]interface{}{
 		"using": []string{
@@ -319,7 +335,7 @@ func (a *Activities) JMAPFetchEmailBlobs(ctx context.Context, params FetchBlobsP
 		if err != nil {
 			return nil, fmt.Errorf("creating blob request: %w", err)
 		}
-		req.SetBasicAuth(params.Creds.Email, params.Creds.Password)
+		req.SetBasicAuth(params.Creds.Email, password)
 
 		blobResp, err := a.Client.Do(req)
 		if err != nil {
@@ -344,6 +360,11 @@ func (a *Activities) JMAPFetchEmailBlobs(ctx context.Context, params FetchBlobsP
 
 // JMAPCreateEmails imports emails via JMAP Email/import.
 func (a *Activities) JMAPCreateEmails(ctx context.Context, params CreateEmailsParams) error {
+	password, err := a.decryptPassword(params.Creds)
+	if err != nil {
+		return fmt.Errorf("decrypting credentials: %w", err)
+	}
+
 	for _, msg := range params.Messages {
 		// Upload blob first
 		uploadURL := fmt.Sprintf("%s/jmap/upload/%s/", params.Creds.StalwartURL, params.Creds.AccountID)
@@ -352,7 +373,7 @@ func (a *Activities) JMAPCreateEmails(ctx context.Context, params CreateEmailsPa
 			return fmt.Errorf("creating upload request: %w", err)
 		}
 		req.Header.Set("Content-Type", "message/rfc822")
-		req.SetBasicAuth(params.Creds.Email, params.Creds.Password)
+		req.SetBasicAuth(params.Creds.Email, password)
 
 		uploadResp, err := a.Client.Do(req)
 		if err != nil {
@@ -411,6 +432,11 @@ func (a *Activities) doJMAPRequest(ctx context.Context, creds Credentials, reque
 
 // doJMAPRequestWithResponse sends a JMAP request and returns the response body.
 func (a *Activities) doJMAPRequestWithResponse(ctx context.Context, creds Credentials, request interface{}) ([]byte, error) {
+	password, err := a.decryptPassword(creds)
+	if err != nil {
+		return nil, fmt.Errorf("decrypting credentials: %w", err)
+	}
+
 	body, err := json.Marshal(request)
 	if err != nil {
 		return nil, fmt.Errorf("marshaling JMAP request: %w", err)
@@ -423,7 +449,7 @@ func (a *Activities) doJMAPRequestWithResponse(ctx context.Context, creds Creden
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.SetBasicAuth(creds.Email, creds.Password)
+	req.SetBasicAuth(creds.Email, password)
 
 	resp, err := a.Client.Do(req)
 	if err != nil {

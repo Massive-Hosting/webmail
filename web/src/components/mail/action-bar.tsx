@@ -7,6 +7,7 @@ import {
   Archive,
   FolderInput,
   AlertTriangle,
+  ShieldCheck,
   Reply,
   ReplyAll,
   Forward,
@@ -52,6 +53,7 @@ export interface ActionBarProps {
   onArchive: (emailIds: string[]) => void;
   onMoveToFolder: (emailIds: string[], targetMailboxId: string) => void;
   onJunk: (emailIds: string[]) => void;
+  onNotSpam: (emailIds: string[]) => void;
   onReply: (emailItem: EmailListItem) => void;
   onReplyAll: (emailItem: EmailListItem) => void;
   onForward: (emailItem: EmailListItem) => void;
@@ -73,6 +75,7 @@ export const ActionBar = React.memo(function ActionBar({
   onArchive,
   onMoveToFolder,
   onJunk,
+  onNotSpam,
   onReply,
   onReplyAll,
   onForward,
@@ -121,6 +124,10 @@ export const ActionBar = React.memo(function ActionBar({
   const handleJunk = useCallback(() => {
     if (hasSelection) onJunk(selectedIds);
   }, [hasSelection, selectedIds, onJunk]);
+
+  const handleNotSpam = useCallback(() => {
+    if (hasSelection) onNotSpam(selectedIds);
+  }, [hasSelection, selectedIds, onNotSpam]);
 
   const handleToggleRead = useCallback(() => {
     if (hasSelection) onMarkRead(selectedIds, !allRead);
@@ -322,13 +329,23 @@ export const ActionBar = React.memo(function ActionBar({
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
 
-        <ActionBarButton
-          icon={<AlertTriangle size={18} />}
-          label={t("action.junk")}
-          tooltip={t("action.markAsJunk")}
-          onClick={handleJunk}
-          disabled={!hasSelection}
-        />
+        {currentMailboxRole === "junk" ? (
+          <ActionBarButton
+            icon={<ShieldCheck size={18} />}
+            label={t("action.notSpam")}
+            tooltip={t("action.notSpam")}
+            onClick={handleNotSpam}
+            disabled={!hasSelection}
+          />
+        ) : (
+          <ActionBarButton
+            icon={<AlertTriangle size={18} />}
+            label={t("action.junk")}
+            tooltip={t("action.markAsJunk")}
+            onClick={handleJunk}
+            disabled={!hasSelection}
+          />
+        )}
 
         {/* Reply actions — only when a single message is open in the reading pane */}
         {showReplyActions && (

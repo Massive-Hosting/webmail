@@ -115,13 +115,10 @@ func TestLoadMissingSecretKey(t *testing.T) {
 	setEnv(t, "WEBMAIL_CORE_API_URL", "http://core:8090")
 	setEnv(t, "WEBMAIL_API_KEY", "test-api-key")
 
-	// SECRET_ENCRYPTION_KEY is now optional (sessions are backed by Valkey).
-	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if cfg.SecretEncryptionKey != nil {
-		t.Errorf("expected nil SecretEncryptionKey, got %v", cfg.SecretEncryptionKey)
+	// SECRET_ENCRYPTION_KEY is required for encrypting credentials in Temporal workflows.
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error for missing SECRET_ENCRYPTION_KEY")
 	}
 }
 

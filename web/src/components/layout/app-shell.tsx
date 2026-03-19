@@ -23,6 +23,7 @@ import { useMessages } from "@/hooks/use-messages.ts";
 import { useMessage } from "@/hooks/use-message.ts";
 import { useSearch } from "@/hooks/use-search.ts";
 import { fetchEmail, fetchIdentities } from "@/api/mail.ts";
+import { trainSpam } from "@/api/spam.ts";
 import { useQuery } from "@tanstack/react-query";
 import { Toaster, toast } from "sonner";
 import { WifiOff, ArrowLeft } from "lucide-react";
@@ -100,8 +101,8 @@ export function AppShell() {
   const virtualFilter = useMemo(() => {
     if (virtualFolder === "scheduled") return { hasKeyword: "$scheduled" };
     if (virtualFolder === "snoozed") return { hasKeyword: "$snoozed" };
-    // Normal mailbox view: hide snoozed emails
-    return { notKeyword: "$snoozed" };
+    // Normal mailbox view: hide snoozed and scheduled emails
+    return { operator: "AND", conditions: [{ notKeyword: "$snoozed" }, { notKeyword: "$scheduled" }] };
   }, [virtualFolder]);
   const effectiveMailboxId = virtualFolder ? null : selectedMailboxId;
 
@@ -361,6 +362,8 @@ export function AppShell() {
 
   const handleJunk = useCallback(async (emailIds: string[]) => {
     if (junkMailbox && selectedMailboxId) {
+      // Train as spam (fire-and-forget)
+      trainSpam(emailIds, "spam").catch(() => {});
       if (emailIds.length > bulkThreshold) {
         await startBulkMove(emailIds, selectedMailboxId, junkMailbox.id);
       } else {
@@ -368,6 +371,20 @@ export function AppShell() {
       }
     }
   }, [junkMailbox, selectedMailboxId, moveEmails, bulkThreshold, startBulkMove]);
+
+  const inboxMailbox = findByRole("inbox");
+
+  const handleNotSpam = useCallback(async (emailIds: string[]) => {
+    if (inboxMailbox && selectedMailboxId) {
+      // Train as ham (fire-and-forget)
+      trainSpam(emailIds, "ham").catch(() => {});
+      if (emailIds.length > bulkThreshold) {
+        await startBulkMove(emailIds, selectedMailboxId, inboxMailbox.id);
+      } else {
+        moveEmails(emailIds, selectedMailboxId, inboxMailbox.id);
+      }
+    }
+  }, [inboxMailbox, selectedMailboxId, moveEmails, bulkThreshold, startBulkMove]);
 
   const handleMoveToFolder = useCallback(async (emailIds: string[], targetMailboxId: string) => {
     if (selectedMailboxId) {
@@ -558,6 +575,7 @@ export function AppShell() {
               onArchive={handleArchive}
               onMoveToFolder={handleMoveToFolder}
               onJunk={handleJunk}
+              onNotSpam={handleNotSpam}
               onReply={handleReply}
               onReplyAll={handleReplyAll}
               onForward={handleForward}

@@ -176,7 +176,9 @@ func (m *mockTemporalClient) WorkerDeploymentClient() client.WorkerDeploymentCli
 func (m *mockTemporalClient) Close()                                                   {}
 
 func newTestTaskHandler(tc *mockTemporalClient) *TaskHandler {
-	return NewTaskHandler(tc, zerolog.Nop())
+	// Test encryption key (32 bytes).
+	testKey := []byte("0123456789abcdef0123456789abcdef")
+	return NewTaskHandler(tc, testKey, zerolog.Nop())
 }
 
 func TestBulkMoveValidRequest(t *testing.T) {

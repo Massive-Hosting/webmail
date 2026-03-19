@@ -706,5 +706,11 @@
   "action.cancelSend": "Avbryt sending",
   "action.sendCancelledSchedule": "Planlagt sending avbrutt",
   "action.unsnooze": "Fjern utsettelse",
-  "action.unsnoozed": "Utsettelse fjernet"
+  "action.unsnoozed": "Utsettelse fjernet",
+  "action.notSpam": "Ikke spam",
+  "action.reportSpam": "Rapporter spam",
+  "spam.flaggedBanner": "Denne meldingen ble flagget som spam (score {{score}}).",
+  "spam.trainedSpam": "Rapportert som spam",
+  "spam.trainedHam": "Merket som ikke-spam",
+  "spam.score": "Spam-score: {{score}}"
 }

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"webmail/internal/activity"
+	"webmail/internal/credcrypt"
 	"webmail/internal/middleware"
 	"webmail/internal/worker"
 	"webmail/internal/workflow"
@@ -19,15 +20,17 @@ import (
 
 // TaskHandler handles API endpoints for triggering and querying Temporal workflows.
 type TaskHandler struct {
-	temporal client.Client
-	log      zerolog.Logger
+	temporal      client.Client
+	encryptionKey []byte
+	log           zerolog.Logger
 }
 
 // NewTaskHandler creates a new task handler.
-func NewTaskHandler(temporal client.Client, log zerolog.Logger) *TaskHandler {
+func NewTaskHandler(temporal client.Client, encryptionKey []byte, log zerolog.Logger) *TaskHandler {
 	return &TaskHandler{
-		temporal: temporal,
-		log:      log.With().Str("component", "task-handler").Logger(),
+		temporal:      temporal,
+		encryptionKey: encryptionKey,
+		log:           log.With().Str("component", "task-handler").Logger(),
 	}
 }
 
@@ -46,11 +49,16 @@ func (h *TaskHandler) credsFromSession(r *http.Request) *activity.Credentials {
 	if sess == nil {
 		return nil
 	}
+	encryptedPw, err := credcrypt.Encrypt(h.encryptionKey, sess.Password)
+	if err != nil {
+		h.log.Error().Err(err).Msg("failed to encrypt credentials for workflow")
+		return nil
+	}
 	return &activity.Credentials{
-		Email:       sess.Email,
-		Password:    sess.Password,
-		AccountID:   sess.AccountID,
-		StalwartURL: sess.StalwartURL,
+		Email:             sess.Email,
+		EncryptedPassword: encryptedPw,
+		AccountID:         sess.AccountID,
+		StalwartURL:       sess.StalwartURL,
 	}
 }
 

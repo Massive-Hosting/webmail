@@ -57,8 +57,8 @@ func Load() (*Config, error) {
 		}
 	}
 
-	// Parse secret encryption key (hex-encoded 32 bytes) — optional,
-	// no longer required for sessions (now backed by Valkey).
+	// Parse secret encryption key (hex-encoded 32 bytes) — required for
+	// encrypting credentials stored in Temporal workflow state.
 	if keyHex := os.Getenv("SECRET_ENCRYPTION_KEY"); keyHex != "" {
 		key, err := hex.DecodeString(keyHex)
 		if err != nil {
@@ -76,6 +76,9 @@ func Load() (*Config, error) {
 	}
 	if cfg.CoreAPIKey == "" {
 		return nil, errors.New("WEBMAIL_API_KEY is required")
+	}
+	if len(cfg.SecretEncryptionKey) == 0 {
+		return nil, errors.New("SECRET_ENCRYPTION_KEY is required")
 	}
 
 	return cfg, nil

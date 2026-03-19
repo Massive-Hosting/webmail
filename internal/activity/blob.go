@@ -25,6 +25,11 @@ type UploadBlobResult struct {
 
 // UploadBlob uploads data to Stalwart as a blob and returns the blob ID.
 func (a *Activities) UploadBlob(ctx context.Context, params UploadBlobParams) (*UploadBlobResult, error) {
+	password, err := a.decryptPassword(params.Creds)
+	if err != nil {
+		return nil, fmt.Errorf("decrypting credentials: %w", err)
+	}
+
 	uploadURL := fmt.Sprintf("%s/jmap/upload/%s/", params.Creds.StalwartURL, params.Creds.AccountID)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, uploadURL, bytes.NewReader(params.Data))
@@ -32,7 +37,7 @@ func (a *Activities) UploadBlob(ctx context.Context, params UploadBlobParams) (*
 		return nil, fmt.Errorf("creating upload request: %w", err)
 	}
 	req.Header.Set("Content-Type", params.ContentType)
-	req.SetBasicAuth(params.Creds.Email, params.Creds.Password)
+	req.SetBasicAuth(params.Creds.Email, password)
 
 	resp, err := a.Client.Do(req)
 	if err != nil {
@@ -61,6 +66,11 @@ type DownloadBlobParams struct {
 
 // DownloadBlob downloads a blob from Stalwart.
 func (a *Activities) DownloadBlob(ctx context.Context, params DownloadBlobParams) ([]byte, error) {
+	password, err := a.decryptPassword(params.Creds)
+	if err != nil {
+		return nil, fmt.Errorf("decrypting credentials: %w", err)
+	}
+
 	downloadURL := fmt.Sprintf("%s/jmap/download/%s/%s/",
 		params.Creds.StalwartURL, params.Creds.AccountID, params.BlobID)
 
@@ -68,7 +78,7 @@ func (a *Activities) DownloadBlob(ctx context.Context, params DownloadBlobParams
 	if err != nil {
 		return nil, fmt.Errorf("creating download request: %w", err)
 	}
-	req.SetBasicAuth(params.Creds.Email, params.Creds.Password)
+	req.SetBasicAuth(params.Creds.Email, password)
 
 	resp, err := a.Client.Do(req)
 	if err != nil {

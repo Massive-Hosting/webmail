@@ -35,6 +35,7 @@ import {
   File,
   FileImage,
   FileArchive,
+  AlertTriangle,
   Info,
   Printer,
   UserPlus,
@@ -52,6 +53,9 @@ import { useAIEnabled } from "@/hooks/use-ai-enabled.ts";
 import { useTranslation } from "react-i18next";
 import { EmailPropertiesDialog } from "@/components/mail/email-properties-dialog.tsx";
 import { printEmail } from "@/lib/print.ts";
+import { parseSpamStatus } from "@/lib/spam.ts";
+import { useMailboxes } from "@/hooks/use-mailboxes.ts";
+import { trainSpam } from "@/api/spam.ts";
 
 interface MessageViewProps {
   emailId: string;
@@ -188,6 +192,36 @@ function MessageContent({ email }: { email: Email }) {
 
   const hasPGPContent = pgpDetected?.hasEncrypted || pgpDetected?.hasSigned || pgpDetected?.hasCleartextSigned;
 
+  // Spam status from X-Spam-Status header
+  const spamStatus = useMemo(() => {
+    const raw = (email as Record<string, unknown>)["header:X-Spam-Status:asRaw"];
+    return parseSpamStatus(raw as string | null);
+  }, [email]);
+
+  const selectedMailboxId = useUIStore((s) => s.selectedMailboxId);
+  const { findByRole } = useMailboxes();
+  const isInJunk = useMemo(() => {
+    const junk = findByRole("junk");
+    return junk ? !!email.mailboxIds[junk.id] : false;
+  }, [email.mailboxIds, findByRole]);
+
+  const handleNotSpamBanner = useCallback(async () => {
+    const inbox = findByRole("inbox");
+    if (!inbox) return;
+    trainSpam([email.id], "ham").catch(() => {});
+    // Move via JMAP — reuse updateEmails to move from junk to inbox
+    const { updateEmails } = await import("@/api/mail.ts");
+    const junk = findByRole("junk");
+    if (junk) {
+      await updateEmails({
+        [email.id]: {
+          [`mailboxIds/${junk.id}`]: null,
+          [`mailboxIds/${inbox.id}`]: true,
+        },
+      });
+    }
+  }, [email.id, findByRole]);
+
   // PGP message hook for decryption/verification
   const pgpMessage = usePGPMessage(
     hasPGPContent ? (rawBodyText ?? bodyHtml ?? null) : null,
@@ -291,6 +325,24 @@ function MessageContent({ email }: { email: Email }) {
             </div>
           </div>
         </div>
+
+        {/* Spam banner — shown when email is in Junk folder with spam status */}
+        {isInJunk && spamStatus && (
+          <div className="message-view__images-bar" style={{ backgroundColor: "var(--color-bg-warning, #fef3cd)", borderColor: "var(--color-border-warning, #ffc107)" }}>
+            <AlertTriangle size={14} />
+            <span>{t("spam.flaggedBanner", { score: spamStatus.score.toFixed(1) })}</span>
+            <button onClick={handleNotSpamBanner} className="message-view__images-bar-action">
+              {t("action.notSpam")}
+            </button>
+          </div>
+        )}
+
+        {/* Spam score badge — shown when not in junk but has spam data */}
+        {!isInJunk && spamStatus && (
+          <div style={{ padding: "2px 8px", fontSize: "11px", color: "var(--color-text-tertiary)" }}>
+            {t("spam.score", { score: spamStatus.score.toFixed(1) })}
+          </div>
+        )}
 
         {/* External images bar */}
         {sanitized?.hasExternalImages && !showExternalImages && (

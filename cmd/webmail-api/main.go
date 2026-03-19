@@ -101,6 +101,7 @@ func main() {
 	valkeySubscriber := ws.NewValkeySubscriber(rdb)
 	progressRelay := ws.NewProgressRelay(hub, valkeySubscriber, log)
 	wsHandler := handler.NewWebSocketHandler(hub, progressRelay, log)
+	spamHandler := handler.NewSpamHandler(log)
 	healthHandler := handler.NewHealthHandler(pool)
 
 	// Start Temporal worker (in-process).
@@ -114,7 +115,7 @@ func main() {
 	// Task handler (only if Temporal connected).
 	var taskHandler *handler.TaskHandler
 	if temporalClient != nil {
-		taskHandler = handler.NewTaskHandler(temporalClient, log)
+		taskHandler = handler.NewTaskHandler(temporalClient, cfg.SecretEncryptionKey, log)
 	}
 
 	// AI handler (only if enabled).
@@ -179,6 +180,9 @@ func main() {
 			r.Put("/pgp/key", pgpHandler.PutKey)
 			r.Delete("/pgp/key", pgpHandler.DeleteKey)
 			r.Get("/pgp/lookup", pgpHandler.Lookup)
+
+			// Spam training.
+			r.Post("/spam/train", spamHandler.Train)
 
 			// WebSocket.
 			r.Get("/ws", wsHandler.Upgrade)
