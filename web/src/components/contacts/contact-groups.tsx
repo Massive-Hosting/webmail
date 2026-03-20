@@ -1,7 +1,7 @@
 /** Contact groups (address books) sidebar section */
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { Users, Plus, Check, X } from "lucide-react";
+import { Users, Plus, Check, X, Share2 } from "lucide-react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import type { AddressBook } from "@/types/contacts.ts";
 import { useTranslation } from "react-i18next";
@@ -15,6 +15,7 @@ interface ContactGroupsProps {
   onCreateGroup: (name: string) => void;
   onRenameGroup: (id: string, name: string) => void;
   onDeleteGroup: (id: string) => void;
+  onShareGroup?: (book: AddressBook) => void;
 }
 
 export const ContactGroups = React.memo(function ContactGroups({
@@ -26,6 +27,7 @@ export const ContactGroups = React.memo(function ContactGroups({
   onCreateGroup,
   onRenameGroup,
   onDeleteGroup,
+  onShareGroup,
 }: ContactGroupsProps) {
   const { t } = useTranslation();
   const [isCreating, setIsCreating] = useState(false);
@@ -116,6 +118,8 @@ export const ContactGroups = React.memo(function ContactGroups({
           onClick={() => onSelectGroup(book.id)}
           onRename={(name) => onRenameGroup(book.id, name)}
           onDelete={book.isDefault ? undefined : () => onDeleteGroup(book.id)}
+          onShare={onShareGroup ? () => onShareGroup(book) : undefined}
+          isShared={!!book.shareWith && Object.keys(book.shareWith).length > 0}
         />
       ))}
     </div>
@@ -130,6 +134,8 @@ function GroupItem({
   onClick,
   onRename,
   onDelete,
+  onShare,
+  isShared,
 }: {
   label: string;
   icon?: React.ReactNode;
@@ -138,6 +144,8 @@ function GroupItem({
   onClick: () => void;
   onRename?: (name: string) => void;
   onDelete?: () => void;
+  onShare?: () => void;
+  isShared?: boolean;
 }) {
   const { t } = useTranslation();
   const [isRenaming, setIsRenaming] = useState(false);
@@ -187,7 +195,7 @@ function GroupItem({
     );
   }
 
-  const hasContextMenu = onRename || onDelete;
+  const hasContextMenu = onRename || onDelete || onShare;
 
   const content = (
     <div
@@ -210,6 +218,9 @@ function GroupItem({
       >
         {label}
       </span>
+      {isShared && (
+        <Users size={11} style={{ color: "var(--color-text-tertiary)", flexShrink: 0 }} />
+      )}
       <span
         className="text-xs tabular-nums"
         style={{ color: "var(--color-text-tertiary)" }}
@@ -240,6 +251,19 @@ function GroupItem({
             zIndex: 50,
           }}
         >
+          {onShare && (
+            <ContextMenu.Item
+              className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+              style={{
+                color: "var(--color-text-primary)",
+                borderRadius: "var(--radius-sm)",
+              }}
+              onSelect={onShare}
+            >
+              <Share2 size={13} />
+              {t("folder.shareFolder")}
+            </ContextMenu.Item>
+          )}
           {onRename && (
             <ContextMenu.Item
               className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"

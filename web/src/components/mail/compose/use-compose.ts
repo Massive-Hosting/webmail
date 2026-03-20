@@ -11,11 +11,6 @@ import {
 import type { Email, Identity, EmailAddress } from "@/types/mail.ts";
 import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 
-/** Escape HTML special characters to prevent injection in composed templates. */
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
 interface OpenComposeOptions {
   mode: ComposeMode;
   email?: Email | null;

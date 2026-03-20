@@ -60,10 +60,25 @@ export function useMailboxes() {
     [sortedMailboxes],
   );
 
-  /** Find a mailbox by role */
+  /** Find a mailbox by role, with fallback by name for common roles */
   const findByRole = useCallback(
     (role: MailboxRole): Mailbox | undefined => {
-      return query.data?.find((m) => m.role === role);
+      const byRole = query.data?.find((m) => m.role === role);
+      if (byRole) return byRole;
+      // Stalwart sometimes creates standard folders without setting the role.
+      // Fall back to name matching for known roles.
+      const nameMap: Partial<Record<string, string[]>> = {
+        archive: ["archive"],
+        trash: ["trash", "deleted items"],
+        junk: ["junk", "junk mail", "spam"],
+        sent: ["sent", "sent items", "sent mail"],
+        drafts: ["drafts"],
+      };
+      const names = nameMap[role];
+      if (names) {
+        return query.data?.find((m) => m.role === null && names.includes(m.name.toLowerCase()));
+      }
+      return undefined;
     },
     [query.data],
   );

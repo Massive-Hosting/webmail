@@ -57,6 +57,20 @@ export interface AddressBook {
   id: string;
   name: string;
   isDefault: boolean;
+  shareWith?: Record<string, AddressBookSharePermission> | null;
+  myRights?: AddressBookRights;
+}
+
+export interface AddressBookSharePermission {
+  mayReadItems: boolean;
+  mayUpdateItems?: boolean;
+  mayDelete?: boolean;
+}
+
+export interface AddressBookRights {
+  mayReadItems: boolean;
+  mayUpdateItems: boolean;
+  mayDelete: boolean;
 }
 
 /** Contact data for create/update (without id) */

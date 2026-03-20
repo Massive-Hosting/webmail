@@ -12,7 +12,8 @@ import {
   useAddressBooks,
   getContactDisplayName,
 } from "@/hooks/use-contacts.ts";
-import type { Contact, ContactCreate } from "@/types/contacts.ts";
+import type { Contact, ContactCreate, AddressBook } from "@/types/contacts.ts";
+import { ShareAddressBookDialog } from "./share-addressbook-dialog.tsx";
 import { EmptyState } from "@/components/ui/empty-state.tsx";
 import { importVCards, exportVCards } from "./import-export.tsx";
 import { toast } from "sonner";
@@ -52,6 +53,7 @@ export const ContactsPage = React.memo(function ContactsPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [initialEmail, setInitialEmail] = useState<string | undefined>(undefined);
   const [initialName, setInitialName] = useState<string | undefined>(undefined);
+  const [shareAddressBook, setShareAddressBook] = useState<AddressBook | null>(null);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -251,6 +253,7 @@ export const ContactsPage = React.memo(function ContactsPage() {
           onCreateGroup={createAddressBook}
           onRenameGroup={updateAddressBook}
           onDeleteGroup={deleteAddressBook}
+          onShareGroup={setShareAddressBook}
         />
       </div>
 
@@ -331,6 +334,15 @@ export const ContactsPage = React.memo(function ContactsPage() {
             }
             setContextMenu(null);
           }}
+        />
+      )}
+
+      {/* Share address book dialog */}
+      {shareAddressBook && (
+        <ShareAddressBookDialog
+          open={!!shareAddressBook}
+          onOpenChange={(open) => { if (!open) setShareAddressBook(null); }}
+          addressBook={shareAddressBook}
         />
       )}
     </div>

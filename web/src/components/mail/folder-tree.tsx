@@ -21,6 +21,7 @@ import {
   Upload,
   CalendarClock,
   Clock,
+  Users,
 } from "lucide-react";
 import type { VirtualFolder } from "@/stores/ui-store.ts";
 import * as ContextMenu from "@radix-ui/react-context-menu";
@@ -30,6 +31,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useTasks } from "@/hooks/use-tasks.ts";
 import { useSettingsStore } from "@/stores/settings-store.ts";
+import { ShareMailboxDialog } from "@/components/mail/share-mailbox-dialog.tsx";
 
 const FOLDER_COLORS = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16"];
 
@@ -56,6 +58,7 @@ export const FolderTree = React.memo(function FolderTree() {
   const { startExportMailbox, startImportMailbox } = useTasks();
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importTargetMailboxId, setImportTargetMailboxId] = useState<string | null>(null);
+  const [shareMailbox, setShareMailbox] = useState<Mailbox | null>(null);
 
   const toggleExpanded = useCallback((id: string) => {
     setExpandedFolders((prev) => {
@@ -238,6 +241,7 @@ export const FolderTree = React.memo(function FolderTree() {
           onDropEmails={handleDropEmails}
           onExportFolder={handleExportFolder}
           onImportToFolder={handleImportToFolder}
+          onShare={setShareMailbox}
         />
       ))}
 
@@ -280,6 +284,7 @@ export const FolderTree = React.memo(function FolderTree() {
           onDropEmails={handleDropEmails}
           onExportFolder={handleExportFolder}
           onImportToFolder={handleImportToFolder}
+          onShare={setShareMailbox}
           depth={0}
         />
       ))}
@@ -326,6 +331,15 @@ export const FolderTree = React.memo(function FolderTree() {
           {t("folder.newFolder")}
         </button>
       )}
+
+      {/* Share folder dialog */}
+      {shareMailbox && (
+        <ShareMailboxDialog
+          open={!!shareMailbox}
+          onOpenChange={(open) => { if (!open) setShareMailbox(null); }}
+          mailbox={shareMailbox}
+        />
+      )}
     </div>
   );
 });
@@ -348,6 +362,7 @@ const FolderItem = React.memo(function FolderItem({
   onDropEmails,
   onExportFolder,
   onImportToFolder,
+  onShare,
 }: {
   mailbox: Mailbox;
   isActive: boolean;
@@ -365,6 +380,7 @@ const FolderItem = React.memo(function FolderItem({
   onDropEmails?: (emailIds: string[], fromMailboxId: string, toMailboxId: string, folderName: string) => void;
   onExportFolder?: (mailboxId: string) => void;
   onImportToFolder?: (mailboxId: string) => void;
+  onShare?: (mailbox: Mailbox) => void;
 }) {
   const { t } = useTranslation();
   const folderColor = useSettingsStore((s) => s.folderColors[mailbox.id]);
@@ -392,9 +408,9 @@ const FolderItem = React.memo(function FolderItem({
   const handleDragOver = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
+      e.dataTransfer.dropEffect = mailbox.myRights.mayAddItems ? "move" : "none";
     },
-    [],
+    [mailbox.myRights.mayAddItems],
   );
 
   const handleDragEnter = useCallback(
@@ -422,6 +438,7 @@ const FolderItem = React.memo(function FolderItem({
       e.preventDefault();
       dragCounterRef.current = 0;
       setIsDropTarget(false);
+      if (!mailbox.myRights.mayAddItems) return;
       try {
         const data = JSON.parse(e.dataTransfer.getData("text/plain"));
         const emailIds = data.emailIds as string[];
@@ -433,7 +450,7 @@ const FolderItem = React.memo(function FolderItem({
         // Not valid drag data, ignore
       }
     },
-    [mailbox.id, mailbox.name, onDropEmails],
+    [mailbox.id, mailbox.name, mailbox.myRights.mayAddItems, onDropEmails],
   );
 
   const contextMenuContent = (
@@ -522,33 +539,52 @@ const FolderItem = React.memo(function FolderItem({
       </ContextMenu.Sub>
       {!isRoleFolder && (
         <>
-          <ContextMenu.Item
-            className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-            style={{
-              color: "var(--color-text-primary)",
-              borderRadius: "var(--radius-sm)",
-            }}
-            onSelect={() => {
-              setRenameValue(mailbox.name);
-              setIsRenaming(true);
-            }}
-          >
-            {t("folder.rename")}
-          </ContextMenu.Item>
-          <ContextMenu.Separator
-            className="my-1"
-            style={{ borderTop: "1px solid var(--color-border-primary)" }}
-          />
-          <ContextMenu.Item
-            className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-            style={{
-              color: "var(--color-text-danger)",
-              borderRadius: "var(--radius-sm)",
-            }}
-            onSelect={() => onDelete(mailbox.id)}
-          >
-            {t("folder.deleteFolder")}
-          </ContextMenu.Item>
+          {onShare && mailbox.myRights.mayRename && (
+            <ContextMenu.Item
+              className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+              style={{
+                color: "var(--color-text-primary)",
+                borderRadius: "var(--radius-sm)",
+              }}
+              onSelect={() => onShare(mailbox)}
+            >
+              <Users size={14} />
+              {t("folder.shareFolder")}
+            </ContextMenu.Item>
+          )}
+          {mailbox.myRights.mayRename && (
+            <ContextMenu.Item
+              className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+              style={{
+                color: "var(--color-text-primary)",
+                borderRadius: "var(--radius-sm)",
+              }}
+              onSelect={() => {
+                setRenameValue(mailbox.name);
+                setIsRenaming(true);
+              }}
+            >
+              {t("folder.rename")}
+            </ContextMenu.Item>
+          )}
+          {mailbox.myRights.mayDelete && (
+            <>
+              <ContextMenu.Separator
+                className="my-1"
+                style={{ borderTop: "1px solid var(--color-border-primary)" }}
+              />
+              <ContextMenu.Item
+                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+                style={{
+                  color: "var(--color-text-danger)",
+                  borderRadius: "var(--radius-sm)",
+                }}
+                onSelect={() => onDelete(mailbox.id)}
+              >
+                {t("folder.deleteFolder")}
+              </ContextMenu.Item>
+            </>
+          )}
         </>
       )}
       {(mailbox.role === "trash" || mailbox.role === "junk") && (
@@ -709,6 +745,9 @@ const FolderItem = React.memo(function FolderItem({
           <span className={`truncate flex-1 text-left ${mailbox.unreadEmails > 0 ? "font-semibold" : "font-normal"}`}>
             {mailbox.name}
           </span>
+          {mailbox.shareWith && Object.keys(mailbox.shareWith).length > 0 && (
+            <Users size={12} style={{ color: "var(--color-text-tertiary)", flexShrink: 0 }} />
+          )}
           {mailbox.unreadEmails > 0 && (
             <Badge count={mailbox.unreadEmails} />
           )}
@@ -789,6 +828,7 @@ function FolderItemWithChildren({
   onDropEmails,
   onExportFolder,
   onImportToFolder,
+  onShare,
   depth,
 }: {
   mailbox: Mailbox;
@@ -804,6 +844,7 @@ function FolderItemWithChildren({
   onDropEmails?: (emailIds: string[], fromMailboxId: string, toMailboxId: string, folderName: string) => void;
   onExportFolder?: (mailboxId: string) => void;
   onImportToFolder?: (mailboxId: string) => void;
+  onShare?: (mailbox: Mailbox) => void;
   depth: number;
 }) {
   const children = childrenMap.get(mailbox.id) ?? [];
@@ -828,6 +869,7 @@ function FolderItemWithChildren({
         onDropEmails={onDropEmails}
         onExportFolder={onExportFolder}
         onImportToFolder={onImportToFolder}
+        onShare={onShare}
       />
       {hasChildren && isExpanded && children.map((child) => (
         <FolderItemWithChildren
@@ -845,6 +887,7 @@ function FolderItemWithChildren({
           onDropEmails={onDropEmails}
           onExportFolder={onExportFolder}
           onImportToFolder={onImportToFolder}
+          onShare={onShare}
           depth={depth + 1}
         />
       ))}

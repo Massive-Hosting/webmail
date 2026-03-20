@@ -184,6 +184,37 @@ export const MessageListItem = React.memo(
                 />
               </button>
             </div>
+
+            {/* Quick action overlay on hover (desktop) */}
+            <div className="message-list-item__quick-actions">
+              {onArchive && (
+                <button
+                  className="message-list-item__quick-action-btn"
+                  onClick={(e) => { e.stopPropagation(); onArchive([email.id]); }}
+                  title={t("action.archive")}
+                >
+                  <Archive size={14} />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  className="message-list-item__quick-action-btn"
+                  onClick={(e) => { e.stopPropagation(); onDelete([email.id]); }}
+                  title={t("action.delete")}
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+              {onMarkRead && (
+                <button
+                  className="message-list-item__quick-action-btn"
+                  onClick={(e) => { e.stopPropagation(); onMarkRead([email.id], unread); }}
+                  title={unread ? t("action.markAsRead") : t("action.markAsUnread")}
+                >
+                  {unread ? <MailOpen size={14} /> : <Mail size={14} />}
+                </button>
+              )}
+            </div>
           </div>
         </ContextMenu.Trigger>
 

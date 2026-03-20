@@ -64,6 +64,19 @@ export interface Mailbox {
   totalThreads: number;
   unreadThreads: number;
   myRights: MailboxRights;
+  shareWith?: Record<string, MailboxSharePermission> | null;
+}
+
+export interface MailboxSharePermission {
+  mayReadItems: boolean;
+  mayAddItems?: boolean;
+  mayRemoveItems?: boolean;
+  maySetSeen?: boolean;
+  maySetKeywords?: boolean;
+  mayCreateChild?: boolean;
+  mayRename?: boolean;
+  mayDelete?: boolean;
+  maySubmit?: boolean;
 }
 
 export type MailboxRole =

@@ -832,6 +832,7 @@ export const ComposePanel = React.memo(function ComposePanel({
           <div className="compose-dialog__cc-toggles">
             <button
               type="button"
+              tabIndex={-1}
               className={`compose-dialog__cc-toggle-btn ${draft.showCc ? "compose-dialog__cc-toggle-btn--active" : ""}`}
               onClick={() => {
                 if (draft.showCc && draft.cc.length === 0) {
@@ -845,6 +846,7 @@ export const ComposePanel = React.memo(function ComposePanel({
             </button>
             <button
               type="button"
+              tabIndex={-1}
               className={`compose-dialog__cc-toggle-btn ${draft.showBcc ? "compose-dialog__cc-toggle-btn--active" : ""}`}
               onClick={() => {
                 if (draft.showBcc && draft.bcc.length === 0) {

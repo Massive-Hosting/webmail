@@ -46,12 +46,16 @@ const ContactsPage = lazy(() =>
 const CalendarPage = lazy(() =>
   import("@/components/calendar/calendar-page.tsx").then((m) => ({ default: m.CalendarPage }))
 );
+const CommandPalette = lazy(() =>
+  import("@/components/ui/command-palette.tsx").then((m) => ({ default: m.CommandPalette }))
+);
 
 export function AppShell() {
   const { t } = useTranslation();
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   const aiEnabled = useAIEnabled();
@@ -142,6 +146,37 @@ export function AppShell() {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, [setIsMobile]);
+
+  // Command palette (Cmd+K / Ctrl+K)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setShowCommandPalette((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  const handleCommandAction = useCallback((action: string) => {
+    switch (action) {
+      case "compose":
+        openCompose({ mode: "new", identity: defaultIdentity });
+        break;
+      case "search":
+        document.getElementById("search-input")?.focus();
+        break;
+      case "settings":
+        setShowSettings(true);
+        break;
+      case "theme": {
+        const btn = document.querySelector("[data-theme-toggle]") as HTMLButtonElement | null;
+        btn?.click();
+        break;
+      }
+    }
+  }, [openCompose, defaultIdentity]);
 
   // Online/offline detection
   useEffect(() => {
@@ -439,6 +474,15 @@ export function AppShell() {
       {showSettings && (
         <Suspense fallback={<div />}>
           <SettingsDialog open={showSettings} onOpenChange={setShowSettings} />
+        </Suspense>
+      )}
+      {showCommandPalette && (
+        <Suspense fallback={<div />}>
+          <CommandPalette
+            open={showCommandPalette}
+            onOpenChange={setShowCommandPalette}
+            onAction={handleCommandAction}
+          />
         </Suspense>
       )}
     </>

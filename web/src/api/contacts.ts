@@ -647,7 +647,7 @@ export async function fetchAddressBooks(): Promise<AddressBook[]> {
       [
         "AddressBook/get",
         {
-          properties: ["id", "name", "isDefault"],
+          properties: ["id", "name", "isDefault", "shareWith", "myRights"],
         },
         "a0",
       ],
@@ -695,7 +695,7 @@ export async function createAddressBook(name: string): Promise<string> {
 /** Update an address book */
 export async function updateAddressBook(
   addressBookId: string,
-  updates: { name?: string },
+  updates: Record<string, unknown>,
 ): Promise<void> {
   const request: JMAPRequest = {
     using: JMAP_USING,

@@ -65,7 +65,7 @@ export async function fetchMailboxes(): Promise<Mailbox[]> {
           properties: [
             "id", "name", "parentId", "role", "sortOrder",
             "totalEmails", "unreadEmails", "totalThreads", "unreadThreads",
-            "myRights",
+            "myRights", "shareWith",
           ],
         },
         "m0",
@@ -544,7 +544,7 @@ export async function fetchMailboxChanges(
           properties: [
             "id", "name", "parentId", "role", "sortOrder",
             "totalEmails", "unreadEmails", "totalThreads", "unreadThreads",
-            "myRights",
+            "myRights", "shareWith",
           ],
         },
         "g_created",
@@ -560,7 +560,7 @@ export async function fetchMailboxChanges(
           properties: [
             "id", "name", "parentId", "role", "sortOrder",
             "totalEmails", "unreadEmails", "totalThreads", "unreadThreads",
-            "myRights",
+            "myRights", "shareWith",
           ],
         },
         "g_updated",
@@ -606,7 +606,7 @@ export async function fetchBatchedDeltaSync(
   const mailboxProperties = [
     "id", "name", "parentId", "role", "sortOrder",
     "totalEmails", "unreadEmails", "totalThreads", "unreadThreads",
-    "myRights",
+    "myRights", "shareWith",
   ];
 
   const request: JMAPRequest = {

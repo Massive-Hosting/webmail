@@ -645,6 +645,7 @@ function ToolbarButton({
   return (
     <button
       type="button"
+      tabIndex={-1}
       title={label}
       onClick={onClick}
       disabled={disabled}
