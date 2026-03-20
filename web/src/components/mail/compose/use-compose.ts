@@ -11,6 +11,11 @@ import {
 import type { Email, Identity, EmailAddress } from "@/types/mail.ts";
 import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 
+/** Escape HTML special characters to prevent injection in composed templates. */
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 interface OpenComposeOptions {
   mode: ComposeMode;
   email?: Email | null;
@@ -74,11 +79,13 @@ export function useCompose() {
           ? email.subject
           : `Re: ${email.subject}`;
 
-        // Build quoted body
-        const senderDisplay = email.from?.[0]
-          ? `${email.from[0].name ?? email.from[0].email}`
-          : "someone";
-        const date = new Date(email.receivedAt).toLocaleString();
+        // Build quoted body (escape user-controlled values to prevent XSS)
+        const senderDisplay = escapeHtml(
+          email.from?.[0]
+            ? (email.from[0].name ?? email.from[0].email)
+            : "someone",
+        );
+        const date = escapeHtml(new Date(email.receivedAt).toLocaleString());
         const originalBody = getEmailBodyHTML(email);
         bodyHTML = `<hr style="border: none; border-top: 1px solid #ccc; margin: 12px 0 8px 0;"><div class="compose-quoted-text" style="border-left: 4px solid var(--color-border-primary, #d6d3d1); padding-left: 12px; margin-top: 8px; color: var(--color-text-secondary, #78716C);">
 <p style="margin: 0 0 4px 0; font-size: 12px;">On ${date}, ${senderDisplay} wrote:</p>
@@ -103,18 +110,19 @@ ${originalBody}
           ? email.subject
           : `Fwd: ${email.subject}`;
 
-        const senderDisplay = email.from?.[0]
-          ? formatAddr(email.from[0])
-          : "unknown";
-        const toDisplay = email.to?.map(formatAddr).join(", ") ?? "";
-        const date = new Date(email.receivedAt).toLocaleString();
+        const senderDisplay = escapeHtml(
+          email.from?.[0] ? formatAddr(email.from[0]) : "unknown",
+        );
+        const toDisplay = escapeHtml(email.to?.map(formatAddr).join(", ") ?? "");
+        const date = escapeHtml(new Date(email.receivedAt).toLocaleString());
+        const subjectEscaped = escapeHtml(email.subject);
         const originalBody = getEmailBodyHTML(email);
 
         bodyHTML = `<p><br></p><p><br></p><div style="border-top: 1px solid #ccc; padding-top: 12px; margin-top: 16px;">
 <p><strong>---------- Forwarded message ----------</strong></p>
 <p>From: ${senderDisplay}<br>
 Date: ${date}<br>
-Subject: ${email.subject}<br>
+Subject: ${subjectEscaped}<br>
 To: ${toDisplay}</p>
 ${originalBody}
 </div>`;

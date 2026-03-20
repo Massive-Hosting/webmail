@@ -14,15 +14,19 @@ import (
 
 // Store manages sessions in Valkey/Redis.
 type Store struct {
-	rdb    redis.Cmdable
-	maxAge time.Duration
+	rdb           redis.Cmdable
+	maxAge        time.Duration
+	encryptionKey []byte // AES-256 key for encrypting secrets in session data
 }
 
 // NewStore creates a session store backed by the given Redis client.
-func NewStore(rdb redis.Cmdable, maxAgeSeconds int) *Store {
+// The encryptionKey (32 bytes) is used to encrypt sensitive session fields
+// (password, stalwart token) before they are stored in Valkey.
+func NewStore(rdb redis.Cmdable, maxAgeSeconds int, encryptionKey []byte) *Store {
 	return &Store{
-		rdb:    rdb,
-		maxAge: time.Duration(maxAgeSeconds) * time.Second,
+		rdb:           rdb,
+		maxAge:        time.Duration(maxAgeSeconds) * time.Second,
+		encryptionKey: encryptionKey,
 	}
 }
 
@@ -32,13 +36,22 @@ func (s *Store) MaxAge() int {
 }
 
 // Create stores session data in Valkey with a TTL and returns a random token.
+// Sensitive fields are encrypted before storage.
 func (s *Store) Create(ctx context.Context, data *SessionData) (string, error) {
 	token, err := generateToken()
 	if err != nil {
 		return "", fmt.Errorf("generating session token: %w", err)
 	}
 
-	value, err := json.Marshal(data)
+	// Encrypt secrets before persisting — work on a copy to avoid mutating caller's data.
+	stored := *data
+	if len(s.encryptionKey) > 0 {
+		if err := stored.EncryptSecrets(s.encryptionKey); err != nil {
+			return "", fmt.Errorf("encrypting session secrets: %w", err)
+		}
+	}
+
+	value, err := json.Marshal(&stored)
 	if err != nil {
 		return "", fmt.Errorf("marshaling session data: %w", err)
 	}
@@ -66,6 +79,13 @@ func (s *Store) Get(ctx context.Context, token string) (*SessionData, error) {
 	var data SessionData
 	if err := json.Unmarshal(value, &data); err != nil {
 		return nil, fmt.Errorf("unmarshaling session data: %w", err)
+	}
+
+	// Decrypt secrets after retrieval.
+	if len(s.encryptionKey) > 0 {
+		if err := data.DecryptSecrets(s.encryptionKey); err != nil {
+			return nil, fmt.Errorf("decrypting session secrets: %w", err)
+		}
 	}
 
 	// Sliding window: refresh TTL on every read.

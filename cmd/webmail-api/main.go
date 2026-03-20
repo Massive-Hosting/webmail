@@ -77,7 +77,7 @@ func main() {
 	log.Info().Str("url", cfg.ValkeyURL).Msg("valkey connected")
 
 	// Initialize session store backed by Valkey.
-	sessStore := session.NewStore(rdb, cfg.SessionMaxAge)
+	sessStore := session.NewStore(rdb, cfg.SessionMaxAge, cfg.SecretEncryptionKey)
 
 	// Core API client.
 	coreClient := hosting.NewCoreAPIClient(cfg.CoreAPIURL, cfg.CoreAPIKey)

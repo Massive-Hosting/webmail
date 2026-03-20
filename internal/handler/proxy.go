@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"regexp"
+
 	"webmail/internal/middleware"
 
 	"github.com/go-chi/chi/v5"
@@ -34,6 +36,9 @@ func NewProxyHandler(log zerolog.Logger) *ProxyHandler {
 		log: log,
 	}
 }
+
+// validBlobIDPattern validates blob IDs to prevent path traversal.
+var validBlobIDPattern = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
 
 // Allowed JMAP capabilities.
 var allowedCapabilities = map[string]bool{
@@ -112,10 +117,14 @@ func (h *ProxyHandler) JMAP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	// Log non-200 responses for debugging.
+	// Log non-200 responses for debugging (truncate body to avoid leaking sensitive data).
 	if resp.StatusCode >= 400 {
-		respBody, _ := io.ReadAll(resp.Body)
-		h.log.Warn().Int("status", resp.StatusCode).Str("body", string(respBody)).Msg("stalwart returned error")
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		logBody := string(respBody)
+		if len(logBody) > 200 {
+			logBody = logBody[:200] + "..."
+		}
+		h.log.Warn().Int("status", resp.StatusCode).Str("body", logBody).Msg("stalwart returned error")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(resp.StatusCode)
 		w.Write(respBody) //nolint:errcheck
@@ -138,8 +147,8 @@ func (h *ProxyHandler) BlobDownload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	blobID := chi.URLParam(r, "blobId")
-	if blobID == "" {
-		writeJSON(w, http.StatusBadRequest, errorResponse{"missing_blob_id"})
+	if blobID == "" || !validBlobIDPattern.MatchString(blobID) {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"invalid_blob_id"})
 		return
 	}
 

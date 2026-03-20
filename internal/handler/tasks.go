@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,6 +18,9 @@ import (
 	"github.com/rs/zerolog"
 	"go.temporal.io/sdk/client"
 )
+
+// Maximum number of emails in a single bulk operation.
+const maxBulkEmailIDs = 10000
 
 // TaskHandler handles API endpoints for triggering and querying Temporal workflows.
 type TaskHandler struct {
@@ -63,7 +67,9 @@ func (h *TaskHandler) credsFromSession(r *http.Request) *activity.Credentials {
 }
 
 func (h *TaskHandler) generateTaskID(taskType, email string) string {
-	return fmt.Sprintf("%s-%s-%d", taskType, email, time.Now().UnixMilli())
+	b := make([]byte, 8)
+	rand.Read(b) //nolint:errcheck
+	return fmt.Sprintf("%s-%s-%d-%x", taskType, email, time.Now().UnixMilli(), b)
 }
 
 // BulkMove handles POST /api/tasks/bulk-move.
@@ -86,6 +92,10 @@ func (h *TaskHandler) BulkMove(w http.ResponseWriter, r *http.Request) {
 
 	if len(req.EmailIDs) == 0 || req.FromMailboxID == "" || req.ToMailboxID == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"missing_fields"})
+		return
+	}
+	if len(req.EmailIDs) > maxBulkEmailIDs {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"too_many_emails"})
 		return
 	}
 
@@ -130,6 +140,10 @@ func (h *TaskHandler) BulkDelete(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"missing_fields"})
 		return
 	}
+	if len(req.EmailIDs) > maxBulkEmailIDs {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"too_many_emails"})
+		return
+	}
 
 	taskID := h.generateTaskID("bulk-delete", creds.Email)
 
@@ -169,6 +183,10 @@ func (h *TaskHandler) BulkMarkRead(w http.ResponseWriter, r *http.Request) {
 
 	if len(req.EmailIDs) == 0 {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"missing_fields"})
+		return
+	}
+	if len(req.EmailIDs) > maxBulkEmailIDs {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"too_many_emails"})
 		return
 	}
 

@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -145,6 +146,11 @@ func lookupWKD(ctx context.Context, email string) ([]byte, error) {
 	local := email[:atIdx]
 	domain := email[atIdx+1:]
 
+	// Reject reserved/private domains to prevent SSRF.
+	if isReservedDomain(domain) {
+		return nil, fmt.Errorf("WKD lookup refused for reserved domain")
+	}
+
 	hash := wkdHash(local)
 
 	// Try the direct method: https://<domain>/.well-known/openpgpkey/hu/<hash>
@@ -168,6 +174,23 @@ func lookupWKD(ctx context.Context, email string) ([]byte, error) {
 	}
 
 	return io.ReadAll(io.LimitReader(resp.Body, 256*1024))
+}
+
+// isReservedDomain returns true if the domain resolves to a loopback, private,
+// or otherwise reserved address that must not be used for outbound HTTP requests.
+func isReservedDomain(domain string) bool {
+	d := strings.ToLower(strings.TrimSuffix(domain, "."))
+	reserved := []string{"localhost", "localhost.localdomain", "local", "internal", "invalid", "test", "example"}
+	for _, r := range reserved {
+		if d == r || strings.HasSuffix(d, "."+r) {
+			return true
+		}
+	}
+	// Reject raw IPs and IPv6 brackets.
+	if net.ParseIP(d) != nil || strings.HasPrefix(d, "[") {
+		return true
+	}
+	return false
 }
 
 // wkdHash computes the WKD hash (SHA-1 of lowercase local part, z-base-32 encoded).

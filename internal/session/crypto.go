@@ -4,16 +4,52 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"net/http"
+
+	"webmail/internal/credcrypt"
 )
 
 // SessionData holds the session payload stored in Valkey.
+// Sensitive fields (Password, StalwartToken) are encrypted with AES-256-GCM
+// before being stored, so a Valkey compromise does not expose plaintext secrets.
 type SessionData struct {
 	Email         string `json:"email"`
-	Password      string `json:"password"`
+	Password      string `json:"password"`      // AES-256-GCM encrypted, base64-encoded
 	AccountID     string `json:"accountId"`
 	StalwartURL   string `json:"stalwartUrl"`
-	StalwartToken string `json:"stalwartToken"`
+	StalwartToken string `json:"stalwartToken"` // AES-256-GCM encrypted, base64-encoded
 	UAHash        string `json:"uaHash"`
+}
+
+// EncryptSecrets encrypts Password and StalwartToken in-place before storage.
+func (s *SessionData) EncryptSecrets(key []byte) error {
+	enc, err := credcrypt.Encrypt(key, s.Password)
+	if err != nil {
+		return err
+	}
+	s.Password = enc
+
+	enc, err = credcrypt.Encrypt(key, s.StalwartToken)
+	if err != nil {
+		return err
+	}
+	s.StalwartToken = enc
+	return nil
+}
+
+// DecryptSecrets decrypts Password and StalwartToken in-place after retrieval.
+func (s *SessionData) DecryptSecrets(key []byte) error {
+	dec, err := credcrypt.Decrypt(key, s.Password)
+	if err != nil {
+		return err
+	}
+	s.Password = dec
+
+	dec, err = credcrypt.Decrypt(key, s.StalwartToken)
+	if err != nil {
+		return err
+	}
+	s.StalwartToken = dec
+	return nil
 }
 
 // CookieName is the name of the session cookie.

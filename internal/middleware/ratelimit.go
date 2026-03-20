@@ -22,11 +22,29 @@ type bucket struct {
 }
 
 // NewRateLimiter creates a rate limiter with the given rate per minute.
+// Starts a background goroutine to evict stale buckets every 5 minutes.
 func NewRateLimiter(ratePerMinute int) *RateLimiter {
-	return &RateLimiter{
+	rl := &RateLimiter{
 		buckets:  make(map[string]*bucket),
 		rate:     ratePerMinute,
 		interval: time.Minute,
+	}
+	go rl.cleanup()
+	return rl
+}
+
+// cleanup periodically removes stale buckets to prevent unbounded memory growth.
+func (rl *RateLimiter) cleanup() {
+	ticker := time.NewTicker(5 * time.Minute)
+	for range ticker.C {
+		rl.mu.Lock()
+		now := time.Now()
+		for key, b := range rl.buckets {
+			if now.Sub(b.lastReset) >= 2*rl.interval {
+				delete(rl.buckets, key)
+			}
+		}
+		rl.mu.Unlock()
 	}
 }
 

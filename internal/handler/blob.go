@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -47,6 +48,9 @@ var blockedUploadTypes = map[string]bool{
 	"application/x-csh":           true,
 	"text/html":                   true,
 }
+
+// validBlobIDFormat validates blob IDs to prevent path traversal.
+var validBlobIDFormat = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
 
 // Safe content types for inline display.
 var safeInlineTypes = map[string]bool{
@@ -147,8 +151,8 @@ func (h *BlobHandler) Download(w http.ResponseWriter, r *http.Request) {
 	}
 
 	blobID := chi.URLParam(r, "blobId")
-	if blobID == "" {
-		writeJSON(w, http.StatusBadRequest, errorResponse{"missing_blob_id"})
+	if blobID == "" || !validBlobIDFormat.MatchString(blobID) {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"invalid_blob_id"})
 		return
 	}
 
@@ -167,8 +171,8 @@ func (h *BlobHandler) Inline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	blobID := chi.URLParam(r, "blobId")
-	if blobID == "" {
-		writeJSON(w, http.StatusBadRequest, errorResponse{"missing_blob_id"})
+	if blobID == "" || !validBlobIDFormat.MatchString(blobID) {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"invalid_blob_id"})
 		return
 	}
 

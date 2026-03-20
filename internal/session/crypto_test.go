@@ -8,12 +8,15 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// Test encryption key (32 bytes for AES-256).
+var testEncKey = []byte("0123456789abcdef0123456789abcdef")
+
 func newTestStore(t *testing.T) (*Store, *miniredis.Miniredis) {
 	t.Helper()
 	mr := miniredis.RunT(t)
 	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 	t.Cleanup(func() { rdb.Close() })
-	return NewStore(rdb, 3600), mr
+	return NewStore(rdb, 3600, testEncKey), mr
 }
 
 func TestCreateAndGet(t *testing.T) {

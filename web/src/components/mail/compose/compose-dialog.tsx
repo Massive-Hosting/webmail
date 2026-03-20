@@ -1312,9 +1312,8 @@ export function ComposeContainer() {
   );
 }
 
-/** Strip HTML tags to get plain text */
+/** Strip HTML tags to get plain text (uses DOMParser to avoid script execution) */
 function stripHtml(html: string): string {
-  const div = document.createElement("div");
-  div.innerHTML = html;
-  return div.textContent ?? "";
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return doc.body.textContent ?? "";
 }

@@ -2,10 +2,12 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"time"
 
 	"webmail/internal/middleware"
@@ -13,6 +15,12 @@ import (
 
 	"github.com/rs/zerolog"
 )
+
+// Maximum number of emails that can be trained in a single request.
+const maxSpamTrainBatch = 100
+
+// validBlobID matches Stalwart blob IDs (alphanumeric, dots, hyphens, underscores).
+var validBlobID = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
 
 // SpamHandler handles spam training endpoints.
 type SpamHandler struct {
@@ -51,8 +59,15 @@ func (h *SpamHandler) Train(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(req.EmailIDs) > maxSpamTrainBatch {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"too_many_emails"})
+		return
+	}
+
+	ctx := r.Context()
+
 	// Step 1: Fetch blobIds for the given email IDs via JMAP Email/get.
-	blobIDs, err := h.fetchBlobIDs(sess, req.EmailIDs)
+	blobIDs, err := h.fetchBlobIDs(ctx, sess, req.EmailIDs)
 	if err != nil {
 		h.log.Error().Err(err).Msg("failed to fetch blob IDs")
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"jmap_error"})
@@ -62,13 +77,13 @@ func (h *SpamHandler) Train(w http.ResponseWriter, r *http.Request) {
 	// Step 2: For each blob, download raw message and train.
 	trained := 0
 	for _, blobID := range blobIDs {
-		rawMsg, err := h.downloadBlob(sess, blobID)
+		rawMsg, err := h.downloadBlob(ctx, sess, blobID)
 		if err != nil {
 			h.log.Warn().Err(err).Str("blobId", blobID).Msg("failed to download blob")
 			continue
 		}
 
-		if err := h.trainMessage(sess, req.Type, rawMsg); err != nil {
+		if err := h.trainMessage(ctx, sess, req.Type, rawMsg); err != nil {
 			h.log.Warn().Err(err).Str("type", req.Type).Msg("failed to train message")
 			continue
 		}
@@ -82,7 +97,7 @@ func (h *SpamHandler) Train(w http.ResponseWriter, r *http.Request) {
 }
 
 // fetchBlobIDs calls JMAP Email/get to get the blobId for each email.
-func (h *SpamHandler) fetchBlobIDs(sess *session.SessionData, emailIDs []string) ([]string, error) {
+func (h *SpamHandler) fetchBlobIDs(ctx context.Context, sess *session.SessionData, emailIDs []string) ([]string, error) {
 	jmapReq := map[string]interface{}{
 		"using": []string{
 			"urn:ietf:params:jmap:core",
@@ -105,7 +120,7 @@ func (h *SpamHandler) fetchBlobIDs(sess *session.SessionData, emailIDs []string)
 		return nil, fmt.Errorf("marshaling JMAP request: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, sess.StalwartURL+"/jmap", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, sess.StalwartURL+"/jmap", bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("creating JMAP request: %w", err)
 	}
@@ -125,7 +140,7 @@ func (h *SpamHandler) fetchBlobIDs(sess *session.SessionData, emailIDs []string)
 	var jmapResp struct {
 		MethodResponses [][]json.RawMessage `json:"methodResponses"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&jmapResp); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 10*1024*1024)).Decode(&jmapResp); err != nil {
 		return nil, fmt.Errorf("decoding JMAP response: %w", err)
 	}
 
@@ -144,7 +159,7 @@ func (h *SpamHandler) fetchBlobIDs(sess *session.SessionData, emailIDs []string)
 
 	blobIDs := make([]string, 0, len(getResult.List))
 	for _, e := range getResult.List {
-		if e.BlobID != "" {
+		if e.BlobID != "" && validBlobID.MatchString(e.BlobID) {
 			blobIDs = append(blobIDs, e.BlobID)
 		}
 	}
@@ -152,10 +167,10 @@ func (h *SpamHandler) fetchBlobIDs(sess *session.SessionData, emailIDs []string)
 }
 
 // downloadBlob fetches a raw RFC822 blob from Stalwart using user credentials.
-func (h *SpamHandler) downloadBlob(sess *session.SessionData, blobID string) ([]byte, error) {
+func (h *SpamHandler) downloadBlob(ctx context.Context, sess *session.SessionData, blobID string) ([]byte, error) {
 	url := fmt.Sprintf("%s/jmap/download/%s/%s/email.eml?accept=message/rfc822", sess.StalwartURL, sess.AccountID, blobID)
 
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -171,15 +186,15 @@ func (h *SpamHandler) downloadBlob(sess *session.SessionData, blobID string) ([]
 		return nil, fmt.Errorf("blob download returned status %d", resp.StatusCode)
 	}
 
-	// Limit to 50MB to prevent abuse.
-	return io.ReadAll(io.LimitReader(resp.Body, 50*1024*1024))
+	// Limit to 10MB per message to prevent abuse.
+	return io.ReadAll(io.LimitReader(resp.Body, 10*1024*1024))
 }
 
 // trainMessage sends raw message data to Stalwart's spam training endpoint.
-func (h *SpamHandler) trainMessage(sess *session.SessionData, trainType string, rawMsg []byte) error {
+func (h *SpamHandler) trainMessage(ctx context.Context, sess *session.SessionData, trainType string, rawMsg []byte) error {
 	url := fmt.Sprintf("%s/api/spam-filter/train/%s/%s", sess.StalwartURL, trainType, sess.Email)
 
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(rawMsg))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(rawMsg))
 	if err != nil {
 		return err
 	}

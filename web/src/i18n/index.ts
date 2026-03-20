@@ -21,7 +21,7 @@ i18n
       de: { translation: de },
     },
     fallbackLng: 'en',
-    interpolation: { escapeValue: false },
+    interpolation: { escapeValue: true },
     detection: {
       order: ['localStorage', 'navigator'],
       lookupLocalStorage: 'language',

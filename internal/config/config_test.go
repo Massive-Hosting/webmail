@@ -99,8 +99,8 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.MaxUploadSize != 25*1024*1024 {
 		t.Errorf("default MaxUploadSize: got %d, want %d", cfg.MaxUploadSize, 25*1024*1024)
 	}
-	if cfg.RateLimitPerMinute != 120 {
-		t.Errorf("default RateLimitPerMinute: got %d, want %d", cfg.RateLimitPerMinute, 120)
+	if cfg.RateLimitPerMinute != 600 {
+		t.Errorf("default RateLimitPerMinute: got %d, want %d", cfg.RateLimitPerMinute, 600)
 	}
 	if cfg.ValkeyURL != "redis://127.0.0.1:6379/0" {
 		t.Errorf("default ValkeyURL: got %q", cfg.ValkeyURL)
