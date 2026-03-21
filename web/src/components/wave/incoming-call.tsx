@@ -102,9 +102,9 @@ export const IncomingCallNotification = React.memo(function IncomingCallNotifica
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-white font-semibold text-sm truncate">
-              {incomingCall.callerName}
+              {incomingCall.from}
             </div>
-            <div className="text-white/70 text-xs truncate">
+            <div className="text-white/60 text-xs truncate">
               {incomingCall.video ? t("wave.incomingVideoCall") : t("wave.incomingAudioCall")}
             </div>
           </div>

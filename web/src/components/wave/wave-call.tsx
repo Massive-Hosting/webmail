@@ -117,7 +117,10 @@ export const WaveCall = React.memo(function WaveCall() {
           ) : (
             <div className="flex flex-col items-center gap-4">
               <Avatar address={peerAddress} size={96} />
-              <div className="text-white text-lg font-semibold">{peerName}</div>
+              <div className="text-white text-lg font-semibold">{peerEmail}</div>
+              {peerName && peerName !== peerEmail && (
+                <div className="text-white/40 text-xs -mt-2">{peerName}</div>
+              )}
               <div className="text-white/50 text-sm">
                 {callState === "ringing" && t("wave.ringing")}
                 {callState === "connecting" && t("wave.connecting")}
