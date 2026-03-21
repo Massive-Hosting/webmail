@@ -49,6 +49,12 @@ const CalendarPage = lazy(() =>
 const CommandPalette = lazy(() =>
   import("@/components/ui/command-palette.tsx").then((m) => ({ default: m.CommandPalette }))
 );
+const WaveCall = lazy(() =>
+  import("@/components/wave/wave-call.tsx").then((m) => ({ default: m.WaveCall }))
+);
+const IncomingCallNotification = lazy(() =>
+  import("@/components/wave/incoming-call.tsx").then((m) => ({ default: m.IncomingCallNotification }))
+);
 
 export function AppShell() {
   const { t } = useTranslation();
@@ -485,6 +491,10 @@ export function AppShell() {
           />
         </Suspense>
       )}
+      <Suspense fallback={<div />}>
+        <WaveCall />
+        <IncomingCallNotification />
+      </Suspense>
     </>
   );
 

@@ -763,5 +763,20 @@
   "security.deleteFailed": "Kunne ikke tilbakekalle app-passord",
   "security.revoke": "Tilbakekall",
   "calendar.team": "Team",
-  "calendar.noRoom": "Ingen rom"
+  "calendar.noRoom": "Ingen rom",
+  "wave.startCall": "Start Wave-samtale",
+  "wave.incomingVideoCall": "Innkommende videosamtale",
+  "wave.incomingAudioCall": "Innkommende lydsamtale",
+  "wave.accept": "Godta",
+  "wave.decline": "Avsl\u00e5",
+  "wave.hangUp": "Legg p\u00e5",
+  "wave.mute": "Demp",
+  "wave.unmute": "Sl\u00e5 p\u00e5 lyd",
+  "wave.cameraOn": "Sl\u00e5 p\u00e5 kamera",
+  "wave.cameraOff": "Sl\u00e5 av kamera",
+  "wave.shareScreen": "Del skjerm",
+  "wave.stopSharing": "Stopp deling",
+  "wave.ringing": "Ringer...",
+  "wave.connecting": "Kobler til...",
+  "wave.callEnded": "Samtale avsluttet"
 }

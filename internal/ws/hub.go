@@ -197,11 +197,17 @@ func (h *Hub) readPump(c *client) {
 			return
 		}
 
-		// Parse client message (expect pong).
-		var msg Message
+		// Parse client message.
+		var msg struct {
+			Type string `json:"type"`
+		}
 		if json.Unmarshal(data, &msg) == nil {
 			if msg.Type == "pong" {
-				// Pong received, connection is alive.
+				continue
+			}
+			// Route call signaling messages point-to-point.
+			if callSignalTypes[msg.Type] {
+				h.handleCallSignal(c, data)
 				continue
 			}
 		}

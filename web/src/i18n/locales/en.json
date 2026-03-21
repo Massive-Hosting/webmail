@@ -763,5 +763,20 @@
   "security.deleteFailed": "Failed to revoke app password",
   "security.revoke": "Revoke",
   "calendar.team": "Team",
-  "calendar.noRoom": "No room"
+  "calendar.noRoom": "No room",
+  "wave.startCall": "Start Wave call",
+  "wave.incomingVideoCall": "Incoming video call",
+  "wave.incomingAudioCall": "Incoming audio call",
+  "wave.accept": "Accept",
+  "wave.decline": "Decline",
+  "wave.hangUp": "Hang up",
+  "wave.mute": "Mute",
+  "wave.unmute": "Unmute",
+  "wave.cameraOn": "Turn camera on",
+  "wave.cameraOff": "Turn camera off",
+  "wave.shareScreen": "Share screen",
+  "wave.stopSharing": "Stop sharing",
+  "wave.ringing": "Ringing...",
+  "wave.connecting": "Connecting...",
+  "wave.callEnded": "Call ended"
 }

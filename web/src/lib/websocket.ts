@@ -25,10 +25,25 @@ export type WSServerMessage =
       progress: number;
       detail: string;
       status: "running" | "completed" | "failed";
-    };
+    }
+  // Wave call signaling
+  | { type: "call-invite"; from: string; payload: { callId: string; callerName: string; video: boolean } }
+  | { type: "call-accept"; from: string; payload: { callId: string } }
+  | { type: "call-reject"; from: string; payload: { callId: string } }
+  | { type: "call-end"; from: string; payload: { callId: string } }
+  | { type: "call-signal"; from: string; payload: { callId: string; signal: unknown } };
+
+/** Wave call message (subset of WSServerMessage) */
+export type WaveCallMessage = Extract<WSServerMessage, { from: string }>;
 
 /** Client → Server message types */
-export type WSClientMessage = { type: "pong" };
+export type WSClientMessage =
+  | { type: "pong" }
+  | { type: "call-invite"; to: string; payload: { callId: string; callerName: string; video: boolean } }
+  | { type: "call-accept"; to: string; payload: { callId: string } }
+  | { type: "call-reject"; to: string; payload: { callId: string } }
+  | { type: "call-end"; to: string; payload: { callId: string } }
+  | { type: "call-signal"; to: string; payload: { callId: string; signal: unknown } };
 
 export type ConnectionStatus = "connecting" | "connected" | "disconnected" | "failed";
 
@@ -50,6 +65,9 @@ export class WebSocketClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private statusListeners = new Set<(status: ConnectionStatus) => void>();
   private taskProgressListeners = new Set<TaskProgressHandler>();
+  private callListeners = new Set<(msg: WaveCallMessage) => void>();
+  /** When true, don't disconnect on tab hidden (active call) */
+  public keepAlive = false;
   private _status: ConnectionStatus = "disconnected";
   private disposed = false;
   private visibilityHandler: (() => void) | null = null;
@@ -81,6 +99,19 @@ export class WebSocketClient {
     return () => {
       this.taskProgressListeners.delete(listener);
     };
+  }
+
+  /** Subscribe to Wave call signaling messages */
+  onCallMessage(listener: (msg: WaveCallMessage) => void): () => void {
+    this.callListeners.add(listener);
+    return () => { this.callListeners.delete(listener); };
+  }
+
+  /** Send a message to the server */
+  send(msg: WSClientMessage) {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(msg));
+    }
   }
 
   private setStatus(status: ConnectionStatus) {
@@ -141,8 +172,8 @@ export class WebSocketClient {
             this.retryCount = 0;
             this.connect();
           }
-        } else {
-          // Tab hidden — close connection to save resources.
+        } else if (!this.keepAlive) {
+          // Tab hidden — close connection to save resources (skip during calls).
           this.closeQuietly();
         }
       };
@@ -229,8 +260,17 @@ export class WebSocketClient {
         break;
 
       case "error":
-        // Log but don't disconnect.
         console.warn("[ws] server error:", msg.message);
+        break;
+
+      case "call-invite":
+      case "call-accept":
+      case "call-reject":
+      case "call-end":
+      case "call-signal":
+        for (const listener of this.callListeners) {
+          listener(msg as WaveCallMessage);
+        }
         break;
     }
   }

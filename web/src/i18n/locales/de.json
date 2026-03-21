@@ -763,5 +763,20 @@
   "security.deleteFailed": "App-Passwort konnte nicht widerrufen werden",
   "security.revoke": "Widerrufen",
   "calendar.team": "Team",
-  "calendar.noRoom": "Kein Raum"
+  "calendar.noRoom": "Kein Raum",
+  "wave.startCall": "Wave-Anruf starten",
+  "wave.incomingVideoCall": "Eingehender Videoanruf",
+  "wave.incomingAudioCall": "Eingehender Audioanruf",
+  "wave.accept": "Annehmen",
+  "wave.decline": "Ablehnen",
+  "wave.hangUp": "Auflegen",
+  "wave.mute": "Stummschalten",
+  "wave.unmute": "Stummschaltung aufheben",
+  "wave.cameraOn": "Kamera einschalten",
+  "wave.cameraOff": "Kamera ausschalten",
+  "wave.shareScreen": "Bildschirm teilen",
+  "wave.stopSharing": "Teilen beenden",
+  "wave.ringing": "Klingelt...",
+  "wave.connecting": "Verbinden...",
+  "wave.callEnded": "Anruf beendet"
 }

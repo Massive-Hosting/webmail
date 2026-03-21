@@ -26,6 +26,7 @@ import {
   ReplyAll,
   Forward,
   MoreHorizontal,
+  Phone,
   Paperclip,
   Download,
   ImageOff,
@@ -50,6 +51,9 @@ import {
 import * as Tooltip from "@radix-ui/react-tooltip";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { useUIStore } from "@/stores/ui-store.ts";
+import { useAuthStore } from "@/stores/auth-store.ts";
+import { useWaveStore } from "@/stores/wave-store.ts";
+import { useWave } from "@/hooks/use-wave.ts";
 import { PGPStatusBar, EncryptedPlaceholder, usePGPMessage } from "@/components/mail/pgp-message.tsx";
 import { detectPGPContent } from "@/lib/pgp-detect.ts";
 import { InvitationCard } from "@/components/calendar/invitation-card.tsx";
@@ -315,6 +319,7 @@ function MessageContent({ email }: { email: Email }) {
                   label={t("action.forwardShortcut")}
                   onClick={() => openCompose({ mode: "forward", email, identity: defaultIdentity })}
                 />
+                <WaveCallButton senderEmail={senderEmailAddr} />
                 <ActionButton
                   icon={<Printer size={18} />}
                   label={t("action.print")}
@@ -589,6 +594,27 @@ function getFileExtension(name?: string | null): string | null {
   const dot = name.lastIndexOf(".");
   if (dot < 0 || dot === name.length - 1) return null;
   return name.substring(dot + 1);
+}
+
+/** Start Wave call button — only shows for same-domain senders */
+function WaveCallButton({ senderEmail }: { senderEmail: string }) {
+  const { t } = useTranslation();
+  const userEmail = useAuthStore((s) => s.email);
+  const callState = useWaveStore((s) => s.callState);
+  const { startCall } = useWave();
+
+  const userDomain = userEmail.split("@")[1]?.toLowerCase();
+  const senderDomain = senderEmail.split("@")[1]?.toLowerCase();
+  if (!userDomain || !senderDomain || userDomain !== senderDomain || senderEmail === userEmail) return null;
+  if (callState !== "idle") return null;
+
+  return (
+    <ActionButton
+      icon={<Phone size={18} />}
+      label={t("wave.startCall")}
+      onClick={() => startCall(senderEmail, true)}
+    />
+  );
 }
 
 /** Right-click context menu for email addresses in the reading pane */
