@@ -34,6 +34,9 @@ Webmail is a full-featured email, contacts, and calendar client that connects to
 | Auto-advance | Navigate to next/previous message after delete or archive |
 | Folder colors | Color-code mail folders for visual organization |
 | Read/unread indicators | Bold text, blue dot, and tinted background for unread emails |
+| Quick actions on hover | Archive, delete, mark read buttons appear on message row hover |
+| Glassmorphism toolbar | Semi-transparent action bar with backdrop blur |
+| Premium attachments | Color-coded file type icons with split download button |
 
 ### Search & Filters
 
@@ -50,7 +53,7 @@ Webmail is a full-featured email, contacts, and calendar client that connects to
 | Feature | Description |
 |---|---|
 | JMAP Contacts | Full JSContact (RFC 9610) integration via Stalwart |
-| Autocomplete | Contact suggestions while composing |
+| Autocomplete | Contact + company directory suggestions while composing |
 | Address books & groups | Organize contacts into books and groups |
 | Contact photos | Upload and display profile photos |
 | vCard import/export | Bulk import and export in standard vCard format with progress |
@@ -59,7 +62,7 @@ Webmail is a full-featured email, contacts, and calendar client that connects to
 
 | Feature | Description |
 |---|---|
-| Multiple views | Month, week, and day layouts |
+| Multiple views | Month, week, day, and team availability layouts |
 | Event management | Create, edit, delete events with recurrence rules |
 | Drag-and-drop events | Drag to reschedule events in week and day views (15-min snap) |
 | Agenda sidebar | Today's schedule visible alongside your inbox |
@@ -103,6 +106,11 @@ Webmail is a full-featured email, contacts, and calendar client that connects to
 
 | Feature | Description |
 |---|---|
+| Team availability view | Scheduling assistant grid showing all colleagues' free/busy for a week |
+| Free/busy overlay | Event form shows attendee busy blocks with conflict detection and suggested free slots |
+| Company directory | Same-domain colleagues appear in compose and attendee autocomplete automatically |
+| Absence indicator | Amber banner warns when a recipient has vacation auto-reply enabled |
+| Meeting room booking | Room picker in event form with availability checking (Stalwart resource principals) |
 | Folder sharing | Share mailbox folders with other users (view or edit permissions) |
 | Address book sharing | Share address books with other users via JMAP shareWith |
 | Calendar sharing | Share calendars with other users (view or edit) |
