@@ -18,7 +18,9 @@ type UserPreferences struct {
 
 // StalwartContext holds cached Stalwart connection details for an email account.
 type StalwartContext struct {
-	StalwartURL   string `json:"stalwart_url"`
-	StalwartToken string `json:"stalwart_token"`
-	FQDN          string `json:"fqdn,omitempty"`
+	StalwartURL      string `json:"stalwart_url"`
+	StalwartToken    string `json:"stalwart_token"`
+	FQDN             string `json:"fqdn,omitempty"`
+	FreeBusyEnabled  bool   `json:"freebusy_enabled"`
+	DirectoryEnabled bool   `json:"directory_enabled"`
 }

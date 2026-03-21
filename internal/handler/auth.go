@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/mail"
+	"strings"
 	"time"
 
 	"webmail/internal/db"
@@ -59,6 +60,14 @@ type sessionResponse struct {
 }
 
 // Login handles POST /api/auth/login.
+func emailDomain(email string) string {
+	at := strings.LastIndex(email, "@")
+	if at < 0 {
+		return ""
+	}
+	return strings.ToLower(email[at+1:])
+}
+
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(io.LimitReader(r.Body, 4096))
 	if err != nil {
@@ -107,6 +116,15 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		// Cache the result.
 		if cacheErr := h.queries.UpsertStalwartContext(ctx, req.Email, sc); cacheErr != nil {
 			h.log.Error().Err(cacheErr).Msg("failed to cache stalwart context")
+		}
+		// Sync collaboration settings from core API to domain_settings table.
+		domain := emailDomain(req.Email)
+		if domain != "" {
+			_ = h.queries.UpsertDomainSettings(ctx, &db.DomainSettings{
+				Domain:           domain,
+				FreeBusyEnabled:  sc.FreeBusyEnabled,
+				DirectoryEnabled: sc.DirectoryEnabled,
+			})
 		}
 	}
 

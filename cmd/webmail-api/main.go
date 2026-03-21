@@ -206,7 +206,6 @@ func main() {
 			r.Post("/availability", availabilityHandler.FreeBusy)
 			r.Post("/directory/search", availabilityHandler.Directory)
 			r.Get("/domain-settings", availabilityHandler.GetDomainSettings)
-			r.Put("/domain-settings", availabilityHandler.PutDomainSettings)
 
 			// WebSocket.
 			r.Get("/ws", wsHandler.Upgrade)

@@ -8,8 +8,7 @@ import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 import { useAddressBooks } from "@/hooks/use-contacts.ts";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCalendars } from "@/api/calendar.ts";
-import { getDomainSettings, updateDomainSettings } from "@/api/availability.ts";
-import { toast } from "sonner";
+import { getDomainSettings } from "@/api/availability.ts";
 
 export const AccountsSettings = React.memo(function AccountsSettings() {
   const { t } = useTranslation();
@@ -149,29 +148,8 @@ function DomainSettingsSection() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleToggle = useCallback(
-    async (field: "freebusy" | "directory", value: boolean) => {
-      const prev = { freebusyEnabled, directoryEnabled };
-      if (field === "freebusy") setFreebusyEnabled(value);
-      else setDirectoryEnabled(value);
-
-      try {
-        await updateDomainSettings({
-          freebusyEnabled: field === "freebusy" ? value : freebusyEnabled,
-          directoryEnabled: field === "directory" ? value : directoryEnabled,
-        });
-        toast.success(t("accounts.settingsSaved"));
-      } catch {
-        // Revert
-        setFreebusyEnabled(prev.freebusyEnabled);
-        setDirectoryEnabled(prev.directoryEnabled);
-        toast.error(t("accounts.settingsFailed"));
-      }
-    },
-    [freebusyEnabled, directoryEnabled, t],
-  );
-
   if (loading) return null;
+  if (!freebusyEnabled && !directoryEnabled) return null;
 
   return (
     <div className="space-y-2">
@@ -182,51 +160,25 @@ function DomainSettingsSection() {
         <Building2 size={14} />
         {t("accounts.organizationFeatures")}
       </h3>
-      <p
-        className="text-xs leading-relaxed"
-        style={{ color: "var(--color-text-secondary)" }}
-      >
-        {t("accounts.organizationFeaturesDesc")}
-      </p>
       <div
-        className="rounded-lg p-3 space-y-3"
+        className="rounded-lg p-3 space-y-2"
         style={{
           backgroundColor: "var(--color-bg-secondary)",
           border: "1px solid var(--color-border-secondary)",
         }}
       >
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={freebusyEnabled}
-            onChange={(e) => handleToggle("freebusy", e.target.checked)}
-            className="rounded border-gray-300"
-          />
-          <div>
-            <div className="text-xs font-medium" style={{ color: "var(--color-text-primary)" }}>
-              {t("accounts.freeBusy")}
-            </div>
-            <div className="text-[11px]" style={{ color: "var(--color-text-tertiary)" }}>
-              {t("accounts.freeBusyDesc")}
-            </div>
+        {freebusyEnabled && (
+          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--color-text-secondary)" }}>
+            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "var(--color-bg-success)" }} />
+            {t("accounts.freeBusy")}
           </div>
-        </label>
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={directoryEnabled}
-            onChange={(e) => handleToggle("directory", e.target.checked)}
-            className="rounded border-gray-300"
-          />
-          <div>
-            <div className="text-xs font-medium" style={{ color: "var(--color-text-primary)" }}>
-              {t("accounts.directory")}
-            </div>
-            <div className="text-[11px]" style={{ color: "var(--color-text-tertiary)" }}>
-              {t("accounts.directoryDesc")}
-            </div>
+        )}
+        {directoryEnabled && (
+          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--color-text-secondary)" }}>
+            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "var(--color-bg-success)" }} />
+            {t("accounts.directory")}
           </div>
-        </label>
+        )}
       </div>
     </div>
   );
