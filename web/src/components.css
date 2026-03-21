@@ -253,20 +253,6 @@
   color: #d97706;
 }
 
-/* ---- Hover preview expansion (desktop) ---- */
-@media (min-width: 768px) {
-  .message-list-item__preview {
-    transition: -webkit-line-clamp 150ms ease;
-  }
-
-  .message-list-item:hover .message-list-item__preview {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    white-space: normal;
-  }
-}
-
 /* ---- Quick action overlay (desktop hover) ---- */
 .message-list-item__quick-actions {
   display: none;

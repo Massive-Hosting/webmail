@@ -851,14 +851,16 @@ function MessageContextMenu({
           </ContextMenu.Sub>
         )}
 
-        <ContextMenu.Item
-          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-          style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
-          onSelect={() => onArchive?.([email.id])}
-        >
-          <Archive size={14} />
-          {t("action.archive")}
-        </ContextMenu.Item>
+        {onArchive && (
+          <ContextMenu.Item
+            className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+            style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+            onSelect={() => onArchive([email.id])}
+          >
+            <Archive size={14} />
+            {t("action.archive")}
+          </ContextMenu.Item>
+        )}
         <ContextMenu.Item
           className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
           style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}

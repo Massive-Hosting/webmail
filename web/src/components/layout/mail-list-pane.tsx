@@ -267,7 +267,7 @@ export function MailListPane({
             onReplyAll={handleReplyAll}
             onForward={handleForward}
             onMarkRead={markRead}
-            onArchive={handleArchive}
+            onArchive={archiveMailbox && selectedMailboxId !== archiveMailbox.id ? handleArchive : undefined}
             onDelete={handleDelete}
             onProperties={handleProperties}
             onPrint={handlePrint}
