@@ -782,5 +782,7 @@
   "wave.readyToCall": "Bereit zum Anrufen",
   "wave.deviceSettings": "Ger\u00e4teeinstellungen",
   "wave.microphone": "Mikrofon",
-  "wave.camera": "Kamera"
+  "wave.camera": "Kamera",
+  "wave.permissionDenied": "Zugriff auf Kamera und Mikrofon wurde verweigert. Bitte erlauben Sie den Zugriff in Ihren Browsereinstellungen.",
+  "wave.permissionPending": "Erlauben Sie den Zugriff auf Kamera und Mikrofon, um Ihre Videovorschau zu sehen."
 }

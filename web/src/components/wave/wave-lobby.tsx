@@ -44,14 +44,15 @@ export const WaveLobby = React.memo(function WaveLobby({
   const [showDeviceSettings, setShowDeviceSettings] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [permissionError, setPermissionError] = useState(false);
+  const [permissionState, setPermissionState] = useState<"pending" | "granted" | "denied">("pending");
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const animFrameRef = useRef<number>(0);
+  const initializedRef = useRef(false);
 
-  // Enumerate devices and start preview
+  // Start preview when dialog opens
   useEffect(() => {
     if (!open) {
       // Clean up on close
@@ -65,20 +66,25 @@ export const WaveLobby = React.memo(function WaveLobby({
       }
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       setAudioLevel(0);
-      setPermissionError(false);
+      setPermissionState("pending");
+      initializedRef.current = false;
       return;
     }
 
-    startPreview();
+    // On first open, always request media to trigger browser permission prompt
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      startPreview();
+    }
 
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
   }, [open]);
 
-  // Restart preview when device selection changes
+  // Restart preview when device selection or toggle changes (but only after initial grant)
   useEffect(() => {
-    if (!open) return;
+    if (!open || !initializedRef.current || permissionState !== "granted") return;
     startPreview();
   }, [selectedAudioDevice, selectedVideoDevice, videoEnabled, audioEnabled]);
 
@@ -93,8 +99,11 @@ export const WaveLobby = React.memo(function WaveLobby({
     }
 
     try {
+      // Always request at least audio to ensure the browser shows the permission prompt.
+      // getUserMedia({audio:false, video:false}) throws — need at least one enabled.
+      const needsAudio = audioEnabled || !videoEnabled;
       const constraints: MediaStreamConstraints = {
-        audio: audioEnabled
+        audio: needsAudio
           ? selectedAudioDevice
             ? { deviceId: { exact: selectedAudioDevice } }
             : true
@@ -106,9 +115,19 @@ export const WaveLobby = React.memo(function WaveLobby({
           : false,
       };
 
+      // If both are off, request audio just to keep the permission alive
+      if (!audioEnabled && !videoEnabled) {
+        constraints.audio = true;
+      }
+
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       setStream(mediaStream);
-      setPermissionError(false);
+      setPermissionState("granted");
+
+      // If user toggled audio off, mute the track but keep permission
+      if (!audioEnabled) {
+        for (const track of mediaStream.getAudioTracks()) track.enabled = false;
+      }
 
       // Attach video
       if (videoRef.current) {
@@ -148,8 +167,9 @@ export const WaveLobby = React.memo(function WaveLobby({
           .filter((d) => d.kind === "videoinput")
           .map((d) => ({ deviceId: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0, 4)}`, kind: d.kind })),
       );
-    } catch {
-      setPermissionError(true);
+    } catch (err) {
+      console.warn("[Wave] Media access error:", err);
+      setPermissionState("denied");
     }
   }, [stream, selectedAudioDevice, selectedVideoDevice, videoEnabled, audioEnabled]);
 
@@ -218,7 +238,7 @@ export const WaveLobby = React.memo(function WaveLobby({
 
           {/* Video preview */}
           <div className="mx-6 mb-4 relative rounded-xl overflow-hidden" style={{ aspectRatio: "4/3", backgroundColor: "#0c0a09" }}>
-            {videoEnabled && !permissionError ? (
+            {videoEnabled && permissionState !== "denied" ? (
               <video
                 ref={videoRef}
                 autoPlay
@@ -230,9 +250,13 @@ export const WaveLobby = React.memo(function WaveLobby({
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center gap-3">
                 <Avatar address={selfAddress} size={72} />
-                {permissionError ? (
+                {permissionState === "denied" ? (
                   <div className="text-xs text-red-400 text-center px-8">
-                    Camera/microphone access denied. Check your browser permissions.
+                    {t("wave.permissionDenied")}
+                  </div>
+                ) : permissionState === "pending" ? (
+                  <div className="text-xs text-white/50 text-center px-8">
+                    {t("wave.permissionPending")}
                   </div>
                 ) : (
                   <div className="text-xs text-white/30">Camera off</div>
@@ -241,7 +265,7 @@ export const WaveLobby = React.memo(function WaveLobby({
             )}
 
             {/* Audio level indicator */}
-            {audioEnabled && !permissionError && (
+            {audioEnabled && permissionState === "granted" && (
               <div className="absolute bottom-3 left-3 flex items-center gap-2">
                 <Volume2 size={14} style={{ color: "rgba(255,255,255,0.5)" }} />
                 <div className="flex items-end gap-0.5 h-4">
@@ -352,7 +376,7 @@ export const WaveLobby = React.memo(function WaveLobby({
           <div className="px-6 pb-6">
             <button
               onClick={handleStartCall}
-              disabled={permissionError}
+              disabled={permissionState === "denied"}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-150 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40"
               style={{
                 background: "linear-gradient(135deg, #22c55e, #16a34a)",

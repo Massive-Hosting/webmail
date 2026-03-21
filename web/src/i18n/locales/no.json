@@ -782,5 +782,7 @@
   "wave.readyToCall": "Klar til \u00e5 ringe",
   "wave.deviceSettings": "Enhetsinnstillinger",
   "wave.microphone": "Mikrofon",
-  "wave.camera": "Kamera"
+  "wave.camera": "Kamera",
+  "wave.permissionDenied": "Tilgang til kamera og mikrofon ble nektet. Tillat tilgang i nettleserinnstillingene og pr\u00f8v igjen.",
+  "wave.permissionPending": "Tillat tilgang til kamera og mikrofon for \u00e5 forh\u00e5ndsvise videoen din."
 }
