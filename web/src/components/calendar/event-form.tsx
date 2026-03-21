@@ -379,9 +379,9 @@ export const EventForm = React.memo(function EventForm({
                 autoFocus
                 className="w-full px-3 py-2 text-sm rounded-md outline-none"
                 style={{
-                  backgroundColor: "var(--color-bg-tertiary)",
+                  backgroundColor: "var(--color-bg-elevated)",
                   color: "var(--color-text-primary)",
-                  border: "1px solid var(--color-border-secondary)",
+                  border: "1px solid var(--color-border-primary)",
                 }}
               />
 
@@ -630,9 +630,9 @@ export const EventForm = React.memo(function EventForm({
                 rows={3}
                 className="w-full px-3 py-2 text-sm rounded-md outline-none resize-none"
                 style={{
-                  backgroundColor: "var(--color-bg-tertiary)",
+                  backgroundColor: "var(--color-bg-elevated)",
                   color: "var(--color-text-primary)",
-                  border: "1px solid var(--color-border-secondary)",
+                  border: "1px solid var(--color-border-primary)",
                 }}
               />
 
