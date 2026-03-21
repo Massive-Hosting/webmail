@@ -77,13 +77,18 @@ export const InvitationCard = React.memo(function InvitationCard({
   }
 
   const cancelled = isCancellation(invitation);
+  const isReply = invitation.method === "REPLY";
   const event = invitation.events[0];
 
-  return cancelled ? (
-    <CancellationCard event={event} />
-  ) : (
-    <RequestCard event={event} method={invitation.method} />
-  );
+  if (cancelled) {
+    return <CancellationCard event={event} />;
+  }
+
+  if (isReply) {
+    return <ReplyCard event={event} />;
+  }
+
+  return <RequestCard event={event} method={invitation.method} />;
 });
 
 /** Card for a new event invitation (METHOD:REQUEST or PUBLISH) */
@@ -340,6 +345,75 @@ function RequestCard({
 }
 
 /** Card for a cancelled event (METHOD:CANCEL) */
+/** Card for a REPLY — shows who responded and their status */
+function ReplyCard({ event }: { event: ParsedVEvent }) {
+  const { t } = useTranslation();
+  const dateTimeStr = formatEventDateTime(event);
+
+  // In a REPLY, attendees contain the person who responded with their status
+  const respondent = event.attendees[0];
+  const respondentName = respondent?.name || respondent?.email || "Someone";
+  const status = respondent?.status ?? "unknown";
+
+  const statusLabels: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+    accepted: { label: t("calendar.accepted"), color: "#22c55e", icon: <Check size={14} /> },
+    declined: { label: t("calendar.declined"), color: "#ef4444", icon: <XCircle size={14} /> },
+    tentative: { label: t("calendar.tentative"), color: "#f59e0b", icon: <HelpCircle size={14} /> },
+  };
+
+  const statusInfo = statusLabels[status] ?? { label: status, color: "#78716c", icon: <HelpCircle size={14} /> };
+
+  return (
+    <div
+      className="mx-6 my-3 rounded-lg overflow-hidden"
+      style={{
+        border: "1px solid var(--color-border-primary)",
+        backgroundColor: "var(--color-bg-secondary)",
+      }}
+    >
+      <div
+        className="flex items-center gap-2 px-4 py-2.5"
+        style={{
+          borderBottom: "1px solid var(--color-border-secondary)",
+          backgroundColor: "var(--color-bg-tertiary)",
+        }}
+      >
+        <CalendarDays size={16} style={{ color: "var(--color-text-accent)" }} />
+        <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+          {t("invitation.calendarEvent")}
+        </span>
+        <span
+          className="ml-auto flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full"
+          style={{ backgroundColor: `${statusInfo.color}15`, color: statusInfo.color }}
+        >
+          {statusInfo.icon}
+          {statusInfo.label}
+        </span>
+      </div>
+
+      <div className="p-4 space-y-2">
+        <div className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+          {event.summary || t("invitation.untitledEvent")}
+        </div>
+        <div className="flex items-center gap-2 text-xs" style={{ color: "var(--color-text-secondary)" }}>
+          <CalendarDays size={13} />
+          {dateTimeStr}
+        </div>
+        <div
+          className="flex items-center gap-2 text-xs mt-2 pt-2"
+          style={{ color: "var(--color-text-secondary)", borderTop: "1px solid var(--color-border-secondary)" }}
+        >
+          <User size={13} />
+          <span>
+            <strong style={{ color: "var(--color-text-primary)" }}>{respondentName}</strong>
+            {" "}{statusInfo.label.toLowerCase()} {t("invitation.calendarEvent").toLowerCase()}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CancellationCard({ event }: { event: ParsedVEvent }) {
   const { t } = useTranslation();
   const [removed, setRemoved] = useState(false);
