@@ -31,6 +31,7 @@ import type {
 import { importICS } from "./ics-import.ts";
 import { ShareCalendarDialog } from "./share-calendar-dialog.tsx";
 import { sendInvitationEmails } from "@/api/calendar.ts";
+import { toast } from "sonner";
 import { EmptyState } from "@/components/ui/empty-state.tsx";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
