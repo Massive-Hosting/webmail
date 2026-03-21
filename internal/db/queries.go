@@ -197,3 +197,87 @@ func (q *Queries) DeleteAppPassword(ctx context.Context, id, email string) error
 	)
 	return err
 }
+
+// --- Event Participants ---
+
+// EventParticipant represents an attendee of a calendar event.
+type EventParticipant struct {
+	EventID string `json:"eventId"`
+	Email   string `json:"email"`
+	Name    string `json:"name"`
+	Role    string `json:"role"`
+	Status  string `json:"status"`
+}
+
+// UpsertEventParticipants stores or replaces participants for a calendar event.
+func (q *Queries) UpsertEventParticipants(ctx context.Context, eventID, ownerEmail string, participants []EventParticipant) error {
+	// Delete existing participants for this event.
+	_, err := q.pool.Exec(ctx, `DELETE FROM event_participants WHERE event_id = $1 AND owner_email = $2`, eventID, ownerEmail)
+	if err != nil {
+		return err
+	}
+
+	for _, p := range participants {
+		_, err := q.pool.Exec(ctx,
+			`INSERT INTO event_participants (event_id, email, owner_email, name, role, status) VALUES ($1, $2, $3, $4, $5, $6)`,
+			eventID, p.Email, ownerEmail, p.Name, p.Role, p.Status,
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// GetEventParticipants returns all participants for a calendar event.
+func (q *Queries) GetEventParticipants(ctx context.Context, eventID, ownerEmail string) ([]EventParticipant, error) {
+	rows, err := q.pool.Query(ctx,
+		`SELECT event_id, email, name, role, status FROM event_participants WHERE event_id = $1 AND owner_email = $2`,
+		eventID, ownerEmail,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []EventParticipant
+	for rows.Next() {
+		var p EventParticipant
+		if err := rows.Scan(&p.EventID, &p.Email, &p.Name, &p.Role, &p.Status); err != nil {
+			return nil, err
+		}
+		result = append(result, p)
+	}
+	if result == nil {
+		result = []EventParticipant{}
+	}
+	return result, rows.Err()
+}
+
+// GetBatchEventParticipants returns participants for multiple events at once.
+func (q *Queries) GetBatchEventParticipants(ctx context.Context, eventIDs []string, ownerEmail string) (map[string][]EventParticipant, error) {
+	rows, err := q.pool.Query(ctx,
+		`SELECT event_id, email, name, role, status FROM event_participants WHERE event_id = ANY($1) AND owner_email = $2`,
+		eventIDs, ownerEmail,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[string][]EventParticipant)
+	for rows.Next() {
+		var p EventParticipant
+		if err := rows.Scan(&p.EventID, &p.Email, &p.Name, &p.Role, &p.Status); err != nil {
+			return nil, err
+		}
+		result[p.EventID] = append(result[p.EventID], p)
+	}
+	return result, rows.Err()
+}
+
+// DeleteEventParticipants removes all participants for a calendar event.
+func (q *Queries) DeleteEventParticipants(ctx context.Context, eventID, ownerEmail string) error {
+	_, err := q.pool.Exec(ctx, `DELETE FROM event_participants WHERE event_id = $1 AND owner_email = $2`, eventID, ownerEmail)
+	return err
+}

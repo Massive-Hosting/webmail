@@ -32,7 +32,9 @@ import type {
 import { importICS } from "./ics-import.ts";
 import { ShareCalendarDialog } from "./share-calendar-dialog.tsx";
 import { sendInvitationEmails } from "@/api/calendar.ts";
+import { saveEventParticipants, deleteEventParticipants, type EventParticipant } from "@/api/participants.ts";
 import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth-store.ts";
 import { EmptyState } from "@/components/ui/empty-state.tsx";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
@@ -105,6 +107,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
   const { events } = useCalendarEvents(visibleCalendarIds, dateRange);
   const { createEvent, updateEvent, deleteEvent } =
     useCalendarEventMutations();
+  const userEmail = useAuthStore((s) => s.email);
 
   // Event form state
   const [formOpen, setFormOpen] = useState(false);
@@ -213,23 +216,49 @@ export const CalendarPage = React.memo(function CalendarPage() {
     setFormOpen(true);
   }, []);
 
-  // Save (create or update) — sends invitation emails to attendees
+  // Save (create or update) — persists participants and sends invitation emails
   const handleSave = useCallback(
-    (data: CalendarEventCreate | CalendarEventUpdate, eventId?: string) => {
+    async (data: CalendarEventCreate | CalendarEventUpdate, eventId?: string) => {
+      const participants = "participants" in data ? data.participants : undefined;
+      const attendees: EventParticipant[] = participants
+        ? Object.values(participants)
+            .filter((p) => p.roles?.attendee && p.email)
+            .map((p) => ({
+              eventId: eventId ?? "",
+              email: p.email!,
+              name: p.name ?? "",
+              role: "attendee",
+              status: p.participationStatus ?? "needs-action",
+            }))
+        : [];
+
+      let savedEventId = eventId;
       if (eventId) {
         updateEvent(eventId, data);
       } else {
-        createEvent(data as CalendarEventCreate);
+        try {
+          savedEventId = await createEvent(data as CalendarEventCreate);
+        } catch {
+          return;
+        }
       }
+
+      // Persist participants to webmail DB (Stalwart doesn't return them)
+      if (savedEventId && attendees.length > 0) {
+        const withId = attendees.map((a) => ({ ...a, eventId: savedEventId! }));
+        saveEventParticipants(savedEventId, withId).catch(() => {});
+      } else if (savedEventId && attendees.length === 0) {
+        deleteEventParticipants(savedEventId).catch(() => {});
+      }
+
       // Send invitation emails if there are attendees (fire-and-forget)
-      const participants = "participants" in data ? data.participants : undefined;
-      if (participants && Object.values(participants).some((p) => p.roles?.attendee)) {
+      if (attendees.length > 0) {
         sendInvitationEmails(data as CalendarEventCreate, "REQUEST").catch((err) => {
           toast.error(`Failed to send invitations: ${err instanceof Error ? err.message : "Unknown error"}`);
         });
       }
     },
-    [createEvent, updateEvent],
+    [createEvent, updateEvent, userEmail],
   );
 
   // Drag-and-drop: change event time
@@ -240,13 +269,14 @@ export const CalendarPage = React.memo(function CalendarPage() {
     [updateEvent],
   );
 
-  // Delete — sends cancellation emails to attendees
+  // Delete — sends cancellation emails to attendees and cleans up participants
   const handleDelete = useCallback(
     (eventId: string) => {
-      // Find the event to check for attendees before deleting
       const event = events.find((e) => e.id === eventId);
       deleteEvent(eventId);
       handleClosePopover();
+      // Clean up participants from webmail DB
+      deleteEventParticipants(eventId).catch(() => {});
       // Send cancellation if event had attendees (fire-and-forget)
       if (event?.participants && Object.values(event.participants).some((p) => p.roles?.attendee)) {
         sendInvitationEmails(event, "CANCEL").catch(() => {});

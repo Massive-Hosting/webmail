@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, Plus, Trash2, MapPin, Clock, Users, Bell, Palette, Repeat, Check, HelpCircle } from "lucide-react";
+import { X, Plus, Trash2, MapPin, Clock, Users, Bell, Palette, Repeat, Check, HelpCircle, Loader2 } from "lucide-react";
 import type {
   CalendarEvent,
   CalendarEventCreate,
@@ -14,6 +14,7 @@ import type {
 } from "@/types/calendar.ts";
 import { format, parseISO, minutesToDuration, parseDurationMinutes, getEventColor, isEventOnDay } from "@/hooks/use-calendar.ts";
 import { useContactSearch } from "@/hooks/use-contacts.ts";
+import { getEventParticipants } from "@/api/participants.ts";
 import { StyledSelect } from "@/components/ui/styled-select.tsx";
 import { useTranslation } from "react-i18next";
 
@@ -127,12 +128,7 @@ export const EventForm = React.memo(function EventForm({
 
   // Attendee management
   const [attendeeInput, setAttendeeInput] = useState("");
-  const [attendees, setAttendees] = useState<Array<{ name: string; email: string; participationStatus?: Participant["participationStatus"] }>>(() => {
-    if (!event?.participants) return [];
-    return Object.values(event.participants)
-      .filter((p) => p.roles?.attendee)
-      .map((p) => ({ name: p.name ?? "", email: p.email ?? "", participationStatus: p.participationStatus }));
-  });
+  const [attendees, setAttendees] = useState<Array<{ name: string; email: string; participationStatus?: Participant["participationStatus"] }>>([]);
 
   // Sync form state when event prop changes (e.g., opening edit dialog).
   useEffect(() => {
@@ -179,14 +175,21 @@ export const EventForm = React.memo(function EventForm({
       }
     }
 
-    if (!event?.participants) {
-      setAttendees([]);
+    // Load attendees from webmail DB (Stalwart doesn't return participants via JMAP).
+    if (event?.id) {
+      getEventParticipants(event.id)
+        .then((participants) => {
+          setAttendees(
+            participants.map((p) => ({
+              name: p.name,
+              email: p.email,
+              participationStatus: p.status as Participant["participationStatus"],
+            })),
+          );
+        })
+        .catch(() => setAttendees([]));
     } else {
-      setAttendees(
-        Object.values(event.participants)
-          .filter((p) => p.roles?.attendee)
-          .map((p) => ({ name: p.name ?? "", email: p.email ?? "", participationStatus: p.participationStatus })),
-      );
+      setAttendees([]);
     }
   }, [event, open, calendars, defaultDate, defaultHour]);
 

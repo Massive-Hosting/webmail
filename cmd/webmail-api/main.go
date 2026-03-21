@@ -103,6 +103,7 @@ func main() {
 	wsHandler := handler.NewWebSocketHandler(hub, progressRelay, log)
 	spamHandler := handler.NewSpamHandler(log)
 	securityHandler := handler.NewSecurityHandler(rdb, queries, log)
+	participantsHandler := handler.NewParticipantsHandler(queries, log)
 	healthHandler := handler.NewHealthHandler(pool)
 
 	// Start Temporal worker (in-process).
@@ -193,6 +194,12 @@ func main() {
 			r.Get("/security/app-passwords", securityHandler.AppPasswordList)
 			r.Post("/security/app-passwords", securityHandler.AppPasswordCreate)
 			r.Delete("/security/app-passwords/{id}", securityHandler.AppPasswordDelete)
+
+			// Event participants (stored in webmail DB since Stalwart doesn't return them).
+			r.Get("/events/{eventId}/participants", participantsHandler.Get)
+			r.Put("/events/{eventId}/participants", participantsHandler.Put)
+			r.Delete("/events/{eventId}/participants", participantsHandler.Delete)
+			r.Post("/events/participants/batch", participantsHandler.BatchGet)
 
 			// WebSocket.
 			r.Get("/ws", wsHandler.Upgrade)
