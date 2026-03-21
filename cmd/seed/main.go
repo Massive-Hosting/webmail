@@ -1137,7 +1137,46 @@ type contactCard struct {
 	Notes         string                 `json:"notes,omitempty"`
 }
 
+func getDefaultAddressBookID(c *client) (string, error) {
+	resp, err := c.jmapCall(jmapRequest{
+		Using: []string{"urn:ietf:params:jmap:contacts"},
+		MethodCalls: [][]interface{}{
+			{"AddressBook/get", map[string]interface{}{
+				"accountId":  c.accountID,
+				"properties": []string{"id", "isDefault"},
+			}, "0"},
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+	var result struct {
+		List []struct {
+			ID        string `json:"id"`
+			IsDefault bool   `json:"isDefault"`
+		} `json:"list"`
+	}
+	if err := json.Unmarshal(resp.MethodResponses[0][1], &result); err != nil {
+		return "", err
+	}
+	for _, ab := range result.List {
+		if ab.IsDefault {
+			return ab.ID, nil
+		}
+	}
+	if len(result.List) > 0 {
+		return result.List[0].ID, nil
+	}
+	return "", fmt.Errorf("no address book found")
+}
+
 func seedContacts(c *client) (int, error) {
+	// Get the default address book ID so contacts are visible in the webmail.
+	addressBookID, err := getDefaultAddressBookID(c)
+	if err != nil {
+		return 0, fmt.Errorf("getting default address book: %w", err)
+	}
+
 	type contactDef struct {
 		fullName     string
 		emails       []string
@@ -1250,6 +1289,7 @@ func seedContacts(c *client) (int, error) {
 			}
 		}
 
+		card["addressBookIds"] = map[string]bool{addressBookID: true}
 		create[fmt.Sprintf("c%d", i)] = card
 	}
 
