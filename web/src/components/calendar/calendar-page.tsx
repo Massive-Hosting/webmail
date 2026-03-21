@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import { ResizeHandle } from "@/components/layout/resize-handle.tsx";
 import { MonthView } from "./month-view.tsx";
 import { WeekView } from "./week-view.tsx";
@@ -327,21 +328,27 @@ export const CalendarPage = React.memo(function CalendarPage() {
         >
           <button
             onClick={handleNewEvent}
-            className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
-            style={{ color: "var(--color-text-accent)" }}
+            className="action-bar__btn action-bar__btn--primary"
           >
-            <Plus size={14} />
-            {t("calendar.newEvent")}
+            <Plus size={16} />
+            <span className="action-bar__btn-label">{t("calendar.newEvent")}</span>
           </button>
-          <button
-            onClick={handleImportICS}
-            className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
-            style={{ color: "var(--color-text-secondary)" }}
-            title={t("calendar.importICS")}
-          >
-            <Upload size={14} />
-            {t("calendar.importICS")}
-          </button>
+          <Tooltip.Provider delayDuration={400}>
+            <Tooltip.Root>
+              <Tooltip.Trigger asChild>
+                <button
+                  onClick={handleImportICS}
+                  className="flex items-center justify-center w-7 h-7 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                >
+                  <Upload size={14} />
+                </button>
+              </Tooltip.Trigger>
+              <Tooltip.Content className="tooltip-content" sideOffset={5}>
+                {t("calendar.importICS")}
+              </Tooltip.Content>
+            </Tooltip.Root>
+          </Tooltip.Provider>
         </div>
 
         <div className="flex flex-col gap-0.5 p-2">
