@@ -879,7 +879,12 @@ function DayTimeline({
     <div
       ref={containerRef}
       className="relative select-none"
-      style={{ height: totalHeight, cursor: dragState ? "grabbing" : undefined }}
+      style={{
+        height: attendeeBusySlots && Object.keys(attendeeBusySlots).length > 0
+          ? totalHeight + 60
+          : totalHeight,
+        cursor: dragState ? "grabbing" : undefined,
+      }}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
     >
@@ -956,86 +961,185 @@ function DayTimeline({
           const slotHeight = (slotDuration / 60) * HOUR_HEIGHT;
           if (slotTop + slotHeight < 0 || slotTop > totalHeight) return null;
           const busyColor = BUSY_COLORS[attendeeIdx % BUSY_COLORS.length];
+          const attendeeName = email.split("@")[0];
           return (
             <div
               key={`busy-${email}-${slotIdx}`}
-              className="absolute rounded-sm pointer-events-none"
-              title={`${email} - busy`}
+              className="absolute rounded-sm overflow-hidden"
               style={{
                 top: Math.max(0, slotTop),
                 left: 52,
                 right: 8,
-                height: Math.max(slotHeight, 4),
-                backgroundColor: busyColor + "20",
-                borderLeft: `3px solid ${busyColor}80`,
+                height: Math.max(slotHeight, 12),
+                backgroundColor: busyColor + "18",
+                borderLeft: `3px solid ${busyColor}`,
                 zIndex: 4,
+                pointerEvents: "none",
               }}
-            />
+            >
+              {slotHeight >= 14 && (
+                <div
+                  className="text-[9px] font-medium px-1.5 pt-0.5 truncate"
+                  style={{ color: busyColor, opacity: 0.8 }}
+                >
+                  {attendeeName}
+                </div>
+              )}
+            </div>
           );
         }),
       )}
 
-      {/* Event block */}
-      {eventTop >= -HOUR_HEIGHT && eventTop < totalHeight && (
+      {/* Event block — red border if conflicts with attendee busy slots */}
+      {(() => {
+        const eventEndMinutes = startMinutes + durationMinutes;
+        const hasConflict = attendeeBusySlots && Object.values(attendeeBusySlots).some((slots) =>
+          slots.some((slot) => {
+            const slotStart = new Date(slot.start);
+            const slotStartMins = slotStart.getHours() * 60 + slotStart.getMinutes();
+            const slotEndMins = slotStartMins + parseDurationMinutes(slot.duration);
+            return startMinutes < slotEndMins && eventEndMinutes > slotStartMins;
+          }),
+        );
+        const borderColor = hasConflict ? "#ef4444" : color;
+
+        return eventTop >= -HOUR_HEIGHT && eventTop < totalHeight && (
+          <div
+            className="absolute rounded-md flex flex-col overflow-hidden"
+            style={{
+              top: Math.max(0, eventTop),
+              left: 52,
+              right: 8,
+              height: Math.max(eventHeight, (MIN_DURATION_MINUTES / 60) * HOUR_HEIGHT),
+              backgroundColor: (hasConflict ? "#ef4444" : color) + "20",
+              border: `2px solid ${borderColor}`,
+              cursor: dragState?.type === "move" ? "grabbing" : "grab",
+              zIndex: 10,
+              userSelect: "none",
+            }}
+            onPointerDown={(e) => handlePointerDown(e, "move")}
+          >
+            {/* Top resize handle */}
+            <div
+              className="absolute top-0 left-0 right-0 flex justify-center"
+              style={{ height: 8, cursor: "ns-resize", zIndex: 11 }}
+              onPointerDown={(e) => handlePointerDown(e, "resize-top")}
+            >
+              <div
+                className="w-8 rounded-full"
+                style={{ height: 3, marginTop: 2, backgroundColor: borderColor, opacity: 0.6 }}
+              />
+            </div>
+
+            {/* Event content */}
+            <div className="flex-1 px-2 pt-2.5 pb-1 min-h-0">
+              <div
+                className="text-[11px] font-medium truncate"
+                style={{ color: borderColor }}
+              >
+                {title || "New event"}
+              </div>
+              <div
+                className="text-[10px] mt-0.5"
+                style={{ color: borderColor, opacity: 0.7 }}
+              >
+                {startTime} - {(() => {
+                  const total = sh * 60 + sm + durationMinutes;
+                  const eh = Math.floor(total / 60) % 24;
+                  const em = total % 60;
+                  return `${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`;
+                })()}
+              </div>
+              {hasConflict && (
+                <div className="text-[9px] mt-0.5 font-medium" style={{ color: "#ef4444" }}>
+                  Conflict
+                </div>
+              )}
+            </div>
+
+            {/* Bottom resize handle */}
+            <div
+              className="absolute bottom-0 left-0 right-0 flex justify-center"
+              style={{ height: 8, cursor: "ns-resize", zIndex: 11 }}
+              onPointerDown={(e) => handlePointerDown(e, "resize-bottom")}
+            >
+              <div
+                className="w-8 rounded-full"
+                style={{ height: 3, marginBottom: 2, backgroundColor: borderColor, opacity: 0.6 }}
+              />
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Attendee legend + suggested free slot */}
+      {attendeeBusySlots && Object.keys(attendeeBusySlots).length > 0 && (
         <div
-          className="absolute rounded-md flex flex-col overflow-hidden"
-          style={{
-            top: Math.max(0, eventTop),
-            left: 52,
-            right: 8,
-            height: Math.max(eventHeight, (MIN_DURATION_MINUTES / 60) * HOUR_HEIGHT),
-            backgroundColor: color + "30",
-            border: `2px solid ${color}`,
-            cursor: dragState?.type === "move" ? "grabbing" : "grab",
-            zIndex: 10,
-            userSelect: "none",
-          }}
-          onPointerDown={(e) => handlePointerDown(e, "move")}
+          className="absolute left-0 right-0 px-2 py-2 space-y-1.5"
+          style={{ top: totalHeight + 4 }}
         >
-          {/* Top resize handle */}
-          <div
-            className="absolute top-0 left-0 right-0 flex justify-center"
-            style={{ height: 8, cursor: "ns-resize", zIndex: 11 }}
-            onPointerDown={(e) => handlePointerDown(e, "resize-top")}
-          >
-            <div
-              className="w-8 rounded-full"
-              style={{ height: 3, marginTop: 2, backgroundColor: color, opacity: 0.6 }}
-            />
+          {/* Legend */}
+          <div className="flex flex-wrap gap-x-3 gap-y-1">
+            {Object.keys(attendeeBusySlots).map((email, idx) => (
+              <div key={email} className="flex items-center gap-1">
+                <div
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: BUSY_COLORS[idx % BUSY_COLORS.length] }}
+                />
+                <span className="text-[9px] truncate" style={{ color: "var(--color-text-tertiary)", maxWidth: 100 }}>
+                  {email.split("@")[0]}
+                </span>
+              </div>
+            ))}
           </div>
 
-          {/* Event content */}
-          <div className="flex-1 px-2 pt-2.5 pb-1 min-h-0">
-            <div
-              className="text-[11px] font-medium truncate"
-              style={{ color }}
-            >
-              {title || "New event"}
-            </div>
-            <div
-              className="text-[10px] mt-0.5"
-              style={{ color: color, opacity: 0.7 }}
-            >
-              {startTime} - {(() => {
-                const total = sh * 60 + sm + durationMinutes;
-                const eh = Math.floor(total / 60) % 24;
-                const em = total % 60;
-                return `${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`;
-              })()}
-            </div>
-          </div>
+          {/* Suggested free slot */}
+          {(() => {
+            const allSlots = Object.values(attendeeBusySlots).flat();
+            if (allSlots.length === 0) return null;
 
-          {/* Bottom resize handle */}
-          <div
-            className="absolute bottom-0 left-0 right-0 flex justify-center"
-            style={{ height: 8, cursor: "ns-resize", zIndex: 11 }}
-            onPointerDown={(e) => handlePointerDown(e, "resize-bottom")}
-          >
-            <div
-              className="w-8 rounded-full"
-              style={{ height: 3, marginBottom: 2, backgroundColor: color, opacity: 0.6 }}
-            />
-          </div>
+            // Find first free slot of the right duration between 8am-6pm
+            const workStart = 8 * 60;
+            const workEnd = 18 * 60;
+            const busyRanges = allSlots
+              .map((s) => {
+                const st = new Date(s.start);
+                const startM = st.getHours() * 60 + st.getMinutes();
+                return { start: startM, end: startM + parseDurationMinutes(s.duration) };
+              })
+              .sort((a, b) => a.start - b.start);
+
+            let cursor = workStart;
+            let freeStart: number | null = null;
+            for (const range of busyRanges) {
+              if (range.start >= cursor + durationMinutes) {
+                freeStart = cursor;
+                break;
+              }
+              cursor = Math.max(cursor, range.end);
+            }
+            if (freeStart === null && cursor + durationMinutes <= workEnd) {
+              freeStart = cursor;
+            }
+
+            if (freeStart === null || (freeStart === startMinutes)) return null;
+
+            const fh = Math.floor(freeStart / 60);
+            const fm = freeStart % 60;
+            const freeTimeStr = `${String(fh).padStart(2, "0")}:${String(fm).padStart(2, "0")}`;
+
+            return (
+              <button
+                type="button"
+                onClick={() => onStartTimeChange(freeTimeStr)}
+                className="flex items-center gap-1.5 text-[10px] font-medium px-2 py-1 rounded-md transition-colors hover:bg-[var(--color-bg-tertiary)]"
+                style={{ color: "var(--color-bg-success)" }}
+              >
+                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--color-bg-success)" }} />
+                Everyone free at {freeTimeStr} — click to move
+              </button>
+            );
+          })()}
         </div>
       )}
     </div>
