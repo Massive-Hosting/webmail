@@ -761,5 +761,7 @@
   "security.appPasswordFailed": "Failed to create app password",
   "security.appPasswordDeleted": "App password revoked",
   "security.deleteFailed": "Failed to revoke app password",
-  "security.revoke": "Revoke"
+  "security.revoke": "Revoke",
+  "calendar.team": "Team",
+  "calendar.noRoom": "No room"
 }

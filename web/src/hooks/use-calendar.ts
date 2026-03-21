@@ -128,6 +128,7 @@ export function useCalendarNavigation(initialView: CalendarViewMode = "month") {
         case "month":
           return addMonths(d, 1);
         case "week":
+        case "team":
           return addWeeks(d, 1);
         case "day":
           return addDays(d, 1);
@@ -141,6 +142,7 @@ export function useCalendarNavigation(initialView: CalendarViewMode = "month") {
         case "month":
           return subMonths(d, 1);
         case "week":
+        case "team":
           return subWeeks(d, 1);
         case "day":
           return subDays(d, 1);
@@ -178,6 +180,14 @@ export function useCalendarNavigation(initialView: CalendarViewMode = "month") {
           start: startOfDay(currentDate).toISOString(),
           end: endOfDay(currentDate).toISOString(),
         };
+      case "team": {
+        const teamWeekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+        const teamWeekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+        return {
+          start: teamWeekStart.toISOString(),
+          end: teamWeekEnd.toISOString(),
+        };
+      }
     }
   }, [viewMode, currentDate]);
 
@@ -196,6 +206,11 @@ export function useCalendarNavigation(initialView: CalendarViewMode = "month") {
       }
       case "day":
         return format(currentDate, "EEEE, MMMM d, yyyy");
+      case "team": {
+        const teamStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+        const teamEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+        return `Team: ${format(teamStart, "MMM d")} - ${format(teamEnd, "MMM d, yyyy")}`;
+      }
     }
   }, [viewMode, currentDate]);
 

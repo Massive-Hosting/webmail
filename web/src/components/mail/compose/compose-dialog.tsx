@@ -21,6 +21,7 @@ import {
   CalendarClock,
   FileText,
   BookmarkPlus,
+  Palmtree,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { DateTimePickerDialog } from "@/components/ui/datetime-picker-dialog.tsx";
@@ -876,6 +877,9 @@ export const ComposePanel = React.memo(function ComposePanel({
           />
         )}
 
+        {/* Absence banners */}
+        <AbsenceBanners recipients={[...draft.to, ...draft.cc, ...draft.bcc]} />
+
         {/* Subject */}
         <div className="compose-dialog__field">
           <label className="compose-dialog__field-label">{t("compose.subject")}</label>
@@ -1318,4 +1322,59 @@ export function ComposeContainer() {
 function stripHtml(html: string): string {
   const doc = new DOMParser().parseFromString(html, "text/html");
   return doc.body.textContent ?? "";
+}
+
+/** Shows absence banners for recipients who have vacation auto-reply enabled */
+function AbsenceBanners({ recipients }: { recipients: Array<{ email: string; isValid: boolean }> }) {
+  const [absences, setAbsences] = useState<Record<string, { subject: string; until?: string }>>({});
+  const checkedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const validEmails = recipients.filter((r) => r.isValid).map((r) => r.email);
+    const toCheck = validEmails.filter((e) => !checkedRef.current.has(e));
+    if (toCheck.length === 0) return;
+
+    for (const email of toCheck) {
+      checkedRef.current.add(email);
+      import("@/api/availability.ts").then(({ checkAbsence }) => {
+        checkAbsence(email)
+          .then((info) => {
+            if (info.absent) {
+              setAbsences((prev) => ({ ...prev, [email]: { subject: info.subject ?? "", until: info.until } }));
+            }
+          })
+          .catch(() => {});
+      });
+    }
+  }, [recipients]);
+
+  const entries = Object.entries(absences).filter(([email]) =>
+    recipients.some((r) => r.email === email && r.isValid),
+  );
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="px-3 space-y-1">
+      {entries.map(([email, info]) => (
+        <div
+          key={email}
+          className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-md"
+          style={{
+            backgroundColor: "rgba(245, 158, 11, 0.08)",
+            color: "var(--color-bg-warning)",
+            border: "1px solid rgba(245, 158, 11, 0.15)",
+          }}
+        >
+          <Palmtree size={13} style={{ flexShrink: 0 }} />
+          <span>
+            <strong>{email.split("@")[0]}</strong>
+            {" is out of office"}
+            {info.until && ` until ${new Date(info.until).toLocaleDateString()}`}
+            {info.subject && ` — ${info.subject}`}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
 }

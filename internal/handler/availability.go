@@ -425,6 +425,307 @@ func (h *AvailabilityHandler) searchPrincipals(ctx context.Context, sess *sessio
 	return entries, nil
 }
 
+// --- Absence Check ---
+
+// AbsenceCheck handles POST /api/absence-check.
+func (h *AvailabilityHandler) AbsenceCheck(w http.ResponseWriter, r *http.Request) {
+	sess := middleware.SessionFromContext(r.Context())
+	if sess == nil {
+		writeJSON(w, http.StatusUnauthorized, errorResponse{"unauthorized"})
+		return
+	}
+
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&req); err != nil || req.Email == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"invalid_request"})
+		return
+	}
+
+	// Same-domain check.
+	requesterDomain := domainFromEmail(sess.Email)
+	targetDomain := domainFromEmail(req.Email)
+	if requesterDomain == "" || targetDomain == "" || requesterDomain != targetDomain {
+		writeJSON(w, http.StatusOK, map[string]interface{}{"absent": false})
+		return
+	}
+
+	// Check directory is enabled (absence piggybacks on directory).
+	settings, err := h.queries.GetDomainSettings(r.Context(), requesterDomain)
+	if err != nil || !settings.DirectoryEnabled {
+		writeJSON(w, http.StatusOK, map[string]interface{}{"absent": false})
+		return
+	}
+
+	accountID, err := h.resolveAccountID(r.Context(), sess, req.Email)
+	if err != nil {
+		writeJSON(w, http.StatusOK, map[string]interface{}{"absent": false})
+		return
+	}
+
+	vr, err := h.queryVacationResponse(r.Context(), sess, accountID)
+	if err != nil || !vr.IsEnabled {
+		writeJSON(w, http.StatusOK, map[string]interface{}{"absent": false})
+		return
+	}
+
+	result := map[string]interface{}{
+		"absent":  true,
+		"subject": vr.Subject,
+	}
+	if vr.ToDate != "" {
+		result["until"] = vr.ToDate
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
+type vacationInfo struct {
+	IsEnabled bool   `json:"isEnabled"`
+	Subject   string `json:"subject"`
+	ToDate    string `json:"toDate"`
+}
+
+func (h *AvailabilityHandler) queryVacationResponse(ctx context.Context, sess *session.SessionData, accountID string) (*vacationInfo, error) {
+	jmapReq := map[string]interface{}{
+		"using": []string{"urn:ietf:params:jmap:core", "urn:ietf:params:jmap:mail", "urn:ietf:params:jmap:vacationresponse"},
+		"methodCalls": []interface{}{
+			[]interface{}{
+				"VacationResponse/get",
+				map[string]interface{}{
+					"accountId": accountID,
+					"ids":       []string{"singleton"},
+				},
+				"v0",
+			},
+		},
+	}
+
+	body, err := json.Marshal(jmapReq)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, sess.StalwartURL+"/jmap/", bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.SetBasicAuth("admin", sess.StalwartToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := h.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("JMAP returned %d", resp.StatusCode)
+	}
+
+	var jmapResp struct {
+		MethodResponses [][]json.RawMessage `json:"methodResponses"`
+	}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1*1024*1024)).Decode(&jmapResp); err != nil {
+		return nil, err
+	}
+
+	for _, mr := range jmapResp.MethodResponses {
+		if len(mr) < 2 {
+			continue
+		}
+		var result struct {
+			List []vacationInfo `json:"list"`
+		}
+		if err := json.Unmarshal(mr[1], &result); err != nil {
+			continue
+		}
+		if len(result.List) > 0 {
+			return &result.List[0], nil
+		}
+	}
+
+	return &vacationInfo{}, nil
+}
+
+// --- Team Availability ---
+
+type teamMember struct {
+	Email     string     `json:"email"`
+	Name      string     `json:"name"`
+	BusySlots []busySlot `json:"busySlots"`
+}
+
+// TeamAvailability handles POST /api/availability/team.
+func (h *AvailabilityHandler) TeamAvailability(w http.ResponseWriter, r *http.Request) {
+	sess := middleware.SessionFromContext(r.Context())
+	if sess == nil {
+		writeJSON(w, http.StatusUnauthorized, errorResponse{"unauthorized"})
+		return
+	}
+
+	var req struct {
+		Start string `json:"start"`
+		End   string `json:"end"`
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"invalid_request"})
+		return
+	}
+
+	requesterDomain := domainFromEmail(sess.Email)
+	if requesterDomain == "" {
+		writeJSON(w, http.StatusOK, map[string]interface{}{"members": []teamMember{}})
+		return
+	}
+
+	settings, err := h.queries.GetDomainSettings(r.Context(), requesterDomain)
+	if err != nil || !settings.FreeBusyEnabled {
+		writeJSON(w, http.StatusOK, map[string]interface{}{"members": []teamMember{}})
+		return
+	}
+
+	// Get all same-domain users from Stalwart.
+	allUsers, err := h.searchPrincipals(r.Context(), sess, requesterDomain, "", 50)
+	if err != nil {
+		h.log.Warn().Err(err).Msg("failed to list team members")
+		writeJSON(w, http.StatusOK, map[string]interface{}{"members": []teamMember{}})
+		return
+	}
+
+	// Fetch availability for each member (bounded concurrency).
+	type result struct {
+		idx   int
+		slots []busySlot
+	}
+	results := make(chan result, len(allUsers))
+	sem := make(chan struct{}, 5) // max 5 concurrent
+
+	for i, user := range allUsers {
+		go func(idx int, email string) {
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			accountID, err := h.resolveAccountID(r.Context(), sess, email)
+			if err != nil {
+				results <- result{idx: idx, slots: nil}
+				return
+			}
+			slots, err := h.queryBusySlots(r.Context(), sess, accountID, req.Start, req.End)
+			if err != nil {
+				results <- result{idx: idx, slots: nil}
+				return
+			}
+			results <- result{idx: idx, slots: slots}
+		}(i, user.Email)
+	}
+
+	members := make([]teamMember, len(allUsers))
+	for i, user := range allUsers {
+		members[i] = teamMember{Email: user.Email, Name: user.Name, BusySlots: []busySlot{}}
+	}
+	for range allUsers {
+		r := <-results
+		if r.slots != nil {
+			members[r.idx].BusySlots = r.slots
+		}
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{"members": members})
+}
+
+// --- Resources ---
+
+type resourceEntry struct {
+	Email       string `json:"email"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// ListResources handles GET /api/resources.
+func (h *AvailabilityHandler) ListResources(w http.ResponseWriter, r *http.Request) {
+	sess := middleware.SessionFromContext(r.Context())
+	if sess == nil {
+		writeJSON(w, http.StatusUnauthorized, errorResponse{"unauthorized"})
+		return
+	}
+
+	requesterDomain := domainFromEmail(sess.Email)
+	if requesterDomain == "" {
+		writeJSON(w, http.StatusOK, []resourceEntry{})
+		return
+	}
+
+	settings, err := h.queries.GetDomainSettings(r.Context(), requesterDomain)
+	if err != nil || !settings.FreeBusyEnabled {
+		writeJSON(w, http.StatusOK, []resourceEntry{})
+		return
+	}
+
+	resources, err := h.listResourcePrincipals(r.Context(), sess, requesterDomain)
+	if err != nil {
+		h.log.Warn().Err(err).Msg("failed to list resources")
+		writeJSON(w, http.StatusOK, []resourceEntry{})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, resources)
+}
+
+func (h *AvailabilityHandler) listResourcePrincipals(ctx context.Context, sess *session.SessionData, domain string) ([]resourceEntry, error) {
+	url := fmt.Sprintf("%s/api/principal", sess.StalwartURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.SetBasicAuth("admin", sess.StalwartToken)
+
+	resp, err := h.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("principal list returned %d", resp.StatusCode)
+	}
+
+	var result struct {
+		Data struct {
+			Items []struct {
+				Name        string   `json:"name"`
+				Description string   `json:"description"`
+				Type        string   `json:"type"`
+				Emails      []string `json:"emails"`
+			} `json:"items"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1*1024*1024)).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	var entries []resourceEntry
+	for _, p := range result.Data.Items {
+		if p.Type != "location" && p.Type != "resource" {
+			continue
+		}
+		for _, email := range p.Emails {
+			if domainFromEmail(email) == domain {
+				entries = append(entries, resourceEntry{
+					Email:       email,
+					Name:        p.Description,
+					Description: p.Name,
+				})
+				break
+			}
+		}
+	}
+	if entries == nil {
+		entries = []resourceEntry{}
+	}
+	return entries, nil
+}
+
 // Crockford base32 encoding for Stalwart JMAP accountId resolution.
 const crockfordAlphabet = "0123456789abcdefghjkmnpqrstvwxyz"
 

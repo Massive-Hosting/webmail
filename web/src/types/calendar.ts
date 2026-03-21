@@ -79,7 +79,7 @@ export type CalendarEventUpdate = Partial<CalendarEventCreate>;
 export type CalendarCreate = Omit<Calendar, "id">;
 
 /** View mode for the calendar */
-export type CalendarViewMode = "month" | "week" | "day";
+export type CalendarViewMode = "month" | "week" | "day" | "team";
 
 /** Date range for querying events */
 export interface DateRange {

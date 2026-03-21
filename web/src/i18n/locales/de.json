@@ -761,5 +761,7 @@
   "security.appPasswordFailed": "App-Passwort konnte nicht erstellt werden",
   "security.appPasswordDeleted": "App-Passwort widerrufen",
   "security.deleteFailed": "App-Passwort konnte nicht widerrufen werden",
-  "security.revoke": "Widerrufen"
+  "security.revoke": "Widerrufen",
+  "calendar.team": "Team",
+  "calendar.noRoom": "Kein Raum"
 }

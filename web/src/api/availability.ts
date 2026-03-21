@@ -41,6 +41,42 @@ export async function getDomainSettings(): Promise<DomainSettings> {
   return apiGet<DomainSettings>("/api/domain-settings");
 }
 
-export async function updateDomainSettings(settings: Partial<DomainSettings>): Promise<void> {
-  return apiPut("/api/domain-settings", settings);
+// --- Absence Check ---
+
+export interface AbsenceInfo {
+  absent: boolean;
+  subject?: string;
+  until?: string;
+}
+
+export async function checkAbsence(email: string): Promise<AbsenceInfo> {
+  return apiPost<AbsenceInfo>("/api/absence-check", { email });
+}
+
+// --- Team Availability ---
+
+export interface TeamMember {
+  email: string;
+  name: string;
+  busySlots: BusySlot[];
+}
+
+export async function fetchTeamAvailability(
+  start: string,
+  end: string,
+): Promise<TeamMember[]> {
+  const result = await apiPost<{ members: TeamMember[] }>("/api/availability/team", { start, end });
+  return result.members ?? [];
+}
+
+// --- Resources ---
+
+export interface Resource {
+  email: string;
+  name: string;
+  description: string;
+}
+
+export async function listResources(): Promise<Resource[]> {
+  return apiGet<Resource[]>("/api/resources");
 }

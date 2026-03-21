@@ -15,7 +15,7 @@ import type {
 import { format, parseISO, minutesToDuration, parseDurationMinutes, getEventColor, isEventOnDay } from "@/hooks/use-calendar.ts";
 import { useContactSearch } from "@/hooks/use-contacts.ts";
 import { getEventParticipants } from "@/api/participants.ts";
-import { fetchAvailability, type BusySlot } from "@/api/availability.ts";
+import { fetchAvailability, listResources, type BusySlot, type Resource } from "@/api/availability.ts";
 import { StyledSelect } from "@/components/ui/styled-select.tsx";
 import { useTranslation } from "react-i18next";
 
@@ -215,6 +215,21 @@ export const EventForm = React.memo(function EventForm({
       setAttendeeBusySlots(Object.fromEntries(results));
     });
   }, [attendees, startDate, allDay]);
+
+  // Fetch available rooms
+  const [rooms, setRooms] = useState<Resource[]>([]);
+  const [selectedRoom, setSelectedRoom] = useState<string>("");
+  useEffect(() => {
+    listResources().then(setRooms).catch(() => setRooms([]));
+  }, []);
+
+  const handleSelectRoom = useCallback((roomEmail: string) => {
+    setSelectedRoom(roomEmail);
+    const room = rooms.find((r) => r.email === roomEmail);
+    if (room) {
+      setLocation(room.name || room.description);
+    }
+  }, [rooms]);
 
   const endTime = useMemo(() => {
     const [h, m] = startTime.split(":").map(Number);
@@ -507,6 +522,30 @@ export const EventForm = React.memo(function EventForm({
                   }}
                 />
               </div>
+
+              {/* Room picker */}
+              {rooms.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <MapPin size={14} style={{ color: "var(--color-text-tertiary)" }} />
+                  <select
+                    value={selectedRoom}
+                    onChange={(e) => handleSelectRoom(e.target.value)}
+                    className="flex-1 px-2 py-1 text-sm rounded outline-none cursor-pointer"
+                    style={{
+                      backgroundColor: "var(--color-bg-elevated)",
+                      color: "var(--color-text-primary)",
+                      border: "1px solid var(--color-border-primary)",
+                    }}
+                  >
+                    <option value="">{t("calendar.noRoom")}</option>
+                    {rooms.map((room) => (
+                      <option key={room.email} value={room.email}>
+                        {room.name || room.email} {room.description ? `(${room.description})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Recurrence */}
               <div className="flex items-center gap-2">

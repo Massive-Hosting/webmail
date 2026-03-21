@@ -31,6 +31,7 @@ import type {
 } from "@/types/calendar.ts";
 import { importICS } from "./ics-import.ts";
 import { ShareCalendarDialog } from "./share-calendar-dialog.tsx";
+import { TeamAvailability } from "./team-availability.tsx";
 import { sendInvitationEmails } from "@/api/calendar.ts";
 import { saveEventParticipants, deleteEventParticipants, type EventParticipant } from "@/api/participants.ts";
 import { toast } from "sonner";
@@ -339,6 +340,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
     { mode: "month", label: t("calendar.month") },
     { mode: "week", label: t("calendar.week") },
     { mode: "day", label: t("calendar.day") },
+    { mode: "team", label: t("calendar.team") },
   ];
 
   return (
@@ -530,6 +532,17 @@ export const CalendarPage = React.memo(function CalendarPage() {
               onClickSlot={handleClickSlot}
               onClickEvent={handleClickEvent}
               onEventTimeChange={handleEventTimeChange}
+            />
+          )}
+          {viewMode === "team" && (
+            <TeamAvailability
+              currentDate={currentDate}
+              onCreateEvent={(date, hour, attendees) => {
+                setDefaultFormDate(date);
+                setDefaultFormHour(hour);
+                setEditingEvent(null);
+                setFormOpen(true);
+              }}
             />
           )}
         </div>

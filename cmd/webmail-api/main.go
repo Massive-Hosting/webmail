@@ -204,8 +204,11 @@ func main() {
 
 			// Free/busy availability and tenant directory.
 			r.Post("/availability", availabilityHandler.FreeBusy)
+			r.Post("/availability/team", availabilityHandler.TeamAvailability)
+			r.Post("/absence-check", availabilityHandler.AbsenceCheck)
 			r.Post("/directory/search", availabilityHandler.Directory)
 			r.Get("/domain-settings", availabilityHandler.GetDomainSettings)
+			r.Get("/resources", availabilityHandler.ListResources)
 
 			// WebSocket.
 			r.Get("/ws", wsHandler.Upgrade)

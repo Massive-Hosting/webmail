@@ -761,5 +761,7 @@
   "security.appPasswordFailed": "Kunne ikke opprette app-passord",
   "security.appPasswordDeleted": "App-passord tilbakekalt",
   "security.deleteFailed": "Kunne ikke tilbakekalle app-passord",
-  "security.revoke": "Tilbakekall"
+  "security.revoke": "Tilbakekall",
+  "calendar.team": "Team",
+  "calendar.noRoom": "Ingen rom"
 }
