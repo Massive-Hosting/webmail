@@ -55,7 +55,7 @@
   border: none;
   background: none;
   cursor: pointer;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   transition: background-color 150ms ease, color 150ms ease;
 }
 
