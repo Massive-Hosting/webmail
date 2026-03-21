@@ -8,6 +8,7 @@ import { useWaveStore } from "@/stores/wave-store.ts";
 import { useWave } from "@/hooks/use-wave.ts";
 import { Avatar } from "@/components/ui/avatar.tsx";
 import { useTranslation } from "react-i18next";
+import { useDraggable } from "@/hooks/use-draggable.ts";
 
 export const WaveCall = React.memo(function WaveCall() {
   const { t } = useTranslation();
@@ -27,6 +28,8 @@ export const WaveCall = React.memo(function WaveCall() {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const [isCompact, setIsCompact] = useState(false);
   const [duration, setDuration] = useState("00:00");
+  const { handleProps: dragHandleProps, containerStyle: dragStyle } = useDraggable();
+  const { handleProps: pipDragProps, containerStyle: pipDragStyle } = useDraggable({ x: window.innerWidth - 220, y: window.innerHeight - 170 });
 
   // Attach streams to video elements
   useEffect(() => {
@@ -59,19 +62,22 @@ export const WaveCall = React.memo(function WaveCall() {
   const hasRemoteVideo = remoteStream && remoteStream.getVideoTracks().length > 0 && remoteStream.getVideoTracks()[0].enabled;
 
   if (isCompact) {
-    // Compact PiP mode
+    // Compact PiP mode — draggable
     return (
       <div
-        className="fixed bottom-6 right-6 z-[9998] rounded-2xl overflow-hidden cursor-pointer"
+        data-draggable
+        className="fixed z-[9998] rounded-2xl overflow-hidden"
         style={{
           width: 200,
           height: 150,
           backgroundColor: "#1c1917",
+          ...pipDragStyle,
           boxShadow: "0 12px 40px rgba(0, 0, 0, 0.4)",
           border: "1px solid rgba(255, 255, 255, 0.1)",
         }}
-        onClick={() => setIsCompact(false)}
       >
+        {/* Drag handle for PiP */}
+        <div className="absolute inset-0 z-10" {...pipDragProps} onDoubleClick={() => setIsCompact(false)} />
         {hasRemoteVideo ? (
           <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
         ) : (
@@ -80,7 +86,7 @@ export const WaveCall = React.memo(function WaveCall() {
           </div>
         )}
         <div
-          className="absolute bottom-0 left-0 right-0 px-2 py-1 flex items-center justify-between"
+          className="absolute bottom-0 left-0 right-0 px-2 py-1 flex items-center justify-between pointer-events-none"
           style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.7))" }}
         >
           <span className="text-white text-[10px] font-medium">{duration}</span>
@@ -97,14 +103,23 @@ export const WaveCall = React.memo(function WaveCall() {
       style={{ backgroundColor: "rgba(0, 0, 0, 0.85)" }}
     >
       <div
+        data-draggable
         className="relative flex flex-col rounded-2xl overflow-hidden"
         style={{
           width: "min(90vw, 900px)",
           height: "min(80vh, 600px)",
           backgroundColor: "#0c0a09",
           boxShadow: "0 24px 80px rgba(0, 0, 0, 0.6)",
+          position: "relative",
+          ...dragStyle,
         }}
       >
+        {/* Drag handle — top bar area */}
+        <div
+          className="absolute top-0 left-0 right-0 h-10 z-20"
+          {...dragHandleProps}
+        />
+
         {/* Remote video / avatar */}
         <div className="flex-1 relative overflow-hidden flex items-center justify-center">
           {callState === "connected" && hasRemoteVideo ? (

@@ -8,6 +8,7 @@ import {
 import { Avatar } from "@/components/ui/avatar.tsx";
 import { useAuthStore } from "@/stores/auth-store.ts";
 import { useTranslation } from "react-i18next";
+import { useDraggable } from "@/hooks/use-draggable.ts";
 
 interface WaveLobbyProps {
   open: boolean;
@@ -34,6 +35,8 @@ export const WaveLobby = React.memo(function WaveLobby({
   const { t } = useTranslation();
   const email = useAuthStore((s) => s.email);
   const displayName = useAuthStore((s) => s.displayName);
+
+  const { handleProps: dragHandleProps, containerStyle: dragStyle } = useDraggable();
 
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(true);
@@ -203,17 +206,19 @@ export const WaveLobby = React.memo(function WaveLobby({
           style={{ backgroundColor: "rgba(0, 0, 0, 0.7)" }}
         />
         <Dialog.Content
+          data-draggable
           className="fixed z-[9999] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl overflow-hidden flex flex-col animate-scale-in"
           style={{
             width: 520,
             maxWidth: "92vw",
             backgroundColor: "#1c1917",
             border: "1px solid rgba(255, 255, 255, 0.08)",
+            ...dragStyle,
             boxShadow: "0 32px 80px rgba(0, 0, 0, 0.6)",
           }}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4">
+          {/* Header — drag handle */}
+          <div className="flex items-center justify-between px-6 py-4" {...dragHandleProps}>
             <Dialog.Title className="flex items-center gap-3">
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center"
