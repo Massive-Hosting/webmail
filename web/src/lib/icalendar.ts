@@ -1,6 +1,6 @@
-/** Basic iCalendar (.ics) parser for meeting invitations */
+/** iCalendar (.ics) parser and generator for meeting invitations */
 
-import type { CalendarEventCreate, Participant, RecurrenceRule } from "@/types/calendar.ts";
+import type { CalendarEventCreate, CalendarEvent, Participant, RecurrenceRule } from "@/types/calendar.ts";
 
 /** Parsed iCalendar invitation */
 export interface ParsedInvitation {
@@ -488,4 +488,127 @@ export function formatEventDateTime(event: ParsedVEvent): string {
   } catch {
     return startStr;
   }
+}
+
+// ---- ICS Generation ----
+
+/** Escape iCalendar text values */
+function escapeICalText(text: string): string {
+  return text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+}
+
+/** Format a Date or ISO string as iCalendar datetime (YYYYMMDDTHHMMSSZ) */
+function toICalDateTime(dt: string | Date): string {
+  const d = typeof dt === "string" ? new Date(dt) : dt;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+}
+
+/** Generate a unique UID for an event */
+function generateUID(): string {
+  const hex = () => Math.random().toString(16).slice(2, 10);
+  return `${hex()}-${hex()}-${hex()}@webmail`;
+}
+
+export type ICSMethod = "REQUEST" | "REPLY" | "CANCEL";
+
+export interface ICSEventData {
+  uid?: string;
+  summary: string;
+  description?: string;
+  location?: string;
+  start: string;
+  duration?: string;
+  timeZone?: string;
+  organizer: { name?: string; email: string };
+  attendees: Array<{ name?: string; email: string; status?: string }>;
+  sequence?: number;
+}
+
+/**
+ * Generate an iCalendar (.ics) string for an event invitation.
+ * Supports REQUEST (invite), REPLY (accept/decline), and CANCEL methods.
+ */
+export function generateICS(method: ICSMethod, event: ICSEventData): string {
+  const uid = event.uid || generateUID();
+  const lines: string[] = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Webmail//EN",
+    `METHOD:${method}`,
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${toICalDateTime(new Date())}`,
+    `DTSTART:${toICalDateTime(event.start)}`,
+    `SUMMARY:${escapeICalText(event.summary)}`,
+  ];
+
+  if (event.duration) {
+    lines.push(`DURATION:${event.duration}`);
+  }
+  if (event.description) {
+    lines.push(`DESCRIPTION:${escapeICalText(event.description)}`);
+  }
+  if (event.location) {
+    lines.push(`LOCATION:${escapeICalText(event.location)}`);
+  }
+  if (event.sequence != null) {
+    lines.push(`SEQUENCE:${event.sequence}`);
+  }
+
+  // Organizer
+  const orgCN = event.organizer.name ? `;CN=${event.organizer.name}` : "";
+  lines.push(`ORGANIZER${orgCN}:mailto:${event.organizer.email}`);
+
+  // Attendees
+  for (const att of event.attendees) {
+    const cn = att.name ? `;CN=${att.name}` : "";
+    const partstat = att.status ? `;PARTSTAT=${att.status.toUpperCase()}` : ";PARTSTAT=NEEDS-ACTION";
+    const rsvp = method === "REQUEST" ? ";RSVP=TRUE" : "";
+    lines.push(`ATTENDEE;ROLE=REQ-PARTICIPANT${cn}${partstat}${rsvp}:mailto:${att.email}`);
+  }
+
+  if (method === "CANCEL") {
+    lines.push("STATUS:CANCELLED");
+  }
+
+  lines.push("END:VEVENT");
+  lines.push("END:VCALENDAR");
+
+  return lines.join("\r\n") + "\r\n";
+}
+
+/**
+ * Build ICSEventData from a JMAP CalendarEvent and organizer info.
+ */
+export function calendarEventToICSData(
+  event: CalendarEvent | CalendarEventCreate,
+  organizerEmail: string,
+  organizerName?: string,
+): ICSEventData {
+  const attendees: ICSEventData["attendees"] = [];
+
+  if ("participants" in event && event.participants) {
+    for (const p of Object.values(event.participants)) {
+      if (p.roles?.attendee && p.email) {
+        attendees.push({
+          name: p.name,
+          email: p.email,
+          status: p.participationStatus,
+        });
+      }
+    }
+  }
+
+  return {
+    uid: "id" in event ? (event as CalendarEvent).id : undefined,
+    summary: ("title" in event ? event.title : "") ?? "",
+    description: event.description,
+    location: event.location,
+    start: event.start ?? new Date().toISOString(),
+    duration: event.duration,
+    timeZone: event.timeZone,
+    organizer: { name: organizerName, email: organizerEmail },
+    attendees,
+  };
 }

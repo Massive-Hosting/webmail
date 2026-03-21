@@ -20,9 +20,10 @@ import {
   type ParsedInvitation,
   type ParsedVEvent,
 } from "@/lib/icalendar.ts";
-import { createCalendarEvent, deleteCalendarEvent } from "@/api/calendar.ts";
+import { createCalendarEvent, deleteCalendarEvent, sendInvitationReply } from "@/api/calendar.ts";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchCalendars } from "@/api/calendar.ts";
+import { useAuthStore } from "@/stores/auth-store.ts";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
@@ -96,6 +97,8 @@ function RequestCard({
   const { t } = useTranslation();
   const [respondedStatus, setRespondedStatus] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const email = useAuthStore((s) => s.email);
+  const displayName = useAuthStore((s) => s.displayName);
 
   const { data: calendars } = useQuery({
     queryKey: ["calendars"],
@@ -141,6 +144,8 @@ function RequestCard({
         declined: t("invitation.invitationDeclined"),
       };
       toast.success(labels[status] ?? "Response sent");
+      // Send REPLY email back to organizer (fire-and-forget)
+      sendInvitationReply(event, status as "accepted" | "declined" | "tentative", email, displayName).catch(() => {});
     },
     onError: (error: Error) => {
       toast.error(t("invitation.failedToRespond", { message: error.message }));

@@ -30,6 +30,7 @@ import type {
 } from "@/types/calendar.ts";
 import { importICS } from "./ics-import.ts";
 import { ShareCalendarDialog } from "./share-calendar-dialog.tsx";
+import { sendInvitationEmails } from "@/api/calendar.ts";
 import { EmptyState } from "@/components/ui/empty-state.tsx";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
@@ -210,13 +211,20 @@ export const CalendarPage = React.memo(function CalendarPage() {
     setFormOpen(true);
   }, []);
 
-  // Save (create or update)
+  // Save (create or update) — sends invitation emails to attendees
   const handleSave = useCallback(
     (data: CalendarEventCreate | CalendarEventUpdate, eventId?: string) => {
       if (eventId) {
         updateEvent(eventId, data);
       } else {
         createEvent(data as CalendarEventCreate);
+      }
+      // Send invitation emails if there are attendees (fire-and-forget)
+      const participants = "participants" in data ? data.participants : undefined;
+      if (participants && Object.values(participants).some((p) => p.roles?.attendee)) {
+        sendInvitationEmails(data as CalendarEventCreate, "REQUEST").catch((err) => {
+          toast.error(`Failed to send invitations: ${err instanceof Error ? err.message : "Unknown error"}`);
+        });
       }
     },
     [createEvent, updateEvent],
@@ -230,13 +238,19 @@ export const CalendarPage = React.memo(function CalendarPage() {
     [updateEvent],
   );
 
-  // Delete
+  // Delete — sends cancellation emails to attendees
   const handleDelete = useCallback(
     (eventId: string) => {
+      // Find the event to check for attendees before deleting
+      const event = events.find((e) => e.id === eventId);
       deleteEvent(eventId);
       handleClosePopover();
+      // Send cancellation if event had attendees (fire-and-forget)
+      if (event?.participants && Object.values(event.participants).some((p) => p.roles?.attendee)) {
+        sendInvitationEmails(event, "CANCEL").catch(() => {});
+      }
     },
-    [deleteEvent, handleClosePopover],
+    [deleteEvent, handleClosePopover, events],
   );
 
   // Keyboard shortcuts

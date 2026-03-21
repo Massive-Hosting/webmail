@@ -63,7 +63,10 @@ Webmail is a full-featured email, contacts, and calendar client that connects to
 | Event management | Create, edit, delete events with recurrence rules |
 | Drag-and-drop events | Drag to reschedule events in week and day views (15-min snap) |
 | Agenda sidebar | Today's schedule visible alongside your inbox |
-| Meeting invitations | Accept, decline, and propose new times for .ics invitations |
+| Meeting invitations | Accept, decline, and tentatively accept .ics invitations |
+| Send invitations | Creating an event with attendees sends RFC 5545 .ics invitation emails |
+| RSVP replies | Accepting or declining sends a REPLY email back to the organizer |
+| Cancellation emails | Deleting an event with attendees sends CANCEL emails automatically |
 | RSVP tracking | See attendee acceptance status on events |
 | Calendar colors | Per-calendar color coding |
 | Calendar sharing | Share calendars with other users (view or edit) |
@@ -82,15 +85,30 @@ Webmail is a full-featured email, contacts, and calendar client that connects to
 
 | Feature | Description |
 |---|---|
+| TOTP two-factor auth | Enable 2FA with any authenticator app (Google Authenticator, Authy) |
+| App passwords | Generate per-device passwords for IMAP/SMTP clients (Thunderbird, Outlook) |
 | PGP encryption & signing | Client-side OpenPGP.js — encrypt, decrypt, sign, verify |
 | One-click PGP setup | Key generation with passphrase derived from login credentials |
 | WKD key discovery | Automatic public key lookup via Web Key Directory |
+| Spam filter training | Mark as spam/not spam trains Stalwart's Bayesian classifier |
+| Spam score display | X-Spam-Status header shown in Junk folder with "Not spam" action |
 | SPF/DKIM/DMARC/ARC display | Email authentication results in message properties |
 | HTML sanitization | DOMPurify strips dangerous content from email bodies |
 | External image blocking | Tracking pixel protection with one-click load |
-| Encrypted sessions | Valkey-backed sessions with user-agent binding |
+| Encrypted sessions | AES-256-GCM encrypted secrets in Valkey with user-agent binding |
 | Security headers | CSP, HSTS, CORS, and X-Content-Type-Options enforced |
 | Rate limiting | Per-user request throttling with login-specific limits |
+
+### Collaboration
+
+| Feature | Description |
+|---|---|
+| Folder sharing | Share mailbox folders with other users (view or edit permissions) |
+| Address book sharing | Share address books with other users via JMAP shareWith |
+| Calendar sharing | Share calendars with other users (view or edit) |
+| ACL enforcement | Folder operations gated by JMAP myRights (rename, delete, drag-drop) |
+| Shared resource overview | Settings > Accounts shows all shared folders, calendars, and address books |
+| Command palette | Cmd+K quick actions — navigate, compose, search, toggle theme |
 
 ### Real-Time & Performance
 
