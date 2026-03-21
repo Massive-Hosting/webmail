@@ -102,6 +102,7 @@ func main() {
 	progressRelay := ws.NewProgressRelay(hub, valkeySubscriber, log)
 	wsHandler := handler.NewWebSocketHandler(hub, progressRelay, log)
 	spamHandler := handler.NewSpamHandler(log)
+	securityHandler := handler.NewSecurityHandler(rdb, queries, log)
 	healthHandler := handler.NewHealthHandler(pool)
 
 	// Start Temporal worker (in-process).
@@ -183,6 +184,15 @@ func main() {
 
 			// Spam training.
 			r.Post("/spam/train", spamHandler.Train)
+
+			// Security: TOTP 2FA and app passwords.
+			r.Get("/security/totp/status", securityHandler.TOTPStatus)
+			r.Post("/security/totp/setup", securityHandler.TOTPSetup)
+			r.Post("/security/totp/confirm", securityHandler.TOTPConfirm)
+			r.Delete("/security/totp", securityHandler.TOTPDisable)
+			r.Get("/security/app-passwords", securityHandler.AppPasswordList)
+			r.Post("/security/app-passwords", securityHandler.AppPasswordCreate)
+			r.Delete("/security/app-passwords/{id}", securityHandler.AppPasswordDelete)
 
 			// WebSocket.
 			r.Get("/ws", wsHandler.Upgrade)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"webmail/internal/model"
 
@@ -139,6 +140,60 @@ func (q *Queries) DeletePGPKey(ctx context.Context, email string) error {
 	_, err := q.pool.Exec(ctx,
 		`UPDATE user_preferences SET pgp_public_key = NULL, updated_at = now() WHERE email = $1`,
 		email,
+	)
+	return err
+}
+
+// --- App Passwords ---
+
+// AppPassword represents an app password metadata entry.
+type AppPassword struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	CreatedAt string `json:"createdAt"`
+}
+
+// ListAppPasswords returns all app password metadata for an email.
+func (q *Queries) ListAppPasswords(ctx context.Context, email string) ([]AppPassword, error) {
+	rows, err := q.pool.Query(ctx,
+		`SELECT id, name, created_at FROM app_passwords WHERE email = $1 ORDER BY created_at DESC`,
+		email,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []AppPassword
+	for rows.Next() {
+		var ap AppPassword
+		var createdAt interface{}
+		if err := rows.Scan(&ap.ID, &ap.Name, &createdAt); err != nil {
+			return nil, err
+		}
+		ap.CreatedAt = fmt.Sprintf("%v", createdAt)
+		result = append(result, ap)
+	}
+	if result == nil {
+		result = []AppPassword{}
+	}
+	return result, rows.Err()
+}
+
+// CreateAppPassword stores app password metadata.
+func (q *Queries) CreateAppPassword(ctx context.Context, id, email, name string) error {
+	_, err := q.pool.Exec(ctx,
+		`INSERT INTO app_passwords (id, email, name) VALUES ($1, $2, $3)`,
+		id, email, name,
+	)
+	return err
+}
+
+// DeleteAppPassword removes app password metadata.
+func (q *Queries) DeleteAppPassword(ctx context.Context, id, email string) error {
+	_, err := q.pool.Exec(ctx,
+		`DELETE FROM app_passwords WHERE id = $1 AND email = $2`,
+		id, email,
 	)
 	return err
 }

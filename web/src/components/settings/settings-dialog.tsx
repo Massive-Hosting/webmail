@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { FilterRulesPanel } from "./filter-rules.tsx";
-import { PGPSettingsPanel } from "./pgp-settings.tsx";
+import { SecuritySettings } from "./security-settings.tsx";
 import { GeneralSettings } from "./general-settings.tsx";
 import { MailSettings } from "./mail-settings.tsx";
 import { SignatureSettings } from "./signature-settings.tsx";
@@ -166,7 +166,7 @@ export const SettingsDialog = React.memo(function SettingsDialog({
                 <StorageSettings />
               </Tabs.Content>
               <Tabs.Content value="security">
-                <PGPSettingsPanel />
+                <SecuritySettings />
               </Tabs.Content>
               <Tabs.Content value="accounts">
                 <AccountsSettings />
