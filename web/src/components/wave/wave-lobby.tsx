@@ -1,0 +1,371 @@
+/** Wave pre-call lobby — camera preview, device selection, audio level meter */
+
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
+import {
+  X, Mic, MicOff, Video, VideoOff, Phone, Monitor, Settings2, Volume2,
+} from "lucide-react";
+import { Avatar } from "@/components/ui/avatar.tsx";
+import { useAuthStore } from "@/stores/auth-store.ts";
+import { useTranslation } from "react-i18next";
+
+interface WaveLobbyProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  peerEmail: string;
+  peerName: string;
+  /** Called when user clicks "Start call" with their chosen settings */
+  onStartCall: (settings: { video: boolean; audioDeviceId?: string; videoDeviceId?: string }) => void;
+}
+
+interface MediaDeviceInfo {
+  deviceId: string;
+  label: string;
+  kind: string;
+}
+
+export const WaveLobby = React.memo(function WaveLobby({
+  open,
+  onOpenChange,
+  peerEmail,
+  peerName,
+  onStartCall,
+}: WaveLobbyProps) {
+  const { t } = useTranslation();
+  const email = useAuthStore((s) => s.email);
+  const displayName = useAuthStore((s) => s.displayName);
+
+  const [videoEnabled, setVideoEnabled] = useState(true);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedAudioDevice, setSelectedAudioDevice] = useState("");
+  const [selectedVideoDevice, setSelectedVideoDevice] = useState("");
+  const [showDeviceSettings, setShowDeviceSettings] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [permissionError, setPermissionError] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const animFrameRef = useRef<number>(0);
+
+  // Enumerate devices and start preview
+  useEffect(() => {
+    if (!open) {
+      // Clean up on close
+      if (stream) {
+        for (const track of stream.getTracks()) track.stop();
+        setStream(null);
+      }
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close();
+        audioCtxRef.current = null;
+      }
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      setAudioLevel(0);
+      setPermissionError(false);
+      return;
+    }
+
+    startPreview();
+
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [open]);
+
+  // Restart preview when device selection changes
+  useEffect(() => {
+    if (!open) return;
+    startPreview();
+  }, [selectedAudioDevice, selectedVideoDevice, videoEnabled, audioEnabled]);
+
+  const startPreview = useCallback(async () => {
+    // Stop previous stream
+    if (stream) {
+      for (const track of stream.getTracks()) track.stop();
+    }
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close();
+      audioCtxRef.current = null;
+    }
+
+    try {
+      const constraints: MediaStreamConstraints = {
+        audio: audioEnabled
+          ? selectedAudioDevice
+            ? { deviceId: { exact: selectedAudioDevice } }
+            : true
+          : false,
+        video: videoEnabled
+          ? selectedVideoDevice
+            ? { deviceId: { exact: selectedVideoDevice }, width: { ideal: 640 }, height: { ideal: 480 } }
+            : { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }
+          : false,
+      };
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      setStream(mediaStream);
+      setPermissionError(false);
+
+      // Attach video
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+
+      // Set up audio level meter
+      if (audioEnabled) {
+        const ctx = new AudioContext();
+        audioCtxRef.current = ctx;
+        const source = ctx.createMediaStreamSource(mediaStream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.8;
+        source.connect(analyser);
+        analyserRef.current = analyser;
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const tick = () => {
+          analyser.getByteFrequencyData(dataArray);
+          const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+          setAudioLevel(avg / 255);
+          animFrameRef.current = requestAnimationFrame(tick);
+        };
+        tick();
+      }
+
+      // Enumerate devices (need permission first to get labels)
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      setAudioDevices(
+        devices
+          .filter((d) => d.kind === "audioinput")
+          .map((d) => ({ deviceId: d.deviceId, label: d.label || `Microphone ${d.deviceId.slice(0, 4)}`, kind: d.kind })),
+      );
+      setVideoDevices(
+        devices
+          .filter((d) => d.kind === "videoinput")
+          .map((d) => ({ deviceId: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0, 4)}`, kind: d.kind })),
+      );
+    } catch {
+      setPermissionError(true);
+    }
+  }, [stream, selectedAudioDevice, selectedVideoDevice, videoEnabled, audioEnabled]);
+
+  const handleStartCall = useCallback(() => {
+    // Stop preview stream — the actual call will create its own
+    if (stream) {
+      for (const track of stream.getTracks()) track.stop();
+      setStream(null);
+    }
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close();
+      audioCtxRef.current = null;
+    }
+
+    onStartCall({
+      video: videoEnabled,
+      audioDeviceId: selectedAudioDevice || undefined,
+      videoDeviceId: selectedVideoDevice || undefined,
+    });
+    onOpenChange(false);
+  }, [stream, videoEnabled, selectedAudioDevice, selectedVideoDevice, onStartCall, onOpenChange]);
+
+  const peerAddress = { name: peerName, email: peerEmail };
+  const selfAddress = { name: displayName || email, email };
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay
+          className="fixed inset-0 z-[9999]"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.7)" }}
+        />
+        <Dialog.Content
+          className="fixed z-[9999] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl overflow-hidden flex flex-col animate-scale-in"
+          style={{
+            width: 520,
+            maxWidth: "92vw",
+            backgroundColor: "#1c1917",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            boxShadow: "0 32px 80px rgba(0, 0, 0, 0.6)",
+          }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4">
+            <Dialog.Title className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ background: "linear-gradient(135deg, #3b82f6, #6366f1)" }}
+              >
+                <Phone size={16} style={{ color: "white" }} />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-white">{t("wave.readyToCall")}</div>
+                <div className="text-xs text-white/50 flex items-center gap-1.5">
+                  <Avatar address={peerAddress} size={14} />
+                  {peerName}
+                </div>
+              </div>
+            </Dialog.Title>
+            <Dialog.Close asChild>
+              <button className="p-1.5 rounded-lg hover:bg-white/10 transition-colors" style={{ color: "rgba(255,255,255,0.5)" }}>
+                <X size={16} />
+              </button>
+            </Dialog.Close>
+          </div>
+
+          {/* Video preview */}
+          <div className="mx-6 mb-4 relative rounded-xl overflow-hidden" style={{ aspectRatio: "4/3", backgroundColor: "#0c0a09" }}>
+            {videoEnabled && !permissionError ? (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+                style={{ transform: "scaleX(-1)" }}
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                <Avatar address={selfAddress} size={72} />
+                {permissionError ? (
+                  <div className="text-xs text-red-400 text-center px-8">
+                    Camera/microphone access denied. Check your browser permissions.
+                  </div>
+                ) : (
+                  <div className="text-xs text-white/30">Camera off</div>
+                )}
+              </div>
+            )}
+
+            {/* Audio level indicator */}
+            {audioEnabled && !permissionError && (
+              <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                <Volume2 size={14} style={{ color: "rgba(255,255,255,0.5)" }} />
+                <div className="flex items-end gap-0.5 h-4">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-1 rounded-full transition-all duration-75"
+                      style={{
+                        height: Math.max(3, (audioLevel > i / 12 ? audioLevel * 16 : 3)),
+                        backgroundColor: audioLevel > i / 12
+                          ? i < 8 ? "#22c55e" : i < 10 ? "#f59e0b" : "#ef4444"
+                          : "rgba(255,255,255,0.15)",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Toggle buttons */}
+          <div className="flex items-center justify-center gap-3 px-6 mb-4">
+            <button
+              onClick={() => setAudioEnabled(!audioEnabled)}
+              className="flex items-center justify-center w-12 h-12 rounded-full transition-all duration-150 hover:scale-105"
+              style={{
+                backgroundColor: audioEnabled ? "rgba(255,255,255,0.1)" : "rgba(239, 68, 68, 0.2)",
+                color: audioEnabled ? "rgba(255,255,255,0.8)" : "#ef4444",
+                border: `1px solid ${audioEnabled ? "rgba(255,255,255,0.1)" : "rgba(239,68,68,0.3)"}`,
+              }}
+              title={audioEnabled ? t("wave.mute") : t("wave.unmute")}
+            >
+              {audioEnabled ? <Mic size={20} /> : <MicOff size={20} />}
+            </button>
+
+            <button
+              onClick={() => setVideoEnabled(!videoEnabled)}
+              className="flex items-center justify-center w-12 h-12 rounded-full transition-all duration-150 hover:scale-105"
+              style={{
+                backgroundColor: videoEnabled ? "rgba(255,255,255,0.1)" : "rgba(239, 68, 68, 0.2)",
+                color: videoEnabled ? "rgba(255,255,255,0.8)" : "#ef4444",
+                border: `1px solid ${videoEnabled ? "rgba(255,255,255,0.1)" : "rgba(239,68,68,0.3)"}`,
+              }}
+              title={videoEnabled ? t("wave.cameraOff") : t("wave.cameraOn")}
+            >
+              {videoEnabled ? <Video size={20} /> : <VideoOff size={20} />}
+            </button>
+
+            <button
+              onClick={() => setShowDeviceSettings(!showDeviceSettings)}
+              className="flex items-center justify-center w-12 h-12 rounded-full transition-all duration-150 hover:scale-105"
+              style={{
+                backgroundColor: showDeviceSettings ? "rgba(59,130,246,0.2)" : "rgba(255,255,255,0.1)",
+                color: showDeviceSettings ? "#60a5fa" : "rgba(255,255,255,0.8)",
+                border: `1px solid ${showDeviceSettings ? "rgba(59,130,246,0.3)" : "rgba(255,255,255,0.1)"}`,
+              }}
+              title={t("wave.deviceSettings")}
+            >
+              <Settings2 size={20} />
+            </button>
+          </div>
+
+          {/* Device selection (expandable) */}
+          {showDeviceSettings && (
+            <div className="mx-6 mb-4 space-y-3 p-4 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              {audioDevices.length > 0 && (
+                <div>
+                  <label className="text-[11px] font-medium text-white/40 block mb-1">{t("wave.microphone")}</label>
+                  <select
+                    value={selectedAudioDevice}
+                    onChange={(e) => setSelectedAudioDevice(e.target.value)}
+                    className="w-full h-8 px-2 text-xs rounded-lg outline-none cursor-pointer"
+                    style={{
+                      backgroundColor: "rgba(255,255,255,0.08)",
+                      color: "rgba(255,255,255,0.8)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                    }}
+                  >
+                    {audioDevices.map((d) => (
+                      <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {videoDevices.length > 0 && (
+                <div>
+                  <label className="text-[11px] font-medium text-white/40 block mb-1">{t("wave.camera")}</label>
+                  <select
+                    value={selectedVideoDevice}
+                    onChange={(e) => setSelectedVideoDevice(e.target.value)}
+                    className="w-full h-8 px-2 text-xs rounded-lg outline-none cursor-pointer"
+                    style={{
+                      backgroundColor: "rgba(255,255,255,0.08)",
+                      color: "rgba(255,255,255,0.8)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                    }}
+                  >
+                    {videoDevices.map((d) => (
+                      <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Start call button */}
+          <div className="px-6 pb-6">
+            <button
+              onClick={handleStartCall}
+              disabled={permissionError}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-150 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40"
+              style={{
+                background: "linear-gradient(135deg, #22c55e, #16a34a)",
+                color: "white",
+                boxShadow: "0 4px 16px rgba(34, 197, 94, 0.3)",
+              }}
+            >
+              <Phone size={18} />
+              {t("wave.startCall")}
+            </button>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+});

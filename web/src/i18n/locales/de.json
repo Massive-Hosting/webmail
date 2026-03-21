@@ -778,5 +778,9 @@
   "wave.stopSharing": "Teilen beenden",
   "wave.ringing": "Klingelt...",
   "wave.connecting": "Verbinden...",
-  "wave.callEnded": "Anruf beendet"
+  "wave.callEnded": "Anruf beendet",
+  "wave.readyToCall": "Bereit zum Anrufen",
+  "wave.deviceSettings": "Ger\u00e4teeinstellungen",
+  "wave.microphone": "Mikrofon",
+  "wave.camera": "Kamera"
 }

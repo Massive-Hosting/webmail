@@ -54,6 +54,7 @@ import { useUIStore } from "@/stores/ui-store.ts";
 import { useAuthStore } from "@/stores/auth-store.ts";
 import { useWaveStore } from "@/stores/wave-store.ts";
 import { useWave } from "@/hooks/use-wave.ts";
+import { WaveLobby } from "@/components/wave/wave-lobby.tsx";
 import { PGPStatusBar, EncryptedPlaceholder, usePGPMessage } from "@/components/mail/pgp-message.tsx";
 import { detectPGPContent } from "@/lib/pgp-detect.ts";
 import { InvitationCard } from "@/components/calendar/invitation-card.tsx";
@@ -596,24 +597,36 @@ function getFileExtension(name?: string | null): string | null {
   return name.substring(dot + 1);
 }
 
-/** Start Wave call button — only shows for same-domain senders */
+/** Start Wave call button — opens lobby for same-domain senders */
 function WaveCallButton({ senderEmail }: { senderEmail: string }) {
   const { t } = useTranslation();
   const userEmail = useAuthStore((s) => s.email);
   const callState = useWaveStore((s) => s.callState);
   const { startCall } = useWave();
+  const [showLobby, setShowLobby] = useState(false);
 
   const userDomain = userEmail.split("@")[1]?.toLowerCase();
   const senderDomain = senderEmail.split("@")[1]?.toLowerCase();
   if (!userDomain || !senderDomain || userDomain !== senderDomain || senderEmail === userEmail) return null;
   if (callState !== "idle") return null;
 
+  const senderName = senderEmail.split("@")[0];
+
   return (
-    <ActionButton
-      icon={<Phone size={18} />}
-      label={t("wave.startCall")}
-      onClick={() => startCall(senderEmail, true)}
-    />
+    <>
+      <ActionButton
+        icon={<Phone size={18} />}
+        label={t("wave.startCall")}
+        onClick={() => setShowLobby(true)}
+      />
+      <WaveLobby
+        open={showLobby}
+        onOpenChange={setShowLobby}
+        peerEmail={senderEmail}
+        peerName={senderName}
+        onStartCall={(settings) => startCall(senderEmail, settings.video)}
+      />
+    </>
   );
 }
 

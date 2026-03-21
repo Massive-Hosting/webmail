@@ -778,5 +778,9 @@
   "wave.stopSharing": "Stop sharing",
   "wave.ringing": "Ringing...",
   "wave.connecting": "Connecting...",
-  "wave.callEnded": "Call ended"
+  "wave.callEnded": "Call ended",
+  "wave.readyToCall": "Ready to call",
+  "wave.deviceSettings": "Device settings",
+  "wave.microphone": "Microphone",
+  "wave.camera": "Camera"
 }

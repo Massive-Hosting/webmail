@@ -778,5 +778,9 @@
   "wave.stopSharing": "Stopp deling",
   "wave.ringing": "Ringer...",
   "wave.connecting": "Kobler til...",
-  "wave.callEnded": "Samtale avsluttet"
+  "wave.callEnded": "Samtale avsluttet",
+  "wave.readyToCall": "Klar til \u00e5 ringe",
+  "wave.deviceSettings": "Enhetsinnstillinger",
+  "wave.microphone": "Mikrofon",
+  "wave.camera": "Kamera"
 }
