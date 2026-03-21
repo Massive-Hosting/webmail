@@ -35,6 +35,11 @@ import {
   File,
   FileImage,
   FileArchive,
+  FileSpreadsheet,
+  FileCode,
+  FileVideo,
+  FileAudio,
+  Presentation,
   AlertTriangle,
   Info,
   Printer,
@@ -476,29 +481,114 @@ function ActionButton({ icon, label, onClick }: { icon: React.ReactNode; label: 
 }
 
 function AttachmentCard({ attachment }: { attachment: EmailBodyPart }) {
-  const icon = getFileIcon(attachment.type);
+  const { icon, color, bgColor } = getFileTypeInfo(attachment.type, attachment.name);
+  const ext = getFileExtension(attachment.name);
+
   return (
-    <a
-      href={`/api/blob/${attachment.blobId}`}
-      download={attachment.name ?? "attachment"}
-      className="message-view__attachment-card"
-    >
-      <span className="message-view__attachment-icon">{icon}</span>
-      <div className="message-view__attachment-info">
-        <span className="message-view__attachment-name">{attachment.name ?? "attachment"}</span>
-        <span className="message-view__attachment-size">{formatFileSize(attachment.size)}</span>
+    <div className="attachment-card">
+      {/* Icon area with type-specific color */}
+      <div className="attachment-card__icon" style={{ backgroundColor: bgColor, color }}>
+        {icon}
+        {ext && <span className="attachment-card__ext">{ext}</span>}
       </div>
-      <Download size={14} className="message-view__attachment-download" />
-    </a>
+
+      {/* File info */}
+      <div className="attachment-card__info">
+        <span className="attachment-card__name" title={attachment.name ?? "attachment"}>
+          {attachment.name ?? "attachment"}
+        </span>
+        <span className="attachment-card__size">{formatFileSize(attachment.size)}</span>
+      </div>
+
+      {/* Download button */}
+      <a
+        href={`/api/blob/${attachment.blobId}`}
+        download={attachment.name ?? "attachment"}
+        className="attachment-card__download"
+        onClick={(e) => e.stopPropagation()}
+        title="Download"
+      >
+        <Download size={14} />
+      </a>
+    </div>
   );
 }
 
-function getFileIcon(mimeType: string): React.ReactNode {
-  if (mimeType.startsWith("image/")) return <FileImage size={18} />;
-  if (mimeType.includes("pdf")) return <FileText size={18} />;
-  if (mimeType.includes("zip") || mimeType.includes("archive"))
-    return <FileArchive size={18} />;
-  return <File size={18} />;
+interface FileTypeInfo {
+  icon: React.ReactNode;
+  color: string;
+  bgColor: string;
+}
+
+function getFileTypeInfo(mimeType: string, name?: string | null): FileTypeInfo {
+  const ext = getFileExtension(name)?.toLowerCase();
+
+  // Images
+  if (mimeType.startsWith("image/")) {
+    return { icon: <FileImage size={20} />, color: "#8b5cf6", bgColor: "rgba(139, 92, 246, 0.1)" };
+  }
+
+  // PDF
+  if (mimeType.includes("pdf") || ext === "pdf") {
+    return { icon: <FileText size={20} />, color: "#ef4444", bgColor: "rgba(239, 68, 68, 0.1)" };
+  }
+
+  // Spreadsheets
+  if (mimeType.includes("spreadsheet") || mimeType.includes("excel") ||
+      ext === "xlsx" || ext === "xls" || ext === "csv") {
+    return { icon: <FileSpreadsheet size={20} />, color: "#22c55e", bgColor: "rgba(34, 197, 94, 0.1)" };
+  }
+
+  // Presentations
+  if (mimeType.includes("presentation") || mimeType.includes("powerpoint") ||
+      ext === "pptx" || ext === "ppt" || ext === "key") {
+    return { icon: <Presentation size={20} />, color: "#f97316", bgColor: "rgba(249, 115, 22, 0.1)" };
+  }
+
+  // Documents (Word, etc.)
+  if (mimeType.includes("document") || mimeType.includes("msword") ||
+      ext === "docx" || ext === "doc" || ext === "rtf" || ext === "odt") {
+    return { icon: <FileText size={20} />, color: "#3b82f6", bgColor: "rgba(59, 130, 246, 0.1)" };
+  }
+
+  // Archives
+  if (mimeType.includes("zip") || mimeType.includes("archive") || mimeType.includes("compressed") ||
+      ext === "zip" || ext === "gz" || ext === "tar" || ext === "rar" || ext === "7z") {
+    return { icon: <FileArchive size={20} />, color: "#a855f7", bgColor: "rgba(168, 85, 247, 0.1)" };
+  }
+
+  // Video
+  if (mimeType.startsWith("video/") || ext === "mp4" || ext === "mov" || ext === "avi" || ext === "mkv") {
+    return { icon: <FileVideo size={20} />, color: "#ec4899", bgColor: "rgba(236, 72, 153, 0.1)" };
+  }
+
+  // Audio
+  if (mimeType.startsWith("audio/") || ext === "mp3" || ext === "wav" || ext === "ogg" || ext === "flac") {
+    return { icon: <FileAudio size={20} />, color: "#06b6d4", bgColor: "rgba(6, 182, 212, 0.1)" };
+  }
+
+  // Code / text
+  if (mimeType.includes("javascript") || mimeType.includes("json") || mimeType.includes("xml") ||
+      mimeType.includes("html") || mimeType.includes("css") || mimeType.startsWith("text/") ||
+      ext === "js" || ext === "ts" || ext === "py" || ext === "go" || ext === "rs" ||
+      ext === "md" || ext === "yml" || ext === "yaml" || ext === "json" || ext === "xml") {
+    return { icon: <FileCode size={20} />, color: "#64748b", bgColor: "rgba(100, 116, 139, 0.1)" };
+  }
+
+  // Figma / design
+  if (ext === "fig" || ext === "sketch" || ext === "xd") {
+    return { icon: <FileImage size={20} />, color: "#f97316", bgColor: "rgba(249, 115, 22, 0.1)" };
+  }
+
+  // Default
+  return { icon: <File size={20} />, color: "#78716c", bgColor: "rgba(120, 113, 108, 0.1)" };
+}
+
+function getFileExtension(name?: string | null): string | null {
+  if (!name) return null;
+  const dot = name.lastIndexOf(".");
+  if (dot < 0 || dot === name.length - 1) return null;
+  return name.substring(dot + 1);
 }
 
 /** Right-click context menu for email addresses in the reading pane */

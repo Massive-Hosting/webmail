@@ -1105,40 +1105,60 @@
   border-bottom: 1px solid var(--color-border-secondary);
 }
 
-.message-view__attachment-card {
+/* --- Premium attachment card --- */
+.attachment-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
+  gap: 0;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border-primary);
   background-color: var(--color-bg-elevated);
-  text-decoration: none;
-  transition: all 150ms ease-in-out;
+  overflow: hidden;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
   min-width: 0;
-  max-width: 220px;
+  max-width: 280px;
 }
 
-.message-view__attachment-card:hover {
+.attachment-card:hover {
   border-color: var(--color-border-focus);
   box-shadow: var(--shadow-sm);
-  background-color: var(--color-bg-tertiary);
 }
 
-.message-view__attachment-icon {
+/* Icon area: colored background with type icon + extension badge */
+.attachment-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 48px;
   flex-shrink: 0;
-  color: var(--color-text-tertiary);
+  position: relative;
 }
 
-.message-view__attachment-info {
-  min-width: 0;
+.attachment-card__ext {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+/* File info: name + size */
+.attachment-card__info {
   flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
   display: flex;
   flex-direction: column;
+  gap: 1px;
 }
 
-.message-view__attachment-name {
-  font-size: 13px;
+.attachment-card__name {
+  font-size: 12.5px;
   font-weight: 500;
   color: var(--color-text-primary);
   overflow: hidden;
@@ -1146,20 +1166,34 @@
   white-space: nowrap;
 }
 
-.message-view__attachment-size {
+.attachment-card__size {
   font-size: 11px;
   color: var(--color-text-tertiary);
 }
 
-.message-view__attachment-download {
+/* Download button: split-button right edge */
+.attachment-card__download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 48px;
   flex-shrink: 0;
+  border-left: 1px solid var(--color-border-secondary);
   color: var(--color-text-tertiary);
-  opacity: 0;
-  transition: opacity 150ms ease;
+  background: none;
+  text-decoration: none;
+  transition: background-color 120ms ease, color 120ms ease;
+  cursor: pointer;
 }
 
-.message-view__attachment-card:hover .message-view__attachment-download {
-  opacity: 1;
+.attachment-card__download:hover {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-accent);
+}
+
+.attachment-card:hover .attachment-card__download {
+  border-left-color: var(--color-border-primary);
 }
 
 /* Body */
