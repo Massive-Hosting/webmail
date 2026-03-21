@@ -23,6 +23,11 @@ type account struct {
 var defaultAccounts = []account{
 	{Email: "info@acme.customer.mhst.io", Password: "test1234"},
 	{Email: "support@acme.customer.mhst.io", Password: "test1234"},
+	{Email: "sarah.chen@acme.customer.mhst.io", Password: "test1234"},
+	{Email: "marcus.johnson@acme.customer.mhst.io", Password: "test1234"},
+	{Email: "priya.patel@acme.customer.mhst.io", Password: "test1234"},
+	{Email: "alex.rivera@acme.customer.mhst.io", Password: "test1234"},
+	{Email: "emma.larsson@acme.customer.mhst.io", Password: "test1234"},
 }
 
 // --- JMAP types ---
