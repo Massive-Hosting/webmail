@@ -1,13 +1,15 @@
-/** Accounts settings: current account info and shared resources overview */
+/** Accounts settings: current account info, shared resources, and domain settings */
 
-import React from "react";
-import { Mail, Users, Folder, BookOpen, Calendar } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Mail, Users, Folder, BookOpen, Calendar, Building2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/auth-store.ts";
 import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 import { useAddressBooks } from "@/hooks/use-contacts.ts";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCalendars } from "@/api/calendar.ts";
+import { getDomainSettings, updateDomainSettings } from "@/api/availability.ts";
+import { toast } from "sonner";
 
 export const AccountsSettings = React.memo(function AccountsSettings() {
   const { t } = useTranslation();
@@ -124,9 +126,111 @@ export const AccountsSettings = React.memo(function AccountsSettings() {
           </div>
         )}
       </div>
+
+      {/* Domain settings */}
+      <DomainSettingsSection />
     </div>
   );
 });
+
+function DomainSettingsSection() {
+  const { t } = useTranslation();
+  const [freebusyEnabled, setFreebusyEnabled] = useState(false);
+  const [directoryEnabled, setDirectoryEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getDomainSettings()
+      .then((ds) => {
+        setFreebusyEnabled(ds.freebusyEnabled);
+        setDirectoryEnabled(ds.directoryEnabled);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleToggle = useCallback(
+    async (field: "freebusy" | "directory", value: boolean) => {
+      const prev = { freebusyEnabled, directoryEnabled };
+      if (field === "freebusy") setFreebusyEnabled(value);
+      else setDirectoryEnabled(value);
+
+      try {
+        await updateDomainSettings({
+          freebusyEnabled: field === "freebusy" ? value : freebusyEnabled,
+          directoryEnabled: field === "directory" ? value : directoryEnabled,
+        });
+        toast.success(t("accounts.settingsSaved"));
+      } catch {
+        // Revert
+        setFreebusyEnabled(prev.freebusyEnabled);
+        setDirectoryEnabled(prev.directoryEnabled);
+        toast.error(t("accounts.settingsFailed"));
+      }
+    },
+    [freebusyEnabled, directoryEnabled, t],
+  );
+
+  if (loading) return null;
+
+  return (
+    <div className="space-y-2">
+      <h3
+        className="text-sm font-semibold flex items-center gap-2"
+        style={{ color: "var(--color-text-primary)" }}
+      >
+        <Building2 size={14} />
+        {t("accounts.organizationFeatures")}
+      </h3>
+      <p
+        className="text-xs leading-relaxed"
+        style={{ color: "var(--color-text-secondary)" }}
+      >
+        {t("accounts.organizationFeaturesDesc")}
+      </p>
+      <div
+        className="rounded-lg p-3 space-y-3"
+        style={{
+          backgroundColor: "var(--color-bg-secondary)",
+          border: "1px solid var(--color-border-secondary)",
+        }}
+      >
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={freebusyEnabled}
+            onChange={(e) => handleToggle("freebusy", e.target.checked)}
+            className="rounded border-gray-300"
+          />
+          <div>
+            <div className="text-xs font-medium" style={{ color: "var(--color-text-primary)" }}>
+              {t("accounts.freeBusy")}
+            </div>
+            <div className="text-[11px]" style={{ color: "var(--color-text-tertiary)" }}>
+              {t("accounts.freeBusyDesc")}
+            </div>
+          </div>
+        </label>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={directoryEnabled}
+            onChange={(e) => handleToggle("directory", e.target.checked)}
+            className="rounded border-gray-300"
+          />
+          <div>
+            <div className="text-xs font-medium" style={{ color: "var(--color-text-primary)" }}>
+              {t("accounts.directory")}
+            </div>
+            <div className="text-[11px]" style={{ color: "var(--color-text-tertiary)" }}>
+              {t("accounts.directoryDesc")}
+            </div>
+          </div>
+        </label>
+      </div>
+    </div>
+  );
+}
 
 function SharedResourceItem({
   icon,

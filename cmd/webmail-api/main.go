@@ -104,6 +104,7 @@ func main() {
 	spamHandler := handler.NewSpamHandler(log)
 	securityHandler := handler.NewSecurityHandler(rdb, queries, log)
 	participantsHandler := handler.NewParticipantsHandler(queries, log)
+	availabilityHandler := handler.NewAvailabilityHandler(queries, log)
 	healthHandler := handler.NewHealthHandler(pool)
 
 	// Start Temporal worker (in-process).
@@ -200,6 +201,12 @@ func main() {
 			r.Put("/events/{eventId}/participants", participantsHandler.Put)
 			r.Delete("/events/{eventId}/participants", participantsHandler.Delete)
 			r.Post("/events/participants/batch", participantsHandler.BatchGet)
+
+			// Free/busy availability and tenant directory.
+			r.Post("/availability", availabilityHandler.FreeBusy)
+			r.Post("/directory/search", availabilityHandler.Directory)
+			r.Get("/domain-settings", availabilityHandler.GetDomainSettings)
+			r.Put("/domain-settings", availabilityHandler.PutDomainSettings)
 
 			// WebSocket.
 			r.Get("/ws", wsHandler.Upgrade)

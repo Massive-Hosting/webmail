@@ -281,3 +281,42 @@ func (q *Queries) DeleteEventParticipants(ctx context.Context, eventID, ownerEma
 	_, err := q.pool.Exec(ctx, `DELETE FROM event_participants WHERE event_id = $1 AND owner_email = $2`, eventID, ownerEmail)
 	return err
 }
+
+// --- Domain Settings ---
+
+// DomainSettings holds per-domain feature flags.
+type DomainSettings struct {
+	Domain           string `json:"domain"`
+	FreeBusyEnabled  bool   `json:"freebusyEnabled"`
+	DirectoryEnabled bool   `json:"directoryEnabled"`
+}
+
+// GetDomainSettings returns settings for a domain. Returns defaults if no row exists.
+func (q *Queries) GetDomainSettings(ctx context.Context, domain string) (*DomainSettings, error) {
+	var ds DomainSettings
+	ds.Domain = domain
+	err := q.pool.QueryRow(ctx,
+		`SELECT freebusy_enabled, directory_enabled FROM domain_settings WHERE domain = $1`, domain,
+	).Scan(&ds.FreeBusyEnabled, &ds.DirectoryEnabled)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return &ds, nil // defaults: false, false
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &ds, nil
+}
+
+// UpsertDomainSettings creates or updates domain settings.
+func (q *Queries) UpsertDomainSettings(ctx context.Context, ds *DomainSettings) error {
+	_, err := q.pool.Exec(ctx,
+		`INSERT INTO domain_settings (domain, freebusy_enabled, directory_enabled)
+		 VALUES ($1, $2, $3)
+		 ON CONFLICT (domain) DO UPDATE SET
+		   freebusy_enabled = EXCLUDED.freebusy_enabled,
+		   directory_enabled = EXCLUDED.directory_enabled,
+		   updated_at = now()`,
+		ds.Domain, ds.FreeBusyEnabled, ds.DirectoryEnabled,
+	)
+	return err
+}

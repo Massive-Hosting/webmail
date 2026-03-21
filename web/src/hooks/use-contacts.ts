@@ -288,11 +288,45 @@ export function useContactSearch(query: string, enabled = true) {
     staleTime: 30 * 1000,
   });
 
-  const results = clientResults.length > 0 ? clientResults : (serverQuery.data ?? []);
+  // Also search tenant directory (same-domain colleagues)
+  const directoryQuery = useQuery({
+    queryKey: ["directorySearch", debouncedQuery],
+    queryFn: async () => {
+      const { searchDirectory } = await import("@/api/availability.ts");
+      return searchDirectory(debouncedQuery, 5);
+    },
+    enabled: enabled && debouncedQuery.length >= 2,
+    staleTime: 60 * 1000,
+  });
+
+  // Merge: personal contacts first, then directory entries (deduplicated)
+  const results = useMemo(() => {
+    const personal = clientResults.length > 0 ? clientResults : (serverQuery.data ?? []);
+    const directory = directoryQuery.data ?? [];
+    if (directory.length === 0) return personal;
+
+    // Deduplicate: collect all emails from personal results
+    const personalEmails = new Set(personal.flatMap((c) => c.emails.map((e) => e.address.toLowerCase())));
+
+    // Convert directory entries to Contact-like objects for uniform rendering
+    const dirContacts: Contact[] = directory
+      .filter((d) => !personalEmails.has(d.email.toLowerCase()))
+      .map((d) => ({
+        id: `dir-${d.email}`,
+        name: { full: d.name },
+        emails: [{ address: d.email }],
+        phones: [],
+        addresses: [],
+        urls: [],
+        addressBookIds: {},
+      }));
+
+    return [...personal, ...dirContacts].slice(0, 15);
+  }, [clientResults, serverQuery.data, directoryQuery.data]);
 
   return {
     results,
-    isSearching: serverQuery.isLoading,
+    isSearching: serverQuery.isLoading || directoryQuery.isLoading,
   };
 }
 

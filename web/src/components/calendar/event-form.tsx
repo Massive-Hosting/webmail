@@ -15,6 +15,7 @@ import type {
 import { format, parseISO, minutesToDuration, parseDurationMinutes, getEventColor, isEventOnDay } from "@/hooks/use-calendar.ts";
 import { useContactSearch } from "@/hooks/use-contacts.ts";
 import { getEventParticipants } from "@/api/participants.ts";
+import { fetchAvailability, type BusySlot } from "@/api/availability.ts";
 import { StyledSelect } from "@/components/ui/styled-select.tsx";
 import { useTranslation } from "react-i18next";
 
@@ -194,6 +195,26 @@ export const EventForm = React.memo(function EventForm({
   }, [event, open, calendars, defaultDate, defaultHour]);
 
   const { results: contactResults } = useContactSearch(attendeeInput, attendeeInput.length >= 1);
+
+  // Fetch free/busy for attendees when date changes
+  const [attendeeBusySlots, setAttendeeBusySlots] = useState<Record<string, BusySlot[]>>({});
+  useEffect(() => {
+    if (attendees.length === 0 || allDay) {
+      setAttendeeBusySlots({});
+      return;
+    }
+    const dayStart = `${startDate}T00:00:00`;
+    const dayEnd = `${startDate}T23:59:59`;
+    Promise.all(
+      attendees.map((a) =>
+        fetchAvailability(a.email, dayStart, dayEnd)
+          .then((slots) => [a.email, slots] as const)
+          .catch(() => [a.email, []] as const),
+      ),
+    ).then((results) => {
+      setAttendeeBusySlots(Object.fromEntries(results));
+    });
+  }, [attendees, startDate, allDay]);
 
   const endTime = useMemo(() => {
     const [h, m] = startTime.split(":").map(Number);
@@ -723,6 +744,7 @@ export const EventForm = React.memo(function EventForm({
                   title={title}
                   otherEvents={otherDayEvents}
                   calendars={calendars}
+                  attendeeBusySlots={attendeeBusySlots}
                 />
               </div>
             )}
@@ -737,6 +759,8 @@ export const EventForm = React.memo(function EventForm({
 /* Day timeline component with drag-to-move and resize-to-change      */
 /* ------------------------------------------------------------------ */
 
+const BUSY_COLORS = ["#ef4444", "#f59e0b", "#8b5cf6", "#06b6d4", "#ec4899"];
+
 interface DayTimelineProps {
   startTime: string;     // "HH:mm"
   durationMinutes: number;
@@ -746,6 +770,7 @@ interface DayTimelineProps {
   title: string;
   otherEvents?: CalendarEvent[];
   calendars?: Calendar[];
+  attendeeBusySlots?: Record<string, BusySlot[]>;
 }
 
 function DayTimeline({
@@ -757,6 +782,7 @@ function DayTimeline({
   title,
   otherEvents,
   calendars,
+  attendeeBusySlots,
 }: DayTimelineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<{
@@ -918,6 +944,36 @@ function DayTimeline({
           </div>
         );
       })}
+
+      {/* Attendee busy slots (free/busy overlay) */}
+      {attendeeBusySlots && Object.entries(attendeeBusySlots).map(([email, slots], attendeeIdx) =>
+        slots.map((slot, slotIdx) => {
+          const slotStart = new Date(slot.start);
+          const slotStartMins = slotStart.getHours() * 60 + slotStart.getMinutes();
+          const slotDuration = parseDurationMinutes(slot.duration);
+          const slotTopMins = slotStartMins - TIMELINE_START_HOUR * 60;
+          const slotTop = (slotTopMins / 60) * HOUR_HEIGHT;
+          const slotHeight = (slotDuration / 60) * HOUR_HEIGHT;
+          if (slotTop + slotHeight < 0 || slotTop > totalHeight) return null;
+          const busyColor = BUSY_COLORS[attendeeIdx % BUSY_COLORS.length];
+          return (
+            <div
+              key={`busy-${email}-${slotIdx}`}
+              className="absolute rounded-sm pointer-events-none"
+              title={`${email} - busy`}
+              style={{
+                top: Math.max(0, slotTop),
+                left: 52,
+                right: 8,
+                height: Math.max(slotHeight, 4),
+                backgroundColor: busyColor + "20",
+                borderLeft: `3px solid ${busyColor}80`,
+                zIndex: 4,
+              }}
+            />
+          );
+        }),
+      )}
 
       {/* Event block */}
       {eventTop >= -HOUR_HEIGHT && eventTop < totalHeight && (
