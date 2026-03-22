@@ -147,13 +147,14 @@ export const NewCallDialog = React.memo(function NewCallDialog({
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         />
         <Dialog.Content
-          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg rounded-xl animate-scale-in overflow-hidden flex flex-col"
+          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full rounded-xl animate-scale-in overflow-hidden flex flex-col"
           style={{
             backgroundColor: "var(--color-bg-elevated)",
             border: "1px solid var(--color-border-primary)",
             boxShadow: "var(--shadow-xl)",
-            height: 520,
-            maxHeight: "85vh",
+            maxWidth: 720,
+            height: 640,
+            maxHeight: "88vh",
           }}
         >
           {/* Header */}

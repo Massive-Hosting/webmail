@@ -3230,3 +3230,186 @@
     align-items: center;
   }
 }
+
+/* ---- Inline attachment previews ---- */
+.message-view__attachment-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.message-view__attachment-preview-img-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border-secondary);
+  transition: border-color 150ms ease;
+}
+
+.message-view__attachment-preview-img-btn:hover {
+  border-color: var(--color-bg-accent);
+}
+
+.message-view__attachment-preview-img {
+  display: block;
+  max-height: 120px;
+  max-width: 200px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+}
+
+.message-view__attachment-preview-pdf {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border-secondary);
+}
+
+.message-view__attachment-preview-iframe {
+  width: 300px;
+  height: 200px;
+  border: none;
+  display: block;
+}
+
+.message-view__attachments-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.message-view__attachments-count {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.message-view__download-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-bg-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: background-color 150ms ease;
+}
+
+.message-view__download-all-btn:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+/* ---- Image lightbox ---- */
+.message-view__lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.message-view__lightbox-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--radius-md);
+  transition: background-color 150ms ease;
+}
+
+.message-view__lightbox-close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.message-view__lightbox-img {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  cursor: default;
+}
+
+/* ---- Pull to refresh ---- */
+.mail-list-pane__pull-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--color-text-tertiary);
+  transition: height 200ms ease;
+}
+
+.mail-list-pane__select-all {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--color-bg-accent);
+  flex-shrink: 0;
+}
+
+/* ---- Swipe gestures (mobile) ---- */
+.message-list-item__swipe-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.message-list-item__swipe-backdrop {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 8px;
+}
+
+.message-list-item__swipe-backdrop--archive {
+  left: 0;
+  right: 0;
+  background-color: #22c55e;
+  justify-content: flex-start;
+}
+
+.message-list-item__swipe-backdrop--delete {
+  left: 0;
+  right: 0;
+  background-color: #ef4444;
+  justify-content: flex-end;
+}
+
+/* ---- Color label dots ---- */
+.message-list-item__label-dots {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.message-list-item__label-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ---- Mute indicator ---- */
+.message-list-item__mute-icon {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}

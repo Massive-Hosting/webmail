@@ -1,6 +1,6 @@
 /** Message list pane container - premium toolbar and contextual empty states */
 
-import React, { useCallback, useState, useMemo } from "react";
+import React, { useCallback, useState, useMemo, useRef, useEffect } from "react";
 import { MessageList } from "@/components/mail/message-list.tsx";
 import { useUIStore } from "@/stores/ui-store.ts";
 import { useSearchStore } from "@/stores/search-store.ts";
@@ -12,7 +12,7 @@ import type { EmailListItem } from "@/types/mail.ts";
 import { useCompose } from "@/components/mail/compose/use-compose.ts";
 import { EmailPropertiesDialog } from "@/components/mail/email-properties-dialog.tsx";
 import { useMessage } from "@/hooks/use-message.ts";
-import { fetchEmail, fetchIdentities } from "@/api/mail.ts";
+import { fetchEmail, fetchIdentities, updateEmails } from "@/api/mail.ts";
 import { printEmail } from "@/lib/print.ts";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -29,6 +29,10 @@ import {
   List,
   Clock,
   RefreshCw,
+  PartyPopper,
+  Pencil,
+  Send,
+  Archive,
 } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useQueryClient } from "@tanstack/react-query";
@@ -65,6 +69,10 @@ export function MailListPane({
   const setConversationView = useSettingsStore((s) => s.setConversationView);
   const { mailboxes, findByRole } = useMailboxes();
   const clearSearch = useSearchStore((s) => s.clearSearch);
+  const selectedEmailIds = useUIStore((s) => s.selectedEmailIds);
+  const selectAllEmails = useUIStore((s) => s.selectAllEmails);
+  const clearSelection = useUIStore((s) => s.clearSelection);
+  const isMobile = useUIStore((s) => s.isMobile);
 
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -90,12 +98,17 @@ export function MailListPane({
     : (currentMailbox?.name ?? "Inbox");
 
   // Use a stable filter for virtual folders to avoid reference instability
+  const isInbox = currentMailbox?.role === "inbox";
   const virtualFilter = useMemo(() => {
     if (virtualFolder === "scheduled") return { hasKeyword: "$scheduled" };
     if (virtualFolder === "snoozed") return { hasKeyword: "$snoozed" };
-    // Normal mailbox view: hide snoozed and scheduled emails
-    return { operator: "AND" as const, conditions: [{ notKeyword: "$snoozed" }, { notKeyword: "$scheduled" }] };
-  }, [virtualFolder]);
+    // Normal mailbox view: hide snoozed and scheduled emails; in inbox also hide muted
+    const conditions: Array<{ notKeyword: string }> = [{ notKeyword: "$snoozed" }, { notKeyword: "$scheduled" }];
+    if (isInbox) {
+      conditions.push({ notKeyword: "$muted" });
+    }
+    return { operator: "AND" as const, conditions };
+  }, [virtualFolder, isInbox]);
   const effectiveMailboxId = virtualFolder ? null : selectedMailboxId;
 
   const {
@@ -168,6 +181,66 @@ export function MailListPane({
     }
   }, [trashMailbox, selectedMailboxId, moveEmails]);
 
+  // Mute/unmute handler
+  const handleMute = useCallback(async (emailIds: string[], muted: boolean) => {
+    const updates: Record<string, Record<string, unknown>> = {};
+    for (const id of emailIds) {
+      updates[id] = { "keywords/$muted": muted ? true : null };
+    }
+    await updateEmails(updates);
+    queryClient.invalidateQueries({ queryKey: ["emails"] });
+  }, [queryClient]);
+
+  // Select-all checkbox
+  const checkboxRef = useRef<HTMLInputElement>(null);
+  const allIds = displayEmails.map(e => e.id);
+  const selectedCount = allIds.filter(id => selectedEmailIds.has(id)).length;
+  const allSelected = selectedCount > 0 && selectedCount === allIds.length;
+  const someSelected = selectedCount > 0 && selectedCount < allIds.length;
+
+  useEffect(() => {
+    if (checkboxRef.current) {
+      checkboxRef.current.indeterminate = someSelected;
+    }
+  }, [someSelected]);
+
+  const handleSelectAll = () => {
+    if (allSelected || someSelected) {
+      clearSelection();
+    } else {
+      selectAllEmails(allIds);
+    }
+  };
+
+  // Pull to refresh (mobile)
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
+  const touchStartRef = useRef(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (contentRef.current && contentRef.current.scrollTop === 0) {
+      touchStartRef.current = e.touches[0].clientY;
+      setIsPulling(true);
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isPulling) return;
+    const delta = (e.touches[0].clientY - touchStartRef.current) * 0.4;
+    if (delta > 0) {
+      setPullDistance(delta);
+    }
+  }, [isPulling]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (pullDistance > 60) {
+      handleRefresh();
+    }
+    setPullDistance(0);
+    setIsPulling(false);
+  }, [pullDistance, handleRefresh]);
+
   // Decide which data to show
   const displayTotal = searchActive ? searchTotal : total;
   const displayLoading = searchActive ? searchIsLoading : isLoading;
@@ -203,6 +276,14 @@ export function MailListPane({
           </>
         ) : (
           <>
+            <input
+              ref={checkboxRef}
+              type="checkbox"
+              checked={allSelected}
+              onChange={handleSelectAll}
+              className="mail-list-pane__select-all"
+              title={t("action.selectAll")}
+            />
             <span className="mail-list-pane__toolbar-title">
               {mailboxName}
             </span>
@@ -279,7 +360,19 @@ export function MailListPane({
       </div>
 
       {/* Message list */}
-      <div className="mail-list-pane__content">
+      <div
+        className="mail-list-pane__content"
+        ref={contentRef}
+        onTouchStart={isMobile ? handleTouchStart : undefined}
+        onTouchMove={isMobile ? handleTouchMove : undefined}
+        onTouchEnd={isMobile ? handleTouchEnd : undefined}
+      >
+        {/* Pull to refresh indicator */}
+        {isMobile && pullDistance > 0 && (
+          <div className="mail-list-pane__pull-indicator" style={{ height: pullDistance }}>
+            <RefreshCw size={18} className={pullDistance > 60 ? "animate-spin" : ""} style={{ opacity: Math.min(pullDistance / 60, 1) }} />
+          </div>
+        )}
         {searchActive && !displayLoading && displayEmails.length === 0 ? (
           <EmptyState
             icon={<Search size={48} strokeWidth={1} />}
@@ -323,6 +416,7 @@ export function MailListPane({
 
 function ContextualEmptyState({ mailboxRole, virtualFolder }: { mailboxRole: string | null; virtualFolder?: string | null }) {
   const { t } = useTranslation();
+  const { open: openCompose } = useCompose();
 
   if (virtualFolder === "scheduled") {
     return (
@@ -349,9 +443,31 @@ function ContextualEmptyState({ mailboxRole, virtualFolder }: { mailboxRole: str
     case "inbox":
       return (
         <EmptyState
-          icon={<CheckCircle size={48} strokeWidth={1} />}
-          title={t("emptyState.allCaughtUp")}
-          description={t("emptyState.allCaughtUpDesc")}
+          icon={<PartyPopper size={48} strokeWidth={1} />}
+          title="Inbox zero!"
+          description="You're all done. Enjoy the moment or start something new."
+          action={{
+            label: t("action.newMail"),
+            onClick: () => openCompose({ mode: "new" }),
+          }}
+          className="h-full"
+        />
+      );
+    case "sent":
+      return (
+        <EmptyState
+          icon={<Send size={48} strokeWidth={1} />}
+          title="No sent messages"
+          description="Messages you send will appear here."
+          className="h-full"
+        />
+      );
+    case "archive":
+      return (
+        <EmptyState
+          icon={<Archive size={48} strokeWidth={1} />}
+          title="Archive is empty"
+          description="Emails you archive will appear here."
           className="h-full"
         />
       );
@@ -360,7 +476,7 @@ function ContextualEmptyState({ mailboxRole, virtualFolder }: { mailboxRole: str
         <EmptyState
           icon={<FileEdit size={48} strokeWidth={1} />}
           title={t("emptyState.noDrafts")}
-          description={t("emptyState.noDraftsDesc")}
+          description="Emails you start composing will be saved here."
           className="h-full"
         />
       );
@@ -368,8 +484,8 @@ function ContextualEmptyState({ mailboxRole, virtualFolder }: { mailboxRole: str
       return (
         <EmptyState
           icon={<Trash2 size={48} strokeWidth={1} />}
-          title={t("emptyState.trashEmpty")}
-          description={t("emptyState.trashEmptyDesc")}
+          title="Trash is empty"
+          description="Emails you delete will appear here."
           className="h-full"
         />
       );
@@ -377,8 +493,8 @@ function ContextualEmptyState({ mailboxRole, virtualFolder }: { mailboxRole: str
       return (
         <EmptyState
           icon={<AlertTriangle size={48} strokeWidth={1} />}
-          title={t("emptyState.noJunk")}
-          description={t("emptyState.noJunkDesc")}
+          title="No spam"
+          description="Emails marked as spam will appear here."
           className="h-full"
         />
       );
@@ -386,8 +502,8 @@ function ContextualEmptyState({ mailboxRole, virtualFolder }: { mailboxRole: str
       return (
         <EmptyState
           icon={<FolderOpen size={48} strokeWidth={1} />}
-          title={t("emptyState.folderEmpty")}
-          description={t("emptyState.folderEmptyDesc")}
+          title="This folder is empty"
+          description="Move emails here to organize your inbox."
           className="h-full"
         />
       );

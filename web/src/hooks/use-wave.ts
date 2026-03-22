@@ -277,6 +277,28 @@ export function useWave() {
     setTimeout(() => useWaveStore.getState().removeReaction(reactionId), 3000);
   }, []);
 
+  /** Switch audio input device mid-call */
+  const switchAudioDevice = useCallback(async (deviceId: string) => {
+    if (waveConnection) {
+      try {
+        await waveConnection.switchAudioDevice(deviceId);
+      } catch (e) {
+        console.error("[Wave] Failed to switch audio device:", e);
+      }
+    }
+  }, []);
+
+  /** Switch video input device mid-call */
+  const switchVideoDevice = useCallback(async (deviceId: string) => {
+    if (waveConnection) {
+      try {
+        await waveConnection.switchVideoDevice(deviceId);
+      } catch (e) {
+        console.error("[Wave] Failed to switch video device:", e);
+      }
+    }
+  }, []);
+
   /** Enable browser Picture-in-Picture on the remote video element */
   const enablePiP = useCallback(async (videoElement: HTMLVideoElement | null) => {
     if (!videoElement || !document.pictureInPictureEnabled) return;
@@ -299,5 +321,7 @@ export function useWave() {
     sendChat,
     sendReaction,
     enablePiP,
+    switchAudioDevice,
+    switchVideoDevice,
   };
 }

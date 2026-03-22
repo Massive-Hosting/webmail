@@ -1,6 +1,6 @@
 /** Settings dialog with vertical tabs for all settings sections */
 
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Tabs from "@radix-ui/react-tabs";
 import {
@@ -17,6 +17,7 @@ import {
   Palmtree,
   Users,
   FileText,
+  Search,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { FilterRulesPanel } from "./filter-rules.tsx";
@@ -37,12 +38,57 @@ interface SettingsDialogProps {
   initialTab?: string;
 }
 
+const SETTINGS_SEARCH_INDEX: Record<string, string[]> = {
+  general: ["general", "theme", "density", "start page", "language", "appearance"],
+  mail: ["mail", "conversation", "reading pane", "archive", "delete", "mark as read", "undo send", "reply", "external images"],
+  signatures: ["signatures", "identity", "email signature"],
+  templates: ["templates", "email templates"],
+  vacation: ["vacation", "out of office", "auto reply", "automatic reply"],
+  filters: ["filters", "rules", "sieve"],
+  shortcuts: ["shortcuts", "keyboard", "hotkeys"],
+  notifications: ["notifications", "desktop", "sound", "alerts"],
+  storage: ["storage", "quota", "space", "trash", "junk"],
+  security: ["security", "two-factor", "2fa", "totp", "app passwords"],
+  accounts: ["accounts", "shared", "organization", "free busy", "directory"],
+};
+
+const ALL_TABS = [
+  "general", "mail", "signatures", "templates", "vacation",
+  "filters", "shortcuts", "notifications", "storage", "security", "accounts",
+];
+
 export const SettingsDialog = React.memo(function SettingsDialog({
   open,
   onOpenChange,
   initialTab = "general",
 }: SettingsDialogProps) {
   const { t } = useTranslation();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Reset search and tab when dialog opens
+  useEffect(() => {
+    if (open) {
+      setSearchTerm("");
+      setActiveTab(initialTab);
+    }
+  }, [open, initialTab]);
+
+  const visibleTabs = useMemo(() => {
+    if (!searchTerm.trim()) return ALL_TABS;
+    const term = searchTerm.toLowerCase();
+    return ALL_TABS.filter((tab) =>
+      SETTINGS_SEARCH_INDEX[tab]?.some((keyword) => keyword.includes(term))
+    );
+  }, [searchTerm]);
+
+  // Auto-switch to first matching tab when search changes
+  useEffect(() => {
+    if (searchTerm.trim() && visibleTabs.length > 0 && !visibleTabs.includes(activeTab)) {
+      setActiveTab(visibleTabs[0]);
+    }
+  }, [searchTerm, visibleTabs, activeTab]);
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -82,7 +128,7 @@ export const SettingsDialog = React.memo(function SettingsDialog({
             </Dialog.Close>
           </div>
 
-          <Tabs.Root defaultValue={initialTab} className="flex-1 overflow-hidden flex flex-row" orientation="vertical">
+          <Tabs.Root value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden flex flex-row" orientation="vertical">
             <Tabs.List
               className="flex flex-col gap-0.5 py-2 px-2 shrink-0 overflow-y-auto"
               style={{
@@ -91,50 +137,89 @@ export const SettingsDialog = React.memo(function SettingsDialog({
               }}
               aria-label={t("settingsDialog.sections")}
             >
-              <TabTrigger value="general">
-                <Palette size={14} />
-                {t("settingsDialog.general")}
-              </TabTrigger>
-              <TabTrigger value="mail">
-                <Mail size={14} />
-                {t("settingsDialog.mail")}
-              </TabTrigger>
-              <TabTrigger value="signatures">
-                <PenLine size={14} />
-                {t("settingsDialog.signatures")}
-              </TabTrigger>
-              <TabTrigger value="templates">
-                <FileText size={14} />
-                {t("settingsDialog.templates")}
-              </TabTrigger>
-              <TabTrigger value="vacation">
-                <Palmtree size={14} />
-                {t("settingsDialog.vacation")}
-              </TabTrigger>
-              <TabTrigger value="filters">
-                <Filter size={14} />
-                {t("settingsDialog.filters")}
-              </TabTrigger>
-              <TabTrigger value="shortcuts">
-                <Keyboard size={14} />
-                {t("settingsDialog.shortcuts")}
-              </TabTrigger>
-              <TabTrigger value="notifications">
-                <Bell size={14} />
-                {t("settingsDialog.notifications")}
-              </TabTrigger>
-              <TabTrigger value="storage">
-                <HardDrive size={14} />
-                {t("settingsDialog.storage")}
-              </TabTrigger>
-              <TabTrigger value="security">
-                <Shield size={14} />
-                {t("settingsDialog.security")}
-              </TabTrigger>
-              <TabTrigger value="accounts">
-                <Users size={14} />
-                {t("settingsDialog.accounts")}
-              </TabTrigger>
+              <div
+                className="flex items-center gap-1.5 px-2 py-1.5 mb-1 rounded-md text-sm"
+                style={{
+                  backgroundColor: "var(--color-bg-tertiary)",
+                  color: "var(--color-text-secondary)",
+                }}
+              >
+                <Search size={14} style={{ flexShrink: 0 }} />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder={t("settingsDialog.searchPlaceholder", { defaultValue: "Search settings..." })}
+                  className="bg-transparent border-none outline-none text-sm w-full"
+                  style={{ color: "var(--color-text-primary)" }}
+                />
+              </div>
+              {visibleTabs.includes("general") && (
+                <TabTrigger value="general">
+                  <Palette size={14} />
+                  {t("settingsDialog.general")}
+                </TabTrigger>
+              )}
+              {visibleTabs.includes("mail") && (
+                <TabTrigger value="mail">
+                  <Mail size={14} />
+                  {t("settingsDialog.mail")}
+                </TabTrigger>
+              )}
+              {visibleTabs.includes("signatures") && (
+                <TabTrigger value="signatures">
+                  <PenLine size={14} />
+                  {t("settingsDialog.signatures")}
+                </TabTrigger>
+              )}
+              {visibleTabs.includes("templates") && (
+                <TabTrigger value="templates">
+                  <FileText size={14} />
+                  {t("settingsDialog.templates")}
+                </TabTrigger>
+              )}
+              {visibleTabs.includes("vacation") && (
+                <TabTrigger value="vacation">
+                  <Palmtree size={14} />
+                  {t("settingsDialog.vacation")}
+                </TabTrigger>
+              )}
+              {visibleTabs.includes("filters") && (
+                <TabTrigger value="filters">
+                  <Filter size={14} />
+                  {t("settingsDialog.filters")}
+                </TabTrigger>
+              )}
+              {visibleTabs.includes("shortcuts") && (
+                <TabTrigger value="shortcuts">
+                  <Keyboard size={14} />
+                  {t("settingsDialog.shortcuts")}
+                </TabTrigger>
+              )}
+              {visibleTabs.includes("notifications") && (
+                <TabTrigger value="notifications">
+                  <Bell size={14} />
+                  {t("settingsDialog.notifications")}
+                </TabTrigger>
+              )}
+              {visibleTabs.includes("storage") && (
+                <TabTrigger value="storage">
+                  <HardDrive size={14} />
+                  {t("settingsDialog.storage")}
+                </TabTrigger>
+              )}
+              {visibleTabs.includes("security") && (
+                <TabTrigger value="security">
+                  <Shield size={14} />
+                  {t("settingsDialog.security")}
+                </TabTrigger>
+              )}
+              {visibleTabs.includes("accounts") && (
+                <TabTrigger value="accounts">
+                  <Users size={14} />
+                  {t("settingsDialog.accounts")}
+                </TabTrigger>
+              )}
             </Tabs.List>
 
             <div className="flex-1 overflow-y-auto">

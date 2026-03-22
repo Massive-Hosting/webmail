@@ -17,6 +17,29 @@ export interface Reaction {
   timestamp: number;
 }
 
+export interface CallHistoryEntry {
+  id: string;
+  peerEmail: string;
+  peerName: string;
+  duration: number; // seconds
+  timestamp: number;
+  video: boolean;
+}
+
+function loadCallHistory(): CallHistoryEntry[] {
+  try {
+    const raw = localStorage.getItem("wave_call_history");
+    if (raw) return JSON.parse(raw) as CallHistoryEntry[];
+  } catch { /* ignore */ }
+  return [];
+}
+
+function saveCallHistory(history: CallHistoryEntry[]) {
+  try {
+    localStorage.setItem("wave_call_history", JSON.stringify(history));
+  } catch { /* ignore */ }
+}
+
 interface WaveState {
   callState: CallState;
   callId: string | null;
@@ -50,6 +73,9 @@ interface WaveState {
   // Reactions (transient — auto-removed after display)
   reactions: Reaction[];
 
+  // Call history
+  callHistory: CallHistoryEntry[];
+
   // Actions
   setCallState: (state: CallState) => void;
   setCall: (callId: string, peerEmail: string, peerName: string) => void;
@@ -64,6 +90,7 @@ interface WaveState {
   setChatOpen: (open: boolean) => void;
   addReaction: (reaction: Reaction) => void;
   removeReaction: (id: string) => void;
+  addCallHistory: (entry: CallHistoryEntry) => void;
   reset: () => void;
 }
 
@@ -84,6 +111,7 @@ export const useWaveStore = create<WaveState>((set) => ({
   chatOpen: false,
   unreadChat: 0,
   reactions: [],
+  callHistory: loadCallHistory(),
 
   setCallState: (callState) =>
     set((s) => ({
@@ -106,23 +134,64 @@ export const useWaveStore = create<WaveState>((set) => ({
   setChatOpen: (chatOpen) => set({ chatOpen, unreadChat: chatOpen ? 0 : undefined as unknown as number }),
   addReaction: (reaction) => set((s) => ({ reactions: [...s.reactions, reaction] })),
   removeReaction: (id) => set((s) => ({ reactions: s.reactions.filter((r) => r.id !== id) })),
+  addCallHistory: (entry) =>
+    set((s) => {
+      const updated = [entry, ...s.callHistory].slice(0, 50);
+      saveCallHistory(updated);
+      return { callHistory: updated };
+    }),
   reset: () =>
-    set({
-      callState: "idle",
-      callId: null,
-      peerEmail: null,
-      peerName: null,
-      isMuted: false,
-      isVideoOff: false,
-      isScreenSharing: false,
-      localStream: null,
-      remoteStream: null,
-      incomingCall: null,
-      callStartTime: null,
-      networkQuality: "unknown",
-      chatMessages: [],
-      chatOpen: false,
-      unreadChat: 0,
-      reactions: [],
+    set((s) => {
+      // Save current call to history if it was connected
+      if (s.callStartTime && s.peerEmail) {
+        const duration = Math.round((Date.now() - s.callStartTime) / 1000);
+        const entry: CallHistoryEntry = {
+          id: crypto.randomUUID(),
+          peerEmail: s.peerEmail,
+          peerName: s.peerName ?? s.peerEmail,
+          duration,
+          timestamp: Date.now(),
+          video: !s.isVideoOff,
+        };
+        const updated = [entry, ...s.callHistory].slice(0, 50);
+        saveCallHistory(updated);
+        return {
+          callState: "idle",
+          callId: null,
+          peerEmail: null,
+          peerName: null,
+          isMuted: false,
+          isVideoOff: false,
+          isScreenSharing: false,
+          localStream: null,
+          remoteStream: null,
+          incomingCall: null,
+          callStartTime: null,
+          networkQuality: "unknown",
+          chatMessages: [],
+          chatOpen: false,
+          unreadChat: 0,
+          reactions: [],
+          callHistory: updated,
+        };
+      }
+      return {
+        callState: "idle",
+        callId: null,
+        peerEmail: null,
+        peerName: null,
+        isMuted: false,
+        isVideoOff: false,
+        isScreenSharing: false,
+        localStream: null,
+        remoteStream: null,
+        incomingCall: null,
+        callStartTime: null,
+        networkQuality: "unknown",
+        chatMessages: [],
+        chatOpen: false,
+        unreadChat: 0,
+        reactions: [],
+      };
     }),
 }));

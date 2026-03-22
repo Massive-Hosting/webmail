@@ -22,12 +22,12 @@ import { useKeyboardShortcuts } from "@/hooks/use-keyboard.ts";
 import { useMessages } from "@/hooks/use-messages.ts";
 import { useMessage } from "@/hooks/use-message.ts";
 import { useSearch } from "@/hooks/use-search.ts";
-import { fetchEmail, fetchIdentities } from "@/api/mail.ts";
+import { fetchEmail, fetchIdentities, updateEmails } from "@/api/mail.ts";
 import { trainSpam } from "@/api/spam.ts";
 import { useWave } from "@/hooks/use-wave.ts";
 import { createCallRoom } from "@/api/wave.ts";
 import { useAuthStore } from "@/stores/auth-store.ts";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Toaster, toast } from "sonner";
 import { WifiOff, ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -104,6 +104,7 @@ export function AppShell() {
   const selectedMailboxId = useUIStore((s) => s.selectedMailboxId);
   const selectedEmailId = useUIStore((s) => s.selectedEmailId);
   const selectedEmailIds = useUIStore((s) => s.selectedEmailIds);
+  const selectAllEmails = useUIStore((s) => s.selectAllEmails);
 
   const setMessageListWidth = useUIStore((s) => s.setMessageListWidth);
   const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
@@ -126,12 +127,18 @@ export function AppShell() {
   const { findByRole, sortedMailboxes, mailboxes } = useMailboxes();
 
   // Virtual folder filter for scheduled/snoozed views (memoized for stable reference)
+  const currentMailboxForFilter = mailboxes.find((m) => m.id === selectedMailboxId);
+  const isInboxFilter = currentMailboxForFilter?.role === "inbox";
   const virtualFilter = useMemo(() => {
     if (virtualFolder === "scheduled") return { hasKeyword: "$scheduled" };
     if (virtualFolder === "snoozed") return { hasKeyword: "$snoozed" };
-    // Normal mailbox view: hide snoozed and scheduled emails
-    return { operator: "AND" as const, conditions: [{ notKeyword: "$snoozed" }, { notKeyword: "$scheduled" }] };
-  }, [virtualFolder]);
+    // Normal mailbox view: hide snoozed and scheduled emails; in inbox also hide muted
+    const conditions: Array<{ notKeyword: string }> = [{ notKeyword: "$snoozed" }, { notKeyword: "$scheduled" }];
+    if (isInboxFilter) {
+      conditions.push({ notKeyword: "$muted" });
+    }
+    return { operator: "AND" as const, conditions };
+  }, [virtualFolder, isInboxFilter]);
   const effectiveMailboxId = virtualFolder ? null : selectedMailboxId;
 
   const { emails, starEmail, markRead, moveEmails, destroyEmails } = useMessages(effectiveMailboxId, virtualFilter);
@@ -357,6 +364,10 @@ export function AppShell() {
           onHelp: () => {
             setShowShortcuts(true);
           },
+          onSelectAll: () => {
+            const allIds = activeEmails.map((e) => e.id);
+            selectAllEmails(allIds);
+          },
           onGoToMailbox: handleGoToMailbox,
         }
       : {},
@@ -532,6 +543,26 @@ export function AppShell() {
       }
     }
   }, [selectedMailboxId, moveEmails, bulkThreshold, startBulkMove]);
+
+  const queryClient = useQueryClient();
+
+  const handleMute = useCallback(async (emailIds: string[], muted: boolean) => {
+    const updates: Record<string, Record<string, unknown>> = {};
+    for (const id of emailIds) {
+      updates[id] = { "keywords/$muted": muted ? true : null };
+    }
+    await updateEmails(updates);
+    queryClient.invalidateQueries({ queryKey: ["emails"] });
+  }, [queryClient]);
+
+  const handleToggleLabel = useCallback(async (emailIds: string[], label: string, active: boolean) => {
+    const updates: Record<string, Record<string, unknown>> = {};
+    for (const id of emailIds) {
+      updates[id] = { [`keywords/$label_${label}`]: active ? true : null };
+    }
+    await updateEmails(updates);
+    queryClient.invalidateQueries({ queryKey: ["emails"] });
+  }, [queryClient]);
 
   // Shared content
   const toasterConfig = (
@@ -766,6 +797,8 @@ export function AppShell() {
               onForward={handleForward}
               onMarkRead={markRead}
               onStar={starEmail}
+              onMute={handleMute}
+              onToggleLabel={handleToggleLabel}
             />
 
             {/* Message list + Reading pane row */}

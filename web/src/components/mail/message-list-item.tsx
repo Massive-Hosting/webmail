@@ -1,8 +1,10 @@
 /** Message list row components: regular item, thread header, and thread child */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useRef } from "react";
 import type { EmailListItem } from "@/types/mail.ts";
 import { isUnread, isFlagged } from "@/types/mail.ts";
+import { useUIStore } from "@/stores/ui-store.ts";
+import { getEmailLabels } from "@/lib/labels.ts";
 import { Avatar } from "@/components/ui/avatar.tsx";
 import { formatMessageDate, formatAddress } from "@/lib/format.ts";
 import {
@@ -12,6 +14,7 @@ import {
   ChevronDown,
   Printer,
   Clock,
+  Bell,
   BellOff,
   Reply,
   ReplyAll,
@@ -20,7 +23,10 @@ import {
   Mail,
   Archive,
   Trash2,
+  Tag,
+  Check,
 } from "lucide-react";
+import { LABEL_COLORS, LABEL_NAMES } from "@/lib/labels.ts";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -71,10 +77,53 @@ export const MessageListItem = React.memo(
     currentMailboxId,
   }: MessageListItemProps) {
     const { t } = useTranslation();
+    const isMobile = useUIStore((s) => s.isMobile);
     const unread = isUnread(email);
     const flagged = isFlagged(email);
     const sender = email.from?.[0] ?? { name: null, email: "unknown" };
     const [isDragging, setIsDragging] = useState(false);
+
+    // Swipe gesture state (mobile only)
+    const [swipeX, setSwipeX] = useState(0);
+    const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+    const isSwipingRef = useRef(false);
+
+    const handleTouchStart = useCallback((e: React.TouchEvent) => {
+      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      isSwipingRef.current = false;
+    }, []);
+
+    const handleTouchMove = useCallback((e: React.TouchEvent) => {
+      if (!touchStartRef.current) return;
+      const dx = e.touches[0].clientX - touchStartRef.current.x;
+      const dy = e.touches[0].clientY - touchStartRef.current.y;
+
+      if (!isSwipingRef.current) {
+        if (Math.abs(dy) > 20) {
+          touchStartRef.current = null;
+          return;
+        }
+        if (Math.abs(dx) > 20) {
+          isSwipingRef.current = true;
+        }
+        return;
+      }
+
+      requestAnimationFrame(() => setSwipeX(dx));
+    }, []);
+
+    const handleTouchEnd = useCallback(() => {
+      if (Math.abs(swipeX) > 100) {
+        if (swipeX > 0) {
+          onArchive?.([email.id]);
+        } else {
+          onDelete?.([email.id]);
+        }
+      }
+      setSwipeX(0);
+      touchStartRef.current = null;
+      isSwipingRef.current = false;
+    }, [swipeX, email.id, onArchive, onDelete]);
 
     const handleStarClick = useCallback(
       (e: React.MouseEvent) => {
@@ -106,7 +155,7 @@ export const MessageListItem = React.memo(
 
     const active = isSelected || isMultiSelected;
 
-    return (
+    const itemContent = (
       <ContextMenu.Root>
         <ContextMenu.Trigger asChild>
           <div
@@ -116,11 +165,12 @@ export const MessageListItem = React.memo(
             data-dragging={isDragging || undefined}
             role="option"
             aria-selected={isSelected}
-            draggable
+            draggable={!isMobile}
             onClick={(e) => onClick(email, e)}
             onMouseEnter={() => onMouseEnter?.(email.id)}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
+            style={isMobile && swipeX !== 0 ? { transform: `translateX(${swipeX}px)`, transition: isSwipingRef.current ? 'none' : 'transform 200ms ease' } : undefined}
           >
             {/* Unread indicator - small blue dot */}
             <div className="message-list-item__indicator">
@@ -159,6 +209,20 @@ export const MessageListItem = React.memo(
 
             {/* Right-side indicators */}
             <div className="message-list-item__actions">
+              {(() => {
+                const labels = getEmailLabels(email.keywords);
+                if (labels.length === 0) return null;
+                return (
+                  <div className="message-list-item__label-dots">
+                    {labels.map(l => (
+                      <div key={l.name} className="message-list-item__label-dot" style={{ backgroundColor: l.color }} />
+                    ))}
+                  </div>
+                );
+              })()}
+              {email.keywords["$muted"] && (
+                <BellOff size={14} className="message-list-item__mute-icon" />
+              )}
               {email.keywords["$snoozed"] && (
                 <Clock
                   size={14}
@@ -235,6 +299,33 @@ export const MessageListItem = React.memo(
         />
       </ContextMenu.Root>
     );
+
+    if (isMobile) {
+      return (
+        <div
+          className="message-list-item__swipe-wrapper"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          {swipeX > 0 && (
+            <div className="message-list-item__swipe-backdrop message-list-item__swipe-backdrop--archive">
+              <Archive size={18} />
+              {t("action.archive")}
+            </div>
+          )}
+          {swipeX < 0 && (
+            <div className="message-list-item__swipe-backdrop message-list-item__swipe-backdrop--delete">
+              {t("action.delete")}
+              <Trash2 size={18} />
+            </div>
+          )}
+          {itemContent}
+        </div>
+      );
+    }
+
+    return itemContent;
   },
   (prev, next) =>
     prev.email.id === next.email.id &&
@@ -390,6 +481,20 @@ export const ThreadHeaderItem = React.memo(
 
         {/* Right-side indicators */}
         <div className="message-list-item__actions">
+          {(() => {
+            const labels = getEmailLabels(email.keywords);
+            if (labels.length === 0) return null;
+            return (
+              <div className="message-list-item__label-dots">
+                {labels.map(l => (
+                  <div key={l.name} className="message-list-item__label-dot" style={{ backgroundColor: l.color }} />
+                ))}
+              </div>
+            );
+          })()}
+          {email.keywords["$muted"] && (
+            <BellOff size={14} className="message-list-item__mute-icon" />
+          )}
           {email.hasAttachment && (
             <Paperclip
               size={14}
@@ -569,6 +674,20 @@ export const ThreadChildItem = React.memo(
 
             {/* Right-side indicators */}
             <div className="message-list-item__actions">
+              {(() => {
+                const labels = getEmailLabels(email.keywords);
+                if (labels.length === 0) return null;
+                return (
+                  <div className="message-list-item__label-dots">
+                    {labels.map(l => (
+                      <div key={l.name} className="message-list-item__label-dot" style={{ backgroundColor: l.color }} />
+                    ))}
+                  </div>
+                );
+              })()}
+              {email.keywords["$muted"] && (
+                <BellOff size={14} className="message-list-item__mute-icon" />
+              )}
               {email.keywords["$snoozed"] && (
                 <Clock
                   size={14}
@@ -754,6 +873,61 @@ function MessageContextMenu({
           <Star size={14} />
           {flagged ? t("action.unstar") : t("action.star")}
         </ContextMenu.Item>
+        <ContextMenu.Item
+          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+          style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+          onSelect={() => {
+            const muted = !!email.keywords["$muted"];
+            updateEmails({ [email.id]: { "keywords/$muted": muted ? null : true } }).then(() => {
+              queryClient.invalidateQueries({ queryKey: ["emails"] });
+            });
+            toast.success(muted ? t("action.unmuted") : t("action.muted"));
+          }}
+        >
+          {email.keywords["$muted"] ? <Bell size={14} /> : <BellOff size={14} />}
+          {email.keywords["$muted"] ? t("action.unmute") : t("action.mute")}
+        </ContextMenu.Item>
+
+        <ContextMenu.Sub>
+          <ContextMenu.SubTrigger
+            className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+            style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+          >
+            <Tag size={14} />
+            {t("action.labels")}
+          </ContextMenu.SubTrigger>
+          <ContextMenu.Portal>
+            <ContextMenu.SubContent
+              className="min-w-[140px] p-1 text-sm"
+              style={{
+                backgroundColor: "var(--color-bg-elevated)",
+                border: "1px solid var(--color-border-primary)",
+                boxShadow: "var(--shadow-lg)",
+                borderRadius: "var(--radius-md)",
+                zIndex: 51,
+              }}
+            >
+              {LABEL_NAMES.map((name) => {
+                const color = LABEL_COLORS[name];
+                const isActive = !!email.keywords[`$label_${name}`];
+                return (
+                  <ContextMenu.Item
+                    key={name}
+                    className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
+                    style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+                    onSelect={() => {
+                      updateEmails({ [email.id]: { [`keywords/$label_${name}`]: isActive ? null : true } });
+                    }}
+                  >
+                    <div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: color }} />
+                    <span style={{ flex: 1, textTransform: "capitalize" }}>{name}</span>
+                    {isActive && <Check size={12} />}
+                  </ContextMenu.Item>
+                );
+              })}
+            </ContextMenu.SubContent>
+          </ContextMenu.Portal>
+        </ContextMenu.Sub>
 
         <ContextMenu.Separator
           className="my-1"

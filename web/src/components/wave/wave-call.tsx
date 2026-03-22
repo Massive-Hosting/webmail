@@ -4,14 +4,17 @@ import React, { useRef, useEffect, useState, useCallback } from "react";
 import {
   Mic, MicOff, Video, VideoOff, Monitor, PhoneOff, Maximize2, Minimize2,
   Loader2, Wifi, WifiOff, MessageCircle, Smile, PictureInPicture, X, Send,
+  Settings2,
 } from "lucide-react";
 import { useWaveStore } from "@/stores/wave-store.ts";
 import type { ChatMessage } from "@/stores/wave-store.ts";
 import { useWave } from "@/hooks/use-wave.ts";
 import { Avatar } from "@/components/ui/avatar.tsx";
 import { useTranslation } from "react-i18next";
-import { useDraggable } from "@/hooks/use-draggable.ts";
+import { useDraggable, useResizable } from "@/hooks/use-draggable.ts";
 import type { NetworkQuality } from "@/lib/wave.ts";
+import { DarkSelect } from "./dark-select.tsx";
+import { playConnectSound, playDisconnectSound } from "@/lib/wave-sounds.ts";
 
 const REACTION_EMOJIS = ["👍", "👏", "😂", "❤️", "🎉", "🤔", "👋", "🔥"];
 
@@ -32,7 +35,7 @@ export const WaveCall = React.memo(function WaveCall() {
   const unreadChat = useWaveStore((s) => s.unreadChat);
   const reactions = useWaveStore((s) => s.reactions);
 
-  const { hangup, toggleMute, toggleVideo, toggleScreenShare, sendChat, sendReaction, enablePiP } = useWave();
+  const { hangup, toggleMute, toggleVideo, toggleScreenShare, sendChat, sendReaction, enablePiP, switchAudioDevice, switchVideoDevice } = useWave();
   const setChatOpen = useWaveStore((s) => s.setChatOpen);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -43,8 +46,26 @@ export const WaveCall = React.memo(function WaveCall() {
   const [duration, setDuration] = useState("00:00");
   const [showReactions, setShowReactions] = useState(false);
   const [chatText, setChatText] = useState("");
+  const [showDeviceSettings, setShowDeviceSettings] = useState(false);
+  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedAudioDevice, setSelectedAudioDevice] = useState("");
+  const [selectedVideoDevice, setSelectedVideoDevice] = useState("");
+  const prevCallState = useRef(callState);
   const { handleProps: dragHandleProps, containerStyle: dragStyle } = useDraggable();
-  const { handleProps: pipDragProps, containerStyle: pipDragStyle } = useDraggable({ x: window.innerWidth - 220, y: window.innerHeight - 170 });
+  const { handleProps: pipDragProps, containerStyle: pipDragStyle } = useDraggable({ x: window.innerWidth - 260, y: window.innerHeight - 220 });
+  const { size: pipSize, resizeHandleProps: pipResizeProps } = useResizable({ width: 240, height: 180 });
+
+  // Play connect/disconnect sounds
+  useEffect(() => {
+    if (callState === "connected" && prevCallState.current !== "connected") {
+      playConnectSound();
+    }
+    if (callState === "ended" && prevCallState.current !== "ended") {
+      playDisconnectSound();
+    }
+    prevCallState.current = callState;
+  }, [callState]);
 
   // Attach streams to video elements
   useEffect(() => {
@@ -58,6 +79,27 @@ export const WaveCall = React.memo(function WaveCall() {
       remoteVideoRef.current.srcObject = remoteStream;
     }
   }, [remoteStream]);
+
+  // Enumerate devices when localStream becomes available
+  useEffect(() => {
+    if (!localStream) return;
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+      setAudioDevices(devices.filter(d => d.kind === "audioinput"));
+      setVideoDevices(devices.filter(d => d.kind === "videoinput"));
+    });
+  }, [localStream]);
+
+  // Switch audio device via WaveConnection
+  useEffect(() => {
+    if (!selectedAudioDevice) return;
+    switchAudioDevice(selectedAudioDevice);
+  }, [selectedAudioDevice, switchAudioDevice]);
+
+  // Switch video device via WaveConnection
+  useEffect(() => {
+    if (!selectedVideoDevice) return;
+    switchVideoDevice(selectedVideoDevice);
+  }, [selectedVideoDevice, switchVideoDevice]);
 
   // Call duration timer
   useEffect(() => {
@@ -179,7 +221,11 @@ export const WaveCall = React.memo(function WaveCall() {
                   {callState === "ended" && t("wave.callEnded")}
                 </div>
                 {(callState === "ringing" || callState === "connecting") && (
-                  <Loader2 size={24} className="animate-spin" style={{ color: "rgba(255,255,255,0.3)" }} />
+                  <div className="relative w-20 h-20 mt-4">
+                    <div className="absolute inset-0 rounded-full" style={{ border: "2px solid rgba(99,102,241,0.3)", animation: "wave-ping 2s cubic-bezier(0,0,0.2,1) infinite" }} />
+                    <div className="absolute inset-2 rounded-full" style={{ border: "1.5px solid rgba(99,102,241,0.2)", animation: "wave-ping 2s cubic-bezier(0,0,0.2,1) infinite 0.5s" }} />
+                    <div className="absolute inset-4 rounded-full flex items-center justify-center animate-pulse" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)" }} />
+                  </div>
                 )}
               </div>
             )}
@@ -203,24 +249,33 @@ export const WaveCall = React.memo(function WaveCall() {
               </div>
             )}
 
-            {/* Local video PiP */}
+            {/* Local video PiP — draggable + resizable */}
             {localStream && callState !== "ended" && (
               <div
-                className="absolute bottom-4 right-4 rounded-xl overflow-hidden"
+                data-draggable
+                className="fixed z-[9999] rounded-xl overflow-hidden"
                 style={{
-                  width: 180,
-                  height: 135,
+                  width: pipSize.width,
+                  height: pipSize.height,
                   backgroundColor: "#292524",
                   boxShadow: "0 4px 16px rgba(0, 0, 0, 0.4)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                  ...pipDragStyle,
                 }}
               >
+                <div className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing" {...pipDragProps} />
                 <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
                 {isVideoOff && (
                   <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: "#292524" }}>
                     <VideoOff size={20} style={{ color: "rgba(255,255,255,0.3)" }} />
                   </div>
                 )}
+                {/* Resize handle */}
+                <div {...pipResizeProps}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" style={{ opacity: 0.4 }}>
+                    <path d="M14 2L2 14M14 6L6 14M14 10L10 14" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </div>
               </div>
             )}
 
@@ -296,6 +351,27 @@ export const WaveCall = React.memo(function WaveCall() {
               />
             )}
 
+            {/* Device settings */}
+            <div className="relative">
+              <ControlButton
+                icon={<Settings2 size={20} />}
+                active={showDeviceSettings}
+                onClick={() => setShowDeviceSettings(!showDeviceSettings)}
+                title="Device settings"
+              />
+              {showDeviceSettings && (
+                <div className="absolute bottom-14 left-1/2 -translate-x-1/2 p-4 rounded-xl w-80 space-y-3 animate-scale-in"
+                  style={{ backgroundColor: "rgba(28,25,23,0.95)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", backdropFilter: "blur(12px)" }}>
+                  {audioDevices.length > 0 && (
+                    <DarkSelect label="Microphone" value={selectedAudioDevice || audioDevices[0]?.deviceId || ""} options={audioDevices.map(d => ({ value: d.deviceId, label: d.label || `Mic ${d.deviceId.slice(0,4)}` }))} onChange={setSelectedAudioDevice} />
+                  )}
+                  {videoDevices.length > 0 && (
+                    <DarkSelect label="Camera" value={selectedVideoDevice || videoDevices[0]?.deviceId || ""} options={videoDevices.map(d => ({ value: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0,4)}` }))} onChange={setSelectedVideoDevice} />
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="w-px h-8 bg-white/10 mx-1" />
 
             {/* Hang up */}
@@ -361,6 +437,10 @@ export const WaveCall = React.memo(function WaveCall() {
         @keyframes reaction-float {
           0% { transform: translateY(0) scale(1); opacity: 1; }
           100% { transform: translateY(-150px) scale(1.5); opacity: 0; }
+        }
+        @keyframes wave-ping {
+          0% { transform: scale(1); opacity: 1; }
+          75%, 100% { transform: scale(1.5); opacity: 0; }
         }
       `}</style>
     </div>

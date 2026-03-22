@@ -299,8 +299,8 @@ export const WaveLobby = React.memo(function WaveLobby({
           onEscapeKeyDown={(e) => e.preventDefault()}
           className={`fixed z-[9999] rounded-2xl overflow-hidden flex flex-col animate-scale-in ${dragStyle.left == null ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" : ""}`}
           style={{
-            width: 520,
-            maxWidth: "92vw",
+            width: 720,
+            maxWidth: "94vw",
             backgroundColor: "#1c1917",
             border: "1px solid rgba(255, 255, 255, 0.08)",
             ...dragStyle,
@@ -318,10 +318,6 @@ export const WaveLobby = React.memo(function WaveLobby({
               </div>
               <div>
                 <div className="text-sm font-semibold text-white">{t("wave.readyToCall")}</div>
-                <div className="text-xs text-white/50 flex items-center gap-1.5">
-                  <Avatar address={peerAddress} size={14} />
-                  {peerName}
-                </div>
               </div>
             </Dialog.Title>
             <Dialog.Close asChild>
@@ -329,6 +325,15 @@ export const WaveLobby = React.memo(function WaveLobby({
                 <X size={16} />
               </button>
             </Dialog.Close>
+          </div>
+
+          {/* Calling: peer info */}
+          <div className="mx-6 mb-4 flex items-center gap-3 px-4 py-3 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <Avatar address={peerAddress} size={40} />
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-white truncate">{peerName}</div>
+              <div className="text-xs text-white/40 truncate">{peerEmail}</div>
+            </div>
           </div>
 
           {/* Video preview */}
@@ -403,40 +408,39 @@ export const WaveLobby = React.memo(function WaveLobby({
               onClick={() => setVideoEnabled(!videoEnabled)}
             />
             <LobbyToggle
-              icon={<Settings2 size={18} />}
-              label={t("wave.deviceSettings")}
-              active={false}
-              accent={showDeviceSettings}
-              onClick={() => { setShowDeviceSettings(!showDeviceSettings); setShowBackgrounds(false); }}
-            />
-            <LobbyToggle
               icon={<ImageIcon size={18} />}
               label={t("wave.background")}
               active={bgEffect.mode !== "none"}
               accent={showBackgrounds}
-              onClick={() => { setShowBackgrounds(!showBackgrounds); setShowDeviceSettings(false); }}
+              onClick={() => setShowBackgrounds(!showBackgrounds)}
             />
           </div>
 
-          {/* Device selection (expandable) */}
-          {showDeviceSettings && (
-            <div className="mx-6 mb-4 space-y-3 p-4 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              {audioDevices.length > 0 && (
-                <DarkSelect
-                  label={t("wave.microphone")}
-                  value={selectedAudioDevice || audioDevices[0]?.deviceId || ""}
-                  options={audioDevices.map((d) => ({ value: d.deviceId, label: d.label || `Microphone ${d.deviceId.slice(0, 8)}` }))}
-                  onChange={setSelectedAudioDevice}
-                />
-              )}
-              {videoDevices.length > 0 && (
-                <DarkSelect
-                  label={t("wave.camera")}
-                  value={selectedVideoDevice || videoDevices[0]?.deviceId || ""}
-                  options={videoDevices.map((d) => ({ value: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0, 8)}` }))}
-                  onChange={setSelectedVideoDevice}
-                />
-              )}
+          {/* Device selection — always visible when devices are available */}
+          {permissionState === "granted" && (audioDevices.length > 0 || videoDevices.length > 0) && (
+            <div className="mx-6 mb-4 p-4 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex items-center gap-1.5 mb-3">
+                <Settings2 size={13} style={{ color: "rgba(255,255,255,0.4)" }} />
+                <label className="text-[11px] font-medium text-white/40">{t("wave.deviceSettings")}</label>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {audioDevices.length > 0 && (
+                  <DarkSelect
+                    label={t("wave.microphone")}
+                    value={selectedAudioDevice || audioDevices[0]?.deviceId || ""}
+                    options={audioDevices.map((d) => ({ value: d.deviceId, label: d.label || `Microphone ${d.deviceId.slice(0, 8)}` }))}
+                    onChange={setSelectedAudioDevice}
+                  />
+                )}
+                {videoDevices.length > 0 && (
+                  <DarkSelect
+                    label={t("wave.camera")}
+                    value={selectedVideoDevice || videoDevices[0]?.deviceId || ""}
+                    options={videoDevices.map((d) => ({ value: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0, 8)}` }))}
+                    onChange={setSelectedVideoDevice}
+                  />
+                )}
+              </div>
             </div>
           )}
 

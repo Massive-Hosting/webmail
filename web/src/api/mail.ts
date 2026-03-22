@@ -52,6 +52,7 @@ const EMAIL_FULL_PROPERTIES = [
   "attachments",
   "headers",
   "header:X-Spam-Status:asRaw",
+  "header:Disposition-Notification-To:asRaw",
 ];
 
 /** Fetch all mailboxes */
@@ -883,6 +884,7 @@ interface SendEmailParams {
   draftEmailId?: string;
   draftsMailboxId?: string;
   sentMailboxId?: string;
+  requestReadReceipt?: boolean;
 }
 
 /**
@@ -960,6 +962,11 @@ export async function sendEmail(params: SendEmailParams): Promise<void> {
     emailObj["header:References:asMessageIds"] = params.references.map((r) =>
       r.replace(/[<>]/g, ""),
     );
+  }
+
+  // Read receipt header
+  if (params.requestReadReceipt && params.from) {
+    emailObj["header:Disposition-Notification-To:asRaw"] = `${params.from.name} <${params.from.email}>`;
   }
 
   // Every email must belong to at least one mailbox (Stalwart requirement).
@@ -1096,6 +1103,60 @@ export async function sendEmail(params: SendEmailParams): Promise<void> {
       }
     }
   }
+}
+
+/** Send a read receipt (MDN) for an email */
+export async function sendReadReceipt(
+  originalEmailId: string,
+  notifyTo: string,
+  identity: Identity | null,
+): Promise<void> {
+  if (!identity) throw new Error("No identity available");
+
+  const mdnBody = `This is a read receipt for your email.`;
+  const mdnHTML = `<p>This is a read receipt acknowledging that your message was displayed.</p>`;
+
+  // Fetch mailboxes to get sent mailbox
+  const mailboxes = await fetchMailboxes();
+  const sent = mailboxes.find(m => m.role === "sent");
+  const drafts = mailboxes.find(m => m.role === "drafts");
+  const mailboxId = drafts?.id ?? sent?.id;
+  if (!mailboxId) throw new Error("No mailbox available");
+
+  const emailObj: Record<string, unknown> = {
+    mailboxIds: { [mailboxId]: true },
+    from: [{ name: identity.name, email: identity.email }],
+    to: [{ email: notifyTo }],
+    subject: `Read: Message received`,
+    keywords: { $seen: true, $mdnsent: true },
+    bodyValues: {
+      html: { value: mdnHTML, isEncodingProblem: false, isTruncated: false },
+      text: { value: mdnBody, isEncodingProblem: false, isTruncated: false },
+    },
+    textBody: [{ partId: "text", type: "text/plain" }],
+    htmlBody: [{ partId: "html", type: "text/html" }],
+  };
+
+  const request: JMAPRequest = {
+    using: JMAP_USING,
+    methodCalls: [
+      ["Email/set", { create: { mdn: emailObj } }, "create_mdn"],
+      ["EmailSubmission/set", {
+        create: { sub: { emailId: "#mdn", identityId: identity.id } },
+        onSuccessUpdateEmail: {
+          "#sub": {
+            "keywords/$draft": null,
+            ...(sent ? { [`mailboxIds/${sent.id}`]: true, ...(drafts ? { [`mailboxIds/${drafts.id}`]: null } : {}) } : {}),
+          },
+        },
+      }, "submit_mdn"],
+    ],
+  };
+
+  await jmapRequest(request);
+
+  // Mark the original email as having had MDN sent
+  await updateEmails({ [originalEmailId]: { "keywords/$mdnsent": true } });
 }
 
 // ---- Vacation / Out of Office (VacationResponse) ----

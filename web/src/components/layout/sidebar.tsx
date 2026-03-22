@@ -4,6 +4,10 @@ import React, { lazy, Suspense, useState, useCallback, useRef, useEffect } from 
 import { FolderTree } from "@/components/mail/folder-tree.tsx";
 import { SavedSearchesList } from "@/components/mail/saved-searches-list.tsx";
 import { useUIStore } from "@/stores/ui-store.ts";
+import { useWaveStore } from "@/stores/wave-store.ts";
+import type { CallHistoryEntry } from "@/stores/wave-store.ts";
+import { useWave } from "@/hooks/use-wave.ts";
+import { formatDistanceToNow } from "date-fns";
 
 const AgendaSidebar = lazy(() =>
   import("@/components/calendar/agenda-sidebar.tsx").then((m) => ({ default: m.AgendaSidebar }))
@@ -11,6 +15,9 @@ const AgendaSidebar = lazy(() =>
 import {
   ChevronLeft,
   ChevronRight,
+  Phone,
+  Video,
+  PhoneCall,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -44,6 +51,7 @@ export const Sidebar = React.memo(function Sidebar() {
           <>
             <FolderTree />
             <SavedSearchesList />
+            <RecentCalls />
             <div
               className="mx-3 my-1"
               style={{ borderTop: "1px solid var(--color-border-primary)" }}
@@ -61,3 +69,72 @@ export const Sidebar = React.memo(function Sidebar() {
     </nav>
   );
 });
+
+function RecentCalls() {
+  const { t } = useTranslation();
+  const callHistory = useWaveStore((s) => s.callHistory);
+  const { startCall } = useWave();
+
+  const recentCalls = callHistory.slice(0, 5);
+
+  if (recentCalls.length === 0) return null;
+
+  return (
+    <div className="px-3 py-2">
+      <div
+        className="text-xs font-semibold uppercase tracking-wide mb-1.5 px-1"
+        style={{ color: "var(--color-text-tertiary)" }}
+      >
+        {t("sidebar.recentCalls", { defaultValue: "Recent Calls" })}
+      </div>
+      <div className="flex flex-col gap-0.5">
+        {recentCalls.map((entry) => (
+          <RecentCallItem key={entry.id} entry={entry} onCallAgain={startCall} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RecentCallItem({
+  entry,
+  onCallAgain,
+}: {
+  entry: CallHistoryEntry;
+  onCallAgain: (peerEmail: string, video: boolean) => void;
+}) {
+  const displayName = entry.peerName || entry.peerEmail.split("@")[0];
+  const timeAgo = formatDistanceToNow(entry.timestamp, { addSuffix: true });
+
+  return (
+    <div
+      className="group flex items-center gap-2 px-1.5 py-1 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors cursor-default"
+    >
+      <div style={{ color: "var(--color-text-tertiary)", flexShrink: 0 }}>
+        {entry.video ? <Video size={14} /> : <Phone size={14} />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div
+          className="text-xs font-medium truncate"
+          style={{ color: "var(--color-text-primary)" }}
+        >
+          {displayName}
+        </div>
+        <div
+          className="text-[10px] truncate"
+          style={{ color: "var(--color-text-tertiary)" }}
+        >
+          {timeAgo}
+        </div>
+      </div>
+      <button
+        onClick={() => onCallAgain(entry.peerEmail, entry.video)}
+        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--color-bg-secondary)] transition-all"
+        style={{ color: "var(--color-text-secondary)" }}
+        title="Call again"
+      >
+        <PhoneCall size={13} />
+      </button>
+    </div>
+  );
+}

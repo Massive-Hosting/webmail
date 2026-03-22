@@ -3,7 +3,7 @@
 import React, { useMemo, useState, useRef, useCallback } from "react";
 import { useMessage } from "@/hooks/use-message.ts";
 import { useCompose } from "@/components/mail/compose/use-compose.ts";
-import { fetchIdentities } from "@/api/mail.ts";
+import { fetchIdentities, sendReadReceipt } from "@/api/mail.ts";
 import { useQuery } from "@tanstack/react-query";
 import { Avatar } from "@/components/ui/avatar.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
@@ -47,6 +47,8 @@ import {
   UserPlus,
   Copy,
   Mail,
+  X,
+  MailCheck,
 } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import * as ContextMenu from "@radix-ui/react-context-menu";
@@ -66,6 +68,7 @@ import { printEmail } from "@/lib/print.ts";
 import { parseSpamStatus } from "@/lib/spam.ts";
 import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 import { trainSpam } from "@/api/spam.ts";
+import { toast } from "sonner";
 
 interface MessageViewProps {
   emailId: string;
@@ -99,6 +102,8 @@ function MessageContent({ email }: { email: Email }) {
   const [showAllRecipients, setShowAllRecipients] = useState(false);
   const [showQuotedText, setShowQuotedText] = useState(false);
   const [showProperties, setShowProperties] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [readReceiptDismissed, setReadReceiptDismissed] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const { open: openCompose } = useCompose();
   const aiEnabled = useAIEnabled();
@@ -214,6 +219,14 @@ function MessageContent({ email }: { email: Email }) {
     const junk = findByRole("junk");
     return junk ? !!email.mailboxIds[junk.id] : false;
   }, [email.mailboxIds, findByRole]);
+
+  const readReceiptTo = useMemo(() => {
+    const raw = (email as unknown as Record<string, unknown>)["header:Disposition-Notification-To:asRaw"];
+    if (!raw || typeof raw !== "string") return null;
+    // Extract email from the header value (may be in format "Name <email>" or just "email")
+    const match = raw.match(/<([^>]+)>/);
+    return match ? match[1].trim() : raw.trim();
+  }, [email]);
 
   const handleNotSpamBanner = useCallback(async () => {
     const inbox = findByRole("inbox");
@@ -366,9 +379,95 @@ function MessageContent({ email }: { email: Email }) {
           </div>
         )}
 
+        {/* Read receipt banner */}
+        {readReceiptTo && !readReceiptDismissed && !email.keywords["$mdnsent"] && (
+          <div className="message-view__images-bar" style={{ backgroundColor: "var(--color-bg-tertiary)" }}>
+            <MailCheck size={14} />
+            <span>{t("readReceipt.requested")}</span>
+            <button
+              onClick={async () => {
+                try {
+                  await sendReadReceipt(email.id, readReceiptTo, defaultIdentity);
+                  toast.success(t("readReceipt.sent"));
+                  setReadReceiptDismissed(true);
+                } catch {
+                  toast.error(t("readReceipt.failed"));
+                }
+              }}
+              className="message-view__images-bar-action"
+            >
+              {t("readReceipt.send")}
+            </button>
+            <button
+              onClick={() => setReadReceiptDismissed(true)}
+              className="message-view__images-bar-action"
+              style={{ opacity: 0.7 }}
+            >
+              {t("readReceipt.ignore")}
+            </button>
+          </div>
+        )}
+
         {/* Attachment cards */}
         {attachments.length > 0 && (
           <div className="message-view__attachments">
+            {/* Inline previews for images and PDFs */}
+            {attachments.some(a => a.size <= 10 * 1024 * 1024 && (a.type?.startsWith("image/") || a.type?.includes("pdf"))) && (
+              <div className="message-view__attachment-previews">
+                {attachments.filter(a => a.size <= 10 * 1024 * 1024).map((att, i) => {
+                  if (att.type?.startsWith("image/")) {
+                    return (
+                      <button
+                        key={i}
+                        className="message-view__attachment-preview-img-btn"
+                        onClick={() => setLightboxUrl(`/api/blob/${att.blobId}/inline`)}
+                      >
+                        <img
+                          src={`/api/blob/${att.blobId}/inline`}
+                          alt={att.name ?? "attachment"}
+                          loading="lazy"
+                          className="message-view__attachment-preview-img"
+                        />
+                      </button>
+                    );
+                  }
+                  if (att.type?.includes("pdf")) {
+                    return (
+                      <div key={i} className="message-view__attachment-preview-pdf">
+                        <iframe
+                          src={`/api/blob/${att.blobId}`}
+                          title={att.name ?? "PDF"}
+                          className="message-view__attachment-preview-iframe"
+                        />
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
+            )}
+            {/* Download all button when multiple attachments */}
+            {attachments.length > 1 && (
+              <div className="message-view__attachments-header">
+                <span className="message-view__attachments-count">
+                  {t("messageView.attachmentCount", { count: attachments.length })}
+                </span>
+                <button
+                  className="message-view__download-all-btn"
+                  onClick={() => {
+                    for (const att of attachments) {
+                      const a = document.createElement("a");
+                      a.href = `/api/blob/${att.blobId}`;
+                      a.download = att.name ?? "attachment";
+                      a.click();
+                    }
+                  }}
+                >
+                  <Download size={14} />
+                  {t("messageView.downloadAll")}
+                </button>
+              </div>
+            )}
             {attachments.map((att, i) => (
               <AttachmentCard key={i} attachment={att} />
             ))}
@@ -459,6 +558,27 @@ function MessageContent({ email }: { email: Email }) {
           email={email}
           onClose={() => setShowProperties(false)}
         />
+      )}
+
+      {/* Image lightbox */}
+      {lightboxUrl && (
+        <div
+          className="message-view__lightbox"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            className="message-view__lightbox-close"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <X size={24} />
+          </button>
+          <img
+            src={lightboxUrl}
+            alt="Preview"
+            className="message-view__lightbox-img"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       )}
     </Tooltip.Provider>
   );

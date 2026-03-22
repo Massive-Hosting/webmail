@@ -24,6 +24,7 @@ interface ShortcutHandlers {
   onSearch?: () => void;
   onHelp?: () => void;
   onGoToMailbox?: (role: string) => void;
+  onSelectAll?: () => void;
 }
 
 export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
@@ -37,10 +38,17 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
       // Skip when typing in inputs
       if (isInputElement(e.target)) return;
 
+      const key = e.key.toLowerCase();
+
+      // Ctrl+A: select all
+      if ((e.ctrlKey || e.metaKey) && key === "a") {
+        e.preventDefault();
+        handlers.onSelectAll?.();
+        return;
+      }
+
       // Don't intercept browser shortcuts
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-
-      const key = e.key.toLowerCase();
 
       // Handle chord second key
       if (chordPrefix === "g") {

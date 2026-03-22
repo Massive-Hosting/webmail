@@ -17,6 +17,9 @@ import {
   Clock,
   XCircle,
   BellOff,
+  Bell,
+  Tag,
+  Check,
 } from "lucide-react";
 import { addHours, setHours, setMinutes, setSeconds, addDays, nextMonday, isPast, format } from "date-fns";
 import { startSnooze } from "@/api/tasks.ts";
@@ -30,6 +33,7 @@ import { useTranslation } from "react-i18next";
 import type { EmailListItem } from "@/types/mail.ts";
 import type { Mailbox } from "@/types/mail.ts";
 import type { VirtualFolder } from "@/stores/ui-store.ts";
+import { LABEL_COLORS, LABEL_NAMES } from "@/lib/labels.ts";
 
 export interface ActionBarProps {
   /** Currently selected email IDs */
@@ -59,7 +63,9 @@ export interface ActionBarProps {
   onForward: (emailItem: EmailListItem) => void;
   onMarkRead: (emailIds: string[], seen: boolean) => void;
   onStar: (emailId: string, flagged: boolean) => void;
+  onMute?: (emailIds: string[], muted: boolean) => void;
   onSnooze?: (emailId: string, mailboxId: string, until: Date) => void;
+  onToggleLabel?: (emailIds: string[], label: string, active: boolean) => void;
 }
 
 export const ActionBar = React.memo(function ActionBar({
@@ -81,7 +87,9 @@ export const ActionBar = React.memo(function ActionBar({
   onForward,
   onMarkRead,
   onStar,
+  onMute,
   onSnooze,
+  onToggleLabel,
 }: ActionBarProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -102,6 +110,12 @@ export const ActionBar = React.memo(function ActionBar({
   // Determine star state of selection (for single)
   const isStarred = useMemo(
     () => selectedEmails.length === 1 && !!selectedEmails[0].keywords["$flagged"],
+    [selectedEmails],
+  );
+
+  // Determine muted state
+  const isMuted = useMemo(
+    () => selectedEmails.length === 1 && !!selectedEmails[0]?.keywords["$muted"],
     [selectedEmails],
   );
 
@@ -136,6 +150,10 @@ export const ActionBar = React.memo(function ActionBar({
   const handleToggleStar = useCallback(() => {
     if (singleEmail) onStar(singleEmail.id, !isStarred);
   }, [singleEmail, isStarred, onStar]);
+
+  const handleToggleMute = useCallback(() => {
+    if (hasSelection) onMute?.(selectedIds, !isMuted);
+  }, [hasSelection, selectedIds, isMuted, onMute]);
 
   const optimisticRemoveFromList = useCallback((ids: string[]) => {
     const idSet = new Set(ids);
@@ -275,14 +293,14 @@ export const ActionBar = React.memo(function ActionBar({
         <ActionBarButton
           icon={<Trash2 size={18} />}
           label={t("action.delete")}
-          tooltip={currentMailboxRole === "trash" ? t("action.deletePermanently") : t("action.delete")}
+          tooltip={(currentMailboxRole === "trash" ? t("action.deletePermanently") : t("action.delete")) + " (#)"}
           onClick={handleDelete}
           disabled={!hasSelection}
         />
         <ActionBarButton
           icon={<Archive size={18} />}
           label={t("action.archive")}
-          tooltip={t("action.archive")}
+          tooltip={t("action.archive") + " (E)"}
           onClick={handleArchive}
           disabled={!hasSelection}
         />
@@ -378,17 +396,62 @@ export const ActionBar = React.memo(function ActionBar({
         <ActionBarButton
           icon={allRead ? <Mail size={18} /> : <MailOpen size={18} />}
           label={allRead ? t("action.unread") : t("action.read")}
-          tooltip={allRead ? t("action.markAsUnread") : t("action.markAsRead")}
+          tooltip={allRead ? "Mark as unread (Shift+U)" : "Mark as read (Shift+I)"}
           onClick={handleToggleRead}
           disabled={!hasSelection}
         />
         <ActionBarButton
           icon={<Star size={18} className={isStarred ? "action-bar__icon--starred" : ""} />}
           label={isStarred ? t("action.unstar") : t("action.star")}
-          tooltip={isStarred ? t("action.removeStar") : t("action.addStar")}
+          tooltip={(isStarred ? t("action.removeStar") : t("action.addStar")) + " (S)"}
           onClick={handleToggleStar}
           disabled={!isSingleSelected}
         />
+        {onMute && (
+          <ActionBarButton
+            icon={isMuted ? <Bell size={18} /> : <BellOff size={18} />}
+            label={isMuted ? t("action.unmute") : t("action.mute")}
+            tooltip={isMuted ? t("action.unmute") : t("action.mute")}
+            onClick={handleToggleMute}
+            disabled={!hasSelection}
+          />
+        )}
+
+        {/* Labels dropdown */}
+        <DropdownMenu.Root>
+          <Tooltip.Root>
+            <Tooltip.Trigger asChild>
+              <DropdownMenu.Trigger asChild>
+                <button className="action-bar__btn" disabled={!hasSelection}>
+                  <Tag size={18} />
+                  <span className="action-bar__btn-label">{t("action.labels")}</span>
+                </button>
+              </DropdownMenu.Trigger>
+            </Tooltip.Trigger>
+            <Tooltip.Content className="tooltip-content" sideOffset={5}>
+              {t("action.labels")}
+            </Tooltip.Content>
+          </Tooltip.Root>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content className="action-bar__dropdown" sideOffset={4} align="start">
+              {LABEL_NAMES.map((name) => {
+                const color = LABEL_COLORS[name];
+                const isActive = selectedEmails.length > 0 && selectedEmails.every(e => e.keywords[`$label_${name}`]);
+                return (
+                  <DropdownMenu.Item
+                    key={name}
+                    className="action-bar__dropdown-item"
+                    onSelect={() => onToggleLabel?.(selectedIds, name, !isActive)}
+                  >
+                    <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
+                    <span style={{ flex: 1, textTransform: "capitalize" }}>{t(`label.${name}`)}</span>
+                    {isActive && <Check size={14} />}
+                  </DropdownMenu.Item>
+                );
+              })}
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
 
         {/* Snooze dropdown — hidden when viewing snoozed/scheduled virtual folders */}
         {!virtualFolder && <DropdownMenu.Root>

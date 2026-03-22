@@ -6,6 +6,8 @@ import {
   Settings2, Loader2, Monitor, Maximize, Minimize2,
 } from "lucide-react";
 import { DarkSelect } from "./dark-select.tsx";
+import { useDraggable, useResizable } from "@/hooks/use-draggable.ts";
+import { playConnectSound, playDisconnectSound } from "@/lib/wave-sounds.ts";
 
 interface RoomInfo {
   id: string;
@@ -28,7 +30,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [audioLevel, setAudioLevel] = useState(0);
-  const [showDevices, setShowDevices] = useState(false);
+  const [showCallDevices, setShowCallDevices] = useState(false);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedAudioDevice, setSelectedAudioDevice] = useState("");
@@ -36,6 +38,8 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [callDuration, setCallDuration] = useState(0);
+  const { handleProps: pipDragProps, containerStyle: pipDragStyle } = useDraggable({ x: typeof window !== "undefined" ? window.innerWidth - 260 : 600, y: typeof window !== "undefined" ? window.innerHeight - 220 : 400 });
+  const { size: pipSize, resizeHandleProps: pipResizeProps } = useResizable({ width: 240, height: 180 });
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -83,6 +87,12 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
     if (!stream) return;
     for (const t of stream.getVideoTracks()) t.enabled = videoEnabled;
   }, [videoEnabled, stream]);
+
+  // Play connect/disconnect sounds
+  useEffect(() => {
+    if (roomState === "connected") playConnectSound();
+    if (roomState === "ended") playDisconnectSound();
+  }, [roomState]);
 
   // Call duration timer
   useEffect(() => {
@@ -237,6 +247,20 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
     };
   }, [stream, roomId, guestName, roomState]);
 
+  // Keep local video element synced with stream (re-attaches after state transitions)
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [stream, roomState]);
+
+  // Attach remote stream to video element when it becomes available
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
+
   const hangup = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "call-end", to: "__host__", payload: JSON.stringify({ callId: roomId }) }));
@@ -288,9 +312,9 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
   // Connected — full screen call view
   if (roomState === "connected" || roomState === "connecting") {
     return (
-      <div className="fixed inset-0 bg-black flex flex-col">
+      <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
         {/* Remote video */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-h-0">
           {remoteStream ? (
             <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
           ) : (
@@ -303,19 +327,44 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
           {roomState === "connecting" && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/60">
               <div className="text-center">
-                <Loader2 className="w-8 h-8 text-white/60 animate-spin mx-auto mb-3" />
+                <div className="relative w-24 h-24 mx-auto mb-4">
+                  <div className="absolute inset-0 rounded-full" style={{ border: "2px solid rgba(99,102,241,0.3)", animation: "wave-ping 2s cubic-bezier(0,0,0.2,1) infinite" }} />
+                  <div className="absolute inset-2 rounded-full" style={{ border: "1.5px solid rgba(99,102,241,0.2)", animation: "wave-ping 2s cubic-bezier(0,0,0.2,1) infinite 0.5s" }} />
+                  <div className="absolute inset-4 rounded-full flex items-center justify-center" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)" }}>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center animate-pulse" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.4), rgba(139,92,246,0.4))", boxShadow: "0 0 20px rgba(99,102,241,0.3)" }}>
+                      <Phone size={16} className="text-white/80" />
+                    </div>
+                  </div>
+                </div>
                 <p className="text-white/60 text-sm">Connecting to {room?.host_name}...</p>
               </div>
             </div>
           )}
-          {/* Local PiP */}
-          <div className="absolute bottom-20 right-4 w-40 rounded-xl overflow-hidden shadow-2xl border border-white/10">
-            <video ref={videoRef} autoPlay playsInline muted className="w-full" style={{ transform: "scaleX(-1)" }} />
+          {/* Local PiP — draggable + resizable */}
+          <div
+            data-draggable
+            className="fixed z-[9999] rounded-xl overflow-hidden shadow-2xl"
+            style={{
+              width: pipSize.width,
+              height: pipSize.height,
+              ...pipDragStyle,
+              border: "1px solid rgba(255,255,255,0.15)",
+              backgroundColor: "#292524",
+            }}
+          >
+            <div className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing" {...pipDragProps} />
+            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
             {!videoEnabled && (
               <div className="absolute inset-0 flex items-center justify-center bg-[#292524]">
                 <VideoOff size={18} style={{ color: "rgba(255,255,255,0.3)" }} />
               </div>
             )}
+            {/* Resize handle */}
+            <div {...pipResizeProps}>
+              <svg width="16" height="16" viewBox="0 0 16 16" style={{ opacity: 0.4 }}>
+                <path d="M14 2L2 14M14 6L6 14M14 10L10 14" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </div>
           </div>
           {/* Top bar — duration + participant name */}
           {roomState === "connected" && (
@@ -331,7 +380,18 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
           )}
         </div>
         {/* Controls */}
-        <div className="flex items-center justify-center gap-3 py-5" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4))" }}>
+        <div className="relative flex items-center justify-center gap-3 py-5" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4))" }}>
+          {showCallDevices && (
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 p-4 rounded-xl w-80 space-y-3 animate-scale-in"
+              style={{ backgroundColor: "rgba(28,25,23,0.95)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", backdropFilter: "blur(12px)" }}>
+              {audioDevices.length > 0 && (
+                <DarkSelect label="Microphone" value={selectedAudioDevice || audioDevices[0]?.deviceId || ""} options={audioDevices.map(d => ({ value: d.deviceId, label: d.label || `Mic ${d.deviceId.slice(0,4)}` }))} onChange={setSelectedAudioDevice} />
+              )}
+              {videoDevices.length > 0 && (
+                <DarkSelect label="Camera" value={selectedVideoDevice || videoDevices[0]?.deviceId || ""} options={videoDevices.map(d => ({ value: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0,4)}` }))} onChange={setSelectedVideoDevice} />
+              )}
+            </div>
+          )}
           <ControlButton active={audioEnabled} onClick={() => setAudioEnabled(!audioEnabled)} icon={audioEnabled ? <Mic size={20} /> : <MicOff size={20} />} />
           <ControlButton active={videoEnabled} onClick={() => setVideoEnabled(!videoEnabled)} icon={videoEnabled ? <Video size={20} /> : <VideoOff size={20} />} />
           <ControlButton
@@ -350,10 +410,21 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
             }}
             icon={<Monitor size={20} />}
           />
+          <ControlButton
+            active={showCallDevices}
+            onClick={() => setShowCallDevices(!showCallDevices)}
+            icon={<Settings2 size={20} />}
+          />
           <button onClick={hangup} className="flex items-center justify-center w-14 h-14 rounded-full transition-transform hover:scale-105 active:scale-95" style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>
             <PhoneOff size={22} className="text-white" />
           </button>
         </div>
+        <style>{`
+          @keyframes wave-ping {
+            0% { transform: scale(1); opacity: 1; }
+            75%, 100% { transform: scale(1.5); opacity: 0; }
+          }
+        `}</style>
       </div>
     );
   }
@@ -442,34 +513,33 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
             danger={!videoEnabled}
             onClick={() => setVideoEnabled(!videoEnabled)}
           />
-          <LobbyBtn
-            icon={<Settings2 size={18} />}
-            label="Devices"
-            active={false}
-            accent={showDevices}
-            onClick={() => setShowDevices(!showDevices)}
-          />
         </div>
 
-        {/* Device selection */}
-        {showDevices && (
-          <div className="mb-6 p-4 rounded-xl space-y-3" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
-            {audioDevices.length > 0 && (
-              <DarkSelect
-                label="Microphone"
-                value={selectedAudioDevice || audioDevices[0]?.deviceId || ""}
-                options={audioDevices.map((d) => ({ value: d.deviceId, label: d.label || `Mic ${d.deviceId.slice(0, 4)}` }))}
-                onChange={setSelectedAudioDevice}
-              />
-            )}
-            {videoDevices.length > 0 && (
-              <DarkSelect
-                label="Camera"
-                value={selectedVideoDevice || videoDevices[0]?.deviceId || ""}
-                options={videoDevices.map((d) => ({ value: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0, 4)}` }))}
-                onChange={setSelectedVideoDevice}
-              />
-            )}
+        {/* Device settings — always visible */}
+        {stream && (audioDevices.length > 0 || videoDevices.length > 0) && (
+          <div className="mb-6 p-4 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="flex items-center gap-1.5 mb-3">
+              <Settings2 size={13} style={{ color: "rgba(255,255,255,0.4)" }} />
+              <label className="text-[11px] font-medium text-white/40">Device settings</label>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {audioDevices.length > 0 && (
+                <DarkSelect
+                  label="Microphone"
+                  value={selectedAudioDevice || audioDevices[0]?.deviceId || ""}
+                  options={audioDevices.map((d) => ({ value: d.deviceId, label: d.label || `Mic ${d.deviceId.slice(0, 4)}` }))}
+                  onChange={setSelectedAudioDevice}
+                />
+              )}
+              {videoDevices.length > 0 && (
+                <DarkSelect
+                  label="Camera"
+                  value={selectedVideoDevice || videoDevices[0]?.deviceId || ""}
+                  options={videoDevices.map((d) => ({ value: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0, 4)}` }))}
+                  onChange={setSelectedVideoDevice}
+                />
+              )}
+            </div>
           </div>
         )}
 

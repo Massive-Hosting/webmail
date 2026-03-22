@@ -22,6 +22,7 @@ import {
   FileText,
   BookmarkPlus,
   Palmtree,
+  MailCheck,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { DateTimePickerDialog } from "@/components/ui/datetime-picker-dialog.tsx";
@@ -340,6 +341,7 @@ export const ComposePanel = React.memo(function ComposePanel({
         draftEmailId: currentDraft.emailId,
         draftsMailboxId,
         sentMailboxId,
+        requestReadReceipt: currentDraft.requestReadReceipt,
       });
 
       closeDraft(draftId);
@@ -1113,6 +1115,18 @@ export const ComposePanel = React.memo(function ComposePanel({
                 </button>
               </>
             )}
+
+            {/* Read receipt toggle */}
+            <div className="compose-dialog__separator" />
+            <button
+              type="button"
+              onClick={() => updateDraft(draftId, { requestReadReceipt: !draft.requestReadReceipt })}
+              className={`compose-dialog__pgp-btn ${draft.requestReadReceipt ? "compose-dialog__pgp-btn--sign-active" : ""}`}
+              title={draft.requestReadReceipt ? t("compose.readReceiptEnabled") : t("compose.readReceiptDisabled")}
+            >
+              <MailCheck size={14} />
+              {t("compose.readReceipt")}
+            </button>
           </div>
 
           <span className="compose-dialog__shortcut-hint">

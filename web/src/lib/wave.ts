@@ -286,6 +286,50 @@ export class WaveConnection {
     }
   }
 
+  /** Switch the audio input device mid-call */
+  async switchAudioDevice(deviceId: string): Promise<void> {
+    if (!this.localStream) return;
+    const current = this.localStream.getAudioTracks()[0];
+    if (current?.getSettings().deviceId === deviceId) return;
+    const newAudio = await navigator.mediaDevices.getUserMedia({
+      audio: { deviceId: { exact: deviceId }, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    });
+    const newTrack = newAudio.getAudioTracks()[0];
+    if (current) {
+      this.localStream.removeTrack(current);
+      current.stop();
+    }
+    if (newTrack) {
+      newTrack.enabled = current?.enabled ?? true;
+      this.localStream.addTrack(newTrack);
+      const sender = this.pc.getSenders().find((s) => s.track?.kind === "audio");
+      if (sender) await sender.replaceTrack(newTrack);
+    }
+    this.opts.onLocalStream(this.localStream);
+  }
+
+  /** Switch the video input device mid-call */
+  async switchVideoDevice(deviceId: string): Promise<void> {
+    if (!this.localStream) return;
+    const current = this.localStream.getVideoTracks()[0];
+    if (current?.getSettings().deviceId === deviceId) return;
+    const newVideo = await navigator.mediaDevices.getUserMedia({
+      video: { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } },
+    });
+    const newTrack = newVideo.getVideoTracks()[0];
+    if (current) {
+      this.localStream.removeTrack(current);
+      current.stop();
+    }
+    if (newTrack) {
+      newTrack.enabled = current?.enabled ?? true;
+      this.localStream.addTrack(newTrack);
+      const sender = this.pc.getSenders().find((s) => s.track?.kind === "video");
+      if (sender && !this.screenStream) await sender.replaceTrack(newTrack);
+    }
+    this.opts.onLocalStream(this.localStream);
+  }
+
   stopScreenShare(): void {
     if (this.screenStream) {
       for (const track of this.screenStream.getTracks()) {

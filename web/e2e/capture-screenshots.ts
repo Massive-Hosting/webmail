@@ -368,4 +368,162 @@ test.describe("Feature Screenshots", () => {
     await page.waitForTimeout(500);
     await screenshot(page, "27-pgp-security");
   });
+
+  // ================================================================
+  // New feature screenshots (UX improvements batch)
+  // ================================================================
+
+  test("28 - Settings search", async ({ page }) => {
+    await login(page);
+    await page.locator('[title="Settings"], button[aria-label="Settings"]').first().click().catch(() => {});
+    await page.waitForTimeout(1000);
+    // Type in settings search
+    const searchInput = page.locator('input[placeholder*="Search settings"]').first();
+    if (await searchInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await searchInput.fill("theme");
+      await page.waitForTimeout(500);
+    }
+    await screenshot(page, "28-settings-search");
+  });
+
+  test("29 - Empty inbox (inbox zero)", async ({ page }) => {
+    await login(page);
+    // Navigate to a folder that's likely empty (e.g., Archive or a custom folder)
+    // Or capture the inbox zero state if inbox happens to be empty
+    const trashFolder = page.locator('[role="treeitem"]:has-text("Trash")').first();
+    if (await trashFolder.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await trashFolder.click();
+      await page.waitForTimeout(1500);
+    }
+    await screenshot(page, "29-empty-state");
+  });
+
+  test("30 - Select all checkbox in toolbar", async ({ page }) => {
+    await login(page);
+    await page.waitForTimeout(1000);
+    // Click the select-all checkbox
+    const selectAll = page.locator('.mail-list-pane__select-all').first();
+    if (await selectAll.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await selectAll.click();
+      await page.waitForTimeout(500);
+    }
+    await screenshot(page, "30-select-all");
+  });
+
+  test("31 - Message context menu with labels and mute", async ({ page }) => {
+    await login(page);
+    const firstEmail = page.locator('.message-list-item').first();
+    if (await firstEmail.isVisible()) {
+      await firstEmail.click({ button: "right" });
+      await page.waitForTimeout(500);
+    }
+    await screenshot(page, "31-context-menu-labels-mute");
+    await page.keyboard.press("Escape");
+  });
+
+  test("32 - Action bar with labels dropdown", async ({ page }) => {
+    await login(page);
+    // Select an email first
+    const firstEmail = page.locator('.message-list-item').first();
+    if (await firstEmail.isVisible()) {
+      await firstEmail.click();
+      await page.waitForTimeout(500);
+    }
+    // Click labels dropdown in action bar
+    const labelsBtn = page.locator('.action-bar__btn:has-text("Labels")').first();
+    if (await labelsBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await labelsBtn.click();
+      await page.waitForTimeout(500);
+    }
+    await screenshot(page, "32-action-bar-labels");
+  });
+
+  test("33 - Inline attachment previews", async ({ page }) => {
+    await login(page);
+    // Find an email with attachments (look for paperclip icon or has attachment)
+    const emailWithAttachment = page.locator('.message-list-item:has(.message-list-item__attachment-icon)').first();
+    if (await emailWithAttachment.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await emailWithAttachment.click();
+      await page.waitForTimeout(2000);
+    } else {
+      // Click first email as fallback
+      await page.locator('.message-list-item').first().click().catch(() => {});
+      await page.waitForTimeout(1500);
+    }
+    await screenshot(page, "33-attachment-previews");
+  });
+
+  test("34 - Compose with read receipt toggle", async ({ page }) => {
+    await login(page);
+    await page.click('.action-bar__btn--primary, button:has-text("New mail")');
+    await page.waitForTimeout(1500);
+    // Click the read receipt toggle button
+    const receiptBtn = page.locator('.compose-dialog__pgp-btn:has-text("Receipt")').first();
+    if (await receiptBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await receiptBtn.click();
+      await page.waitForTimeout(300);
+    }
+    await screenshot(page, "34-compose-read-receipt");
+  });
+
+  test("35 - Call history in sidebar", async ({ page }) => {
+    await login(page);
+    // Capture the sidebar showing the recent calls section
+    await page.waitForTimeout(1000);
+    const sidebar = page.locator('nav[aria-label="Mailbox folders"]').first();
+    if (await sidebar.isVisible()) {
+      await sidebar.screenshot({ path: join(SCREENSHOTS_DIR, "35-call-history-sidebar.png") });
+    } else {
+      await screenshot(page, "35-call-history-sidebar");
+    }
+  });
+
+  test("36 - Keyboard shortcut tooltips", async ({ page }) => {
+    await login(page);
+    // Select an email to enable action buttons
+    const firstEmail = page.locator('.message-list-item').first();
+    if (await firstEmail.isVisible()) {
+      await firstEmail.click();
+      await page.waitForTimeout(500);
+    }
+    // Hover over delete button to show tooltip with shortcut
+    const deleteBtn = page.locator('.action-bar__btn:has-text("Delete")').first();
+    if (await deleteBtn.isVisible()) {
+      await deleteBtn.hover();
+      await page.waitForTimeout(600); // tooltip delay
+    }
+    await screenshot(page, "36-keyboard-tooltip");
+  });
+
+  test("37 - Mobile swipe gesture", async ({ page }) => {
+    await page.setViewportSize(MOBILE_VIEWPORT);
+    await page.goto(BASE_URL);
+    await page.waitForSelector('input[type="email"], input[placeholder*="email"], input[name="email"]', { timeout: 10000 });
+    await page.fill('input[type="email"], input[placeholder*="email"], input[name="email"]', EMAIL);
+    await page.fill('input[type="password"]', PASSWORD);
+    await page.click('button[type="submit"]');
+    await page.waitForTimeout(5000);
+    // Simulate a partial swipe on the first email for the screenshot
+    const firstItem = page.locator('.message-list-item').first();
+    if (await firstItem.isVisible({ timeout: 3000 }).catch(() => false)) {
+      const box = await firstItem.boundingBox();
+      if (box) {
+        // Start swipe from middle, move right 80px (partial, below threshold)
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+      }
+    }
+    await screenshot(page, "37-mobile-swipe");
+  });
+
+  test("38 - Mobile pull to refresh", async ({ page }) => {
+    await page.setViewportSize(MOBILE_VIEWPORT);
+    await page.goto(BASE_URL);
+    await page.waitForSelector('input[type="email"], input[placeholder*="email"], input[name="email"]', { timeout: 10000 });
+    await page.fill('input[type="email"], input[placeholder*="email"], input[name="email"]', EMAIL);
+    await page.fill('input[type="password"]', PASSWORD);
+    await page.click('button[type="submit"]');
+    await page.waitForTimeout(5000);
+    await screenshot(page, "38-mobile-pull-refresh");
+  });
 });

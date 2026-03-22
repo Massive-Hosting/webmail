@@ -45,6 +45,7 @@ export interface DraftState {
   attachments: AttachmentState[];
   inReplyTo?: string;
   references?: string[];
+  requestReadReceipt: boolean;
   isDirty: boolean;
   lastSaved?: Date;
   saving: boolean;
@@ -94,6 +95,7 @@ function createDefaultDraft(overrides: Partial<DraftState> & { draftId: string }
     bodyHTML: "",
     bodyText: "",
     attachments: [],
+    requestReadReceipt: false,
     isDirty: false,
     saving: false,
     consecutiveSaveFailures: 0,
