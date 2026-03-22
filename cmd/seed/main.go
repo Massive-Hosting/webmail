@@ -1029,6 +1029,73 @@ func generateStarredEmails(acctEmail string, mb *mailboxes) []emailSpec {
 	return specs
 }
 
+func generateInternalEmails(acctEmail string, mb *mailboxes) []emailSpec {
+	// Extract domain from account email
+	parts := strings.SplitN(acctEmail, "@", 2)
+	if len(parts) < 2 {
+		return nil
+	}
+	domain := parts[1]
+
+	colleagues := []struct {
+		local   string
+		name    string
+		subject string
+		body    string
+	}{
+		{
+			local:   "sarah.chen",
+			name:    "Sarah Chen",
+			subject: "Quick sync about the deployment?",
+			body:    `<p>Hey,</p><p>Can we hop on a quick call to discuss the deployment schedule for next week? I have some concerns about the database migration timing.</p><p>Free anytime this afternoon.</p><p>Sarah</p>`,
+		},
+		{
+			local:   "marcus.johnson",
+			name:    "Marcus Johnson",
+			subject: "Code review feedback",
+			body:    `<p>Hi,</p><p>I've reviewed PR #847 and left some comments. The overall approach looks solid, but I think we should discuss the caching strategy before merging.</p><p>Want to jump on a call?</p><p>Marcus</p>`,
+		},
+		{
+			local:   "priya.patel",
+			name:    "Priya Patel",
+			subject: "Design handoff ready",
+			body:    `<p>Hi there!</p><p>The new dashboard mockups are finalized and ready for handoff. I've uploaded everything to Figma.</p><p>Let me know if you want to walk through them together — happy to do a quick video call.</p><p>Priya</p>`,
+		},
+		{
+			local:   "alex.rivera",
+			name:    "Alex Rivera",
+			subject: "Staging environment issue",
+			body:    `<p>Hey,</p><p>I noticed the staging environment is throwing 502 errors intermittently. I've checked the logs and it seems like a memory issue.</p><p>Can you take a look when you get a chance? Happy to screenshare if that helps.</p><p>Alex</p>`,
+		},
+		{
+			local:   "emma.larsson",
+			name:    "Emma Larsson",
+			subject: "Sprint retrospective notes",
+			body:    `<p>Hi team,</p><p>Here are the action items from today's retro:</p><ul><li>Improve PR review turnaround time</li><li>Set up automated staging deploys</li><li>Document the API versioning strategy</li></ul><p>Let's discuss priorities in our next standup.</p><p>Emma</p>`,
+		},
+	}
+
+	var specs []emailSpec
+	for _, c := range colleagues {
+		fromEmail := c.local + "@" + domain
+		// Don't send email from yourself to yourself
+		if fromEmail == acctEmail {
+			continue
+		}
+		specs = append(specs, emailSpec{
+			From:      fromEmail,
+			FromName:  c.name,
+			To:        acctEmail,
+			Subject:   c.subject,
+			HTMLBody:  wrapHTML(c.body),
+			Date:      randomDate(3),
+			MailboxID: mb.Inbox,
+			IsRead:    false,
+		})
+	}
+	return specs
+}
+
 // --- Seed function ---
 
 func seedAccount(baseURL string, acct account, clean bool) error {
@@ -1081,6 +1148,9 @@ func seedAccount(baseURL string, acct account, clean bool) error {
 
 	// 9. Starred emails (5)
 	allEmails = append(allEmails, generateStarredEmails(acct.Email, mb)...)
+
+	// 10. Internal emails from same-domain colleagues (for Wave call testing)
+	allEmails = append(allEmails, generateInternalEmails(acct.Email, mb)...)
 
 	// Import all emails
 	var unread, starred int
