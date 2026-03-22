@@ -9,10 +9,13 @@ interface DragPosition {
 
 export function useDraggable(initialPosition?: DragPosition) {
   const [position, setPosition] = useState<DragPosition | null>(initialPosition ?? null);
-  const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
+  const dragRef = useRef<{
+    // Offset from pointer to element's top-left corner
+    offsetX: number;
+    offsetY: number;
+  } | null>(null);
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
-    // Only drag from the handle element itself, not its children buttons
     const target = e.target as HTMLElement;
     if (target.closest("button, input, select, textarea, [role='button']")) return;
 
@@ -23,21 +26,23 @@ export function useDraggable(initialPosition?: DragPosition) {
     if (!el) return;
 
     const rect = el.getBoundingClientRect();
+
+    // Store the offset between the pointer position and the element's top-left.
+    // This keeps the grab point stable — the element doesn't jump.
     dragRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      origX: rect.left,
-      origY: rect.top,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
     };
+
+    // Immediately set position to current visual location (removes centering transform)
+    setPosition({ x: rect.left, y: rect.top });
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragRef.current) return;
-    const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
 
-    const newX = dragRef.current.origX + dx;
-    const newY = dragRef.current.origY + dy;
+    const newX = e.clientX - dragRef.current.offsetX;
+    const newY = e.clientY - dragRef.current.offsetY;
 
     // Clamp to viewport
     const maxX = window.innerWidth - 100;
@@ -63,7 +68,7 @@ export function useDraggable(initialPosition?: DragPosition) {
     ? {
         left: position.x,
         top: position.y,
-        transform: "none",  // Override any centering transform
+        transform: "none",
       }
     : {};
 
