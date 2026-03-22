@@ -637,6 +637,7 @@ export function AppShell() {
           aiEnabled={aiEnabled}
           copilotOpen={copilotOpen}
           onToggleCopilot={handleToggleCopilot}
+          onNewCall={handleNewCall}
         />
       </header>
       <div className="flex flex-1 overflow-hidden">
