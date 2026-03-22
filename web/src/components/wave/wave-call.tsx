@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import {
-  Mic, MicOff, Video, VideoOff, Monitor, PhoneOff, Maximize2, Minimize2, Loader2,
+  Mic, MicOff, Video, VideoOff, Monitor, PhoneOff, Maximize2, Minimize2, Loader2, Wifi,
 } from "lucide-react";
 import { useWaveStore } from "@/stores/wave-store.ts";
 import { useWave } from "@/hooks/use-wave.ts";
@@ -148,17 +148,21 @@ export const WaveCall = React.memo(function WaveCall() {
             </div>
           )}
 
-          {/* Call duration badge (connected with video) */}
-          {callState === "connected" && hasRemoteVideo && (
+          {/* Top bar — participant info + duration */}
+          {callState === "connected" && (
             <div
-              className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-medium"
-              style={{
-                backgroundColor: "rgba(0, 0, 0, 0.5)",
-                color: "rgba(255, 255, 255, 0.8)",
-                backdropFilter: "blur(8px)",
-              }}
+              className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 z-10"
+              style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)" }}
             >
-              {duration}
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-white/80 text-xs font-medium">
+                  {peerName || peerEmail}
+                </span>
+              </div>
+              <div className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-sm border border-white/10">
+                <span className="text-white/80 text-xs font-mono">{duration}</span>
+              </div>
             </div>
           )}
 

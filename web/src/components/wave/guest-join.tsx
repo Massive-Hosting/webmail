@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Volume2,
-  Settings2, Loader2,
+  Settings2, Loader2, Monitor, Maximize, Minimize2,
 } from "lucide-react";
 import { DarkSelect } from "./dark-select.tsx";
 
@@ -291,7 +291,15 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
       <div className="fixed inset-0 bg-black flex flex-col">
         {/* Remote video */}
         <div className="flex-1 relative">
-          <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
+          {remoteStream ? (
+            <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center border border-white/10">
+                <span className="text-3xl font-bold text-white/60">{(room?.host_name || "H")[0].toUpperCase()}</span>
+              </div>
+            </div>
+          )}
           {roomState === "connecting" && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/60">
               <div className="text-center">
@@ -301,20 +309,47 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
             </div>
           )}
           {/* Local PiP */}
-          <div className="absolute bottom-4 right-4 w-40 rounded-xl overflow-hidden shadow-2xl border border-white/10">
+          <div className="absolute bottom-20 right-4 w-40 rounded-xl overflow-hidden shadow-2xl border border-white/10">
             <video ref={videoRef} autoPlay playsInline muted className="w-full" style={{ transform: "scaleX(-1)" }} />
+            {!videoEnabled && (
+              <div className="absolute inset-0 flex items-center justify-center bg-[#292524]">
+                <VideoOff size={18} style={{ color: "rgba(255,255,255,0.3)" }} />
+              </div>
+            )}
           </div>
-          {/* Duration badge */}
+          {/* Top bar — duration + participant name */}
           {roomState === "connected" && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm border border-white/10">
-              <span className="text-white/80 text-xs font-mono">{formatTime(callDuration)}</span>
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)" }}>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-white/80 text-xs font-medium">{room?.host_name}</span>
+              </div>
+              <div className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-sm border border-white/10">
+                <span className="text-white/80 text-xs font-mono">{formatTime(callDuration)}</span>
+              </div>
             </div>
           )}
         </div>
         {/* Controls */}
-        <div className="flex items-center justify-center gap-3 py-5 bg-gradient-to-t from-black/80 to-transparent">
+        <div className="flex items-center justify-center gap-3 py-5" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4))" }}>
           <ControlButton active={audioEnabled} onClick={() => setAudioEnabled(!audioEnabled)} icon={audioEnabled ? <Mic size={20} /> : <MicOff size={20} />} />
           <ControlButton active={videoEnabled} onClick={() => setVideoEnabled(!videoEnabled)} icon={videoEnabled ? <Video size={20} /> : <VideoOff size={20} />} />
+          <ControlButton
+            active={false}
+            onClick={async () => {
+              try {
+                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                const screenTrack = screenStream.getVideoTracks()[0];
+                const sender = pcRef.current?.getSenders().find((s) => s.track?.kind === "video");
+                if (sender && screenTrack) await sender.replaceTrack(screenTrack);
+                screenTrack.addEventListener("ended", () => {
+                  const camTrack = stream?.getVideoTracks()[0];
+                  if (sender && camTrack) sender.replaceTrack(camTrack);
+                });
+              } catch { /* user cancelled */ }
+            }}
+            icon={<Monitor size={20} />}
+          />
           <button onClick={hangup} className="flex items-center justify-center w-14 h-14 rounded-full transition-transform hover:scale-105 active:scale-95" style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>
             <PhoneOff size={22} className="text-white" />
           </button>
