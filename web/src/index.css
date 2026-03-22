@@ -38,6 +38,8 @@
   --color-bg-danger: #EF4444;
   --color-bg-success: #22C55E;
   --color-bg-warning: #F59E0B;
+  --color-input-bg: #FFFFFF;
+  --color-input-bg-hover: #FAFAF9;
 
   --color-text-primary: #1C1917;
   --color-text-secondary: #57534E;
@@ -88,6 +90,8 @@
   --color-bg-overlay: rgba(0, 0, 0, 0.6);
   --color-bg-accent: #3B82F6;
   --color-bg-accent-hover: #60A5FA;
+  --color-input-bg: #1C1917;
+  --color-input-bg-hover: #292524;
 
   --color-text-primary: #D6D3D1;
   --color-text-secondary: #A8A29E;
@@ -159,6 +163,24 @@ h1, h2, h3, h4, h5, h6 {
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+/* ---- Global input styling — clean white/dark backgrounds ---- */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input:not([type]),
+textarea,
+select {
+  background-color: var(--color-input-bg);
+  color: var(--color-text-primary);
 }
 
 /* ---- Skip navigation link ---- */

@@ -147,11 +147,13 @@ export const NewCallDialog = React.memo(function NewCallDialog({
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         />
         <Dialog.Content
-          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md rounded-xl animate-scale-in overflow-hidden"
+          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg rounded-xl animate-scale-in overflow-hidden flex flex-col"
           style={{
             backgroundColor: "var(--color-bg-elevated)",
             border: "1px solid var(--color-border-primary)",
             boxShadow: "var(--shadow-xl)",
+            height: 520,
+            maxHeight: "85vh",
           }}
         >
           {/* Header */}
@@ -198,7 +200,7 @@ export const NewCallDialog = React.memo(function NewCallDialog({
             <div
               className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg"
               style={{
-                backgroundColor: "var(--color-bg-tertiary)",
+                backgroundColor: "var(--color-input-bg)",
                 border: "1px solid var(--color-border-primary)",
               }}
             >
@@ -228,8 +230,7 @@ export const NewCallDialog = React.memo(function NewCallDialog({
 
           {/* Results */}
           <div
-            className="px-3 pb-3 overflow-y-auto"
-            style={{ maxHeight: 320 }}
+            className="px-3 pb-3 overflow-y-auto flex-1 min-h-0"
           >
             {results.length === 0 && !showManualOption && query.length >= 2 && !searching && (
               <div
