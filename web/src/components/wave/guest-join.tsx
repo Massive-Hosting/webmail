@@ -5,6 +5,7 @@ import {
   Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Volume2,
   Settings2, Loader2,
 } from "lucide-react";
+import { DarkSelect } from "./dark-select.tsx";
 
 interface RoomInfo {
   id: string;
@@ -419,34 +420,20 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
         {showDevices && (
           <div className="mb-6 p-4 rounded-xl space-y-3" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
             {audioDevices.length > 0 && (
-              <div>
-                <label className="text-[11px] font-medium text-white/40 block mb-1">Microphone</label>
-                <select
-                  value={selectedAudioDevice}
-                  onChange={(e) => setSelectedAudioDevice(e.target.value)}
-                  className="w-full h-9 px-3 text-xs rounded-lg outline-none cursor-pointer appearance-none"
-                  style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.85)", border: "1px solid rgba(255,255,255,0.12)" }}
-                >
-                  {audioDevices.map((d) => (
-                    <option key={d.deviceId} value={d.deviceId} style={{ backgroundColor: "#1c1917", color: "#d6d3d1" }}>{d.label || `Mic ${d.deviceId.slice(0, 4)}`}</option>
-                  ))}
-                </select>
-              </div>
+              <DarkSelect
+                label="Microphone"
+                value={selectedAudioDevice || audioDevices[0]?.deviceId || ""}
+                options={audioDevices.map((d) => ({ value: d.deviceId, label: d.label || `Mic ${d.deviceId.slice(0, 4)}` }))}
+                onChange={setSelectedAudioDevice}
+              />
             )}
             {videoDevices.length > 0 && (
-              <div>
-                <label className="text-[11px] font-medium text-white/40 block mb-1">Camera</label>
-                <select
-                  value={selectedVideoDevice}
-                  onChange={(e) => setSelectedVideoDevice(e.target.value)}
-                  className="w-full h-9 px-3 text-xs rounded-lg outline-none cursor-pointer appearance-none"
-                  style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.85)", border: "1px solid rgba(255,255,255,0.12)" }}
-                >
-                  {videoDevices.map((d) => (
-                    <option key={d.deviceId} value={d.deviceId} style={{ backgroundColor: "#1c1917", color: "#d6d3d1" }}>{d.label || `Camera ${d.deviceId.slice(0, 4)}`}</option>
-                  ))}
-                </select>
-              </div>
+              <DarkSelect
+                label="Camera"
+                value={selectedVideoDevice || videoDevices[0]?.deviceId || ""}
+                options={videoDevices.map((d) => ({ value: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0, 4)}` }))}
+                onChange={setSelectedVideoDevice}
+              />
             )}
           </div>
         )}

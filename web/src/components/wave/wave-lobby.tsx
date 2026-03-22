@@ -9,7 +9,7 @@ import { Avatar } from "@/components/ui/avatar.tsx";
 import { useAuthStore } from "@/stores/auth-store.ts";
 import { useTranslation } from "react-i18next";
 import { useDraggable } from "@/hooks/use-draggable.ts";
-// StyledSelect portals behind the dialog — use themed native selects instead
+import { DarkSelect } from "./dark-select.tsx";
 
 interface WaveLobbyProps {
   open: boolean;
@@ -410,46 +410,20 @@ export const WaveLobby = React.memo(function WaveLobby({
           {showDeviceSettings && (
             <div className="mx-6 mb-4 space-y-3 p-4 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
               {audioDevices.length > 0 && (
-                <div>
-                  <label className="text-[11px] font-medium text-white/40 block mb-1">{t("wave.microphone")}</label>
-                  <select
-                    value={selectedAudioDevice || audioDevices[0]?.deviceId || ""}
-                    onChange={(e) => setSelectedAudioDevice(e.target.value)}
-                    className="w-full h-9 px-3 text-xs rounded-lg outline-none cursor-pointer appearance-none"
-                    style={{
-                      backgroundColor: "rgba(255,255,255,0.08)",
-                      color: "rgba(255,255,255,0.85)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                    }}
-                  >
-                    {audioDevices.map((d) => (
-                      <option key={d.deviceId} value={d.deviceId} style={{ backgroundColor: "#1c1917", color: "#d6d3d1" }}>
-                        {d.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <DarkSelect
+                  label={t("wave.microphone")}
+                  value={selectedAudioDevice || audioDevices[0]?.deviceId || ""}
+                  options={audioDevices.map((d) => ({ value: d.deviceId, label: d.label || `Microphone ${d.deviceId.slice(0, 8)}` }))}
+                  onChange={setSelectedAudioDevice}
+                />
               )}
               {videoDevices.length > 0 && (
-                <div>
-                  <label className="text-[11px] font-medium text-white/40 block mb-1">{t("wave.camera")}</label>
-                  <select
-                    value={selectedVideoDevice || videoDevices[0]?.deviceId || ""}
-                    onChange={(e) => setSelectedVideoDevice(e.target.value)}
-                    className="w-full h-9 px-3 text-xs rounded-lg outline-none cursor-pointer appearance-none"
-                    style={{
-                      backgroundColor: "rgba(255,255,255,0.08)",
-                      color: "rgba(255,255,255,0.85)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                    }}
-                  >
-                    {videoDevices.map((d) => (
-                      <option key={d.deviceId} value={d.deviceId} style={{ backgroundColor: "#1c1917", color: "#d6d3d1" }}>
-                        {d.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <DarkSelect
+                  label={t("wave.camera")}
+                  value={selectedVideoDevice || videoDevices[0]?.deviceId || ""}
+                  options={videoDevices.map((d) => ({ value: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0, 8)}` }))}
+                  onChange={setSelectedVideoDevice}
+                />
               )}
             </div>
           )}
@@ -524,3 +498,4 @@ function LobbyToggle({
     </button>
   );
 }
+
