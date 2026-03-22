@@ -800,5 +800,12 @@
   "wave.inviteSent": "Wave-invitasjon sendt til {{email}}",
   "wave.inviteExternal": "Inviter {{email}} til Wave-samtale",
   "wave.sendInviteHint": "Sender en e-post med en deltakelseslenke",
+  "wave.waitingForGuest": "Venter p\u00e5 gjest",
+  "wave.inviteSentTo": "Invitasjon sendt til {{name}}",
+  "wave.waitingHint": "En e-post med en deltakelseslenke er sendt. Du kan ogs\u00e5 dele lenken nedenfor.",
+  "wave.cancelCall": "Avbryt samtale",
+  "wave.copyLink": "Kopier lenke",
+  "wave.copied": "Kopiert!",
+  "wave.close": "Lukk",
   "wave.roomCreateFailed": "Kunne ikke opprette samtalerom"
 }

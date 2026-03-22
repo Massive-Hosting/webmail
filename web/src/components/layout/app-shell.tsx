@@ -64,6 +64,9 @@ const NewCallDialog = lazy(() =>
 const WaveLobby = lazy(() =>
   import("@/components/wave/wave-lobby.tsx").then((m) => ({ default: m.WaveLobby }))
 );
+const WaveWaitingRoom = lazy(() =>
+  import("@/components/wave/waiting-room.tsx").then((m) => ({ default: m.WaveWaitingRoom }))
+);
 
 export function AppShell() {
   const { t } = useTranslation();
@@ -73,6 +76,7 @@ export function AppShell() {
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showNewCall, setShowNewCall] = useState(false);
   const [callTarget, setCallTarget] = useState<{ email: string; name: string } | null>(null);
+  const [waitingRoom, setWaitingRoom] = useState<{ roomId: string; joinUrl: string; guestName: string; guestEmail: string; video: boolean } | null>(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   const email = useAuthStore((s) => s.email);
@@ -386,7 +390,7 @@ export function AppShell() {
         // Same domain — direct P2P call via WebSocket signaling
         startCall(callTarget.email, settings.video);
       } else {
-        // External recipient — create room, send invite email, enter waiting state
+        // External recipient — create room, send invite email, enter waiting room
         try {
           const hostName = displayName || email.split("@")[0];
           const res = await createCallRoom({
@@ -413,6 +417,14 @@ export function AppShell() {
             });
           }
 
+          // Enter waiting room
+          setWaitingRoom({
+            roomId: res.room.id,
+            joinUrl: res.join_url,
+            guestName: callTarget.name,
+            guestEmail: callTarget.email,
+            video: settings.video,
+          });
           toast.success(t("wave.inviteSent", { email: callTarget.email }));
         } catch {
           toast.error(t("wave.roomCreateFailed"));
@@ -596,6 +608,19 @@ export function AppShell() {
             peerEmail={callTarget.email}
             peerName={callTarget.name}
             onStartCall={handleStartCallFromLobby}
+          />
+        </Suspense>
+      )}
+      {waitingRoom && (
+        <Suspense fallback={<div />}>
+          <WaveWaitingRoom
+            open={!!waitingRoom}
+            onOpenChange={(open) => { if (!open) setWaitingRoom(null); }}
+            roomId={waitingRoom.roomId}
+            joinUrl={waitingRoom.joinUrl}
+            guestName={waitingRoom.guestName}
+            guestEmail={waitingRoom.guestEmail}
+            video={waitingRoom.video}
           />
         </Suspense>
       )}

@@ -800,5 +800,12 @@
   "wave.inviteSent": "Wave call invite sent to {{email}}",
   "wave.inviteExternal": "Invite {{email}} to Wave call",
   "wave.sendInviteHint": "Sends an email with a join link",
+  "wave.waitingForGuest": "Waiting for guest",
+  "wave.inviteSentTo": "Invite sent to {{name}}",
+  "wave.waitingHint": "An email with a join link has been sent. You can also share the link below.",
+  "wave.cancelCall": "Cancel call",
+  "wave.copyLink": "Copy link",
+  "wave.copied": "Copied!",
+  "wave.close": "Close",
   "wave.roomCreateFailed": "Failed to create call room"
 }

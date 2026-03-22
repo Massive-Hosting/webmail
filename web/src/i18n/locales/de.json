@@ -800,5 +800,12 @@
   "wave.inviteSent": "Wave-Einladung an {{email}} gesendet",
   "wave.inviteExternal": "{{email}} zu Wave-Anruf einladen",
   "wave.sendInviteHint": "Sendet eine E-Mail mit einem Beitrittslink",
+  "wave.waitingForGuest": "Warte auf Gast",
+  "wave.inviteSentTo": "Einladung an {{name}} gesendet",
+  "wave.waitingHint": "Eine E-Mail mit einem Beitrittslink wurde gesendet. Sie können den Link auch unten teilen.",
+  "wave.cancelCall": "Anruf abbrechen",
+  "wave.copyLink": "Link kopieren",
+  "wave.copied": "Kopiert!",
+  "wave.close": "Schließen",
   "wave.roomCreateFailed": "Fehler beim Erstellen des Anrufraums"
 }
