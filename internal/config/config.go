@@ -28,6 +28,10 @@ type Config struct {
 	AIAPIKey    string
 	AIModel     string
 	AIMaxTokens int
+
+	// TURN server for WebRTC NAT traversal.
+	TURNSecret  string
+	TURNServers string // Comma-separated TURN URIs
 }
 
 // Load reads configuration from environment variables with sensible defaults.
@@ -47,6 +51,8 @@ func Load() (*Config, error) {
 		AIAPIKey:           os.Getenv("AI_API_KEY"),
 		AIModel:            os.Getenv("AI_MODEL"),
 		AIMaxTokens:        envIntOr("AI_MAX_TOKENS", 1024),
+		TURNSecret:         os.Getenv("TURN_SECRET"),
+		TURNServers:        os.Getenv("TURN_SERVERS"),
 	}
 
 	// Parse allowed origins.

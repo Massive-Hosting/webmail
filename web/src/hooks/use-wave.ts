@@ -4,10 +4,21 @@ import { useCallback, useEffect, useRef } from "react";
 import { useWaveStore } from "@/stores/wave-store.ts";
 import { WaveConnection } from "@/lib/wave.ts";
 import { useAuthStore } from "@/stores/auth-store.ts";
+import { apiGet } from "@/api/client.ts";
 import type { WebSocketClient, WaveCallMessage } from "@/lib/websocket.ts";
 
 let wsClient: WebSocketClient | null = null;
 let waveConnection: WaveConnection | null = null;
+
+/** Fetch TURN credentials from the server, fall back to STUN-only */
+async function getICEServers(): Promise<RTCIceServer[] | undefined> {
+  try {
+    const result = await apiGet<{ iceServers: RTCIceServer[] }>("/api/turn/credentials");
+    return result.iceServers;
+  } catch {
+    return undefined; // TURN not configured — STUN fallback
+  }
+}
 
 /** Set the WebSocket client instance (called once from app-shell) */
 export function setWaveWSClient(client: WebSocketClient) {
@@ -80,7 +91,7 @@ export function useWave() {
   }, []);
 
   const startCall = useCallback(
-    (peerEmail: string, video: boolean) => {
+    async (peerEmail: string, video: boolean) => {
       if (!wsClient || store.callState !== "idle") return;
 
       const callId = crypto.randomUUID();
@@ -90,11 +101,14 @@ export function useWave() {
 
       if (wsClient) wsClient.keepAlive = true;
 
+      const iceServers = await getICEServers();
+
       waveConnection = new WaveConnection({
         callId,
         peerEmail,
         isInitiator: true,
         video,
+        iceServers,
         onStateChange: (state) => useWaveStore.getState().setCallState(state),
         onRemoteStream: (stream) => useWaveStore.getState().setRemoteStream(stream),
         onLocalStream: (stream) => useWaveStore.getState().setLocalStream(stream),
@@ -114,7 +128,7 @@ export function useWave() {
     [store.callState, email, displayName, cleanup],
   );
 
-  const acceptCall = useCallback(() => {
+  const acceptCall = useCallback(async () => {
     const incoming = useWaveStore.getState().incomingCall;
     if (!incoming || !wsClient) return;
 
@@ -125,11 +139,14 @@ export function useWave() {
 
     if (wsClient) wsClient.keepAlive = true;
 
+    const iceServers = await getICEServers();
+
     waveConnection = new WaveConnection({
       callId: incoming.callId,
       peerEmail: incoming.from,
       isInitiator: false,
       video: incoming.video,
+      iceServers,
       onStateChange: (state) => useWaveStore.getState().setCallState(state),
       onRemoteStream: (stream) => useWaveStore.getState().setRemoteStream(stream),
       onLocalStream: (stream) => useWaveStore.getState().setLocalStream(stream),

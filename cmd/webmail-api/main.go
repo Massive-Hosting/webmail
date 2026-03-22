@@ -128,6 +128,13 @@ func main() {
 		log.Info().Str("model", cfg.AIModel).Msg("AI assistant enabled")
 	}
 
+	// TURN handler (only if configured).
+	var turnHandler *handler.TURNHandler
+	if cfg.TURNSecret != "" && cfg.TURNServers != "" {
+		turnHandler = handler.NewTURNHandler(cfg.TURNSecret, cfg.TURNServers)
+		log.Info().Str("servers", cfg.TURNServers).Msg("TURN relay configured")
+	}
+
 	// Build router.
 	r := chi.NewRouter()
 
@@ -238,6 +245,11 @@ func main() {
 					w.WriteHeader(http.StatusOK)
 					w.Write([]byte(`{"enabled":false}`)) //nolint:errcheck
 				})
+			}
+
+			// TURN credentials for Wave calls.
+			if turnHandler != nil {
+				r.Get("/turn/credentials", turnHandler.Credentials)
 			}
 		})
 	})

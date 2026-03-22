@@ -7,6 +7,7 @@ export interface WaveCallOptions {
   peerEmail: string;
   isInitiator: boolean;
   video: boolean;
+  iceServers?: RTCIceServer[];
   onStateChange: (state: CallState) => void;
   onRemoteStream: (stream: MediaStream) => void;
   onLocalStream: (stream: MediaStream) => void;
@@ -27,7 +28,7 @@ export class WaveConnection {
 
   constructor(opts: WaveCallOptions) {
     this.opts = opts;
-    this.pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    this.pc = new RTCPeerConnection({ iceServers: opts.iceServers ?? ICE_SERVERS });
     this.setupPeerConnection();
   }
 
