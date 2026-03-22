@@ -578,6 +578,7 @@
   "listToolbar.oldestFirst": "Älteste zuerst",
   "listToolbar.groupByConversation": "Nach Konversation gruppieren",
   "listToolbar.showIndividual": "Einzelne Nachrichten anzeigen",
+  "listToolbar.refresh": "Aktualisieren",
   "contacts.namePlaceholder": "Vollständiger Name",
   "contacts.showNameDetails": "Vor-/Nachname anzeigen",
   "contacts.hideNameDetails": "Details ausblenden",

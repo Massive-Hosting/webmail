@@ -28,8 +28,10 @@ import {
   Layers,
   List,
   Clock,
+  RefreshCw,
 } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "@/stores/settings-store.ts";
 
@@ -63,6 +65,19 @@ export function MailListPane({
   const setConversationView = useSettingsStore((s) => s.setConversationView);
   const { mailboxes, findByRole } = useMailboxes();
   const clearSearch = useSearchStore((s) => s.clearSearch);
+
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["emails"] }),
+      queryClient.invalidateQueries({ queryKey: ["mailboxes"] }),
+    ]);
+    // Keep the spin animation visible briefly for visual feedback
+    setTimeout(() => setRefreshing(false), 600);
+  }, [queryClient]);
 
   const handleToggleConversation = useCallback(() => {
     setConversationView(!conversationView);
@@ -199,6 +214,26 @@ export function MailListPane({
             <div className="flex-1" />
             <Tooltip.Provider delayDuration={400}>
               <div className="mail-list-pane__toolbar-actions">
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild>
+                    <button
+                      onClick={handleRefresh}
+                      className="mail-list-pane__toolbar-icon-btn"
+                      aria-label={t("listToolbar.refresh")}
+                    >
+                      <RefreshCw
+                        size={14}
+                        className={refreshing ? "animate-spin" : ""}
+                      />
+                    </button>
+                  </Tooltip.Trigger>
+                  <Tooltip.Content
+                    className="mail-list-pane__tooltip"
+                    sideOffset={6}
+                  >
+                    {t("listToolbar.refresh")}
+                  </Tooltip.Content>
+                </Tooltip.Root>
                 <div className="mail-list-pane__toolbar-separator" />
                 <Tooltip.Root>
                   <Tooltip.Trigger asChild>
