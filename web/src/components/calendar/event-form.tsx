@@ -523,23 +523,18 @@ export const EventForm = React.memo(function EventForm({
               {rooms.length > 0 && (
                 <div className="flex items-center gap-2">
                   <MapPin size={14} style={{ color: "var(--color-text-tertiary)" }} />
-                  <select
+                  <StyledSelect
                     value={selectedRoom}
-                    onChange={(e) => handleSelectRoom(e.target.value)}
-                    className="flex-1 px-2 py-1 text-sm rounded outline-none cursor-pointer"
-                    style={{
-                      backgroundColor: "var(--color-bg-elevated)",
-                      color: "var(--color-text-primary)",
-                      border: "1px solid var(--color-border-primary)",
-                    }}
-                  >
-                    <option value="">{t("calendar.noRoom")}</option>
-                    {rooms.map((room) => (
-                      <option key={room.email} value={room.email}>
-                        {room.name || room.email} {room.description ? `(${room.description})` : ""}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={handleSelectRoom}
+                    options={[
+                      { value: "", label: t("calendar.noRoom") },
+                      ...rooms.map((room) => ({
+                        value: room.email,
+                        label: `${room.name || room.email}${room.description ? ` (${room.description})` : ""}`,
+                      })),
+                    ]}
+                    className="flex-1 text-sm"
+                  />
                 </div>
               )}
 

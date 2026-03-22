@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, Trash2, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { StyledSelect } from "@/components/ui/styled-select.tsx";
 import { updateMailbox } from "@/api/mail.ts";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -175,21 +176,15 @@ export const ShareMailboxDialog = React.memo(function ShareMailboxDialog({
                   border: "1px solid var(--color-border-secondary)",
                 }}
               />
-              <select
+              <StyledSelect
                 value={newPermission}
-                onChange={(e) =>
-                  setNewPermission(e.target.value as PermissionLevel)
-                }
-                className="h-8 px-2 text-xs rounded-md outline-none cursor-pointer"
-                style={{
-                  backgroundColor: "var(--color-bg-tertiary)",
-                  color: "var(--color-text-primary)",
-                  border: "1px solid var(--color-border-secondary)",
-                }}
-              >
-                <option value="view">{t("sharing.canView")}</option>
-                <option value="edit">{t("sharing.canEdit")}</option>
-              </select>
+                onValueChange={(v) => setNewPermission(v as PermissionLevel)}
+                options={[
+                  { value: "view", label: t("sharing.canView") },
+                  { value: "edit", label: t("sharing.canEdit") },
+                ]}
+                className="h-8 text-xs"
+              />
               <button
                 onClick={handleAddShare}
                 disabled={!newEmail.trim() || !newEmail.includes("@")}
@@ -227,24 +222,15 @@ export const ShareMailboxDialog = React.memo(function ShareMailboxDialog({
                     >
                       {share.email}
                     </span>
-                    <select
+                    <StyledSelect
                       value={share.permission}
-                      onChange={(e) =>
-                        handleChangePermission(
-                          share.email,
-                          e.target.value as PermissionLevel,
-                        )
-                      }
-                      className="h-6 px-1.5 text-[11px] rounded outline-none cursor-pointer"
-                      style={{
-                        backgroundColor: "var(--color-bg-tertiary)",
-                        color: "var(--color-text-secondary)",
-                        border: "1px solid var(--color-border-secondary)",
-                      }}
-                    >
-                      <option value="view">{t("sharing.canView")}</option>
-                      <option value="edit">{t("sharing.canEdit")}</option>
-                    </select>
+                      onValueChange={(v) => handleChangePermission(share.email, v as PermissionLevel)}
+                      options={[
+                        { value: "view", label: t("sharing.canView") },
+                        { value: "edit", label: t("sharing.canEdit") },
+                      ]}
+                      className="h-6 text-[11px]"
+                    />
                     <button
                       onClick={() => handleRemoveShare(share.email)}
                       className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
