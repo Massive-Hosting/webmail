@@ -183,6 +183,14 @@ select {
   color: var(--color-text-primary);
 }
 
+/* Suppress focus ring on form inputs — they use border-color transitions
+   or live inside wrapper divs that handle focus-within styling instead. */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+
 /* ---- Skip navigation link ---- */
 .skip-nav {
   position: absolute;

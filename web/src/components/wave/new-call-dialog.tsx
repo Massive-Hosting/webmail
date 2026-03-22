@@ -198,7 +198,7 @@ export const NewCallDialog = React.memo(function NewCallDialog({
           {/* Search input */}
           <div className="px-5 pt-4 pb-2">
             <div
-              className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg"
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors focus-within:ring-2 focus-within:ring-[var(--color-border-focus)]/30 focus-within:border-[var(--color-border-focus)]"
               style={{
                 backgroundColor: "var(--color-input-bg)",
                 border: "1px solid var(--color-border-primary)",
