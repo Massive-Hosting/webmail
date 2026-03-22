@@ -74,24 +74,24 @@ export function useWave() {
           break;
 
         // Chat message from peer
-        case "call-chat" as string:
+        case "call-chat":
           if (state.callId === msg.payload.callId) {
             useWaveStore.getState().addChatMessage({
               id: crypto.randomUUID(),
               from: "peer",
-              text: msg.payload.text as string,
+              text: msg.payload.text,
               timestamp: Date.now(),
             });
           }
           break;
 
         // Reaction from peer
-        case "call-reaction" as string:
+        case "call-reaction":
           if (state.callId === msg.payload.callId) {
             const reactionId = crypto.randomUUID();
             useWaveStore.getState().addReaction({
               id: reactionId,
-              emoji: msg.payload.emoji as string,
+              emoji: msg.payload.emoji,
               from: "peer",
               timestamp: Date.now(),
             });
@@ -247,7 +247,7 @@ export function useWave() {
     const s = useWaveStore.getState();
     if (!wsClient || !s.peerEmail || !s.callId) return;
     wsClient.send({
-      type: "call-chat" as "call-signal",
+      type: "call-chat",
       to: s.peerEmail,
       payload: { callId: s.callId, text },
     });
@@ -263,7 +263,7 @@ export function useWave() {
     const s = useWaveStore.getState();
     if (!wsClient || !s.peerEmail || !s.callId) return;
     wsClient.send({
-      type: "call-reaction" as "call-signal",
+      type: "call-reaction",
       to: s.peerEmail,
       payload: { callId: s.callId, emoji },
     });

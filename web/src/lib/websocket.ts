@@ -31,7 +31,9 @@ export type WSServerMessage =
   | { type: "call-accept"; from: string; payload: { callId: string } }
   | { type: "call-reject"; from: string; payload: { callId: string } }
   | { type: "call-end"; from: string; payload: { callId: string } }
-  | { type: "call-signal"; from: string; payload: { callId: string; signal: unknown } };
+  | { type: "call-signal"; from: string; payload: { callId: string; signal: unknown } }
+  | { type: "call-chat"; from: string; payload: { callId: string; text: string } }
+  | { type: "call-reaction"; from: string; payload: { callId: string; emoji: string } };
 
 /** Wave call message (subset of WSServerMessage) */
 export type WaveCallMessage = Extract<WSServerMessage, { from: string }>;
@@ -43,7 +45,9 @@ export type WSClientMessage =
   | { type: "call-accept"; to: string; payload: { callId: string } }
   | { type: "call-reject"; to: string; payload: { callId: string } }
   | { type: "call-end"; to: string; payload: { callId: string } }
-  | { type: "call-signal"; to: string; payload: { callId: string; signal: unknown } };
+  | { type: "call-signal"; to: string; payload: { callId: string; signal: unknown } }
+  | { type: "call-chat"; to: string; payload: { callId: string; text: string } }
+  | { type: "call-reaction"; to: string; payload: { callId: string; emoji: string } };
 
 export type ConnectionStatus = "connecting" | "connected" | "disconnected" | "failed";
 
@@ -268,6 +272,8 @@ export class WebSocketClient {
       case "call-reject":
       case "call-end":
       case "call-signal":
+      case "call-chat":
+      case "call-reaction":
         for (const listener of this.callListeners) {
           listener(msg as WaveCallMessage);
         }
