@@ -73,6 +73,8 @@ async function getSegmenter(): Promise<ImageSegmenter | null> {
  * the original camera stream.
  */
 export class BackgroundProcessor {
+  private width: number;
+  private height: number;
   private canvas: OffscreenCanvas | HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
   private bgCanvas: OffscreenCanvas | HTMLCanvasElement;
@@ -85,7 +87,9 @@ export class BackgroundProcessor {
   private bgImage: HTMLImageElement | null = null;
   private gradientBg: CanvasGradient | null = null;
 
-  constructor(private width = 640, private height = 480) {
+  constructor(width = 640, height = 480) {
+    this.width = width;
+    this.height = height;
     // Use regular canvas for compatibility (OffscreenCanvas doesn't support captureStream)
     this.canvas = document.createElement("canvas");
     this.canvas.width = width;
