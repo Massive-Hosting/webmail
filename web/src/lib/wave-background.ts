@@ -5,6 +5,7 @@
  * person from background, then composites with blur or image replacement.
  */
 
+// @ts-expect-error — MediaPipe tasks-vision doesn't ship type declarations
 import { ImageSegmenter, FilesetResolver } from "@mediapipe/tasks-vision";
 
 export type BackgroundMode = "none" | "blur" | "image";
@@ -18,15 +19,17 @@ export interface BackgroundEffect {
 }
 
 // Predefined virtual background images (gradients rendered as data URLs)
-export const VIRTUAL_BACKGROUNDS = [
-  { id: "blur-light", mode: "blur" as BackgroundMode, blurStrength: 10, label: "Light Blur", preview: "linear-gradient(135deg, #e0e7ff, #c7d2fe)" },
-  { id: "blur-strong", mode: "blur" as BackgroundMode, blurStrength: 25, label: "Strong Blur", preview: "linear-gradient(135deg, #a5b4fc, #818cf8)" },
-  { id: "gradient-sunset", mode: "image" as BackgroundMode, label: "Sunset", preview: "linear-gradient(135deg, #f97316, #ec4899)" },
-  { id: "gradient-ocean", mode: "image" as BackgroundMode, label: "Ocean", preview: "linear-gradient(135deg, #06b6d4, #3b82f6)" },
-  { id: "gradient-forest", mode: "image" as BackgroundMode, label: "Forest", preview: "linear-gradient(135deg, #22c55e, #065f46)" },
-  { id: "gradient-night", mode: "image" as BackgroundMode, label: "Night", preview: "linear-gradient(135deg, #1e1b4b, #312e81)" },
-  { id: "gradient-warm", mode: "image" as BackgroundMode, label: "Warm", preview: "linear-gradient(135deg, #fbbf24, #f97316)" },
-  { id: "gradient-cool", mode: "image" as BackgroundMode, label: "Cool", preview: "linear-gradient(135deg, #6366f1, #8b5cf6)" },
+export const VIRTUAL_BACKGROUNDS: Array<{
+  id: string; mode: BackgroundMode; blurStrength?: number; label: string; preview: string;
+}> = [
+  { id: "blur-light", mode: "blur", blurStrength: 10, label: "Light Blur", preview: "linear-gradient(135deg, #e0e7ff, #c7d2fe)" },
+  { id: "blur-strong", mode: "blur", blurStrength: 25, label: "Strong Blur", preview: "linear-gradient(135deg, #a5b4fc, #818cf8)" },
+  { id: "gradient-sunset", mode: "image", label: "Sunset", preview: "linear-gradient(135deg, #f97316, #ec4899)" },
+  { id: "gradient-ocean", mode: "image", label: "Ocean", preview: "linear-gradient(135deg, #06b6d4, #3b82f6)" },
+  { id: "gradient-forest", mode: "image", label: "Forest", preview: "linear-gradient(135deg, #22c55e, #065f46)" },
+  { id: "gradient-night", mode: "image", label: "Night", preview: "linear-gradient(135deg, #1e1b4b, #312e81)" },
+  { id: "gradient-warm", mode: "image", label: "Warm", preview: "linear-gradient(135deg, #fbbf24, #f97316)" },
+  { id: "gradient-cool", mode: "image", label: "Cool", preview: "linear-gradient(135deg, #6366f1, #8b5cf6)" },
 ];
 
 let segmenter: ImageSegmenter | null = null;
