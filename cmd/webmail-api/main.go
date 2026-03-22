@@ -225,12 +225,19 @@ func main() {
 				r.Get("/tasks/{taskId}", taskHandler.GetTaskStatus)
 			}
 
-			// AI assistant (only registered when enabled).
+			// AI assistant — status endpoint always registered so frontend
+			// gets a clean response instead of 404.
 			if aiHandler != nil {
 				r.Get("/ai/status", aiHandler.Status)
 				r.Post("/ai/compose", aiHandler.Compose)
 				r.Post("/ai/reply", aiHandler.Reply)
 				r.Post("/ai/rewrite", aiHandler.Rewrite)
+			} else {
+				r.Get("/ai/status", func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte(`{"enabled":false}`)) //nolint:errcheck
+				})
 			}
 		})
 	})
