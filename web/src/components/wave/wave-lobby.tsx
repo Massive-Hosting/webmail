@@ -86,11 +86,57 @@ export const WaveLobby = React.memo(function WaveLobby({
     };
   }, [open]);
 
-  // Restart preview when DEVICE selection changes (need a new stream)
+  // Replace only the audio track when mic device changes (keeps video untouched)
   useEffect(() => {
-    if (!open || !initializedRef.current || permissionState !== "granted") return;
-    startPreview();
-  }, [selectedAudioDevice, selectedVideoDevice]);
+    if (!open || !initializedRef.current || permissionState !== "granted" || !stream || !selectedAudioDevice) return;
+    // Check if the current audio track already uses this device
+    const currentAudio = stream.getAudioTracks()[0];
+    if (currentAudio?.getSettings().deviceId === selectedAudioDevice) return;
+
+    (async () => {
+      try {
+        const newAudio = await navigator.mediaDevices.getUserMedia({
+          audio: { deviceId: { exact: selectedAudioDevice } },
+        });
+        const newTrack = newAudio.getAudioTracks()[0];
+        // Remove old audio track, add new one
+        if (currentAudio) stream.removeTrack(currentAudio);
+        currentAudio?.stop();
+        if (newTrack) {
+          newTrack.enabled = audioEnabled;
+          stream.addTrack(newTrack);
+        }
+        // Reconnect audio analyser
+        reconnectAudioAnalyser(stream);
+      } catch (e) {
+        console.error("[Wave] Failed to switch audio device:", e);
+      }
+    })();
+  }, [selectedAudioDevice]);
+
+  // Replace only the video track when camera device changes (keeps audio untouched)
+  useEffect(() => {
+    if (!open || !initializedRef.current || permissionState !== "granted" || !stream || !selectedVideoDevice) return;
+    const currentVideo = stream.getVideoTracks()[0];
+    if (currentVideo?.getSettings().deviceId === selectedVideoDevice) return;
+
+    (async () => {
+      try {
+        const newVideo = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: selectedVideoDevice } },
+        });
+        const newTrack = newVideo.getVideoTracks()[0];
+        if (currentVideo) stream.removeTrack(currentVideo);
+        currentVideo?.stop();
+        if (newTrack) {
+          newTrack.enabled = videoEnabled;
+          stream.addTrack(newTrack);
+        }
+      } catch (e) {
+        console.error("[Wave] Failed to switch video device:", e);
+      }
+    })();
+  }, [selectedVideoDevice]);
 
   // Toggle tracks in-place when mic/camera buttons are pressed (no stream restart)
   useEffect(() => {
@@ -105,7 +151,47 @@ export const WaveLobby = React.memo(function WaveLobby({
     for (const track of stream.getVideoTracks()) {
       track.enabled = videoEnabled;
     }
+    // Re-attach srcObject when re-enabling video (track was disabled, element may need refresh)
+    if (videoEnabled && videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+    }
   }, [videoEnabled, stream]);
+
+  /** Reconnect audio analyser to a (possibly new) stream for the level meter */
+  const reconnectAudioAnalyser = useCallback((mediaStream: MediaStream) => {
+    // Clean up old analyser
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close();
+      audioCtxRef.current = null;
+    }
+
+    if (mediaStream.getAudioTracks().length === 0) return;
+
+    const ctx = new AudioContext();
+    if (ctx.state === "suspended") ctx.resume();
+    audioCtxRef.current = ctx;
+    const source = ctx.createMediaStreamSource(mediaStream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    analyser.smoothingTimeConstant = 0.5;
+    source.connect(analyser);
+    analyserRef.current = analyser;
+
+    const dataArray = new Uint8Array(analyser.fftSize);
+    const tick = () => {
+      analyser.getByteTimeDomainData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        const v = (dataArray[i] - 128) / 128;
+        sum += v * v;
+      }
+      const rms = Math.sqrt(sum / dataArray.length);
+      setAudioLevel(Math.min(1, rms * 4));
+      animFrameRef.current = requestAnimationFrame(tick);
+    };
+    tick();
+  }, []);
 
   const startPreview = useCallback(async () => {
     // Stop previous stream
@@ -118,23 +204,10 @@ export const WaveLobby = React.memo(function WaveLobby({
     }
 
     try {
-      // First request: simple audio+video to trigger the browser permission prompt.
-      // Use simple constraints to maximize compatibility.
-      const constraints: MediaStreamConstraints = {
-        audio: selectedAudioDevice ? { deviceId: { exact: selectedAudioDevice } } : true,
-        video: videoEnabled
-          ? selectedVideoDevice
-            ? { deviceId: { exact: selectedVideoDevice } }
-            : true
-          : false,
-      };
-
-      // Need at least one track
-      if (!constraints.audio && !constraints.video) {
-        constraints.audio = true;
-      }
-
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: true,
+      });
       setStream(mediaStream);
       setPermissionState("granted");
 
@@ -148,36 +221,8 @@ export const WaveLobby = React.memo(function WaveLobby({
         videoRef.current.srcObject = mediaStream;
       }
 
-      // Set up audio level meter (always, even if muted — shows when unmuted)
-      if (mediaStream.getAudioTracks().length > 0) {
-        const ctx = new AudioContext();
-        // Resume AudioContext (browsers suspend it until user interaction)
-        if (ctx.state === "suspended") await ctx.resume();
-        audioCtxRef.current = ctx;
-        const source = ctx.createMediaStreamSource(mediaStream);
-        const analyser = ctx.createAnalyser();
-        analyser.fftSize = 512;
-        analyser.smoothingTimeConstant = 0.5;
-        source.connect(analyser);
-        analyserRef.current = analyser;
-
-        // Use time-domain data for voice level detection (more responsive than frequency)
-        const dataArray = new Uint8Array(analyser.fftSize);
-        const tick = () => {
-          analyser.getByteTimeDomainData(dataArray);
-          // Calculate RMS (root mean square) for voice level
-          let sum = 0;
-          for (let i = 0; i < dataArray.length; i++) {
-            const v = (dataArray[i] - 128) / 128;
-            sum += v * v;
-          }
-          const rms = Math.sqrt(sum / dataArray.length);
-          // Scale to 0-1 range with some amplification
-          setAudioLevel(Math.min(1, rms * 4));
-          animFrameRef.current = requestAnimationFrame(tick);
-        };
-        tick();
-      }
+      // Set up audio level meter
+      reconnectAudioAnalyser(mediaStream);
 
       // Enumerate devices (need permission first to get labels)
       const devices = await navigator.mediaDevices.enumerateDevices();
@@ -207,12 +252,11 @@ export const WaveLobby = React.memo(function WaveLobby({
           setPermissionState("denied");
         }
       } else {
-        // Unknown error — still show denied state but log it
         console.error("[Wave] Unexpected getUserMedia error:", name, err);
         setPermissionState("denied");
       }
     }
-  }, [stream, selectedAudioDevice, selectedVideoDevice, videoEnabled, audioEnabled]);
+  }, [stream, audioEnabled, reconnectAudioAnalyser]);
 
   const handleStartCall = useCallback(() => {
     // Stop preview stream — the actual call will create its own
@@ -284,17 +328,22 @@ export const WaveLobby = React.memo(function WaveLobby({
 
           {/* Video preview */}
           <div className="mx-6 mb-4 relative rounded-xl overflow-hidden" style={{ aspectRatio: "4/3", backgroundColor: "#0c0a09" }}>
-            {videoEnabled && permissionState !== "denied" ? (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover"
-                style={{ transform: "scaleX(-1)" }}
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+            {/* Always mount the video element to preserve srcObject across toggles */}
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover absolute inset-0"
+              style={{
+                transform: "scaleX(-1)",
+                opacity: videoEnabled && permissionState !== "denied" ? 1 : 0,
+                transition: "opacity 150ms ease",
+              }}
+            />
+            {/* Overlay when camera is off or permission issue */}
+            {(!videoEnabled || permissionState !== "granted") && (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3 relative z-10">
                 <Avatar address={selfAddress} size={72} />
                 {permissionState === "denied" ? (
                   <div className="text-xs text-red-400 text-center px-8">
