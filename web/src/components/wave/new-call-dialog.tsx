@@ -33,7 +33,7 @@ export const NewCallDialog = React.memo(function NewCallDialog({
   const [searching, setSearching] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Focus input when dialog opens
   useEffect(() => {
@@ -250,7 +250,7 @@ export const NewCallDialog = React.memo(function NewCallDialog({
                 }}
                 onMouseEnter={() => setSelectedIdx(idx)}
               >
-                <Avatar name={r.name} email={r.email} size={36} />
+                <Avatar address={{ name: r.name, email: r.email }} size={36} />
                 <div className="flex-1 min-w-0">
                   <div
                     className="text-sm font-medium truncate"
