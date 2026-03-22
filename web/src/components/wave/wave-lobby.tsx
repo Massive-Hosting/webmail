@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/avatar.tsx";
 import { useAuthStore } from "@/stores/auth-store.ts";
 import { useTranslation } from "react-i18next";
 import { useDraggable } from "@/hooks/use-draggable.ts";
+import { StyledSelect } from "@/components/ui/styled-select.tsx";
 
 interface WaveLobbyProps {
   open: boolean;
@@ -85,11 +86,26 @@ export const WaveLobby = React.memo(function WaveLobby({
     };
   }, [open]);
 
-  // Restart preview when device selection or toggle changes (but only after initial grant)
+  // Restart preview when DEVICE selection changes (need a new stream)
   useEffect(() => {
     if (!open || !initializedRef.current || permissionState !== "granted") return;
     startPreview();
-  }, [selectedAudioDevice, selectedVideoDevice, videoEnabled, audioEnabled]);
+  }, [selectedAudioDevice, selectedVideoDevice]);
+
+  // Toggle tracks in-place when mic/camera buttons are pressed (no stream restart)
+  useEffect(() => {
+    if (!stream) return;
+    for (const track of stream.getAudioTracks()) {
+      track.enabled = audioEnabled;
+    }
+  }, [audioEnabled, stream]);
+
+  useEffect(() => {
+    if (!stream) return;
+    for (const track of stream.getVideoTracks()) {
+      track.enabled = videoEnabled;
+    }
+  }, [videoEnabled, stream]);
 
   const startPreview = useCallback(async () => {
     // Stop previous stream
@@ -132,22 +148,32 @@ export const WaveLobby = React.memo(function WaveLobby({
         videoRef.current.srcObject = mediaStream;
       }
 
-      // Set up audio level meter
-      if (audioEnabled) {
+      // Set up audio level meter (always, even if muted — shows when unmuted)
+      if (mediaStream.getAudioTracks().length > 0) {
         const ctx = new AudioContext();
+        // Resume AudioContext (browsers suspend it until user interaction)
+        if (ctx.state === "suspended") await ctx.resume();
         audioCtxRef.current = ctx;
         const source = ctx.createMediaStreamSource(mediaStream);
         const analyser = ctx.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.8;
+        analyser.fftSize = 512;
+        analyser.smoothingTimeConstant = 0.5;
         source.connect(analyser);
         analyserRef.current = analyser;
 
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        // Use time-domain data for voice level detection (more responsive than frequency)
+        const dataArray = new Uint8Array(analyser.fftSize);
         const tick = () => {
-          analyser.getByteFrequencyData(dataArray);
-          const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-          setAudioLevel(avg / 255);
+          analyser.getByteTimeDomainData(dataArray);
+          // Calculate RMS (root mean square) for voice level
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            const v = (dataArray[i] - 128) / 128;
+            sum += v * v;
+          }
+          const rms = Math.sqrt(sum / dataArray.length);
+          // Scale to 0-1 range with some amplification
+          setAudioLevel(Math.min(1, rms * 4));
           animFrameRef.current = requestAnimationFrame(tick);
         };
         tick();
@@ -220,6 +246,8 @@ export const WaveLobby = React.memo(function WaveLobby({
         <Dialog.Content
           data-draggable
           aria-describedby={undefined}
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
           className="fixed z-[9999] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl overflow-hidden flex flex-col animate-scale-in"
           style={{
             width: 520,
@@ -352,39 +380,23 @@ export const WaveLobby = React.memo(function WaveLobby({
               {audioDevices.length > 0 && (
                 <div>
                   <label className="text-[11px] font-medium text-white/40 block mb-1">{t("wave.microphone")}</label>
-                  <select
-                    value={selectedAudioDevice}
-                    onChange={(e) => setSelectedAudioDevice(e.target.value)}
-                    className="w-full h-8 px-2 text-xs rounded-lg outline-none cursor-pointer"
-                    style={{
-                      backgroundColor: "rgba(255,255,255,0.08)",
-                      color: "rgba(255,255,255,0.8)",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                    }}
-                  >
-                    {audioDevices.map((d) => (
-                      <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
-                    ))}
-                  </select>
+                  <StyledSelect
+                    value={selectedAudioDevice || audioDevices[0]?.deviceId || ""}
+                    onValueChange={setSelectedAudioDevice}
+                    options={audioDevices.map((d) => ({ value: d.deviceId, label: d.label }))}
+                    className="w-full"
+                  />
                 </div>
               )}
               {videoDevices.length > 0 && (
                 <div>
                   <label className="text-[11px] font-medium text-white/40 block mb-1">{t("wave.camera")}</label>
-                  <select
-                    value={selectedVideoDevice}
-                    onChange={(e) => setSelectedVideoDevice(e.target.value)}
-                    className="w-full h-8 px-2 text-xs rounded-lg outline-none cursor-pointer"
-                    style={{
-                      backgroundColor: "rgba(255,255,255,0.08)",
-                      color: "rgba(255,255,255,0.8)",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                    }}
-                  >
-                    {videoDevices.map((d) => (
-                      <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
-                    ))}
-                  </select>
+                  <StyledSelect
+                    value={selectedVideoDevice || videoDevices[0]?.deviceId || ""}
+                    onValueChange={setSelectedVideoDevice}
+                    options={videoDevices.map((d) => ({ value: d.deviceId, label: d.label }))}
+                    className="w-full"
+                  />
                 </div>
               )}
             </div>
