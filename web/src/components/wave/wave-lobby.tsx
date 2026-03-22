@@ -102,24 +102,19 @@ export const WaveLobby = React.memo(function WaveLobby({
     }
 
     try {
-      // Always request at least audio to ensure the browser shows the permission prompt.
-      // getUserMedia({audio:false, video:false}) throws — need at least one enabled.
-      const needsAudio = audioEnabled || !videoEnabled;
+      // First request: simple audio+video to trigger the browser permission prompt.
+      // Use simple constraints to maximize compatibility.
       const constraints: MediaStreamConstraints = {
-        audio: needsAudio
-          ? selectedAudioDevice
-            ? { deviceId: { exact: selectedAudioDevice } }
-            : true
-          : false,
+        audio: selectedAudioDevice ? { deviceId: { exact: selectedAudioDevice } } : true,
         video: videoEnabled
           ? selectedVideoDevice
-            ? { deviceId: { exact: selectedVideoDevice }, width: { ideal: 640 }, height: { ideal: 480 } }
-            : { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }
+            ? { deviceId: { exact: selectedVideoDevice } }
+            : true
           : false,
       };
 
-      // If both are off, request audio just to keep the permission alive
-      if (!audioEnabled && !videoEnabled) {
+      // Need at least one track
+      if (!constraints.audio && !constraints.video) {
         constraints.audio = true;
       }
 
@@ -171,8 +166,25 @@ export const WaveLobby = React.memo(function WaveLobby({
           .map((d) => ({ deviceId: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0, 4)}`, kind: d.kind })),
       );
     } catch (err) {
-      console.warn("[Wave] Media access error:", err);
-      setPermissionState("denied");
+      console.error("[Wave] Media access error:", err);
+      const name = err instanceof DOMException ? err.name : "";
+      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+        setPermissionState("denied");
+      } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+        // No camera/mic found — try audio only
+        try {
+          const audioOnly = await navigator.mediaDevices.getUserMedia({ audio: true });
+          setStream(audioOnly);
+          setPermissionState("granted");
+          setVideoEnabled(false);
+        } catch {
+          setPermissionState("denied");
+        }
+      } else {
+        // Unknown error — still show denied state but log it
+        console.error("[Wave] Unexpected getUserMedia error:", name, err);
+        setPermissionState("denied");
+      }
     }
   }, [stream, selectedAudioDevice, selectedVideoDevice, videoEnabled, audioEnabled]);
 
@@ -207,6 +219,7 @@ export const WaveLobby = React.memo(function WaveLobby({
         />
         <Dialog.Content
           data-draggable
+          aria-describedby={undefined}
           className="fixed z-[9999] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl overflow-hidden flex flex-col animate-scale-in"
           style={{
             width: 520,
