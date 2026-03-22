@@ -812,5 +812,7 @@
   "wave.chatPlaceholder": "Type a message...",
   "wave.reactions": "Reactions",
   "wave.pip": "Picture in Picture",
+  "wave.background": "Background",
+  "wave.loadingBackground": "Loading effect...",
   "wave.roomCreateFailed": "Failed to create call room"
 }

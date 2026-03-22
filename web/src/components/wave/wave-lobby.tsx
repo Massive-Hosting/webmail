@@ -3,13 +3,14 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
-  X, Mic, MicOff, Video, VideoOff, Phone, Monitor, Settings2, Volume2,
+  X, Mic, MicOff, Video, VideoOff, Phone, Monitor, Settings2, Volume2, ImageIcon, Ban,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar.tsx";
 import { useAuthStore } from "@/stores/auth-store.ts";
 import { useTranslation } from "react-i18next";
 import { useDraggable } from "@/hooks/use-draggable.ts";
 import { DarkSelect } from "./dark-select.tsx";
+import { BackgroundProcessor, VIRTUAL_BACKGROUNDS, type BackgroundEffect } from "@/lib/wave-background.ts";
 
 interface WaveLobbyProps {
   open: boolean;
@@ -46,14 +47,18 @@ export const WaveLobby = React.memo(function WaveLobby({
   const [selectedAudioDevice, setSelectedAudioDevice] = useState("");
   const [selectedVideoDevice, setSelectedVideoDevice] = useState("");
   const [showDeviceSettings, setShowDeviceSettings] = useState(false);
+  const [showBackgrounds, setShowBackgrounds] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [permissionState, setPermissionState] = useState<"pending" | "granted" | "denied">("pending");
+  const [bgEffect, setBgEffect] = useState<BackgroundEffect>({ mode: "none" });
+  const [bgLoading, setBgLoading] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const animFrameRef = useRef<number>(0);
+  const bgProcessorRef = useRef<BackgroundProcessor | null>(null);
   const initializedRef = useRef(false);
 
   // Start preview when dialog opens
@@ -402,7 +407,14 @@ export const WaveLobby = React.memo(function WaveLobby({
               label={t("wave.deviceSettings")}
               active={false}
               accent={showDeviceSettings}
-              onClick={() => setShowDeviceSettings(!showDeviceSettings)}
+              onClick={() => { setShowDeviceSettings(!showDeviceSettings); setShowBackgrounds(false); }}
+            />
+            <LobbyToggle
+              icon={<ImageIcon size={18} />}
+              label={t("wave.background")}
+              active={bgEffect.mode !== "none"}
+              accent={showBackgrounds}
+              onClick={() => { setShowBackgrounds(!showBackgrounds); setShowDeviceSettings(false); }}
             />
           </div>
 
@@ -425,6 +437,82 @@ export const WaveLobby = React.memo(function WaveLobby({
                   onChange={setSelectedVideoDevice}
                 />
               )}
+            </div>
+          )}
+
+          {/* Background effects picker */}
+          {showBackgrounds && (
+            <div className="mx-6 mb-4 p-4 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <label className="text-[11px] font-medium text-white/40 block mb-2">{t("wave.background")}</label>
+              {bgLoading && (
+                <div className="text-xs text-white/30 mb-2">{t("wave.loadingBackground")}</div>
+              )}
+              <div className="grid grid-cols-5 gap-2">
+                {/* None option */}
+                <button
+                  onClick={async () => {
+                    setBgEffect({ mode: "none" });
+                    bgProcessorRef.current?.stop();
+                    bgProcessorRef.current = null;
+                    // Restore original stream to video
+                    if (videoRef.current && stream) videoRef.current.srcObject = stream;
+                  }}
+                  className="relative aspect-square rounded-lg overflow-hidden transition-all hover:scale-105"
+                  style={{
+                    backgroundColor: "rgba(255,255,255,0.08)",
+                    border: bgEffect.mode === "none" ? "2px solid #6366f1" : "2px solid transparent",
+                  }}
+                >
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Ban size={16} style={{ color: "rgba(255,255,255,0.4)" }} />
+                  </div>
+                </button>
+
+                {/* Virtual backgrounds */}
+                {VIRTUAL_BACKGROUNDS.map((bg) => (
+                  <button
+                    key={bg.id}
+                    onClick={async () => {
+                      if (!stream || !videoEnabled) return;
+                      setBgLoading(true);
+
+                      const effect: BackgroundEffect = bg.mode === "blur"
+                        ? { mode: "blur", blurStrength: bg.blurStrength }
+                        : { mode: "image", imageUrl: bg.preview };
+
+                      setBgEffect(effect);
+
+                      try {
+                        // Create or reuse processor
+                        if (!bgProcessorRef.current) {
+                          bgProcessorRef.current = new BackgroundProcessor();
+                        }
+                        bgProcessorRef.current.setInput(stream);
+                        bgProcessorRef.current.setEffect(effect);
+                        const processedStream = await bgProcessorRef.current.start();
+
+                        // Show processed stream in preview (keep audio from original)
+                        if (videoRef.current) {
+                          videoRef.current.srcObject = processedStream;
+                        }
+                      } catch (e) {
+                        console.error("[Wave] Background effect failed:", e);
+                        setBgEffect({ mode: "none" });
+                      } finally {
+                        setBgLoading(false);
+                      }
+                    }}
+                    className="relative aspect-square rounded-lg overflow-hidden transition-all hover:scale-105"
+                    style={{
+                      background: bg.preview,
+                      border: (bgEffect.mode === bg.mode && (bg.mode === "blur" ? bgEffect.blurStrength === bg.blurStrength : bgEffect.imageUrl === bg.preview))
+                        ? "2px solid #6366f1" : "2px solid transparent",
+                    }}
+                  >
+                    <span className="absolute bottom-0.5 left-0 right-0 text-[8px] font-medium text-white/80 text-center drop-shadow-sm">{bg.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 

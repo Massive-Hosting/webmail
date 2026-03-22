@@ -812,5 +812,7 @@
   "wave.chatPlaceholder": "Skriv en melding...",
   "wave.reactions": "Reaksjoner",
   "wave.pip": "Bilde i bilde",
+  "wave.background": "Bakgrunn",
+  "wave.loadingBackground": "Laster effekt...",
   "wave.roomCreateFailed": "Kunne ikke opprette samtalerom"
 }

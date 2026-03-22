@@ -812,5 +812,7 @@
   "wave.chatPlaceholder": "Nachricht eingeben...",
   "wave.reactions": "Reaktionen",
   "wave.pip": "Bild im Bild",
+  "wave.background": "Hintergrund",
+  "wave.loadingBackground": "Effekt wird geladen...",
   "wave.roomCreateFailed": "Fehler beim Erstellen des Anrufraums"
 }
