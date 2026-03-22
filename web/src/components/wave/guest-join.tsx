@@ -43,7 +43,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const callStartRef = useRef<number>(0);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   // Fetch room info
   useEffect(() => {
