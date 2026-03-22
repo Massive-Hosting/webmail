@@ -5,11 +5,13 @@ import "encoding/json"
 // callSignalTypes are WebSocket message types that should be forwarded
 // point-to-point from sender to the "to" field recipient.
 var callSignalTypes = map[string]bool{
-	"call-invite": true,
-	"call-accept": true,
-	"call-reject": true,
-	"call-end":    true,
-	"call-signal": true,
+	"call-invite":   true,
+	"call-accept":   true,
+	"call-reject":   true,
+	"call-end":      true,
+	"call-signal":   true,
+	"call-chat":     true,
+	"call-reaction": true,
 }
 
 // callMessage is the envelope for call signaling messages.

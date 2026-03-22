@@ -807,5 +807,10 @@
   "wave.copyLink": "Kopier lenke",
   "wave.copied": "Kopiert!",
   "wave.close": "Lukk",
+  "wave.chat": "Chat",
+  "wave.chatEmpty": "Ingen meldinger enn\u00e5",
+  "wave.chatPlaceholder": "Skriv en melding...",
+  "wave.reactions": "Reaksjoner",
+  "wave.pip": "Bilde i bilde",
   "wave.roomCreateFailed": "Kunne ikke opprette samtalerom"
 }

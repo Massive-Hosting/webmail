@@ -28,26 +28,47 @@ export const IncomingCallNotification = React.memo(function IncomingCallNotifica
       return;
     }
 
-    // Create a pleasant ring tone
+    // Create a pleasant two-tone ring (like a real phone)
     try {
       const ctx = new AudioContext();
       audioRef.current = ctx;
-      const osc = ctx.createOscillator();
+
+      // Two-tone ring: 440Hz + 480Hz (North American ring cadence)
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = 440;
-      gain.gain.value = 0.1;
-      osc.connect(gain);
+      osc1.type = "sine";
+      osc1.frequency.value = 440;
+      osc2.type = "sine";
+      osc2.frequency.value = 480;
+      gain.gain.value = 0;
+      osc1.connect(gain);
+      osc2.connect(gain);
       gain.connect(ctx.destination);
 
-      // Ring pattern: 1s on, 1s off
-      const ringInterval = setInterval(() => {
-        gain.gain.setValueAtTime(0.1, ctx.currentTime);
-        gain.gain.setValueAtTime(0, ctx.currentTime + 0.8);
-      }, 2000);
+      osc1.start();
+      osc2.start();
+      oscillatorRef.current = osc1;
 
-      osc.start();
-      oscillatorRef.current = osc;
+      // Ring cadence: 2s on, 4s off (standard ring pattern)
+      const scheduleRing = () => {
+        const now = ctx.currentTime;
+        // Fade in
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.08, now + 0.05);
+        // Hold
+        gain.gain.setValueAtTime(0.08, now + 0.9);
+        // Brief gap in the middle
+        gain.gain.linearRampToValueAtTime(0, now + 0.95);
+        gain.gain.setValueAtTime(0, now + 1.0);
+        gain.gain.linearRampToValueAtTime(0.08, now + 1.05);
+        // Fade out
+        gain.gain.setValueAtTime(0.08, now + 1.9);
+        gain.gain.linearRampToValueAtTime(0, now + 2.0);
+      };
+
+      scheduleRing();
+      const ringInterval = setInterval(scheduleRing, 4000);
 
       // Auto-reject after 30 seconds
       const timeout = setTimeout(() => {
@@ -57,7 +78,8 @@ export const IncomingCallNotification = React.memo(function IncomingCallNotifica
       return () => {
         clearInterval(ringInterval);
         clearTimeout(timeout);
-        osc.stop();
+        osc1.stop();
+        osc2.stop();
         ctx.close();
       };
     } catch {

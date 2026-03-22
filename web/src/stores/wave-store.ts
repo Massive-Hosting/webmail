@@ -1,7 +1,21 @@
 /** Wave call state store */
 
 import { create } from "zustand";
-import type { CallState } from "@/lib/wave.ts";
+import type { CallState, NetworkQuality } from "@/lib/wave.ts";
+
+export interface ChatMessage {
+  id: string;
+  from: "me" | "peer";
+  text: string;
+  timestamp: number;
+}
+
+export interface Reaction {
+  id: string;
+  emoji: string;
+  from: "me" | "peer";
+  timestamp: number;
+}
 
 interface WaveState {
   callState: CallState;
@@ -25,6 +39,17 @@ interface WaveState {
   // Call duration
   callStartTime: number | null;
 
+  // Network quality
+  networkQuality: NetworkQuality;
+
+  // Chat
+  chatMessages: ChatMessage[];
+  chatOpen: boolean;
+  unreadChat: number;
+
+  // Reactions (transient — auto-removed after display)
+  reactions: Reaction[];
+
   // Actions
   setCallState: (state: CallState) => void;
   setCall: (callId: string, peerEmail: string, peerName: string) => void;
@@ -34,6 +59,11 @@ interface WaveState {
   setLocalStream: (stream: MediaStream | null) => void;
   setRemoteStream: (stream: MediaStream | null) => void;
   setIncomingCall: (call: WaveState["incomingCall"]) => void;
+  setNetworkQuality: (quality: NetworkQuality) => void;
+  addChatMessage: (msg: ChatMessage) => void;
+  setChatOpen: (open: boolean) => void;
+  addReaction: (reaction: Reaction) => void;
+  removeReaction: (id: string) => void;
   reset: () => void;
 }
 
@@ -49,6 +79,11 @@ export const useWaveStore = create<WaveState>((set) => ({
   remoteStream: null,
   incomingCall: null,
   callStartTime: null,
+  networkQuality: "unknown",
+  chatMessages: [],
+  chatOpen: false,
+  unreadChat: 0,
+  reactions: [],
 
   setCallState: (callState) =>
     set((s) => ({
@@ -62,6 +97,15 @@ export const useWaveStore = create<WaveState>((set) => ({
   setLocalStream: (localStream) => set({ localStream }),
   setRemoteStream: (remoteStream) => set({ remoteStream }),
   setIncomingCall: (incomingCall) => set({ incomingCall }),
+  setNetworkQuality: (networkQuality) => set({ networkQuality }),
+  addChatMessage: (msg) =>
+    set((s) => ({
+      chatMessages: [...s.chatMessages, msg],
+      unreadChat: s.chatOpen ? s.unreadChat : s.unreadChat + (msg.from === "peer" ? 1 : 0),
+    })),
+  setChatOpen: (chatOpen) => set({ chatOpen, unreadChat: chatOpen ? 0 : undefined as unknown as number }),
+  addReaction: (reaction) => set((s) => ({ reactions: [...s.reactions, reaction] })),
+  removeReaction: (id) => set((s) => ({ reactions: s.reactions.filter((r) => r.id !== id) })),
   reset: () =>
     set({
       callState: "idle",
@@ -75,5 +119,10 @@ export const useWaveStore = create<WaveState>((set) => ({
       remoteStream: null,
       incomingCall: null,
       callStartTime: null,
+      networkQuality: "unknown",
+      chatMessages: [],
+      chatOpen: false,
+      unreadChat: 0,
+      reactions: [],
     }),
 }));

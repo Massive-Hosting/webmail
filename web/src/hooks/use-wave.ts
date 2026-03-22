@@ -72,6 +72,33 @@ export function useWave() {
             waveConnection.handleSignal(msg.payload.signal as { type: string; sdp?: RTCSessionDescriptionInit; candidate?: RTCIceCandidateInit }).catch(console.error);
           }
           break;
+
+        // Chat message from peer
+        case "call-chat" as string:
+          if (state.callId === msg.payload.callId) {
+            useWaveStore.getState().addChatMessage({
+              id: crypto.randomUUID(),
+              from: "peer",
+              text: msg.payload.text as string,
+              timestamp: Date.now(),
+            });
+          }
+          break;
+
+        // Reaction from peer
+        case "call-reaction" as string:
+          if (state.callId === msg.payload.callId) {
+            const reactionId = crypto.randomUUID();
+            useWaveStore.getState().addReaction({
+              id: reactionId,
+              emoji: msg.payload.emoji as string,
+              from: "peer",
+              timestamp: Date.now(),
+            });
+            // Auto-remove after animation
+            setTimeout(() => useWaveStore.getState().removeReaction(reactionId), 3000);
+          }
+          break;
       }
     });
 
@@ -112,6 +139,7 @@ export function useWave() {
         onStateChange: (state) => useWaveStore.getState().setCallState(state),
         onRemoteStream: (stream) => useWaveStore.getState().setRemoteStream(stream),
         onLocalStream: (stream) => useWaveStore.getState().setLocalStream(stream),
+        onNetworkQuality: (q) => useWaveStore.getState().setNetworkQuality(q),
         sendSignal: (to, signal) => {
           wsClient?.send({ type: "call-signal", to, payload: { callId, signal } });
         },
@@ -150,6 +178,7 @@ export function useWave() {
       onStateChange: (state) => useWaveStore.getState().setCallState(state),
       onRemoteStream: (stream) => useWaveStore.getState().setRemoteStream(stream),
       onLocalStream: (stream) => useWaveStore.getState().setLocalStream(stream),
+      onNetworkQuality: (q) => useWaveStore.getState().setNetworkQuality(q),
       sendSignal: (to, signal) => {
         wsClient?.send({ type: "call-signal", to, payload: { callId: incoming.callId, signal } });
       },
@@ -214,6 +243,50 @@ export function useWave() {
     }
   }, []);
 
+  const sendChat = useCallback((text: string) => {
+    const s = useWaveStore.getState();
+    if (!wsClient || !s.peerEmail || !s.callId) return;
+    wsClient.send({
+      type: "call-chat" as "call-signal",
+      to: s.peerEmail,
+      payload: { callId: s.callId, text },
+    });
+    s.addChatMessage({
+      id: crypto.randomUUID(),
+      from: "me",
+      text,
+      timestamp: Date.now(),
+    });
+  }, []);
+
+  const sendReaction = useCallback((emoji: string) => {
+    const s = useWaveStore.getState();
+    if (!wsClient || !s.peerEmail || !s.callId) return;
+    wsClient.send({
+      type: "call-reaction" as "call-signal",
+      to: s.peerEmail,
+      payload: { callId: s.callId, emoji },
+    });
+    const reactionId = crypto.randomUUID();
+    s.addReaction({
+      id: reactionId,
+      emoji,
+      from: "me",
+      timestamp: Date.now(),
+    });
+    setTimeout(() => useWaveStore.getState().removeReaction(reactionId), 3000);
+  }, []);
+
+  /** Enable browser Picture-in-Picture on the remote video element */
+  const enablePiP = useCallback(async (videoElement: HTMLVideoElement | null) => {
+    if (!videoElement || !document.pictureInPictureEnabled) return;
+    try {
+      await videoElement.requestPictureInPicture();
+    } catch {
+      // PiP not available or user denied
+    }
+  }, []);
+
   return {
     ...store,
     startCall,
@@ -223,5 +296,8 @@ export function useWave() {
     toggleMute,
     toggleVideo,
     toggleScreenShare,
+    sendChat,
+    sendReaction,
+    enablePiP,
   };
 }

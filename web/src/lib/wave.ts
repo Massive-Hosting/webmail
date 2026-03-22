@@ -2,6 +2,8 @@
 
 export type CallState = "idle" | "ringing" | "connecting" | "connected" | "ended";
 
+export type NetworkQuality = "excellent" | "good" | "fair" | "poor" | "unknown";
+
 export interface WaveCallOptions {
   callId: string;
   peerEmail: string;
@@ -11,6 +13,7 @@ export interface WaveCallOptions {
   onStateChange: (state: CallState) => void;
   onRemoteStream: (stream: MediaStream) => void;
   onLocalStream: (stream: MediaStream) => void;
+  onNetworkQuality?: (quality: NetworkQuality) => void;
   sendSignal: (to: string, signal: unknown) => void;
 }
 
@@ -25,6 +28,9 @@ export class WaveConnection {
   private screenStream: MediaStream | null = null;
   private state: CallState = "idle";
   private opts: WaveCallOptions;
+  private statsInterval: ReturnType<typeof setInterval> | null = null;
+  private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+  private prevBytesReceived = 0;
 
   constructor(opts: WaveCallOptions) {
     this.opts = opts;
@@ -52,35 +58,134 @@ export class WaveConnection {
       const state = this.pc.connectionState;
       if (state === "connected") {
         this.setState("connected");
-      } else if (state === "failed" || state === "closed") {
+        this.startNetworkMonitoring();
+      } else if (state === "failed") {
+        this.attemptReconnect();
+      } else if (state === "closed") {
         this.setState("ended");
       }
     };
 
     this.pc.oniceconnectionstatechange = () => {
       if (this.pc.iceConnectionState === "disconnected") {
-        // Give it a moment to recover before ending
-        setTimeout(() => {
-          if (this.pc.iceConnectionState === "disconnected" || this.pc.iceConnectionState === "failed") {
-            this.setState("ended");
+        // Give ICE a chance to recover before attempting reconnect
+        this.reconnectTimeout = setTimeout(() => {
+          if (this.pc.iceConnectionState === "disconnected") {
+            this.attemptReconnect();
+          } else if (this.pc.iceConnectionState === "failed") {
+            this.attemptReconnect();
           }
         }, 3000);
+      } else if (this.pc.iceConnectionState === "connected") {
+        // Clear any pending reconnect
+        if (this.reconnectTimeout) {
+          clearTimeout(this.reconnectTimeout);
+          this.reconnectTimeout = null;
+        }
       }
     };
+  }
+
+  /** Attempt ICE restart to recover from network changes */
+  private async attemptReconnect() {
+    if (this.state === "ended") return;
+    try {
+      const offer = await this.pc.createOffer({ iceRestart: true });
+      await this.pc.setLocalDescription(offer);
+      this.opts.sendSignal(this.opts.peerEmail, {
+        type: "sdp",
+        sdp: this.pc.localDescription,
+      });
+    } catch {
+      // Reconnect failed — end the call
+      this.setState("ended");
+    }
+  }
+
+  /** Monitor network quality using RTCPeerConnection stats */
+  private startNetworkMonitoring() {
+    this.statsInterval = setInterval(async () => {
+      if (this.state !== "connected" || !this.opts.onNetworkQuality) return;
+      try {
+        const stats = await this.pc.getStats();
+        let packetLoss = 0;
+        let jitter = 0;
+        let roundTripTime = 0;
+        let hasInbound = false;
+
+        stats.forEach((report) => {
+          if (report.type === "inbound-rtp" && report.kind === "video") {
+            hasInbound = true;
+            const lost = report.packetsLost ?? 0;
+            const received = report.packetsReceived ?? 0;
+            if (received + lost > 0) {
+              packetLoss = (lost / (received + lost)) * 100;
+            }
+            jitter = (report.jitter ?? 0) * 1000; // convert to ms
+          }
+          if (report.type === "candidate-pair" && report.state === "succeeded") {
+            roundTripTime = report.currentRoundTripTime ? report.currentRoundTripTime * 1000 : 0;
+          }
+        });
+
+        if (!hasInbound) {
+          // Try audio stats
+          stats.forEach((report) => {
+            if (report.type === "inbound-rtp" && report.kind === "audio") {
+              hasInbound = true;
+              const lost = report.packetsLost ?? 0;
+              const received = report.packetsReceived ?? 0;
+              if (received + lost > 0) {
+                packetLoss = (lost / (received + lost)) * 100;
+              }
+            }
+          });
+        }
+
+        let quality: NetworkQuality = "unknown";
+        if (hasInbound) {
+          if (packetLoss < 1 && roundTripTime < 100 && jitter < 30) {
+            quality = "excellent";
+          } else if (packetLoss < 3 && roundTripTime < 200 && jitter < 50) {
+            quality = "good";
+          } else if (packetLoss < 8 && roundTripTime < 400) {
+            quality = "fair";
+          } else {
+            quality = "poor";
+          }
+        }
+        this.opts.onNetworkQuality(quality);
+      } catch {
+        // Stats not available
+      }
+    }, 3000);
   }
 
   private setState(state: CallState) {
     this.state = state;
     this.opts.onStateChange(state);
+    if (state === "ended") {
+      if (this.statsInterval) clearInterval(this.statsInterval);
+      if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+    }
   }
 
   getState(): CallState {
     return this.state;
   }
 
+  /** Get the underlying RTCPeerConnection (for PiP, stats, etc.) */
+  getPeerConnection(): RTCPeerConnection {
+    return this.pc;
+  }
+
   async startLocalMedia(video: boolean): Promise<MediaStream> {
     this.localStream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
       video: video ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" } : false,
     });
 
@@ -198,7 +303,9 @@ export class WaveConnection {
   }
 
   hangup(): void {
-    // Stop all local tracks
+    if (this.statsInterval) clearInterval(this.statsInterval);
+    if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+
     if (this.localStream) {
       for (const track of this.localStream.getTracks()) {
         track.stop();

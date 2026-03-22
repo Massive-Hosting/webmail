@@ -807,5 +807,10 @@
   "wave.copyLink": "Copy link",
   "wave.copied": "Copied!",
   "wave.close": "Close",
+  "wave.chat": "Chat",
+  "wave.chatEmpty": "No messages yet",
+  "wave.chatPlaceholder": "Type a message...",
+  "wave.reactions": "Reactions",
+  "wave.pip": "Picture in Picture",
   "wave.roomCreateFailed": "Failed to create call room"
 }
