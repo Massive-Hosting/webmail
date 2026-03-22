@@ -332,46 +332,29 @@ export const WaveLobby = React.memo(function WaveLobby({
             )}
           </div>
 
-          {/* Toggle buttons */}
-          <div className="flex items-center justify-center gap-3 px-6 mb-4">
-            <button
+          {/* Toggle buttons — premium pill style with labels */}
+          <div className="flex items-center justify-center gap-2 px-6 mb-4">
+            <LobbyToggle
+              icon={audioEnabled ? <Mic size={18} /> : <MicOff size={18} />}
+              label={audioEnabled ? t("wave.mute") : t("wave.unmute")}
+              active={audioEnabled}
+              danger={!audioEnabled}
               onClick={() => setAudioEnabled(!audioEnabled)}
-              className="flex items-center justify-center w-12 h-12 rounded-full transition-all duration-150 hover:scale-105"
-              style={{
-                backgroundColor: audioEnabled ? "rgba(255,255,255,0.1)" : "rgba(239, 68, 68, 0.2)",
-                color: audioEnabled ? "rgba(255,255,255,0.8)" : "#ef4444",
-                border: `1px solid ${audioEnabled ? "rgba(255,255,255,0.1)" : "rgba(239,68,68,0.3)"}`,
-              }}
-              title={audioEnabled ? t("wave.mute") : t("wave.unmute")}
-            >
-              {audioEnabled ? <Mic size={20} /> : <MicOff size={20} />}
-            </button>
-
-            <button
+            />
+            <LobbyToggle
+              icon={videoEnabled ? <Video size={18} /> : <VideoOff size={18} />}
+              label={videoEnabled ? t("wave.cameraOff") : t("wave.cameraOn")}
+              active={videoEnabled}
+              danger={!videoEnabled}
               onClick={() => setVideoEnabled(!videoEnabled)}
-              className="flex items-center justify-center w-12 h-12 rounded-full transition-all duration-150 hover:scale-105"
-              style={{
-                backgroundColor: videoEnabled ? "rgba(255,255,255,0.1)" : "rgba(239, 68, 68, 0.2)",
-                color: videoEnabled ? "rgba(255,255,255,0.8)" : "#ef4444",
-                border: `1px solid ${videoEnabled ? "rgba(255,255,255,0.1)" : "rgba(239,68,68,0.3)"}`,
-              }}
-              title={videoEnabled ? t("wave.cameraOff") : t("wave.cameraOn")}
-            >
-              {videoEnabled ? <Video size={20} /> : <VideoOff size={20} />}
-            </button>
-
-            <button
+            />
+            <LobbyToggle
+              icon={<Settings2 size={18} />}
+              label={t("wave.deviceSettings")}
+              active={false}
+              accent={showDeviceSettings}
               onClick={() => setShowDeviceSettings(!showDeviceSettings)}
-              className="flex items-center justify-center w-12 h-12 rounded-full transition-all duration-150 hover:scale-105"
-              style={{
-                backgroundColor: showDeviceSettings ? "rgba(59,130,246,0.2)" : "rgba(255,255,255,0.1)",
-                color: showDeviceSettings ? "#60a5fa" : "rgba(255,255,255,0.8)",
-                border: `1px solid ${showDeviceSettings ? "rgba(59,130,246,0.3)" : "rgba(255,255,255,0.1)"}`,
-              }}
-              title={t("wave.deviceSettings")}
-            >
-              <Settings2 size={20} />
-            </button>
+            />
           </div>
 
           {/* Device selection (expandable) */}
@@ -423,3 +406,52 @@ export const WaveLobby = React.memo(function WaveLobby({
     </Dialog.Root>
   );
 });
+
+/** Premium toggle button for the lobby */
+function LobbyToggle({
+  icon,
+  label,
+  active,
+  danger,
+  accent,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  danger?: boolean;
+  accent?: boolean;
+  onClick: () => void;
+}) {
+  const bg = danger
+    ? "rgba(239, 68, 68, 0.15)"
+    : accent
+      ? "rgba(59, 130, 246, 0.15)"
+      : "rgba(255, 255, 255, 0.06)";
+  const border = danger
+    ? "rgba(239, 68, 68, 0.25)"
+    : accent
+      ? "rgba(59, 130, 246, 0.25)"
+      : "rgba(255, 255, 255, 0.08)";
+  const color = danger
+    ? "#f87171"
+    : accent
+      ? "#60a5fa"
+      : "rgba(255, 255, 255, 0.75)";
+
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 hover:scale-[1.03] active:scale-[0.97]"
+      style={{
+        backgroundColor: bg,
+        color,
+        border: `1px solid ${border}`,
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
