@@ -1,8 +1,8 @@
 /** New Wave Call dialog — search contacts/directory or type an email to start a call */
 
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Phone, Video, X, Search, Users, BookUser } from "lucide-react";
+import { Phone, Video, X, Search, Users, BookUser, Send } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/auth-store.ts";
 import { Avatar } from "@/components/ui/avatar.tsx";
@@ -230,7 +230,7 @@ export const NewCallDialog = React.memo(function NewCallDialog({
 
           {/* Results */}
           <div
-            className="px-3 pb-3 overflow-y-auto flex-1 min-h-0"
+            className="px-3 pt-1 pb-3 overflow-y-auto flex-1 min-h-0"
           >
             {results.length === 0 && !showManualOption && query.length >= 2 && !searching && (
               <div
@@ -276,39 +276,50 @@ export const NewCallDialog = React.memo(function NewCallDialog({
               </button>
             ))}
 
-            {showManualOption && (
-              <button
-                onClick={handleManualCall}
-                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left transition-colors"
-                style={{
-                  backgroundColor: results.length === 0 && selectedIdx === 0 ? "var(--color-bg-tertiary)" : "transparent",
-                }}
-              >
-                <div
-                  className="flex items-center justify-center w-9 h-9 rounded-full shrink-0"
+            {showManualOption && (() => {
+              const targetEmail = query.trim();
+              const targetDomain = targetEmail.split("@")[1]?.toLowerCase();
+              const isExternal = targetDomain !== userEmail.split("@")[1]?.toLowerCase();
+              return (
+                <button
+                  onClick={handleManualCall}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left transition-colors"
                   style={{
-                    backgroundColor: "var(--color-bg-tertiary)",
-                    border: "1px solid var(--color-border-primary)",
+                    backgroundColor: results.length === 0 && selectedIdx === 0 ? "var(--color-bg-tertiary)" : "transparent",
                   }}
                 >
-                  <Phone size={16} style={{ color: "var(--color-text-accent)" }} />
-                </div>
-                <div className="flex-1 min-w-0">
                   <div
-                    className="text-sm font-medium truncate"
-                    style={{ color: "var(--color-text-primary)" }}
+                    className="flex items-center justify-center w-9 h-9 rounded-full shrink-0"
+                    style={{
+                      backgroundColor: isExternal ? "rgba(99,102,241,0.1)" : "var(--color-bg-tertiary)",
+                      border: `1px solid ${isExternal ? "rgba(99,102,241,0.2)" : "var(--color-border-primary)"}`,
+                    }}
                   >
-                    {t("wave.callEmail", { email: query.trim() })}
+                    {isExternal
+                      ? <Send size={16} style={{ color: "#6366f1" }} />
+                      : <Phone size={16} style={{ color: "var(--color-text-accent)" }} />
+                    }
                   </div>
-                  <div
-                    className="text-xs"
-                    style={{ color: "var(--color-text-secondary)" }}
-                  >
-                    {t("wave.directCall")}
+                  <div className="flex-1 min-w-0">
+                    <div
+                      className="text-sm font-medium truncate"
+                      style={{ color: "var(--color-text-primary)" }}
+                    >
+                      {isExternal
+                        ? t("wave.inviteExternal", { email: targetEmail })
+                        : t("wave.callEmail", { email: targetEmail })
+                      }
+                    </div>
+                    <div
+                      className="text-xs"
+                      style={{ color: "var(--color-text-secondary)" }}
+                    >
+                      {isExternal ? t("wave.sendInviteHint") : t("wave.directCall")}
+                    </div>
                   </div>
-                </div>
-              </button>
-            )}
+                </button>
+              );
+            })()}
           </div>
 
           {/* Footer hint */}

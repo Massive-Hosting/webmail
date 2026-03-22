@@ -797,5 +797,8 @@
   "wave.inviteSubject": "{{name}} is inviting you to a Wave call",
   "wave.inviteBody": "<p>Hi,</p><p><strong>{{name}}</strong> would like to have a video call with you.</p><p><a href=\"{{url}}\" style=\"display:inline-block;padding:12px 24px;background:#22c55e;color:white;text-decoration:none;border-radius:8px;font-weight:600\">Join Wave Call</a></p><p style=\"color:#888;font-size:12px\">Or copy this link: {{url}}</p>",
   "wave.roomCreated": "Call room created — sending invite",
+  "wave.inviteSent": "Wave call invite sent to {{email}}",
+  "wave.inviteExternal": "Invite {{email}} to Wave call",
+  "wave.sendInviteHint": "Sends an email with a join link",
   "wave.roomCreateFailed": "Failed to create call room"
 }

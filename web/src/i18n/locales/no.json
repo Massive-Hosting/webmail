@@ -797,5 +797,8 @@
   "wave.inviteSubject": "{{name}} inviterer deg til en Wave-samtale",
   "wave.inviteBody": "<p>Hei,</p><p><strong>{{name}}</strong> vil gjerne ha en videosamtale med deg.</p><p><a href=\"{{url}}\" style=\"display:inline-block;padding:12px 24px;background:#22c55e;color:white;text-decoration:none;border-radius:8px;font-weight:600\">Bli med i Wave-samtale</a></p><p style=\"color:#888;font-size:12px\">Eller kopier denne lenken: {{url}}</p>",
   "wave.roomCreated": "Samtalerom opprettet \u2014 sender invitasjon",
+  "wave.inviteSent": "Wave-invitasjon sendt til {{email}}",
+  "wave.inviteExternal": "Inviter {{email}} til Wave-samtale",
+  "wave.sendInviteHint": "Sender en e-post med en deltakelseslenke",
   "wave.roomCreateFailed": "Kunne ikke opprette samtalerom"
 }

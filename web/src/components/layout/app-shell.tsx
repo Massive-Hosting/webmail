@@ -386,7 +386,7 @@ export function AppShell() {
         // Same domain — direct P2P call via WebSocket signaling
         startCall(callTarget.email, settings.video);
       } else {
-        // External recipient — create room and send invite email
+        // External recipient — create room, send invite email, enter waiting state
         try {
           const hostName = displayName || email.split("@")[0];
           const res = await createCallRoom({
@@ -395,21 +395,32 @@ export function AppShell() {
             host_name: hostName,
             video: settings.video,
           });
-          // Open compose with the invite link
-          openCompose({
-            mode: "new",
-            prefillTo: [{ email: callTarget.email, name: callTarget.name }],
-            prefillSubject: t("wave.inviteSubject", { name: hostName }),
-            prefillBody: t("wave.inviteBody", { name: hostName, url: res.join_url }),
-          });
-          toast.success(t("wave.roomCreated"));
+
+          // Send invite email automatically via JMAP
+          const identities = await fetchIdentities();
+          const identity = identities[0];
+          if (identity) {
+            const { sendEmail } = await import("@/api/mail.ts");
+            await sendEmail({
+              from: identity,
+              to: [{ name: callTarget.name, email: callTarget.email, isValid: true }],
+              cc: [],
+              bcc: [],
+              subject: t("wave.inviteSubject", { name: hostName }),
+              bodyHTML: t("wave.inviteBody", { name: hostName, url: res.join_url }),
+              bodyText: `${hostName} is inviting you to a Wave call. Join here: ${res.join_url}`,
+              attachments: [],
+            });
+          }
+
+          toast.success(t("wave.inviteSent", { email: callTarget.email }));
         } catch {
           toast.error(t("wave.roomCreateFailed"));
         }
       }
       setCallTarget(null);
     },
-    [callTarget, startCall, email, displayName, openCompose, t],
+    [callTarget, startCall, email, displayName, t],
   );
 
   // Action bar callbacks
