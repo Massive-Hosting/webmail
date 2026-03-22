@@ -785,5 +785,13 @@
   "wave.microphone": "Mikrofon",
   "wave.camera": "Kamera",
   "wave.permissionDenied": "Tilgang til kamera og mikrofon ble nektet. Tillat tilgang i nettleserinnstillingene og pr\u00f8v igjen.",
-  "wave.permissionPending": "Tillat tilgang til kamera og mikrofon for \u00e5 forh\u00e5ndsvise videoen din."
+  "wave.permissionPending": "Tillat tilgang til kamera og mikrofon for \u00e5 forh\u00e5ndsvise videoen din.",
+  "wave.newCall": "Nytt Wave-anrop",
+  "wave.newCallDescription": "S\u00f8k kontakter eller skriv inn e-postadresse",
+  "wave.searchPlaceholder": "S\u00f8k etter navn eller e-post...",
+  "wave.noResults": "Ingen kontakter funnet",
+  "wave.callEmail": "Ring {{email}}",
+  "wave.directCall": "Enter for \u00e5 starte",
+  "wave.navigate": "Naviger",
+  "wave.select": "Velg"
 }

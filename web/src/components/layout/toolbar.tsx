@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Globe,
   Sparkles,
+  Phone,
 } from "lucide-react";
 import { SearchBar } from "@/components/mail/search-bar.tsx";
 import { useTheme } from "@/hooks/use-theme.ts";
@@ -28,6 +29,7 @@ interface ToolbarProps {
   aiEnabled?: boolean;
   copilotOpen?: boolean;
   onToggleCopilot?: () => void;
+  onNewCall?: () => void;
 }
 
 /** Reusable toolbar icon button with tooltip */
@@ -84,6 +86,7 @@ export const Toolbar = React.memo(function Toolbar({
   aiEnabled,
   copilotOpen,
   onToggleCopilot,
+  onNewCall,
 }: ToolbarProps) {
   const { theme, setTheme } = useTheme();
   const { t, i18n } = useTranslation();
@@ -153,6 +156,14 @@ export const Toolbar = React.memo(function Toolbar({
             icon={<Settings size={19} />}
             label={t("toolbar.settings")}
             tooltipText={t("toolbar.settings")}
+          />
+
+          {/* Wave call */}
+          <ToolbarIconButton
+            onClick={onNewCall}
+            icon={<Phone size={19} />}
+            label={t("wave.newCall")}
+            tooltipText={t("wave.newCall")}
           />
 
           {/* AI Copilot toggle */}

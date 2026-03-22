@@ -20,6 +20,7 @@ import { getAvatarColor } from "@/lib/format.ts";
 import { ContactForm } from "./contact-form.tsx";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { useAuthStore } from "@/stores/auth-store.ts";
 
 interface ContactDetailProps {
   contact: Contact;
@@ -27,6 +28,7 @@ interface ContactDetailProps {
   onDelete: (contactId: string) => void;
   onComposeEmail: (email: string, name?: string) => void;
   onSave: (contactId: string, updates: Partial<Contact>) => void;
+  onWaveCall?: (email: string, name: string) => void;
 }
 
 export const ContactDetail = React.memo(function ContactDetail({
@@ -35,6 +37,7 @@ export const ContactDetail = React.memo(function ContactDetail({
   onDelete,
   onComposeEmail,
   onSave,
+  onWaveCall,
 }: ContactDetailProps) {
   const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
@@ -44,6 +47,9 @@ export const ContactDetail = React.memo(function ContactDetail({
   const initials = getContactInitials(contact);
   const primaryEmail = contact.emails[0]?.address ?? "";
   const avatarColor = getAvatarColor(primaryEmail || displayName);
+  const userEmail = useAuthStore((s) => s.email);
+  const canWaveCall = primaryEmail && primaryEmail !== userEmail &&
+    primaryEmail.split("@")[1]?.toLowerCase() === userEmail.split("@")[1]?.toLowerCase();
 
   const handleCopyPhone = useCallback((phone: string) => {
     navigator.clipboard.writeText(phone).then(() => {
@@ -135,6 +141,16 @@ export const ContactDetail = React.memo(function ContactDetail({
           >
             <Mail size={14} />
             {t("contacts.email")}
+          </button>
+        )}
+        {canWaveCall && onWaveCall && (
+          <button
+            onClick={() => onWaveCall(primaryEmail, displayName)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 hover:bg-[var(--color-bg-tertiary)]"
+            style={{ color: "var(--color-text-accent)" }}
+          >
+            <Phone size={14} />
+            {t("wave.startCall")}
           </button>
         )}
         <button

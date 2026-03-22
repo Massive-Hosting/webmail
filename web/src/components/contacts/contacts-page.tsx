@@ -302,6 +302,9 @@ export const ContactsPage = React.memo(function ContactsPage() {
             onDelete={handleDelete}
             onComposeEmail={handleComposeEmail}
             onSave={handleUpdateSave}
+            onWaveCall={(email, name) => {
+              window.dispatchEvent(new CustomEvent("wave:new-call", { detail: { email, name } }));
+            }}
           />
         ) : (
           <EmptyState

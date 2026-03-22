@@ -24,6 +24,7 @@ import { useMessage } from "@/hooks/use-message.ts";
 import { useSearch } from "@/hooks/use-search.ts";
 import { fetchEmail, fetchIdentities } from "@/api/mail.ts";
 import { trainSpam } from "@/api/spam.ts";
+import { useWave } from "@/hooks/use-wave.ts";
 import { useQuery } from "@tanstack/react-query";
 import { Toaster, toast } from "sonner";
 import { WifiOff, ArrowLeft } from "lucide-react";
@@ -55,6 +56,12 @@ const WaveCall = lazy(() =>
 const IncomingCallNotification = lazy(() =>
   import("@/components/wave/incoming-call.tsx").then((m) => ({ default: m.IncomingCallNotification }))
 );
+const NewCallDialog = lazy(() =>
+  import("@/components/wave/new-call-dialog.tsx").then((m) => ({ default: m.NewCallDialog }))
+);
+const WaveLobby = lazy(() =>
+  import("@/components/wave/wave-lobby.tsx").then((m) => ({ default: m.WaveLobby }))
+);
 
 export function AppShell() {
   const { t } = useTranslation();
@@ -62,6 +69,8 @@ export function AppShell() {
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showNewCall, setShowNewCall] = useState(false);
+  const [callTarget, setCallTarget] = useState<{ email: string; name: string } | null>(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   const aiEnabled = useAIEnabled();
@@ -181,8 +190,21 @@ export function AppShell() {
         btn?.click();
         break;
       }
+      case "wave-call":
+        setShowNewCall(true);
+        break;
     }
   }, [openCompose, defaultIdentity]);
+
+  // Listen for Wave call requests from other components (e.g. contacts page)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { email, name } = (e as CustomEvent).detail;
+      setCallTarget({ email, name });
+    };
+    window.addEventListener("wave:new-call", handler);
+    return () => window.removeEventListener("wave:new-call", handler);
+  }, []);
 
   // Online/offline detection
   useEffect(() => {
@@ -338,6 +360,26 @@ export function AppShell() {
   const handleOpenAdvancedSearch = useCallback(() => {
     setShowAdvancedSearch(true);
   }, []);
+
+  const { startCall } = useWave();
+
+  const handleNewCall = useCallback(() => {
+    setShowNewCall(true);
+  }, []);
+
+  const handleSelectCallRecipient = useCallback((email: string, name: string) => {
+    setCallTarget({ email, name });
+  }, []);
+
+  const handleStartCallFromLobby = useCallback(
+    (settings: { video: boolean }) => {
+      if (callTarget) {
+        startCall(callTarget.email, settings.video);
+      }
+      setCallTarget(null);
+    },
+    [callTarget, startCall],
+  );
 
   // Action bar callbacks
   const currentMailbox = mailboxes.find((m) => m.id === selectedMailboxId);
@@ -495,6 +537,26 @@ export function AppShell() {
         <WaveCall />
         <IncomingCallNotification />
       </Suspense>
+      {showNewCall && (
+        <Suspense fallback={<div />}>
+          <NewCallDialog
+            open={showNewCall}
+            onOpenChange={setShowNewCall}
+            onSelectRecipient={handleSelectCallRecipient}
+          />
+        </Suspense>
+      )}
+      {callTarget && (
+        <Suspense fallback={<div />}>
+          <WaveLobby
+            open={!!callTarget}
+            onOpenChange={(open) => { if (!open) setCallTarget(null); }}
+            peerEmail={callTarget.email}
+            peerName={callTarget.name}
+            onStartCall={handleStartCallFromLobby}
+          />
+        </Suspense>
+      )}
     </>
   );
 
@@ -513,6 +575,7 @@ export function AppShell() {
             aiEnabled={aiEnabled}
             copilotOpen={copilotOpen}
             onToggleCopilot={handleToggleCopilot}
+            onNewCall={handleNewCall}
           />
         </header>
         {mobileView === "sidebar" && (

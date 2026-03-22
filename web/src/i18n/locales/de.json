@@ -785,5 +785,13 @@
   "wave.microphone": "Mikrofon",
   "wave.camera": "Kamera",
   "wave.permissionDenied": "Zugriff auf Kamera und Mikrofon wurde verweigert. Bitte erlauben Sie den Zugriff in Ihren Browsereinstellungen.",
-  "wave.permissionPending": "Erlauben Sie den Zugriff auf Kamera und Mikrofon, um Ihre Videovorschau zu sehen."
+  "wave.permissionPending": "Erlauben Sie den Zugriff auf Kamera und Mikrofon, um Ihre Videovorschau zu sehen.",
+  "wave.newCall": "Neuer Wave-Anruf",
+  "wave.newCallDescription": "Kontakte suchen oder E-Mail-Adresse eingeben",
+  "wave.searchPlaceholder": "Nach Name oder E-Mail suchen...",
+  "wave.noResults": "Keine Kontakte gefunden",
+  "wave.callEmail": "{{email}} anrufen",
+  "wave.directCall": "Enter zum Starten",
+  "wave.navigate": "Navigieren",
+  "wave.select": "Auswählen"
 }

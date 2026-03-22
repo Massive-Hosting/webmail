@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect, useRef, useMemo } from "react"
 import {
   Inbox, Send, FileEdit, Archive, Trash2, AlertTriangle,
   Pencil, Reply, Forward, Search, Settings, Moon, Sun,
-  Calendar, Users as ContactsIcon, Star, Mail, Command,
+  Calendar, Users as ContactsIcon, Star, Mail, Command, Phone,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useUIStore } from "@/stores/ui-store.ts";
@@ -108,6 +108,13 @@ export const CommandPalette = React.memo(function CommandPalette({
       icon: <Settings size={15} />,
       group: "Actions",
       action: () => onAction("settings"),
+    });
+    items.push({
+      id: "wave-call",
+      label: t("wave.newCall"),
+      icon: <Phone size={15} />,
+      group: "Actions",
+      action: () => onAction("wave-call"),
     });
     items.push({
       id: "theme",
