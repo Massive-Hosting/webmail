@@ -69,7 +69,8 @@ export function useDraggable(initialPosition?: DragPosition) {
         left: position.x,
         top: position.y,
         transform: "none",
-      }
+        translate: "none",
+      } as React.CSSProperties
     : {};
 
   return { position, handleProps, containerStyle };
