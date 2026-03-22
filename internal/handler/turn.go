@@ -41,14 +41,30 @@ func (h *TURNHandler) Credentials(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	writeJSON(w, http.StatusOK, h.generateCredentials(sess.Email))
+}
+
+// GuestCredentials handles GET /api/call-rooms/{id}/turn — public TURN for guests.
+func (h *TURNHandler) GuestCredentials(roomHandler *CallRoomHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		roomID := r.PathValue("id")
+		room := roomHandler.GetRoom(roomID)
+		if room == nil {
+			writeJSON(w, http.StatusNotFound, errorResponse{"room not found or expired"})
+			return
+		}
+		writeJSON(w, http.StatusOK, h.generateCredentials("guest-"+roomID))
+	}
+}
+
+func (h *TURNHandler) generateCredentials(identity string) map[string]interface{} {
 	expiry := time.Now().Add(turnCredentialTTL * time.Second).Unix()
-	username := fmt.Sprintf("%d:%s", expiry, sess.Email)
+	username := fmt.Sprintf("%d:%s", expiry, identity)
 
 	mac := hmac.New(sha1.New, []byte(h.secret))
 	mac.Write([]byte(username))
 	password := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 
-	// Build ICE servers array with STUN + TURN
 	iceServers := []map[string]interface{}{
 		{"urls": "stun:stun.l.google.com:19302"},
 	}
@@ -60,8 +76,8 @@ func (h *TURNHandler) Credentials(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	writeJSON(w, http.StatusOK, map[string]interface{}{
+	return map[string]interface{}{
 		"iceServers": iceServers,
 		"ttl":        turnCredentialTTL,
-	})
+	}
 }

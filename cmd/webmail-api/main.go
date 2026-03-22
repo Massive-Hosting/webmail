@@ -135,6 +135,9 @@ func main() {
 		log.Info().Str("servers", cfg.TURNServers).Msg("TURN relay configured")
 	}
 
+	// Call room handler for guest Wave calls.
+	callRoomHandler := handler.NewCallRoomHandler()
+
 	// Build router.
 	r := chi.NewRouter()
 
@@ -156,6 +159,23 @@ func main() {
 	r.Route("/api", func(r chi.Router) {
 		// Public endpoints.
 		r.Get("/partner", partnerHandler.Get)
+
+		// Guest Wave call endpoints (public — validated by room ID).
+		r.Get("/call-rooms/{id}", callRoomHandler.Get)
+		if turnHandler != nil {
+			r.Get("/call-rooms/{id}/turn", turnHandler.GuestCredentials(callRoomHandler))
+		}
+		r.Get("/call-rooms/{id}/ws", func(w http.ResponseWriter, r *http.Request) {
+			roomID := r.PathValue("id")
+			room := callRoomHandler.GetRoom(roomID)
+			if room == nil {
+				http.Error(w, `{"error":"room not found"}`, http.StatusNotFound)
+				return
+			}
+			if err := hub.HandleGuestConnection(w, r, roomID); err != nil {
+				log.Error().Err(err).Msg("guest websocket upgrade failed")
+			}
+		})
 
 		// Auth endpoints (login has its own rate limiter).
 		r.Group(func(r chi.Router) {
@@ -251,6 +271,9 @@ func main() {
 			if turnHandler != nil {
 				r.Get("/turn/credentials", turnHandler.Credentials)
 			}
+
+			// Call room creation (authenticated).
+			r.Post("/call-rooms", callRoomHandler.Create)
 		})
 	})
 

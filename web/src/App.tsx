@@ -1,6 +1,6 @@
 /** Main application component with routing and auth */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getSession } from "@/api/client.ts";
 import { AppShell } from "@/components/layout/app-shell.tsx";
@@ -9,6 +9,10 @@ import { LoginPage } from "@/components/login-page.tsx";
 import { useSettingsStore } from "@/stores/settings-store.ts";
 import { useAuthStore } from "@/stores/auth-store.ts";
 import { prefetchInitialMailData } from "@/api/batch.ts";
+
+const WaveGuestJoin = lazy(() =>
+  import("@/components/wave/guest-join.tsx").then((m) => ({ default: m.WaveGuestJoin }))
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,7 +30,23 @@ const queryClient = new QueryClient({
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
+/** Check if this is a guest Wave call join page */
+function getGuestRoomId(): string | null {
+  const match = window.location.pathname.match(/^\/wave\/join\/([a-f0-9]+)$/);
+  return match ? match[1] : null;
+}
+
 export default function App() {
+  // Guest Wave call join — public page, no auth required
+  const guestRoomId = getGuestRoomId();
+  if (guestRoomId) {
+    return (
+      <Suspense fallback={<LoadingScreen />}>
+        <WaveGuestJoin roomId={guestRoomId} />
+      </Suspense>
+    );
+  }
+
   const [authState, setAuthState] = useState<AuthState>("loading");
   const loadSettings = useSettingsStore((s) => s.loadFromServer);
   const setSession = useAuthStore((s) => s.setSession);

@@ -793,5 +793,9 @@
   "wave.callEmail": "{{email}} anrufen",
   "wave.directCall": "Enter zum Starten",
   "wave.navigate": "Navigieren",
-  "wave.select": "Auswählen"
+  "wave.select": "Auswählen",
+  "wave.inviteSubject": "{{name}} lädt Sie zu einem Wave-Anruf ein",
+  "wave.inviteBody": "<p>Hallo,</p><p><strong>{{name}}</strong> möchte einen Videoanruf mit Ihnen führen.</p><p><a href=\"{{url}}\" style=\"display:inline-block;padding:12px 24px;background:#22c55e;color:white;text-decoration:none;border-radius:8px;font-weight:600\">Wave-Anruf beitreten</a></p><p style=\"color:#888;font-size:12px\">Oder kopieren Sie diesen Link: {{url}}</p>",
+  "wave.roomCreated": "Anrufraum erstellt — Einladung wird gesendet",
+  "wave.roomCreateFailed": "Fehler beim Erstellen des Anrufraums"
 }

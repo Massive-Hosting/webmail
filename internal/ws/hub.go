@@ -71,6 +71,13 @@ func (h *Hub) Shutdown() {
 	h.byEmail = make(map[string]map[*client]bool)
 }
 
+// HandleGuestConnection upgrades an HTTP connection to WebSocket for a guest caller.
+// The guest is identified by a synthetic email "guest:{roomID}" so signaling works
+// through the existing byEmail routing.
+func (h *Hub) HandleGuestConnection(w http.ResponseWriter, r *http.Request, roomID string) error {
+	return h.HandleConnection(w, r, "guest:"+roomID, "")
+}
+
 // HandleConnection upgrades an HTTP connection to WebSocket and manages it.
 func (h *Hub) HandleConnection(w http.ResponseWriter, r *http.Request, email, accountID string) error {
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{

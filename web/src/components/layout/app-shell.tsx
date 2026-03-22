@@ -25,6 +25,8 @@ import { useSearch } from "@/hooks/use-search.ts";
 import { fetchEmail, fetchIdentities } from "@/api/mail.ts";
 import { trainSpam } from "@/api/spam.ts";
 import { useWave } from "@/hooks/use-wave.ts";
+import { createCallRoom } from "@/api/wave.ts";
+import { useAuthStore } from "@/stores/auth-store.ts";
 import { useQuery } from "@tanstack/react-query";
 import { Toaster, toast } from "sonner";
 import { WifiOff, ArrowLeft } from "lucide-react";
@@ -72,6 +74,9 @@ export function AppShell() {
   const [showNewCall, setShowNewCall] = useState(false);
   const [callTarget, setCallTarget] = useState<{ email: string; name: string } | null>(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  const email = useAuthStore((s) => s.email);
+  const displayName = useAuthStore((s) => s.displayName);
 
   const aiEnabled = useAIEnabled();
   const copilotOpen = useUIStore((s) => s.copilotOpen);
@@ -372,13 +377,39 @@ export function AppShell() {
   }, []);
 
   const handleStartCallFromLobby = useCallback(
-    (settings: { video: boolean }) => {
-      if (callTarget) {
+    async (settings: { video: boolean }) => {
+      if (!callTarget) return;
+      const userDomain = email.split("@")[1]?.toLowerCase();
+      const targetDomain = callTarget.email.split("@")[1]?.toLowerCase();
+
+      if (userDomain && targetDomain && userDomain === targetDomain) {
+        // Same domain — direct P2P call via WebSocket signaling
         startCall(callTarget.email, settings.video);
+      } else {
+        // External recipient — create room and send invite email
+        try {
+          const hostName = displayName || email.split("@")[0];
+          const res = await createCallRoom({
+            guest_email: callTarget.email,
+            guest_name: callTarget.name,
+            host_name: hostName,
+            video: settings.video,
+          });
+          // Open compose with the invite link
+          openCompose({
+            mode: "new",
+            prefillTo: [{ email: callTarget.email, name: callTarget.name }],
+            prefillSubject: t("wave.inviteSubject", { name: hostName }),
+            prefillBody: t("wave.inviteBody", { name: hostName, url: res.join_url }),
+          });
+          toast.success(t("wave.roomCreated"));
+        } catch {
+          toast.error(t("wave.roomCreateFailed"));
+        }
       }
       setCallTarget(null);
     },
-    [callTarget, startCall],
+    [callTarget, startCall, email, displayName, openCompose, t],
   );
 
   // Action bar callbacks

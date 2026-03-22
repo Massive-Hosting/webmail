@@ -793,5 +793,9 @@
   "wave.callEmail": "Ring {{email}}",
   "wave.directCall": "Enter for \u00e5 starte",
   "wave.navigate": "Naviger",
-  "wave.select": "Velg"
+  "wave.select": "Velg",
+  "wave.inviteSubject": "{{name}} inviterer deg til en Wave-samtale",
+  "wave.inviteBody": "<p>Hei,</p><p><strong>{{name}}</strong> vil gjerne ha en videosamtale med deg.</p><p><a href=\"{{url}}\" style=\"display:inline-block;padding:12px 24px;background:#22c55e;color:white;text-decoration:none;border-radius:8px;font-weight:600\">Bli med i Wave-samtale</a></p><p style=\"color:#888;font-size:12px\">Eller kopier denne lenken: {{url}}</p>",
+  "wave.roomCreated": "Samtalerom opprettet \u2014 sender invitasjon",
+  "wave.roomCreateFailed": "Kunne ikke opprette samtalerom"
 }

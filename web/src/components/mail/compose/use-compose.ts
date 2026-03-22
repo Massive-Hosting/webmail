@@ -18,6 +18,8 @@ interface OpenComposeOptions {
   windowMode?: WindowMode;
   /** Pre-fill the body with AI-generated text (inserted before quoted text in replies) */
   prefillBody?: string;
+  /** Pre-fill the subject line */
+  prefillSubject?: string;
   /** Pre-fill the To recipients */
   prefillTo?: Array<{ email: string; name?: string | null }>;
 }
@@ -29,13 +31,13 @@ export function useCompose() {
   const open = useCallback(
     (options: OpenComposeOptions) => {
       const draftId = generateDraftId();
-      const { mode, email, identity, windowMode = "inline", prefillBody, prefillTo } = options;
+      const { mode, email, identity, windowMode = "inline", prefillBody, prefillSubject, prefillTo } = options;
 
       // Pre-resolve mailbox IDs so auto-save always has them
       const draftsMailboxId = findByRole("drafts")?.id;
       const sentMailboxId = findByRole("sent")?.id;
 
-      let subject = "";
+      let subject = prefillSubject ?? "";
       let bodyHTML = "";
       const to: Array<{ name: string | null; email: string; isValid: boolean }> = [];
       const cc: Array<{ name: string | null; email: string; isValid: boolean }> = [];
