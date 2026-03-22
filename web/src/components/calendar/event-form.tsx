@@ -452,7 +452,6 @@ export const EventForm = React.memo(function EventForm({
                     onChange={(e) => setStartDate(e.target.value)}
                     className="px-2 py-1 text-sm rounded outline-none"
                     style={{
-                      backgroundColor: "var(--color-bg-tertiary)",
                       color: "var(--color-text-primary)",
                       border: "1px solid var(--color-border-secondary)",
                     }}
@@ -465,7 +464,6 @@ export const EventForm = React.memo(function EventForm({
                         onChange={(e) => setStartTime(e.target.value)}
                         className="px-2 py-1 text-sm rounded outline-none"
                         style={{
-                          backgroundColor: "var(--color-bg-tertiary)",
                           color: "var(--color-text-primary)",
                           border: "1px solid var(--color-border-secondary)",
                         }}
@@ -482,7 +480,6 @@ export const EventForm = React.memo(function EventForm({
                         onChange={(e) => handleEndTimeChange(e.target.value)}
                         className="px-2 py-1 text-sm rounded outline-none"
                         style={{
-                          backgroundColor: "var(--color-bg-tertiary)",
                           color: "var(--color-text-primary)",
                           border: "1px solid var(--color-border-secondary)",
                         }}
@@ -516,7 +513,6 @@ export const EventForm = React.memo(function EventForm({
                   placeholder={t("calendar.addLocation")}
                   className="flex-1 px-2 py-1 text-sm rounded outline-none"
                   style={{
-                    backgroundColor: "var(--color-bg-tertiary)",
                     color: "var(--color-text-primary)",
                     border: "1px solid var(--color-border-secondary)",
                   }}
@@ -584,7 +580,6 @@ export const EventForm = React.memo(function EventForm({
                       placeholder={t("calendar.addAttendees")}
                       className="w-full px-2 py-1 text-sm rounded outline-none"
                       style={{
-                        backgroundColor: "var(--color-bg-tertiary)",
                         color: "var(--color-text-primary)",
                         border: "1px solid var(--color-border-secondary)",
                       }}
