@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
+	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -12,7 +13,13 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
+
+func openDB(dsn string) (*sql.DB, error) {
+	return sql.Open("pgx", dsn)
+}
 
 // --- Configuration ---
 
@@ -1953,6 +1960,25 @@ func main() {
 		if err := seedAccount(*url, *webmailURL, acct, *clean); err != nil {
 			fmt.Fprintf(os.Stderr, "Error seeding %s: %v\n", acct.Email, err)
 			os.Exit(1)
+		}
+	}
+
+	// Enable free/busy and directory for the acme domain via direct DB
+	// (webmail API doesn't have a write endpoint for this — it's managed via control panel)
+	dbURL := os.Getenv("WEBMAIL_DATABASE_URL")
+	if dbURL == "" {
+		dbURL = "postgres://webmail:webmail@10.10.10.200:5432/webmail?sslmode=disable"
+	}
+	fmt.Println("Enabling free/busy and directory...")
+	if db, err := openDB(dbURL); err != nil {
+		fmt.Printf("  Warning: could not connect to DB: %v\n", err)
+	} else {
+		_, err = db.Exec(`INSERT INTO domain_settings (domain, freebusy_enabled, directory_enabled) VALUES ('acme.customer.mhst.io', true, true) ON CONFLICT (domain) DO UPDATE SET freebusy_enabled = true, directory_enabled = true`)
+		db.Close()
+		if err != nil {
+			fmt.Printf("  Warning: could not enable domain settings: %v\n", err)
+		} else {
+			fmt.Println("  Free/busy and directory enabled")
 		}
 	}
 
