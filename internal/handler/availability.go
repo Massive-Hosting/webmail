@@ -732,19 +732,20 @@ func (h *AvailabilityHandler) listResourcePrincipals(ctx context.Context, sess *
 }
 
 // stalwartAccountID converts a Stalwart principal numeric ID to the JMAP account ID string.
-// Stalwart uses base36 encoding: 0-9 for IDs 0-9, then a-z for IDs 10-35, etc.
-const base36Alphabet = "0123456789abcdefghijklmnopqrstuvwxyz"
+// Stalwart encodes account IDs using a radix-32 scheme with alphabet: abcdefghijklmnopqrstuvwxyz234567
+// (RFC 4648 base32 lowercase, but used as a simple positional encoding of the numeric ID).
+const stalwartAlphabet = "abcdefghijklmnopqrstuvwxyz234567"
 
 func stalwartAccountID(n uint32) string {
 	if n == 0 {
-		return "0"
+		return "a"
 	}
 	var buf [7]byte
 	i := len(buf)
 	for n > 0 {
 		i--
-		buf[i] = base36Alphabet[n%36]
-		n /= 36
+		buf[i] = stalwartAlphabet[n%32]
+		n /= 32
 	}
 	return string(buf[i:])
 }
