@@ -637,11 +637,16 @@ export const EventForm = React.memo(function EventForm({
                 {/* Attendee list */}
                 {attendees.length > 0 && (
                   <div className="flex flex-col gap-1 ml-5">
-                    {attendees.map((a) => (
+                    {attendees.map((a, attendeeIdx) => (
                       <div
                         key={a.email}
                         className="flex items-center gap-2 text-sm"
                       >
+                        {/* Color dot matching the busy slot bar */}
+                        <div
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: BUSY_COLORS[attendeeIdx % BUSY_COLORS.length] }}
+                        />
                         {isEditing && a.participationStatus && (
                           <span className="shrink-0" title={
                             a.participationStatus === "accepted" ? t("calendar.accepted")
