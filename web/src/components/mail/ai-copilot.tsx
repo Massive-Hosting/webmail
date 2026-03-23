@@ -516,12 +516,14 @@ export const AICopilot = React.memo(function AICopilot({
               <input
                 ref={inputRef}
                 type="text"
-                className="flex-1 bg-transparent text-sm"
+                className="flex-1 text-sm"
                 style={{
                   color: "var(--color-text-primary)",
+                  backgroundColor: "transparent",
                   outline: "none",
                   border: "none",
                   boxShadow: "none",
+                  borderRadius: 0,
                 }}
                 placeholder={t("ai.copilotPlaceholder")}
                 value={input}
