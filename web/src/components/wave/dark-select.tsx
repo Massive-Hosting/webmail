@@ -74,6 +74,14 @@ export const DarkSelect = React.memo(function DarkSelect({
         }} />
       </button>
       {open && pos && createPortal(
+        <>
+        {/* Invisible backdrop to catch clicks outside the dropdown */}
+        <div
+          className="fixed inset-0"
+          style={{ zIndex: 99998 }}
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); setOpen(false); }}
+          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+        />
         <div
           ref={dropdownRef}
           className="fixed py-1 rounded-lg overflow-y-auto animate-scale-in"
@@ -112,7 +120,8 @@ export const DarkSelect = React.memo(function DarkSelect({
               <span className="truncate">{opt.label}</span>
             </button>
           ))}
-        </div>,
+        </div>
+        </>,
         document.body,
       )}
     </div>
