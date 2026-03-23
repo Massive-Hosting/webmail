@@ -30,6 +30,37 @@ var defaultAccounts = []account{
 	{Email: "emma.larsson@acme.customer.mhst.io", Password: "test1234"},
 }
 
+// Internal colleague directory — used for emails, contacts, and calendar participants.
+type colleague struct {
+	Local string // local part of email
+	Name  string
+}
+
+var allColleagues = []colleague{
+	{"info", "Acme Info"},
+	{"support", "Acme Support"},
+	{"sarah.chen", "Sarah Chen"},
+	{"marcus.johnson", "Marcus Johnson"},
+	{"priya.patel", "Priya Patel"},
+	{"alex.rivera", "Alex Rivera"},
+	{"emma.larsson", "Emma Larsson"},
+}
+
+const domain = "acme.customer.mhst.io"
+
+func colleagueEmail(c colleague) string {
+	return c.Local + "@" + domain
+}
+
+func findColleague(local string) colleague {
+	for _, c := range allColleagues {
+		if c.Local == local {
+			return c
+		}
+	}
+	return colleague{Local: local, Name: local}
+}
+
 // --- JMAP types ---
 
 type jmapRequest struct {
@@ -45,9 +76,9 @@ type jmapResponse struct {
 type jmapSession struct {
 	Capabilities map[string]json.RawMessage `json:"capabilities"`
 	Accounts     map[string]struct {
-		Name                 string          `json:"name"`
-		IsPersonal           bool            `json:"isPersonal"`
-		AccountCapabilities  map[string]json.RawMessage `json:"accountCapabilities"`
+		Name                string                     `json:"name"`
+		IsPersonal          bool                       `json:"isPersonal"`
+		AccountCapabilities map[string]json.RawMessage `json:"accountCapabilities"`
 	} `json:"accounts"`
 	PrimaryAccounts map[string]string `json:"primaryAccounts"`
 	UploadURL       string            `json:"uploadUrl"`
@@ -445,347 +476,243 @@ type sender struct {
 	Email string
 }
 
-var senders = []sender{
-	{"Sarah Chen", "sarah@techcorp.io"},
-	{"Marcus Johnson", "marcus.johnson@innovatelab.com"},
-	{"Priya Patel", "priya@designstudio.co"},
-	{"Alex Rivera", "alex.rivera@cloudops.net"},
-	{"Emma Larsson", "emma.larsson@nordictech.se"},
-	{"Yuki Tanaka", "yuki@tokyodev.jp"},
-	{"David Kim", "david.kim@startuphq.com"},
-	{"Fatima Al-Hassan", "fatima@menadigital.ae"},
-	{"James O'Brien", "james@dublinsoft.ie"},
-	{"Lin Wei", "lin.wei@shenzhenai.cn"},
-	{"GitHub", "noreply@github.com"},
-	{"Jira", "jira@atlassian.com"},
-	{"Slack", "notification@slack.com"},
-	{"AWS", "no-reply@aws.amazon.com"},
-	{"Google Cloud", "cloudnotify@google.com"},
-}
+// ---- Internal threaded conversations (the bulk of email) ----
 
-var newsletterSubjects = []string{
-	"This Week in Tech: AI Developments",
-	"Go Weekly #412 - Generics Deep Dive",
-	"Frontend Focus: New CSS Features Landing",
-	"DevOps Digest: Container Security Best Practices",
-	"The Pragmatic Engineer Newsletter",
-	"Kubernetes Release Notes v1.31",
-	"PostgreSQL Performance Tips",
-	"Cloud Architecture Patterns - March Edition",
-	"Open Source Spotlight: New Projects",
-	"Security Advisory: Critical Updates",
-}
-
-var newsletterBodies = []string{
-	`<h2>This Week in Tech</h2>
-<p>Welcome to this week's roundup of the most important developments in technology.</p>
-<p><strong>Top Stories:</strong></p>
-<ul>
-<li>New AI models show improved reasoning capabilities</li>
-<li>Major cloud provider announces edge computing expansion</li>
-<li>Open source project reaches 100k GitHub stars</li>
-</ul>
-<p>Read more at <a href="https://example.com">our website</a>.</p>`,
-
-	`<h2>Go Weekly</h2>
-<p>Your weekly dose of Go programming news and tutorials.</p>
-<p><strong>Featured Article:</strong> Understanding Go's new range-over-func feature and how it changes iteration patterns.</p>
-<p>Also this week:</p>
-<ul>
-<li>Optimizing memory allocations in hot paths</li>
-<li>Building resilient microservices with Go</li>
-<li>New testing patterns for table-driven tests</li>
-</ul>`,
-
-	`<h2>Frontend Focus</h2>
-<p>The latest in web development, CSS, and JavaScript.</p>
-<p><strong>CSS Container Queries</strong> are now supported in all major browsers. Here's how to start using them today.</p>
-<p>Plus: A deep dive into the new <code>Popover API</code> and what it means for accessible UI components.</p>`,
-
-	`<h2>DevOps Digest</h2>
-<p>Stay up to date with the latest in DevOps, SRE, and platform engineering.</p>
-<p><strong>This Month's Focus: Container Security</strong></p>
-<p>We examine the top vulnerabilities found in container images and how to build a secure CI/CD pipeline with automated scanning.</p>
-<blockquote>Security is not a feature, it's a foundation.</blockquote>`,
-
-	`<h2>The Pragmatic Engineer</h2>
-<p>Insights from the tech industry, engineering culture, and career growth.</p>
-<p><strong>Compensation Trends in 2026:</strong> We surveyed 5,000 engineers across 40 countries. Here are the surprising results.</p>
-<p>Key takeaway: Remote roles are seeing <em>increased</em> compensation in specialized areas.</p>`,
-
-	`<h2>Kubernetes v1.31 Release Notes</h2>
-<p>The latest Kubernetes release includes several important changes:</p>
-<ul>
-<li>Sidecar containers are now GA</li>
-<li>Improved scheduler performance for large clusters</li>
-<li>New pod lifecycle hooks</li>
-<li>Deprecation of legacy API versions</li>
-</ul>
-<p>Upgrade guide available at <a href="https://kubernetes.io">kubernetes.io</a>.</p>`,
-
-	`<h2>PostgreSQL Performance Tips</h2>
-<p>Optimize your database for production workloads.</p>
-<p><strong>Tip #47: Partial Indexes</strong></p>
-<p>If you frequently query a subset of your data, partial indexes can dramatically reduce index size and improve query performance:</p>
-<p><code>CREATE INDEX idx_active_users ON users (email) WHERE active = true;</code></p>`,
-
-	`<h2>Cloud Architecture Patterns</h2>
-<p>Monthly deep-dive into cloud-native architecture patterns.</p>
-<p><strong>This Month: Event Sourcing at Scale</strong></p>
-<p>We explore how three companies implemented event sourcing for their core domains, the challenges they faced, and the patterns that emerged.</p>`,
-
-	`<h2>Open Source Spotlight</h2>
-<p>Discovering interesting open source projects.</p>
-<p><strong>Featured Projects:</strong></p>
-<ul>
-<li><strong>htmx</strong> - High power tools for HTML</li>
-<li><strong>Ruff</strong> - An extremely fast Python linter</li>
-<li><strong>Biome</strong> - Toolchain for web projects</li>
-</ul>`,
-
-	`<h2>Security Advisory</h2>
-<p><strong style="color: #d32f2f;">CRITICAL: Update Required</strong></p>
-<p>A vulnerability has been discovered in the following packages. Please update immediately:</p>
-<ul>
-<li>libxml2 &lt; 2.12.5</li>
-<li>openssl &lt; 3.2.1</li>
-</ul>
-<p>Patches are available now. See <a href="https://example.com/advisory">the full advisory</a> for details.</p>`,
-}
-
-func generateWelcomeEmail(acctEmail string, mb *mailboxes) emailSpec {
-	return emailSpec{
-		From:     "hello@acme-hosting.com",
-		FromName: "Acme Hosting",
-		To:       acctEmail,
-		Subject:  "Welcome to Acme Hosting!",
-		HTMLBody: wrapHTML(fmt.Sprintf(`<h1 style="color: #2563eb;">Welcome to Acme Hosting!</h1>
-<p>Hi there,</p>
-<p>We're thrilled to have you on board. Your account <strong>%s</strong> is all set up and ready to go.</p>
-<h2>Getting Started</h2>
-<ul>
-<li>Check out our <a href="https://docs.acme-hosting.com">documentation</a></li>
-<li>Set up your <a href="https://acme-hosting.com/settings">email preferences</a></li>
-<li>Join our <a href="https://community.acme-hosting.com">community forum</a></li>
-</ul>
-<p>If you need any help, just reply to this email or visit our <a href="https://support.acme-hosting.com">support center</a>.</p>
-<p>Best regards,<br><strong>The Acme Hosting Team</strong></p>
-<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-<p style="color: #9ca3af; font-size: 12px;">Acme Hosting Inc. | 123 Cloud Street, San Francisco, CA 94105</p>`, acctEmail)),
-		Date:      randomDate(28),
-		MailboxID: mb.Inbox,
-		IsRead:    true,
-	}
-}
-
-func generateNewsletterEmails(acctEmail string, mb *mailboxes) []emailSpec {
-	specs := make([]emailSpec, 10)
-	for i := 0; i < 10; i++ {
-		s := senders[rand.Intn(len(senders))]
-		specs[i] = emailSpec{
-			From:      s.Email,
-			FromName:  s.Name,
-			To:        acctEmail,
-			Subject:   newsletterSubjects[i],
-			HTMLBody:  wrapHTML(newsletterBodies[i]),
-			Date:      randomDate(30),
-			MailboxID: mb.Inbox,
-			IsRead:    i < 6, // 60% read
-		}
-	}
-	return specs
-}
-
-func generateAttachmentEmails(acctEmail string, mb *mailboxes) []emailSpec {
-	attachmentEmails := []struct {
-		subject     string
-		sender      sender
-		attachments []attachmentSpec
-		body        string
-	}{
-		{
-			subject: "Q4 Budget Review - Final",
-			sender:  sender{"Sarah Chen", "sarah@techcorp.io"},
-			attachments: []attachmentSpec{
-				{Filename: "Q4_Budget_2025.xlsx", ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
-				{Filename: "Budget_Summary.pdf", ContentType: "application/pdf"},
-			},
-			body: `<p>Hi,</p>
-<p>Please find attached the final Q4 budget review documents. The spreadsheet has all the detailed breakdowns and the PDF is the executive summary.</p>
-<p>Key highlights:</p>
-<ul>
-<li>Total spend: $2.4M (5% under budget)</li>
-<li>Infrastructure costs down 12% after cloud optimization</li>
-<li>Headcount costs as projected</li>
-</ul>
-<p>Let me know if you have any questions before the board meeting.</p>
-<p>Best,<br>Sarah</p>`,
-		},
-		{
-			subject: "Design Mockups v3",
-			sender:  sender{"Priya Patel", "priya@designstudio.co"},
-			attachments: []attachmentSpec{
-				{Filename: "Dashboard_Redesign_v3.png", ContentType: "image/png"},
-				{Filename: "Mobile_Views.png", ContentType: "image/png"},
-				{Filename: "Component_Library.fig", ContentType: "application/octet-stream"},
-			},
-			body: `<p>Hey team,</p>
-<p>Here are the updated mockups incorporating last week's feedback:</p>
-<ul>
-<li>Simplified navigation sidebar</li>
-<li>New color palette for data visualizations</li>
-<li>Mobile responsive layouts</li>
-</ul>
-<p>The Figma file has all the components. Let me know your thoughts!</p>
-<p>Priya</p>`,
-		},
-		{
-			subject: "Contract - Signed Copy",
-			sender:  sender{"James O'Brien", "james@dublinsoft.ie"},
-			attachments: []attachmentSpec{
-				{Filename: "Service_Agreement_2026_Signed.pdf", ContentType: "application/pdf"},
-			},
-			body: `<p>Hi,</p>
-<p>Please find attached the fully executed service agreement for 2026. Both parties have signed.</p>
-<p>Key dates:</p>
-<ul>
-<li>Start date: April 1, 2026</li>
-<li>First review: July 1, 2026</li>
-<li>Term: 12 months</li>
-</ul>
-<p>Filed a copy with legal as well.</p>
-<p>Cheers,<br>James</p>`,
-		},
-		{
-			subject: "Meeting Notes - Sprint Retrospective",
-			sender:  sender{"Marcus Johnson", "marcus.johnson@innovatelab.com"},
-			attachments: []attachmentSpec{
-				{Filename: "Sprint_23_Retro_Notes.md", ContentType: "text/markdown"},
-			},
-			body: `<p>Team,</p>
-<p>Notes from today's retro attached. Summary of action items:</p>
-<ol>
-<li>Improve test coverage for auth module (assigned: Alex)</li>
-<li>Set up automated deployment to staging (assigned: David)</li>
-<li>Document API versioning strategy (assigned: Lin)</li>
-</ol>
-<p>Great sprint everyone!</p>
-<p>Marcus</p>`,
-		},
-		{
-			subject: "Your Invoice #INV-2026-0342",
-			sender:  sender{"Billing", "billing@cloudservices.com"},
-			attachments: []attachmentSpec{
-				{Filename: "Invoice_INV-2026-0342.pdf", ContentType: "application/pdf"},
-			},
-			body: `<p>Dear Customer,</p>
-<p>Please find your invoice attached for the billing period March 1-31, 2026.</p>
-<table style="border-collapse: collapse; width: 100%;">
-<tr style="background: #f3f4f6;"><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Service</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Amount</strong></td></tr>
-<tr><td style="padding: 8px; border: 1px solid #e5e7eb;">Compute (m6i.xlarge x3)</td><td style="padding: 8px; border: 1px solid #e5e7eb;">$847.20</td></tr>
-<tr><td style="padding: 8px; border: 1px solid #e5e7eb;">Storage (500GB)</td><td style="padding: 8px; border: 1px solid #e5e7eb;">$45.00</td></tr>
-<tr><td style="padding: 8px; border: 1px solid #e5e7eb;">Bandwidth</td><td style="padding: 8px; border: 1px solid #e5e7eb;">$23.50</td></tr>
-<tr style="background: #f3f4f6;"><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Total</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>$915.70</strong></td></tr>
-</table>
-<p>Payment is due within 30 days.</p>`,
-		},
-	}
-
-	specs := make([]emailSpec, len(attachmentEmails))
-	for i, ae := range attachmentEmails {
-		specs[i] = emailSpec{
-			From:        ae.sender.Email,
-			FromName:    ae.sender.Name,
-			To:          acctEmail,
-			Subject:     ae.subject,
-			HTMLBody:    wrapHTML(ae.body),
-			Date:        randomDate(25),
-			MailboxID:   mb.Inbox,
-			IsRead:      rand.Float32() < 0.6,
-			Attachments: ae.attachments,
-		}
-	}
-	return specs
-}
-
-type conversation struct {
+type internalConversation struct {
 	subject  string
 	messages []struct {
-		from sender
-		body string
+		fromLocal string // local part of sender address
+		body      string
 	}
 }
 
-func generateThreadedConversations(acctEmail string, mb *mailboxes) []emailSpec {
-	conversations := []conversation{
+func generateInternalThreads(acctEmail string, mb *mailboxes) []emailSpec {
+	acctLocal := strings.SplitN(acctEmail, "@", 2)[0]
+
+	conversations := []internalConversation{
+		// Thread 1: API Migration Plan — sarah.chen, marcus.johnson, alex.rivera
 		{
 			subject: "API Migration Plan",
 			messages: []struct {
-				from sender
-				body string
+				fromLocal string
+				body      string
 			}{
-				{sender{"Alex Rivera", "alex.rivera@cloudops.net"}, `<p>Hey team,</p><p>I've drafted the API migration plan for moving from v2 to v3. Main changes:</p><ul><li>New authentication flow using OAuth2</li><li>Pagination changes (cursor-based)</li><li>Rate limiting updates</li></ul><p>Thoughts?</p>`},
-				{sender{"You", acctEmail}, `<p>Looks solid, Alex. A couple of questions:</p><ol><li>What's the timeline for deprecating v2 endpoints?</li><li>Do we need to update the SDK clients simultaneously?</li></ol><p>Also, should we set up a migration guide for external consumers?</p>`},
-				{sender{"Alex Rivera", "alex.rivera@cloudops.net"}, `<p>Good questions:</p><p>1. Thinking 6-month deprecation window with v2 in maintenance mode from day one.<br>2. SDKs should be updated in parallel - I'll coordinate with the SDK team.</p><p>Migration guide is a great idea. I'll add it to the plan.</p>`},
-				{sender{"David Kim", "david.kim@startuphq.com"}, `<p>+1 on the migration guide. Our largest customers will need hand-holding through this.</p><p>Can we also add a compatibility layer so v2 requests get auto-translated? That would ease the transition significantly.</p>`},
+				{"sarah.chen", `<p>Hey team,</p>
+<p>I've put together a plan for migrating from v2 to v3 of our public API. Here are the main changes:</p>
+<ul>
+<li>New authentication flow using OAuth2 with PKCE</li>
+<li>Cursor-based pagination replacing offset pagination</li>
+<li>Stricter rate limiting (100 req/min for free tier, 1000 for paid)</li>
+</ul>
+<p>I've shared the full RFC in Notion. Can you both review by end of week?</p>
+<p>Sarah</p>`},
+				{"alex.rivera", `<p>Thanks Sarah, just read through it.</p>
+<p>The OAuth2 change makes sense. Two questions:</p>
+<ol>
+<li>What's the deprecation timeline for v2? We have external partners still on it.</li>
+<li>Should we ship SDK updates alongside or can they lag behind?</li>
+</ol>
+<p>Also, I can set up the new rate limiter in our API gateway this sprint if we agree on the limits.</p>
+<p>Alex</p>`},
+				{"marcus.johnson", `<p>Solid plan. I like the cursor-based pagination — our current offset approach falls apart on large datasets.</p>
+<p>Re: Alex's questions, I'd suggest a 6-month deprecation window with v2 in maintenance mode from day one. SDKs should ship within 2 weeks of the API launch — we can't leave integrators hanging.</p>
+<p>One addition: can we include a compatibility shim so v2 requests get auto-translated? Would make the transition way smoother for existing customers.</p>
+<p>Marcus</p>`},
+				{"sarah.chen", `<p>Great feedback from both of you. Updated the RFC:</p>
+<ul>
+<li>6-month deprecation window for v2 (Marcus's suggestion)</li>
+<li>SDK updates ship within 2 weeks of API launch</li>
+<li>Alex will prototype the rate limiter this sprint</li>
+<li>Compatibility shim added to the roadmap (Marcus to spec it out)</li>
+</ul>
+<p>Let's finalize in Thursday's architecture review. I'll add it to the agenda.</p>
+<p>Sarah</p>`},
 			},
 		},
+		// Thread 2: Office Party Planning — emma.larsson, priya.patel, sarah.chen
 		{
 			subject: "Office Party Planning",
 			messages: []struct {
-				from sender
-				body string
+				fromLocal string
+				body      string
 			}{
-				{sender{"Emma Larsson", "emma.larsson@nordictech.se"}, `<p>Hi everyone!</p><p>It's time to start planning our spring office party. I'm thinking:</p><ul><li>Date: Last Friday of March</li><li>Venue: The rooftop terrace</li><li>Theme: Spring garden party</li></ul><p>Budget is $3,000. Who wants to help organize?</p>`},
-				{sender{"You", acctEmail}, `<p>Count me in! I can handle the catering arrangements. Should we do a survey for dietary restrictions?</p>`},
-				{sender{"Fatima Al-Hassan", "fatima@menadigital.ae"}, `<p>I can help with decorations! A garden theme sounds lovely. Will there be music? I know a great local band.</p>`},
-				{sender{"Emma Larsson", "emma.larsson@nordictech.se"}, `<p>Perfect! Yes to the survey and yes to the band, Fatima. Let's keep music budget around $500-800.</p><p>I'll create a shared doc for planning. Meeting this Thursday at 2pm to discuss details?</p>`},
+				{"emma.larsson", `<p>Hi everyone!</p>
+<p>Time to plan our spring office party. Here's what I'm thinking:</p>
+<ul>
+<li><strong>Date:</strong> Last Friday of March</li>
+<li><strong>Venue:</strong> The rooftop terrace (confirmed availability)</li>
+<li><strong>Theme:</strong> Spring garden party</li>
+<li><strong>Budget:</strong> $3,000</li>
+</ul>
+<p>I need volunteers for catering, decorations, and entertainment. Who's in?</p>
+<p>Emma</p>`},
+				{"priya.patel", `<p>Love the garden theme! I'll handle decorations — I have some great ideas for floral arrangements and string lights.</p>
+<p>For music, my friend's band does acoustic sets and they're really good. They'd probably do it for $600.</p>
+<p>Should we set up a shared doc for planning?</p>
+<p>Priya</p>`},
+				{"sarah.chen", `<p>Count me in for catering! I'll send out a dietary restrictions survey today.</p>
+<p>Budget breakdown suggestion:</p>
+<ul>
+<li>Catering: $1,500</li>
+<li>Decorations: $400</li>
+<li>Music: $600</li>
+<li>Drinks: $400</li>
+<li>Contingency: $100</li>
+</ul>
+<p>Does that work for everyone?</p>
+<p>Sarah</p>`},
+				{"emma.larsson", `<p>Perfect breakdown, Sarah. Priya, the band sounds great — go ahead and book them.</p>
+<p>I've created the planning doc: <a href="https://docs.google.com/party-planning">Party Planning Sheet</a></p>
+<p>Let's meet Thursday at 2pm to finalize details. I booked the small conference room.</p>
+<p>This is going to be fun!</p>
+<p>Emma</p>`},
 			},
 		},
+		// Thread 3: Customer Escalation — support, marcus.johnson, priya.patel
 		{
-			subject: "Production Incident - Database Connection Pool",
+			subject: "Customer Escalation - Northwind Corp",
 			messages: []struct {
-				from sender
-				body string
+				fromLocal string
+				body      string
 			}{
-				{sender{"AWS", "no-reply@aws.amazon.com"}, `<p><strong>Alert: High connection count detected</strong></p><p>Your RDS instance <code>prod-main-db</code> has exceeded 80% of max_connections.</p><p>Current: 412/500 connections<br>Threshold: 80%<br>Time: 2026-03-14 14:32:00 UTC</p>`},
-				{sender{"You", acctEmail}, `<p>Team, we're seeing connection pool exhaustion on prod. I'm investigating.</p><p>Initial findings: looks like the new batch job isn't closing connections properly. Rolling back the deployment now.</p>`},
-				{sender{"Lin Wei", "lin.wei@shenzhenai.cn"}, `<p>Confirmed - the batch job was opening new connections per iteration instead of reusing from the pool. Fix is in PR #847. Connection count is dropping after the rollback.</p><p>Current: 156/500 connections.</p>`},
+				{"support", `<p>Team,</p>
+<p>We have a P1 escalation from Northwind Corp (Enterprise tier). Their admin reports that bulk email imports have been failing intermittently since yesterday.</p>
+<p><strong>Impact:</strong> ~200 users affected, migration from legacy system blocked</p>
+<p><strong>Error:</strong> <code>HTTP 503 - Service Temporarily Unavailable</code> on the import endpoint</p>
+<p>Customer is requesting an update within 2 hours. Can someone investigate?</p>
+<p>Acme Support</p>`},
+				{"marcus.johnson", `<p>I'm on it. Checked the logs — the import worker is hitting memory limits when processing large batches (&gt;50 messages). The OOM killer is restarting the pod.</p>
+<p>Quick fix: increase the memory limit from 512MB to 1GB. Long-term: we need to implement chunked imports.</p>
+<p>I can deploy the memory bump in 30 minutes. Priya, can you check the UI side? The error message shown to users is just a generic 503 — we should show something more helpful.</p>
+<p>Marcus</p>`},
+				{"priya.patel", `<p>Good catch, Marcus. I'll update the import UI to:</p>
+<ol>
+<li>Show a specific error message for import failures</li>
+<li>Add a retry button</li>
+<li>Suggest smaller batch sizes in the meantime</li>
+</ol>
+<p>I can have the UI fix ready by end of day. Should I also update the status page?</p>
+<p>Priya</p>`},
+				{"support", `<p>Thanks both. Updates:</p>
+<ul>
+<li>Marcus deployed the memory fix — imports are succeeding again</li>
+<li>Priya's UI improvements are in review</li>
+<li>I've updated the customer and the status page</li>
+</ul>
+<p>Northwind confirmed they can proceed with their migration. Marking this as resolved.</p>
+<p>Let's do a quick post-mortem tomorrow to discuss the chunked import work.</p>
+<p>Acme Support</p>`},
 			},
 		},
+		// Thread 4: Q1 OKR Review — info, all team members
 		{
-			subject: "Interview Feedback - Senior Engineer Candidate",
+			subject: "Q1 OKR Review - Results and Q2 Planning",
 			messages: []struct {
-				from sender
-				body string
+				fromLocal string
+				body      string
 			}{
-				{sender{"Marcus Johnson", "marcus.johnson@innovatelab.com"}, `<p>Team,</p><p>Please share your feedback on today's candidate (Jane Martinez) for the Senior Engineer position.</p><p>My take: Strong system design skills, good communication. The live coding was impressive - she optimized the solution from O(n^2) to O(n log n) without hints.</p>`},
-				{sender{"Yuki Tanaka", "yuki@tokyodev.jp"}, `<p>Agree with Marcus. I was particularly impressed with her experience in distributed systems. She asked very thoughtful questions about our architecture.</p><p>One concern: she mentioned wanting to focus on ML infrastructure, and we don't have much of that yet. Might be a retention risk.</p>`},
-				{sender{"You", acctEmail}, `<p>Strong hire from me. The system design round was the best I've seen this quarter. She designed a scalable notification system with proper failure handling and retry logic.</p><p>Re: ML interest - I think that actually aligns with our 2026 H2 roadmap. We could pitch that as a growth opportunity.</p>`},
+				{"info", `<p>Hi everyone,</p>
+<p>Q1 is wrapping up and it's time to review our OKRs. Here's a summary of where we landed:</p>
+<p><strong>Objective 1: Improve Platform Reliability</strong></p>
+<ul>
+<li>KR1: 99.95% uptime — <span style="color:green">Achieved (99.97%)</span></li>
+<li>KR2: P1 MTTR under 30 min — <span style="color:orange">Partial (38 min avg)</span></li>
+<li>KR3: Automated failover — <span style="color:green">Achieved</span></li>
+</ul>
+<p><strong>Objective 2: Scale Engineering Velocity</strong></p>
+<ul>
+<li>KR1: CI/CD pipeline time -40% — <span style="color:green">Achieved (-47%)</span></li>
+<li>KR2: Test coverage 85% — <span style="color:red">Missed (78%)</span></li>
+</ul>
+<p>Please submit your Q2 OKR drafts by Friday. We'll review them in Monday's all-hands.</p>
+<p>Acme Info</p>`},
+				{"sarah.chen", `<p>Great progress on reliability! For Q2, I'd like to propose:</p>
+<p><strong>Objective: Modernize Email Infrastructure</strong></p>
+<ul>
+<li>KR1: Complete JMAP integration for all mailbox operations</li>
+<li>KR2: Launch new webmail UI to 50% of users</li>
+<li>KR3: Reduce email processing latency by 60%</li>
+</ul>
+<p>This aligns with the infrastructure savings we're targeting.</p>
+<p>Sarah</p>`},
+				{"alex.rivera", `<p>For the platform team, I'm proposing:</p>
+<p><strong>Objective: Zero-Downtime Deployments</strong></p>
+<ul>
+<li>KR1: All services support rolling updates</li>
+<li>KR2: Canary deployment pipeline for critical services</li>
+<li>KR3: Automated rollback on error rate spike</li>
+</ul>
+<p>This should also help with the MTTR target we missed in Q1.</p>
+<p>Alex</p>`},
+				{"emma.larsson", `<p>Product side Q2 goals:</p>
+<p><strong>Objective: Improve User Satisfaction</strong></p>
+<ul>
+<li>KR1: NPS score > 40 (currently 31)</li>
+<li>KR2: Reduce support ticket volume by 25%</li>
+<li>KR3: Ship 3 most-requested features from user survey</li>
+</ul>
+<p>The top 3 requested features are: dark mode, keyboard shortcuts, and calendar integration.</p>
+<p>Emma</p>`},
+				{"marcus.johnson", `<p>Backend team Q2:</p>
+<p><strong>Objective: API Platform Excellence</strong></p>
+<ul>
+<li>KR1: Launch API v3 with full documentation</li>
+<li>KR2: 99th percentile latency under 200ms</li>
+<li>KR3: Onboard 5 new API partners</li>
+</ul>
+<p>This builds on Sarah's migration plan. We should coordinate timelines.</p>
+<p>Marcus</p>`},
 			},
 		},
+		// Thread 5: New Hire Onboarding — sarah.chen, emma.larsson
 		{
-			subject: "Quarterly Team Objectives",
+			subject: "New Hire Onboarding - Jordan Kim",
 			messages: []struct {
-				from sender
-				body string
+				fromLocal string
+				body      string
 			}{
-				{sender{"David Kim", "david.kim@startuphq.com"}, `<p>Hi all,</p><p>Sharing draft OKRs for Q2. Please review and add your team's objectives by Friday:</p><p><strong>Objective 1: Improve Platform Reliability</strong></p><ul><li>KR1: Achieve 99.95% uptime (currently 99.9%)</li><li>KR2: Reduce P1 incident MTTR to under 30 min</li><li>KR3: Implement automated failover for all critical services</li></ul><p><strong>Objective 2: Scale Engineering Velocity</strong></p><ul><li>KR1: Reduce CI/CD pipeline time by 40%</li><li>KR2: Increase test coverage to 85%</li></ul>`},
-				{sender{"You", acctEmail}, `<p>Looks good, David. For our team I'd add:</p><p><strong>Objective 3: Modernize Email Infrastructure</strong></p><ul><li>KR1: Complete JMAP integration for all mailbox operations</li><li>KR2: Launch new webmail UI to 50% of users</li><li>KR3: Reduce email processing latency by 60%</li></ul>`},
-				{sender{"Sarah Chen", "sarah@techcorp.io"}, `<p>Love objective 3! Aligns well with the infrastructure budget savings we're targeting.</p><p>Can we also add a KR around user satisfaction? Something like "Achieve NPS > 40 for webmail experience" - this would give us a concrete user-facing metric.</p>`},
-				{sender{"David Kim", "david.kim@startuphq.com"}, `<p>Great additions from both of you. I'll update the doc. Let's finalize in Monday's leadership sync.</p><p>Also adding a stretch goal: "Zero-downtime deployments for all user-facing services by end of Q2."</p>`},
+				{"sarah.chen", `<p>Hi Emma,</p>
+<p>Jordan Kim is starting next Monday as a Junior Frontend Engineer on your team. Here's what I've set up so far:</p>
+<ul>
+<li>Laptop ordered (MacBook Pro 16") — arrives Thursday</li>
+<li>GitHub, Slack, and Notion accounts created</li>
+<li>First-week buddy: Priya (confirmed)</li>
+</ul>
+<p>Can you prepare the onboarding schedule? I'd suggest:</p>
+<ul>
+<li>Monday: Welcome, setup, team intros</li>
+<li>Tuesday: Codebase walkthrough with buddy</li>
+<li>Wednesday: First small task (good-first-issue)</li>
+<li>Thursday-Friday: Pair programming sessions</li>
+</ul>
+<p>Sarah</p>`},
+				{"emma.larsson", `<p>Thanks Sarah, this is really thorough!</p>
+<p>I'll prepare the onboarding doc today. A few additions to the schedule:</p>
+<ul>
+<li>Monday 11am: 1:1 with me to discuss team goals and expectations</li>
+<li>Tuesday 2pm: Product overview with the PM team</li>
+<li>Wednesday: Join the daily standup (good way to meet everyone)</li>
+</ul>
+<p>For the good-first-issue, I'm thinking the dark mode toggle for the settings page — it's well-scoped and touches our component library.</p>
+<p>Should we also schedule a 30-day check-in?</p>
+<p>Emma</p>`},
+				{"sarah.chen", `<p>The dark mode toggle is a perfect starter task!</p>
+<p>Yes, let's schedule the 30-day check-in. I'll set it up for April 27.</p>
+<p>One more thing — can you add Jordan to the #frontend and #new-hires Slack channels? I've already added them to #general and #engineering.</p>
+<p>Looking forward to having them on the team!</p>
+<p>Sarah</p>`},
 			},
 		},
 	}
 
 	var specs []emailSpec
 	for _, conv := range conversations {
-		baseDate := randomDate(20)
+		baseDate := randomDate(14)
 		var prevMessageID string
 		var refs []string
 
 		for j, msg := range conv.messages {
-			msgDate := baseDate.Add(time.Duration(j*2+rand.Intn(3)) * time.Hour)
+			msgDate := baseDate.Add(time.Duration(j*3+rand.Intn(4)) * time.Hour)
 			messageID := fmt.Sprintf("<thread-%d-msg-%d@seed.local>", rand.Int63(), j)
 
 			subject := conv.subject
@@ -793,26 +720,40 @@ func generateThreadedConversations(acctEmail string, mb *mailboxes) []emailSpec 
 				subject = "Re: " + conv.subject
 			}
 
-			from := msg.from.Email
-			fromName := msg.from.Name
-			to := acctEmail
+			fromCol := findColleague(msg.fromLocal)
+			fromEmail := colleagueEmail(fromCol)
+			fromName := fromCol.Name
 
-			// If "You" is the sender, swap from/to
-			if msg.from.Email == acctEmail {
-				fromName = ""
-				// Just use the email as both name and address
-				from = acctEmail
-				to = conversations[0].messages[0].from.Email // reply to original sender
+			// Determine mailbox: if this account sent the message, it goes to Sent;
+			// otherwise it goes to Inbox.
+			mailboxID := mb.Inbox
+			if msg.fromLocal == acctLocal {
+				mailboxID = mb.Sent
 			}
 
+			// Build the To header. For simplicity, address it to the next
+			// participant in the thread (or the first if sender is last).
+			toLocal := ""
+			for _, m := range conv.messages {
+				if m.fromLocal != msg.fromLocal {
+					toLocal = m.fromLocal
+					break
+				}
+			}
+			if toLocal == "" {
+				toLocal = conv.messages[0].fromLocal
+			}
+			toCol := findColleague(toLocal)
+			toEmail := colleagueEmail(toCol)
+
 			spec := emailSpec{
-				From:      from,
+				From:      fromEmail,
 				FromName:  fromName,
-				To:        to,
+				To:        toEmail,
 				Subject:   subject,
 				HTMLBody:  wrapHTML(msg.body),
 				Date:      msgDate,
-				MailboxID: mb.Inbox,
+				MailboxID: mailboxID,
 				IsRead:    true,
 				MessageID: messageID,
 			}
@@ -830,267 +771,349 @@ func generateThreadedConversations(acctEmail string, mb *mailboxes) []emailSpec 
 	return specs
 }
 
-func generateSentEmails(acctEmail string, mb *mailboxes) []emailSpec {
-	sentEmails := []struct {
-		to      string
-		toName  string
-		subject string
-		body    string
-	}{
-		{
-			to: "sarah@techcorp.io", toName: "Sarah Chen",
-			subject: "Re: Project Timeline Update",
-			body:    `<p>Hi Sarah,</p><p>Thanks for the update. The revised timeline looks realistic. I've adjusted our sprint plan accordingly.</p><p>Let's sync next Tuesday to review progress.</p><p>Best</p>`,
-		},
-		{
-			to: "team@acme-hosting.com", toName: "Team",
-			subject: "Deployment Checklist - Friday Release",
-			body:    `<p>Team,</p><p>Here's the checklist for Friday's release:</p><ol><li>Run full regression suite</li><li>Update API documentation</li><li>Notify beta customers</li><li>Stage the deployment at 2pm</li><li>Go live at 4pm (low traffic window)</li></ol><p>Please confirm you've reviewed your section.</p>`,
-		},
-		{
-			to: "hr@acme-hosting.com", toName: "HR Department",
-			subject: "PTO Request - March 28-30",
-			body:    `<p>Hi HR,</p><p>I'd like to request PTO for March 28-30 (Thursday-Saturday). I have no critical deliverables that week and have arranged coverage with the team.</p><p>Thanks!</p>`,
-		},
-		{
-			to: "priya@designstudio.co", toName: "Priya Patel",
-			subject: "Feedback on New Dashboard Designs",
-			body:    `<p>Hey Priya,</p><p>Reviewed the latest mockups. Overall they look great! A few suggestions:</p><ul><li>The sidebar feels a bit cramped on 1366px screens - can we test with narrower viewports?</li><li>Love the new color scheme for charts</li><li>Can we add a "last updated" timestamp to each widget?</li></ul><p>Happy to jump on a call to discuss.</p>`,
-		},
-		{
-			to: "vendor@supplies.com", toName: "Office Supplies Co",
-			subject: "Re: Order Confirmation #ORD-7823",
-			body:    `<p>Thanks for confirming the order. Please deliver to the main office reception, 3rd floor.</p><p>Delivery contact: Front desk, ext. 100.</p>`,
-		},
+// ---- Standalone internal emails (not threaded) ----
+
+func generateInternalSingles(acctEmail string, mb *mailboxes) []emailSpec {
+	acctLocal := strings.SplitN(acctEmail, "@", 2)[0]
+
+	type singleEmail struct {
+		fromLocal string
+		subject   string
+		body      string
+		isRead    bool
+		isFlagged bool
 	}
 
-	specs := make([]emailSpec, len(sentEmails))
-	for i, se := range sentEmails {
-		specs[i] = emailSpec{
-			From:      acctEmail,
-			FromName:  "",
-			To:        fmt.Sprintf("%s <%s>", se.toName, se.to),
-			Subject:   se.subject,
-			HTMLBody:  wrapHTML(se.body),
-			Date:      randomDate(15),
-			MailboxID: mb.Sent,
-			IsRead:    true,
+	emails := []singleEmail{
+		{"sarah.chen", "Quick sync about the deployment?",
+			`<p>Hey,</p><p>Can we hop on a quick call to discuss the deployment schedule for next week? I have some concerns about the database migration timing.</p><p>Free anytime this afternoon.</p><p>Sarah</p>`,
+			false, false},
+		{"marcus.johnson", "Code review feedback on PR #847",
+			`<p>Hi,</p><p>I've reviewed PR #847 and left some comments. The overall approach looks solid, but I think we should discuss the caching strategy before merging.</p><p>Main concerns:</p><ul><li>Cache invalidation timing might cause stale reads</li><li>The TTL of 5 minutes seems too aggressive for user profiles</li></ul><p>Want to jump on a call?</p><p>Marcus</p>`,
+			false, false},
+		{"priya.patel", "Design handoff ready",
+			`<p>Hi there!</p><p>The new dashboard mockups are finalized and ready for handoff. I've uploaded everything to Figma:</p><ul><li>Desktop layouts (1440px, 1920px)</li><li>Tablet responsive views</li><li>Component specifications</li></ul><p>Let me know if you want to walk through them together.</p><p>Priya</p>`,
+			false, false},
+		{"alex.rivera", "Staging environment issue",
+			`<p>Hey,</p><p>I noticed the staging environment is throwing 502 errors intermittently. I've checked the logs and it seems like a memory issue with the JMAP worker process.</p><p>Can you take a look when you get a chance? The error pattern starts around 10am when the batch jobs kick in.</p><p>Alex</p>`,
+			false, false},
+		{"emma.larsson", "Sprint retrospective action items",
+			`<p>Hi team,</p><p>Here are the action items from today's retro:</p><ol><li>Improve PR review turnaround time (target: &lt;24h)</li><li>Set up automated staging deploys via CI</li><li>Document the API versioning strategy</li></ol><p>I've created Jira tickets for each. Let's discuss priorities in our next standup.</p><p>Emma</p>`,
+			true, false},
+		{"info", "March All-Hands Meeting - Agenda",
+			`<p>Hi everyone,</p><p>Here's the agenda for this month's all-hands meeting (Friday 3pm):</p><ol><li>Q1 results overview (CEO)</li><li>Product roadmap update (Emma)</li><li>Engineering highlights (Sarah)</li><li>New hire introductions</li><li>Q&amp;A</li></ol><p>Please submit questions in advance via the #all-hands Slack channel.</p><p>Acme Info</p>`,
+			true, false},
+		{"support", "Updated support rotation for April",
+			`<p>Hi team,</p><p>The April on-call rotation is now published. Key changes:</p><ul><li>We're moving to 1-week rotations (from 2-week)</li><li>Added a secondary on-call role for backup</li><li>Weekend coverage now has a separate rotation</li></ul><p>Check the schedule in PagerDuty and swap shifts by March 28 if needed.</p><p>Acme Support</p>`,
+			true, false},
+		{"marcus.johnson", "Lunch today?",
+			`<p>Hey, want to grab lunch today? I was thinking the new ramen place on 5th street. Emma and Alex are coming too.</p><p>12:30 work for you?</p><p>Marcus</p>`,
+			false, false},
+		{"sarah.chen", "FYI: Production metrics dashboard",
+			`<p>Hey,</p><p>I set up a new Grafana dashboard for our production metrics. It includes:</p><ul><li>Request latency (p50, p95, p99)</li><li>Error rates by endpoint</li><li>Active connections</li><li>Queue depth</li></ul><p>Link: <a href="https://grafana.internal/d/prod-overview">Production Overview</a></p><p>Feedback welcome!</p><p>Sarah</p>`,
+			true, true},
+		{"priya.patel", "Brand guidelines updated",
+			`<p>Hi all,</p><p>I've updated our brand guidelines with the new color palette and typography. Key changes:</p><ul><li>Primary blue shifted slightly: #2563eb &rarr; #2557d6</li><li>New font stack: Inter for UI, Source Serif for marketing</li><li>Updated icon set (Lucide replacing Feather)</li></ul><p>Please use the updated Figma library going forward.</p><p>Priya</p>`,
+			true, false},
+		{"alex.rivera", "SSL certs expiring next week",
+			`<p>Heads up — the wildcard SSL cert for *.acme.customer.mhst.io expires next Thursday.</p><p>I've already submitted the renewal request. Auto-renewal failed because the DNS challenge record was stale. I've fixed the automation so this won't happen again.</p><p>No action needed from your side, just FYI.</p><p>Alex</p>`,
+			false, true},
+		{"emma.larsson", "User research insights - email compose flow",
+			`<p>Hi team,</p><p>Just wrapped up the user research sessions on the email compose flow. Key findings:</p><ol><li>Users want autocomplete for internal recipients (top request)</li><li>The attachment flow is confusing on mobile</li><li>Rich text formatting toolbar needs better discoverability</li><li>Users love the quick-reply feature</li></ol><p>Full report is in the Research folder on Notion. Let's discuss in next week's design review.</p><p>Emma</p>`,
+			false, false},
+		{"sarah.chen", "Important: Server credentials for staging",
+			`<p>Here are the updated credentials for the staging environment. Please store them securely.</p><p><strong>Host:</strong> staging.internal.acme.io<br><strong>Port:</strong> 5432<br><strong>Database:</strong> webmail_staging</p><p>These rotate every 30 days. Next rotation: April 15.</p><p>Sarah</p>`,
+			true, true},
+		{"marcus.johnson", "Architecture decision: JMAP as primary protocol",
+			`<p>Summary of today's architecture review:</p><p><strong>Decision:</strong> We'll go with JMAP as the primary protocol for the new webmail client.</p><p><strong>Rationale:</strong></p><ul><li>Better performance than IMAP for web clients</li><li>Built-in push support via EventSource</li><li>Cleaner API with proper state management</li><li>Easier to implement offline support</li></ul><p><strong>Timeline:</strong> MVP by end of Q2.</p><p>ADR document: <a href="https://notion.so/adr-003">ADR-003</a></p><p>Marcus</p>`,
+			true, true},
+		{"info", "Welcome Jordan Kim to the team!",
+			`<p>Hi everyone,</p><p>Please join me in welcoming <strong>Jordan Kim</strong> who starts next Monday as a Junior Frontend Engineer!</p><p>Jordan comes from a bootcamp background with strong React and TypeScript skills. They'll be joining Emma's product team.</p><p>Their buddy for the first month will be Priya. Please make them feel welcome!</p><p>Acme Info</p>`,
+			true, false},
+	}
+
+	var specs []emailSpec
+	for _, e := range emails {
+		if e.fromLocal == acctLocal {
+			continue // skip emails from self
 		}
+		fromCol := findColleague(e.fromLocal)
+		specs = append(specs, emailSpec{
+			From:      colleagueEmail(fromCol),
+			FromName:  fromCol.Name,
+			To:        acctEmail,
+			Subject:   e.subject,
+			HTMLBody:  wrapHTML(e.body),
+			Date:      randomDate(7),
+			MailboxID: mb.Inbox,
+			IsRead:    e.isRead,
+			IsFlagged: e.isFlagged,
+		})
 	}
 	return specs
 }
 
-func generateDraftEmails(acctEmail string, mb *mailboxes) []emailSpec {
-	drafts := []struct {
-		to      string
+// ---- Sent emails (from this account to colleagues) ----
+
+func generateSentEmails(acctEmail string, mb *mailboxes) []emailSpec {
+	acctLocal := strings.SplitN(acctEmail, "@", 2)[0]
+
+	sentEmails := []struct {
+		toLocal string
 		subject string
 		body    string
 	}{
-		{
-			to:      "team@acme-hosting.com",
-			subject: "RFC: New Caching Strategy",
-			body:    `<p>Team,</p><p>I've been thinking about our caching approach and wanted to propose some changes:</p><p><strong>Current issues:</strong></p><ul><li>Cache invalidation is inconsistent</li><li>TTLs are too aggressive for static content</li></ul><p><strong>Proposed changes:</strong></p><p>[TODO: flesh this out]</p>`,
-		},
-		{
-			to:      "manager@acme-hosting.com",
-			subject: "1:1 Agenda Items",
-			body:    `<p>Topics for our next 1:1:</p><ul><li>Career growth discussion</li><li>Team hiring priorities</li><li>Conference budget for Q2</li></ul>`,
-		},
-		{
-			to:      "",
-			subject: "Blog Post Draft - JMAP Migration Story",
-			body:    `<p><em>Draft - Work in Progress</em></p><h1>How We Migrated Our Email Platform to JMAP</h1><p>When we started evaluating email protocols for our next-generation webmail client, we knew IMAP wasn't going to cut it anymore...</p><p>[Continue writing]</p>`,
-		},
+		{"sarah.chen", "Re: Quick sync about the deployment?",
+			`<p>Hey Sarah,</p><p>Sure, I'm free after 2pm. Let's do a quick video call.</p><p>I also looked at the migration scripts — we should probably run them in a maintenance window. Saturday 6am?</p><p>Talk soon.</p>`},
+		{"marcus.johnson", "Re: Code review feedback on PR #847",
+			`<p>Thanks for the review, Marcus. Good catch on the TTL — I'll bump it to 15 minutes and add an invalidation hook for profile updates.</p><p>Updated the PR, mind taking another look?</p>`},
+		{"alex.rivera", "Deployment checklist for Friday",
+			`<p>Alex,</p><p>Here's the checklist for Friday's release:</p><ol><li>Run full regression suite</li><li>Update API documentation</li><li>Notify beta customers</li><li>Stage the deployment at 2pm</li><li>Go live at 4pm (low traffic window)</li></ol><p>Please confirm you've reviewed the infra section.</p>`},
+		{"priya.patel", "Feedback on dashboard designs",
+			`<p>Hey Priya,</p><p>Reviewed the latest mockups. Overall they look great! A few suggestions:</p><ul><li>The sidebar feels a bit cramped on 1366px screens</li><li>Love the new color scheme for charts</li><li>Can we add a "last updated" timestamp to each widget?</li></ul><p>Happy to jump on a call to discuss.</p>`},
+		{"emma.larsson", "Re: Sprint retrospective action items",
+			`<p>Thanks Emma. I'll take ownership of the API versioning documentation — should have a first draft by Wednesday.</p><p>For the PR review turnaround, maybe we should set up a Slack reminder in #engineering when PRs are pending for more than 12 hours?</p>`},
+		{"info", "Conference budget request for Q2",
+			`<p>Hi,</p><p>I'd like to request budget for attending GopherCon EU in June. Estimated costs:</p><ul><li>Conference ticket: $800</li><li>Travel: $500</li><li>Hotel (3 nights): $600</li></ul><p>I'm planning to give a talk on our JMAP migration if accepted. Happy to share learnings with the team after.</p><p>Thanks!</p>`},
 	}
 
-	specs := make([]emailSpec, len(drafts))
-	for i, d := range drafts {
-		specs[i] = emailSpec{
+	var specs []emailSpec
+	for _, se := range sentEmails {
+		if se.toLocal == acctLocal {
+			continue
+		}
+		toCol := findColleague(se.toLocal)
+		specs = append(specs, emailSpec{
 			From:      acctEmail,
 			FromName:  "",
-			To:        d.to,
+			To:        fmt.Sprintf("%s <%s>", toCol.Name, colleagueEmail(toCol)),
+			Subject:   se.subject,
+			HTMLBody:  wrapHTML(se.body),
+			Date:      randomDate(10),
+			MailboxID: mb.Sent,
+			IsRead:    true,
+		})
+	}
+	return specs
+}
+
+// ---- External emails (newsletters, notifications, etc.) ----
+
+func generateExternalEmails(acctEmail string, mb *mailboxes) []emailSpec {
+	externals := []struct {
+		from     sender
+		subject  string
+		body     string
+		isRead   bool
+		mailbox  string // "inbox", "junk", "trash"
+		isFlagged bool
+	}{
+		{sender{"Go Weekly", "newsletter@golangweekly.com"}, "Go Weekly #412 - Generics Deep Dive",
+			`<h2>Go Weekly</h2>
+<p>Your weekly dose of Go programming news and tutorials.</p>
+<p><strong>Featured Article:</strong> Understanding Go's new range-over-func feature and how it changes iteration patterns.</p>
+<ul><li>Optimizing memory allocations in hot paths</li><li>Building resilient microservices with Go</li><li>New testing patterns for table-driven tests</li></ul>`,
+			true, "inbox", false},
+		{sender{"GitHub", "noreply@github.com"}, "[acme/webmail] PR #892 merged: Add calendar integration",
+			`<p><strong>Pull request #892</strong> has been merged into <code>main</code>.</p>
+<p><strong>Add calendar integration</strong> by @sarah-chen</p>
+<p>+1,247 -89 across 23 files</p>
+<p>Reviewers: @marcus-j, @alex-r (approved)</p>`,
+			true, "inbox", false},
+		{sender{"Jira", "jira@atlassian.com"}, "[WEBMAIL-142] Launch checklist - assigned to you",
+			`<p><strong>WEBMAIL-142: Launch Checklist for Webmail v2</strong></p>
+<p>Priority: <span style="color: #d32f2f;">Critical</span><br>Sprint: Sprint 24<br>Due: March 31, 2026</p>
+<p>Checklist:<br>- [ ] Load testing complete<br>- [ ] Security audit passed<br>- [ ] Documentation updated<br>- [ ] Rollback plan documented</p>`,
+			false, "inbox", true},
+		{sender{"AWS", "no-reply@aws.amazon.com"}, "AWS Cost Alert: March spend approaching budget",
+			`<p><strong>AWS Cost Alert</strong></p>
+<p>Your account <code>acme-production</code> has reached 82% of the monthly budget.</p>
+<table style="border-collapse: collapse; width: 100%;"><tr style="background: #f3f4f6;"><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Service</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Cost</strong></td></tr>
+<tr><td style="padding: 8px; border: 1px solid #e5e7eb;">EC2</td><td style="padding: 8px; border: 1px solid #e5e7eb;">$2,847</td></tr>
+<tr><td style="padding: 8px; border: 1px solid #e5e7eb;">RDS</td><td style="padding: 8px; border: 1px solid #e5e7eb;">$1,234</td></tr>
+<tr><td style="padding: 8px; border: 1px solid #e5e7eb;">S3</td><td style="padding: 8px; border: 1px solid #e5e7eb;">$156</td></tr></table>`,
+			false, "inbox", false},
+		{sender{"The Pragmatic Engineer", "gergely@pragmaticengineer.com"}, "Compensation Trends in 2026",
+			`<h2>The Pragmatic Engineer</h2>
+<p>We surveyed 5,000 engineers across 40 countries. Here are the surprising results.</p>
+<p>Key takeaway: Remote roles are seeing <em>increased</em> compensation in specialized areas like platform engineering and ML infrastructure.</p>`,
+			true, "inbox", false},
+		{sender{"Billing", "billing@cloudservices.com"}, "Your Invoice #INV-2026-0342",
+			`<p>Dear Customer,</p>
+<p>Please find your invoice for the billing period March 1-31, 2026.</p>
+<p><strong>Total: $915.70</strong></p><p>Payment is due within 30 days.</p>`,
+			true, "inbox", false},
+		// Junk
+		{sender{"International Lottery Commission", "winner@lottery-intl.xyz"}, "CONGRATULATIONS! You've Won $5,000,000!!!",
+			`<p style="color: red; font-size: 18px;"><strong>YOU ARE A WINNER!!!</strong></p>
+<p>Your email was selected in our INTERNATIONAL MEGA LOTTERY DRAW. You have won <strong>$5,000,000.00 USD</strong>!!!</p>
+<p>To claim your prize, send your full name, address, and bank details IMMEDIATELY.</p>`,
+			false, "junk", false},
+		{sender{"Online Pharmacy", "deals@cheapmeds-online.ru"}, "70% OFF - Limited Time Offer",
+			`<p>BEST DEALS ONLINE - UP TO 70% OFF</p><p>Click here for amazing discounts!</p>
+<p>FREE SHIPPING on all orders over $50!</p>`,
+			false, "junk", false},
+		// Trash
+		{sender{"Example Service", "noreply@service.example.com"}, "Your password has been changed",
+			`<p>This is a confirmation that your password was successfully changed on March 10, 2026.</p>
+<p>If you didn't make this change, please contact support immediately.</p>`,
+			true, "trash", false},
+		{sender{"Old Newsletter", "newsletter@oldservice.com"}, "Weekly Update #283",
+			`<p>This week's update from Old Service...</p>
+<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>`,
+			true, "trash", false},
+	}
+
+	var specs []emailSpec
+	for _, e := range externals {
+		mailboxID := mb.Inbox
+		switch e.mailbox {
+		case "junk":
+			mailboxID = mb.Junk
+		case "trash":
+			mailboxID = mb.Trash
+		}
+		specs = append(specs, emailSpec{
+			From:      e.from.Email,
+			FromName:  e.from.Name,
+			To:        acctEmail,
+			Subject:   e.subject,
+			HTMLBody:  wrapHTML(e.body),
+			Date:      randomDate(14),
+			MailboxID: mailboxID,
+			IsRead:    e.isRead,
+			IsFlagged: e.isFlagged,
+		})
+	}
+	return specs
+}
+
+// ---- Attachment emails (from colleagues) ----
+
+func generateAttachmentEmails(acctEmail string, mb *mailboxes) []emailSpec {
+	acctLocal := strings.SplitN(acctEmail, "@", 2)[0]
+
+	attachmentEmails := []struct {
+		fromLocal   string
+		subject     string
+		body        string
+		attachments []attachmentSpec
+	}{
+		{"sarah.chen", "Q4 Budget Review - Final",
+			`<p>Hi,</p>
+<p>Please find attached the final Q4 budget review documents.</p>
+<p>Key highlights:</p>
+<ul><li>Total spend: $2.4M (5% under budget)</li><li>Infrastructure costs down 12% after cloud optimization</li><li>Headcount costs as projected</li></ul>
+<p>Let me know if you have questions before the board meeting.</p>
+<p>Sarah</p>`,
+			[]attachmentSpec{
+				{Filename: "Q4_Budget_2025.xlsx", ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
+				{Filename: "Budget_Summary.pdf", ContentType: "application/pdf"},
+			}},
+		{"priya.patel", "Design Mockups v3",
+			`<p>Hey team,</p>
+<p>Updated mockups incorporating last week's feedback:</p>
+<ul><li>Simplified navigation sidebar</li><li>New color palette for data visualizations</li><li>Mobile responsive layouts</li></ul>
+<p>The Figma file has all the components.</p>
+<p>Priya</p>`,
+			[]attachmentSpec{
+				{Filename: "Dashboard_Redesign_v3.png", ContentType: "image/png"},
+				{Filename: "Mobile_Views.png", ContentType: "image/png"},
+				{Filename: "Component_Library.fig", ContentType: "application/octet-stream"},
+			}},
+		{"marcus.johnson", "Meeting Notes - Sprint Retrospective",
+			`<p>Team,</p>
+<p>Notes from today's retro attached. Summary of action items:</p>
+<ol><li>Improve test coverage for auth module (assigned: Alex)</li><li>Set up automated deployment to staging (assigned: Marcus)</li><li>Document API versioning strategy (assigned: Sarah)</li></ol>
+<p>Great sprint everyone!</p>
+<p>Marcus</p>`,
+			[]attachmentSpec{
+				{Filename: "Sprint_23_Retro_Notes.md", ContentType: "text/markdown"},
+			}},
+		{"alex.rivera", "Infrastructure cost report",
+			`<p>Hey,</p>
+<p>Here's the monthly infrastructure cost report. We managed to cut costs by 12% this month thanks to the reserved instance purchases and right-sizing effort.</p>
+<p>See the attached spreadsheet for the full breakdown by service.</p>
+<p>Alex</p>`,
+			[]attachmentSpec{
+				{Filename: "Infra_Cost_Report_March_2026.xlsx", ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
+			}},
+		{"emma.larsson", "User Research Report - Q1",
+			`<p>Hi all,</p>
+<p>Attached is the Q1 user research report. We interviewed 24 users and identified 5 major pain points.</p>
+<p>Top finding: users want faster search and better keyboard shortcuts. Full details in the PDF.</p>
+<p>Emma</p>`,
+			[]attachmentSpec{
+				{Filename: "Q1_User_Research_Report.pdf", ContentType: "application/pdf"},
+				{Filename: "Interview_Notes_Raw.xlsx", ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
+			}},
+	}
+
+	var specs []emailSpec
+	for _, ae := range attachmentEmails {
+		if ae.fromLocal == acctLocal {
+			continue
+		}
+		fromCol := findColleague(ae.fromLocal)
+		specs = append(specs, emailSpec{
+			From:        colleagueEmail(fromCol),
+			FromName:    fromCol.Name,
+			To:          acctEmail,
+			Subject:     ae.subject,
+			HTMLBody:    wrapHTML(ae.body),
+			Date:        randomDate(20),
+			MailboxID:   mb.Inbox,
+			IsRead:      rand.Float32() < 0.6,
+			Attachments: ae.attachments,
+		})
+	}
+	return specs
+}
+
+// ---- Draft emails ----
+
+func generateDraftEmails(acctEmail string, mb *mailboxes) []emailSpec {
+	acctLocal := strings.SplitN(acctEmail, "@", 2)[0]
+
+	drafts := []struct {
+		toLocal string
+		subject string
+		body    string
+	}{
+		{"marcus.johnson", "RFC: New Caching Strategy",
+			`<p>Marcus,</p>
+<p>I've been thinking about our caching approach and wanted to propose some changes:</p>
+<p><strong>Current issues:</strong></p>
+<ul><li>Cache invalidation is inconsistent across services</li><li>TTLs are too aggressive for static content</li></ul>
+<p><strong>Proposed changes:</strong></p>
+<p>[TODO: flesh this out with benchmarks]</p>`},
+		{"sarah.chen", "1:1 Agenda Items",
+			`<p>Topics for our next 1:1:</p>
+<ul><li>Career growth discussion</li><li>Team hiring priorities for Q2</li><li>Conference budget for GopherCon EU</li></ul>`},
+		{"", "Blog Post Draft - JMAP Migration Story",
+			`<p><em>Draft - Work in Progress</em></p>
+<h1>How We Migrated Our Email Platform to JMAP</h1>
+<p>When we started evaluating email protocols for our next-generation webmail client, we knew IMAP wasn't going to cut it anymore...</p>
+<p>[Continue writing]</p>`},
+	}
+
+	var specs []emailSpec
+	for _, d := range drafts {
+		to := ""
+		if d.toLocal != "" && d.toLocal != acctLocal {
+			toCol := findColleague(d.toLocal)
+			to = fmt.Sprintf("%s <%s>", toCol.Name, colleagueEmail(toCol))
+		}
+		specs = append(specs, emailSpec{
+			From:      acctEmail,
+			FromName:  "",
+			To:        to,
 			Subject:   d.subject,
 			HTMLBody:  wrapHTML(d.body),
 			Date:      randomDate(5),
 			MailboxID: mb.Drafts,
 			IsRead:    true,
 			IsDraft:   true,
-		}
-	}
-	return specs
-}
-
-func generateJunkEmails(acctEmail string, mb *mailboxes) []emailSpec {
-	return []emailSpec{
-		{
-			From:     "winner@lottery-intl.xyz",
-			FromName: "International Lottery Commission",
-			To:       acctEmail,
-			Subject:  "CONGRATULATIONS! You've Won $5,000,000!!!",
-			HTMLBody: wrapHTML(`<p style="color: red; font-size: 18px;"><strong>YOU ARE A WINNER!!!</strong></p>
-<p>Dear Lucky Winner,</p>
-<p>Your email was selected in our INTERNATIONAL MEGA LOTTERY DRAW. You have won the sum of <strong>$5,000,000.00 USD</strong>!!!</p>
-<p>To claim your prize, send your full name, address, and bank details to our claims department IMMEDIATELY.</p>
-<p>ACT NOW - this offer expires in 24 hours!!!</p>
-<p><em>Dr. James Williams<br>Claims Director<br>International Lottery Commission</em></p>`),
-			Date:      randomDate(7),
-			MailboxID: mb.Junk,
-			IsRead:    false,
-		},
-		{
-			From:     "deals@cheapmeds-online.ru",
-			FromName: "Online Pharmacy",
-			To:       acctEmail,
-			Subject:  "70% OFF - Limited Time Offer on Premium Products",
-			HTMLBody: wrapHTML(`<p>BEST DEALS ONLINE - UP TO 70% OFF</p>
-<p>Click here for amazing discounts on thousands of products!</p>
-<p>FREE SHIPPING on all orders over $50!</p>
-<p>BUY NOW: <a href="https://example.com">www.totally-legit-deals.com</a></p>
-<p><small>To unsubscribe click <a href="https://example.com">here</a></small></p>`),
-			Date:      randomDate(3),
-			MailboxID: mb.Junk,
-			IsRead:    false,
-		},
-	}
-}
-
-func generateTrashEmails(acctEmail string, mb *mailboxes) []emailSpec {
-	return []emailSpec{
-		{
-			From:     "noreply@service.example.com",
-			FromName: "Example Service",
-			To:       acctEmail,
-			Subject:  "Your password has been changed",
-			HTMLBody: wrapHTML(`<p>Hi,</p><p>This is a confirmation that your password was successfully changed on March 10, 2026.</p><p>If you didn't make this change, please contact support immediately.</p>`),
-			Date:      randomDate(10),
-			MailboxID: mb.Trash,
-			IsRead:    true,
-		},
-		{
-			From:     "newsletter@oldservice.com",
-			FromName: "Old Newsletter",
-			To:       acctEmail,
-			Subject:  "Weekly Update #283",
-			HTMLBody: wrapHTML(`<p>This week's update from Old Service...</p><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>`),
-			Date:      randomDate(14),
-			MailboxID: mb.Trash,
-			IsRead:    true,
-		},
-	}
-}
-
-func generateStarredEmails(acctEmail string, mb *mailboxes) []emailSpec {
-	starred := []struct {
-		from    sender
-		subject string
-		body    string
-	}{
-		{
-			from:    sender{"Sarah Chen", "sarah@techcorp.io"},
-			subject: "Important: Server Credentials",
-			body:    `<p>Here are the credentials you requested for the staging environment. Please store them securely.</p><p><strong>Host:</strong> staging.internal.acme.io<br><strong>Port:</strong> 5432<br><strong>Database:</strong> webmail_staging</p><p>These rotate every 30 days.</p>`,
-		},
-		{
-			from:    sender{"David Kim", "david.kim@startuphq.com"},
-			subject: "Meeting Notes - Architecture Decision",
-			body:    `<p>Summary of today's architecture review:</p><p><strong>Decision:</strong> We'll go with JMAP as the primary protocol for the new webmail client.</p><p><strong>Rationale:</strong> Better performance, built-in push support, cleaner API than IMAP.</p><p><strong>Timeline:</strong> MVP by end of Q2.</p>`,
-		},
-		{
-			from:    sender{"Yuki Tanaka", "yuki@tokyodev.jp"},
-			subject: "Your Promotion Approval",
-			body:    `<p>Hi,</p><p>Great news! Your promotion to Senior Engineer has been approved, effective April 1. HR will follow up with the details.</p><p>Well deserved - congratulations!</p>`,
-		},
-		{
-			from:    sender{"Lin Wei", "lin.wei@shenzhenai.cn"},
-			subject: "Useful Resources - System Design",
-			body:    `<p>Hey, here are those system design resources I mentioned:</p><ul><li><a href="https://example.com">Designing Data-Intensive Applications</a></li><li><a href="https://example.com">System Design Interview guide</a></li><li><a href="https://example.com">Distributed Systems Patterns</a></li></ul><p>The first one is especially good for our current project.</p>`,
-		},
-		{
-			from:    sender{"Jira", "jira@atlassian.com"},
-			subject: "[WEBMAIL-142] Launch checklist - assigned to you",
-			body:    `<p><strong>WEBMAIL-142: Launch Checklist for Webmail v2</strong></p><p>Priority: <span style="color: #d32f2f;">Critical</span><br>Sprint: Sprint 24<br>Due: March 31, 2026</p><p>Checklist:<br>- [ ] Load testing complete<br>- [ ] Security audit passed<br>- [ ] Documentation updated<br>- [ ] Rollback plan documented</p>`,
-		},
-	}
-
-	specs := make([]emailSpec, len(starred))
-	for i, s := range starred {
-		specs[i] = emailSpec{
-			From:      s.from.Email,
-			FromName:  s.from.Name,
-			To:        acctEmail,
-			Subject:   s.subject,
-			HTMLBody:  wrapHTML(s.body),
-			Date:      randomDate(20),
-			MailboxID: mb.Inbox,
-			IsRead:    true,
-			IsFlagged: true,
-		}
-	}
-	return specs
-}
-
-func generateInternalEmails(acctEmail string, mb *mailboxes) []emailSpec {
-	// Extract domain from account email
-	parts := strings.SplitN(acctEmail, "@", 2)
-	if len(parts) < 2 {
-		return nil
-	}
-	domain := parts[1]
-
-	colleagues := []struct {
-		local   string
-		name    string
-		subject string
-		body    string
-	}{
-		{
-			local:   "sarah.chen",
-			name:    "Sarah Chen",
-			subject: "Quick sync about the deployment?",
-			body:    `<p>Hey,</p><p>Can we hop on a quick call to discuss the deployment schedule for next week? I have some concerns about the database migration timing.</p><p>Free anytime this afternoon.</p><p>Sarah</p>`,
-		},
-		{
-			local:   "marcus.johnson",
-			name:    "Marcus Johnson",
-			subject: "Code review feedback",
-			body:    `<p>Hi,</p><p>I've reviewed PR #847 and left some comments. The overall approach looks solid, but I think we should discuss the caching strategy before merging.</p><p>Want to jump on a call?</p><p>Marcus</p>`,
-		},
-		{
-			local:   "priya.patel",
-			name:    "Priya Patel",
-			subject: "Design handoff ready",
-			body:    `<p>Hi there!</p><p>The new dashboard mockups are finalized and ready for handoff. I've uploaded everything to Figma.</p><p>Let me know if you want to walk through them together — happy to do a quick video call.</p><p>Priya</p>`,
-		},
-		{
-			local:   "alex.rivera",
-			name:    "Alex Rivera",
-			subject: "Staging environment issue",
-			body:    `<p>Hey,</p><p>I noticed the staging environment is throwing 502 errors intermittently. I've checked the logs and it seems like a memory issue.</p><p>Can you take a look when you get a chance? Happy to screenshare if that helps.</p><p>Alex</p>`,
-		},
-		{
-			local:   "emma.larsson",
-			name:    "Emma Larsson",
-			subject: "Sprint retrospective notes",
-			body:    `<p>Hi team,</p><p>Here are the action items from today's retro:</p><ul><li>Improve PR review turnaround time</li><li>Set up automated staging deploys</li><li>Document the API versioning strategy</li></ul><p>Let's discuss priorities in our next standup.</p><p>Emma</p>`,
-		},
-	}
-
-	var specs []emailSpec
-	for _, c := range colleagues {
-		fromEmail := c.local + "@" + domain
-		// Don't send email from yourself to yourself
-		if fromEmail == acctEmail {
-			continue
-		}
-		specs = append(specs, emailSpec{
-			From:      fromEmail,
-			FromName:  c.name,
-			To:        acctEmail,
-			Subject:   c.subject,
-			HTMLBody:  wrapHTML(c.body),
-			Date:      randomDate(3),
-			MailboxID: mb.Inbox,
-			IsRead:    false,
 		})
 	}
 	return specs
@@ -1121,36 +1144,23 @@ func seedAccount(baseURL string, acct account, clean bool) error {
 	// Collect all emails
 	var allEmails []emailSpec
 
-	// 1. Welcome email
-	allEmails = append(allEmails, generateWelcomeEmail(acct.Email, mb))
+	// 1. Internal threaded conversations (the bulk — 5 threads, ~20 messages)
+	allEmails = append(allEmails, generateInternalThreads(acct.Email, mb)...)
 
-	// 2. Newsletter emails (10)
-	allEmails = append(allEmails, generateNewsletterEmails(acct.Email, mb)...)
+	// 2. Internal single emails (~15 messages from colleagues)
+	allEmails = append(allEmails, generateInternalSingles(acct.Email, mb)...)
 
-	// 3. Attachment emails (5)
-	allEmails = append(allEmails, generateAttachmentEmails(acct.Email, mb)...)
-
-	// 4. Threaded conversations (~18 messages from 5 threads)
-	threadEmails := generateThreadedConversations(acct.Email, mb)
-	allEmails = append(allEmails, threadEmails...)
-
-	// 5. Sent emails (5)
+	// 3. Sent emails to colleagues (~6)
 	allEmails = append(allEmails, generateSentEmails(acct.Email, mb)...)
 
-	// 6. Draft emails (3)
+	// 4. Attachment emails from colleagues (~5)
+	allEmails = append(allEmails, generateAttachmentEmails(acct.Email, mb)...)
+
+	// 5. Draft emails (~3)
 	allEmails = append(allEmails, generateDraftEmails(acct.Email, mb)...)
 
-	// 7. Junk emails (2)
-	allEmails = append(allEmails, generateJunkEmails(acct.Email, mb)...)
-
-	// 8. Trash emails (2)
-	allEmails = append(allEmails, generateTrashEmails(acct.Email, mb)...)
-
-	// 9. Starred emails (5)
-	allEmails = append(allEmails, generateStarredEmails(acct.Email, mb)...)
-
-	// 10. Internal emails from same-domain colleagues (for Wave call testing)
-	allEmails = append(allEmails, generateInternalEmails(acct.Email, mb)...)
+	// 6. External emails (newsletters, notifications, junk, trash — ~10)
+	allEmails = append(allEmails, generateExternalEmails(acct.Email, mb)...)
 
 	// Import all emails
 	var unread, starred int
@@ -1166,11 +1176,11 @@ func seedAccount(baseURL string, acct account, clean bool) error {
 		}
 	}
 
-	fmt.Printf("  Created %d emails (%d unread, %d starred, 5 threads)\n", len(allEmails), unread, starred)
+	fmt.Printf("  Created %d emails (%d unread, %d starred)\n", len(allEmails), unread, starred)
 
 	// --- Contacts ---
 	if c.hasCapability("urn:ietf:params:jmap:contacts") {
-		contactCount, err := seedContacts(c)
+		contactCount, err := seedContacts(c, acct.Email)
 		if err != nil {
 			fmt.Printf("  Contacts: skipped (error: %v)\n", err)
 		} else {
@@ -1182,7 +1192,7 @@ func seedAccount(baseURL string, acct account, clean bool) error {
 
 	// --- Calendar ---
 	if c.hasCapability("urn:ietf:params:jmap:calendars") {
-		eventCount, err := seedCalendarEvents(c)
+		eventCount, err := seedCalendarEvents(c, acct.Email)
 		if err != nil {
 			fmt.Printf("  Calendar: skipped (error: %v)\n", err)
 		} else {
@@ -1240,55 +1250,79 @@ func getDefaultAddressBookID(c *client) (string, error) {
 	return "", fmt.Errorf("no address book found")
 }
 
-func seedContacts(c *client) (int, error) {
-	// Get the default address book ID so contacts are visible in the webmail.
+func seedContacts(c *client, acctEmail string) (int, error) {
 	addressBookID, err := getDefaultAddressBookID(c)
 	if err != nil {
 		return 0, fmt.Errorf("getting default address book: %w", err)
 	}
 
+	acctLocal := strings.SplitN(acctEmail, "@", 2)[0]
+
 	type contactDef struct {
-		fullName     string
-		emails       []string
-		phone        string
-		org          string
-		title        string
-		address      string
-		notes        string
+		fullName string
+		emails   []string
+		phone    string
+		org      string
+		title    string
+		notes    string
 	}
 
-	contacts := []contactDef{
-		{"Sarah Chen", []string{"sarah@techcorp.io", "sarah.chen@gmail.com"}, "+1-415-555-0101", "TechCorp", "VP of Engineering", "123 Market St, San Francisco, CA 94105", "Met at KubeCon 2025"},
-		{"Marcus Johnson", []string{"marcus.johnson@innovatelab.com"}, "+1-212-555-0102", "InnovateLab", "Senior Developer", "456 Broadway, New York, NY 10013", ""},
-		{"Priya Patel", []string{"priya@designstudio.co"}, "+44-20-7946-0103", "Design Studio", "Lead Designer", "10 Downing St, London, UK", "Freelance designer, great work on dashboards"},
-		{"Alex Rivera", []string{"alex.rivera@cloudops.net", "alex@personal.net"}, "+1-650-555-0104", "CloudOps", "DevOps Lead", "", ""},
-		{"Emma Larsson", []string{"emma.larsson@nordictech.se"}, "+46-8-555-0105", "NordicTech", "Product Manager", "Storgatan 1, Stockholm, Sweden", "Speaks Swedish, English, German"},
-		{"Yuki Tanaka", []string{"yuki@tokyodev.jp"}, "+81-3-5555-0106", "TokyoDev", "CTO", "1-1 Shibuya, Tokyo, Japan", ""},
-		{"David Kim", []string{"david.kim@startuphq.com"}, "+1-310-555-0107", "StartupHQ", "CEO", "789 Wilshire Blvd, Los Angeles, CA 90017", "YC W24 batch"},
-		{"Fatima Al-Hassan", []string{"fatima@menadigital.ae"}, "+971-4-555-0108", "MENA Digital", "Regional Director", "DIFC, Dubai, UAE", ""},
-		{"James O'Brien", []string{"james@dublinsoft.ie"}, "+353-1-555-0109", "Dublin Software", "Solutions Architect", "St Stephen's Green, Dublin, Ireland", ""},
-		{"Lin Wei", []string{"lin.wei@shenzhenai.cn"}, "+86-755-555-0110", "Shenzhen AI", "ML Engineer", "Nanshan District, Shenzhen, China", "PhD from Tsinghua"},
-		{"Maria Garcia", []string{"maria@techlatam.mx"}, "+52-55-555-0111", "TechLatam", "Engineering Manager", "Reforma 222, Mexico City, Mexico", ""},
-		{"Oleksandr Kovalenko", []string{"oleks@kyivcode.ua"}, "+380-44-555-0112", "KyivCode", "Backend Developer", "", "Go and Rust expert"},
-		{"Aisha Okafor", []string{"aisha@lagostech.ng"}, "+234-1-555-0113", "LagosTech", "Data Scientist", "Victoria Island, Lagos, Nigeria", ""},
-		{"Pierre Dubois", []string{"pierre@parisdev.fr", "p.dubois@personal.fr"}, "+33-1-555-0114", "ParisDev", "Frontend Lead", "Rue de Rivoli, Paris, France", "Vue.js contributor"},
-		{"Raj Krishnan", []string{"raj@bangaloresoft.in"}, "+91-80-555-0115", "BangaloreSoft", "Tech Lead", "Whitefield, Bangalore, India", "AWS certified"},
-		{"Sophie Mueller", []string{"sophie@berlintech.de"}, "+49-30-555-0116", "BerlinTech", "QA Lead", "Friedrichstr, Berlin, Germany", ""},
-		{"Carlos Mendez", []string{"carlos@saotechworks.br"}, "+55-11-555-0117", "SaoTechWorks", "Full Stack Developer", "", "Organizes local meetups"},
-		{"Nadia Petrov", []string{"nadia@moscowdev.ru"}, "+7-495-555-0118", "MoscowDev", "Security Engineer", "", ""},
-		{"Hassan Ali", []string{"hassan@cairotech.eg"}, "+20-2-555-0119", "CairoTech", "Mobile Developer", "Zamalek, Cairo, Egypt", "Flutter specialist"},
-		{"Ingrid Johansson", []string{"ingrid@osloinnovate.no"}, "+47-22-555-0120", "Oslo Innovate", "UX Researcher", "Karl Johans gate, Oslo, Norway", ""},
-		{"Chen Wei Ming", []string{"weiming@shanghaistartup.cn"}, "+86-21-555-0121", "Shanghai Startup", "Co-founder", "", ""},
-		{"Ana Popescu", []string{"ana@bucharestdev.ro"}, "+40-21-555-0122", "BucharestDev", "Database Admin", "", "PostgreSQL expert"},
-		{"Tom Wilson", []string{"tom.wilson@acme-hosting.com"}, "+1-800-555-0123", "Acme Hosting", "Support Manager", "123 Cloud St, San Francisco, CA", "Internal contact"},
-		{"Lisa Park", []string{"lisa.park@acme-hosting.com"}, "+1-800-555-0124", "Acme Hosting", "HR Director", "123 Cloud St, San Francisco, CA", "Internal contact"},
-		{"Mike Thompson", []string{"mike@freelance.dev"}, "+1-503-555-0125", "", "Freelance Consultant", "", "Available for contract work"},
-		{"Svetlana Ivanova", []string{"svetlana@spbtech.ru"}, "+7-812-555-0126", "SPB Tech", "Project Manager", "", "PMP certified"},
-		{"Juan Rodriguez", []string{"juan@buenosdev.ar"}, "+54-11-555-0127", "BuenosDev", "DevRel", "", "Conference speaker"},
-		{"Akiko Sato", []string{"akiko@osakadata.jp"}, "+81-6-5555-0128", "OsakaData", "Data Engineer", "Umeda, Osaka, Japan", "Apache Spark contributor"},
-		{"Robert van der Berg", []string{"robert@amsterdamcloud.nl"}, "+31-20-555-0129", "Amsterdam Cloud", "Cloud Architect", "Keizersgracht, Amsterdam, Netherlands", ""},
-		{"Grace Mwangi", []string{"grace@nairobitech.ke"}, "+254-20-555-0130", "NairobiTech", "iOS Developer", "Westlands, Nairobi, Kenya", "Swift and SwiftUI"},
+	var contacts []contactDef
+
+	// Internal colleagues (all acme accounts except self)
+	internalContacts := []struct {
+		local string
+		name  string
+		title string
+		phone string
+	}{
+		{"info", "Acme Info", "Company Announcements", "+1-800-555-0100"},
+		{"support", "Acme Support", "Customer Support", "+1-800-555-0101"},
+		{"sarah.chen", "Sarah Chen", "VP of Engineering", "+1-415-555-0102"},
+		{"marcus.johnson", "Marcus Johnson", "Senior Backend Engineer", "+1-212-555-0103"},
+		{"priya.patel", "Priya Patel", "Lead Designer", "+1-650-555-0104"},
+		{"alex.rivera", "Alex Rivera", "DevOps Lead", "+1-650-555-0105"},
+		{"emma.larsson", "Emma Larsson", "Product Manager", "+46-8-555-0106"},
 	}
+
+	for _, ic := range internalContacts {
+		if ic.local == acctLocal {
+			continue
+		}
+		contacts = append(contacts, contactDef{
+			fullName: ic.name,
+			emails:   []string{ic.local + "@" + domain},
+			phone:    ic.phone,
+			org:      "Acme",
+			title:    ic.title,
+			notes:    "Internal colleague",
+		})
+	}
+
+	// External contacts (~20)
+	externalContacts := []contactDef{
+		{"Maria Garcia", []string{"maria@techlatam.mx"}, "+52-55-555-0111", "TechLatam", "Engineering Manager", ""},
+		{"Oleksandr Kovalenko", []string{"oleks@kyivcode.ua"}, "+380-44-555-0112", "KyivCode", "Backend Developer", "Go and Rust expert"},
+		{"Aisha Okafor", []string{"aisha@lagostech.ng"}, "+234-1-555-0113", "LagosTech", "Data Scientist", ""},
+		{"Pierre Dubois", []string{"pierre@parisdev.fr", "p.dubois@personal.fr"}, "+33-1-555-0114", "ParisDev", "Frontend Lead", "Vue.js contributor"},
+		{"Raj Krishnan", []string{"raj@bangaloresoft.in"}, "+91-80-555-0115", "BangaloreSoft", "Tech Lead", "AWS certified"},
+		{"Sophie Mueller", []string{"sophie@berlintech.de"}, "+49-30-555-0116", "BerlinTech", "QA Lead", ""},
+		{"Carlos Mendez", []string{"carlos@saotechworks.br"}, "+55-11-555-0117", "SaoTechWorks", "Full Stack Developer", "Organizes local meetups"},
+		{"Yuki Tanaka", []string{"yuki@tokyodev.jp"}, "+81-3-5555-0106", "TokyoDev", "CTO", ""},
+		{"David Kim", []string{"david.kim@startuphq.com"}, "+1-310-555-0107", "StartupHQ", "CEO", "YC W24 batch"},
+		{"Fatima Al-Hassan", []string{"fatima@menadigital.ae"}, "+971-4-555-0108", "MENA Digital", "Regional Director", ""},
+		{"James O'Brien", []string{"james@dublinsoft.ie"}, "+353-1-555-0109", "Dublin Software", "Solutions Architect", ""},
+		{"Lin Wei", []string{"lin.wei@shenzhenai.cn"}, "+86-755-555-0110", "Shenzhen AI", "ML Engineer", "PhD from Tsinghua"},
+		{"Hassan Ali", []string{"hassan@cairotech.eg"}, "+20-2-555-0119", "CairoTech", "Mobile Developer", "Flutter specialist"},
+		{"Ingrid Johansson", []string{"ingrid@osloinnovate.no"}, "+47-22-555-0120", "Oslo Innovate", "UX Researcher", ""},
+		{"Chen Wei Ming", []string{"weiming@shanghaistartup.cn"}, "+86-21-555-0121", "Shanghai Startup", "Co-founder", ""},
+		{"Ana Popescu", []string{"ana@bucharestdev.ro"}, "+40-21-555-0122", "BucharestDev", "Database Admin", "PostgreSQL expert"},
+		{"Tom Wilson", []string{"tom.wilson@partner-corp.com"}, "+1-800-555-0123", "Partner Corp", "Account Manager", "Key partner contact"},
+		{"Lisa Park", []string{"lisa.park@recruiter.io"}, "+1-800-555-0124", "TalentSearch", "Senior Recruiter", ""},
+		{"Mike Thompson", []string{"mike@freelance.dev"}, "+1-503-555-0125", "", "Freelance Consultant", "Available for contract work"},
+		{"Grace Mwangi", []string{"grace@nairobitech.ke"}, "+254-20-555-0130", "NairobiTech", "iOS Developer", "Swift and SwiftUI"},
+	}
+	contacts = append(contacts, externalContacts...)
 
 	create := map[string]interface{}{}
 	for i, ct := range contacts {
@@ -1316,7 +1350,7 @@ func seedContacts(c *client) (int, error) {
 				label = "personal"
 			}
 			emails[fmt.Sprintf("e%d", j)] = map[string]interface{}{
-				"address": email,
+				"address":  email,
 				"contexts": map[string]bool{label: true},
 			}
 		}
@@ -1363,7 +1397,7 @@ func seedContacts(c *client) (int, error) {
 		create[fmt.Sprintf("c%d", i)] = card
 	}
 
-	// Split into batches of 10 to avoid oversized requests
+	// Split into batches of 10
 	keys := make([]string, 0, len(create))
 	for k := range create {
 		keys = append(keys, k)
@@ -1401,7 +1435,36 @@ func seedContacts(c *client) (int, error) {
 
 // --- Calendar ---
 
-func seedCalendarEvents(c *client) (int, error) {
+func mondayOfCurrentWeek() time.Time {
+	now := time.Now()
+	monday := now
+	for monday.Weekday() != time.Monday {
+		monday = monday.AddDate(0, 0, -1)
+	}
+	return time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, now.Location())
+}
+
+// participantsFromLocals builds a JMAP participants map from a list of local parts.
+// The first local in the list is the organizer.
+func participantsFromLocals(locals []string) map[string]interface{} {
+	participants := map[string]interface{}{}
+	for i, local := range locals {
+		col := findColleague(local)
+		roles := map[string]bool{"attendee": true}
+		if i == 0 {
+			roles["owner"] = true
+		}
+		participants[fmt.Sprintf("p%d", i)] = map[string]interface{}{
+			"name":  col.Name,
+			"email": colleagueEmail(col),
+			"kind":  "individual",
+			"roles": roles,
+		}
+	}
+	return participants
+}
+
+func seedCalendarEvents(c *client, acctEmail string) (int, error) {
 	// First, get the default calendar
 	resp, err := c.jmapCall(jmapRequest{
 		Using: []string{"urn:ietf:params:jmap:calendars"},
@@ -1441,124 +1504,182 @@ func seedCalendarEvents(c *client) (int, error) {
 		return 0, fmt.Errorf("no calendar found")
 	}
 
-	now := time.Now()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	monday := mondayOfCurrentWeek()
 
 	events := map[string]interface{}{}
+	eventIdx := 0
 
-	// Daily standup - recurring weekdays at 9:30am for 2 weeks
-	events["standup"] = map[string]interface{}{
-		"calendarIds": map[string]bool{calendarID: true},
-		"title":       "Daily Standup",
-		"description": "Quick sync on progress, blockers, and plans for the day.",
-		"start":       today.Add(9*time.Hour + 30*time.Minute).Format("2006-01-02T15:04:05"),
-		"duration":    "PT15M",
-		"timeZone":    "Europe/Stockholm",
-		"recurrenceRules": []map[string]interface{}{
-			{
-				"frequency": "weekly",
-				"byDay":     []map[string]interface{}{{"day": "mo"}, {"day": "tu"}, {"day": "we"}, {"day": "th"}, {"day": "fr"}},
-				"count":     10,
-			},
-		},
-		"status": "confirmed",
-	}
-
-	// One-off meetings
-	oneOffs := []struct {
-		title    string
-		desc     string
-		dayOff   int
-		hour     int
-		min      int
-		durMins  int
-	}{
-		{"Design Review", "Review the latest UI mockups and discuss feedback from user testing.", 1, 14, 0, 60},
-		{"Sprint Planning", "Plan stories and tasks for Sprint 25. Bring your estimates.", 2, 10, 0, 90},
-		{"1:1 with Manager", "Weekly check-in. Topics: career growth, project updates, team feedback.", 3, 11, 0, 30},
-		{"Architecture Review", "Discuss the proposed microservices migration and data layer changes.", 4, 15, 30, 60},
-		{"Customer Demo", "Demo the new webmail features to the Acme Corp team.", 5, 13, 0, 45},
-		{"Tech Talk: JMAP Protocol", "Internal presentation on JMAP and how it compares to IMAP.", 7, 16, 0, 60},
-		{"Team Retrospective", "Sprint retrospective - what went well, what to improve.", 8, 14, 30, 60},
-		{"Budget Planning Meeting", "Q2 budget review with finance team.", 9, 10, 0, 60},
-		{"Pair Programming Session", "Pair on the email threading implementation with Lin.", 10, 14, 0, 120},
-		{"Product Roadmap Review", "Review H2 2026 product roadmap with stakeholders.", 12, 11, 0, 90},
-	}
-
-	for i, m := range oneOffs {
-		start := today.AddDate(0, 0, m.dayOff).Add(time.Duration(m.hour)*time.Hour + time.Duration(m.min)*time.Minute)
-		events[fmt.Sprintf("meeting%d", i)] = map[string]interface{}{
+	addEvent := func(key string, title, description, duration string, start time.Time, participants map[string]interface{}, showWithoutTime bool) {
+		evt := map[string]interface{}{
 			"calendarIds": map[string]bool{calendarID: true},
-			"title":       m.title,
-			"description": m.desc,
+			"title":       title,
+			"description": description,
 			"start":       start.Format("2006-01-02T15:04:05"),
-			"duration":    fmt.Sprintf("PT%dM", m.durMins),
+			"duration":    duration,
 			"timeZone":    "Europe/Stockholm",
 			"status":      "confirmed",
 		}
+		if participants != nil {
+			evt["participants"] = participants
+		}
+		if showWithoutTime {
+			evt["showWithoutTime"] = true
+		}
+		events[key] = evt
+		eventIdx++
 	}
 
-	// All-day events
-	events["offsite"] = map[string]interface{}{
-		"calendarIds": map[string]bool{calendarID: true},
-		"title":       "Company Offsite",
-		"description": "Annual company offsite at Grand Hotel. Team building, strategy sessions, and dinner.",
-		"start":       today.AddDate(0, 0, 11).Format("2006-01-02T00:00:00"),
-		"duration":    "P2D",
-		"timeZone":    "Europe/Stockholm",
-		"showWithoutTime": true,
-		"status":      "confirmed",
-	}
+	// ==================== CURRENT WEEK (Mon-Fri) ====================
 
-	events["holiday"] = map[string]interface{}{
-		"calendarIds": map[string]bool{calendarID: true},
-		"title":       "Public Holiday - Good Friday",
-		"description": "Office closed.",
-		"start":       today.AddDate(0, 0, 14).Format("2006-01-02T00:00:00"),
-		"duration":    "P1D",
-		"timeZone":    "Europe/Stockholm",
-		"showWithoutTime": true,
-		"status":      "confirmed",
-	}
+	// --- Monday ---
+	// 9:00 Daily Standup (15min) [wave-meeting]
+	addEvent("mon-standup", "Daily Standup",
+		"Quick sync on progress, blockers, and plans for the day.\n\n[wave-meeting]",
+		"PT15M", monday.Add(9*time.Hour),
+		participantsFromLocals([]string{"sarah.chen", "marcus.johnson", "alex.rivera", "emma.larsson"}), false)
 
-	// Event with attendees
-	events["teamlunch"] = map[string]interface{}{
-		"calendarIds": map[string]bool{calendarID: true},
-		"title":       "Team Lunch",
-		"description": "Monthly team lunch at the Italian place.",
-		"start":       today.AddDate(0, 0, 6).Add(12 * time.Hour).Format("2006-01-02T15:04:05"),
-		"duration":    "PT90M",
-		"timeZone":    "Europe/Stockholm",
-		"status":      "confirmed",
-		"participants": map[string]interface{}{
-			"p1": map[string]interface{}{"name": "Sarah Chen", "email": "sarah@techcorp.io", "kind": "individual", "roles": map[string]bool{"attendee": true}},
-			"p2": map[string]interface{}{"name": "Marcus Johnson", "email": "marcus.johnson@innovatelab.com", "kind": "individual", "roles": map[string]bool{"attendee": true}},
-			"p3": map[string]interface{}{"name": "Priya Patel", "email": "priya@designstudio.co", "kind": "individual", "roles": map[string]bool{"attendee": true}},
-			"p4": map[string]interface{}{"name": "Alex Rivera", "email": "alex.rivera@cloudops.net", "kind": "individual", "roles": map[string]bool{"attendee": true}},
-		},
-	}
+	// 10:00 Sprint Planning (1h)
+	addEvent("mon-sprint", "Sprint Planning",
+		"Plan stories and tasks for Sprint 25. Bring your estimates and priorities.",
+		"PT1H", monday.Add(10*time.Hour),
+		participantsFromLocals([]string{"emma.larsson", "sarah.chen", "marcus.johnson", "priya.patel"}), false)
 
-	// Yesterday event (past)
-	events["yesterday"] = map[string]interface{}{
-		"calendarIds": map[string]bool{calendarID: true},
-		"title":       "Code Review Session",
-		"description": "Review PRs #841, #843, #845 before merge.",
-		"start":       today.AddDate(0, 0, -1).Add(15 * time.Hour).Format("2006-01-02T15:04:05"),
-		"duration":    "PT60M",
-		"timeZone":    "Europe/Stockholm",
-		"status":      "confirmed",
-	}
+	// 14:00 Design Review (45min)
+	addEvent("mon-design", "Design Review",
+		"Review the latest UI mockups and discuss feedback from user testing.",
+		"PT45M", monday.Add(14*time.Hour),
+		participantsFromLocals([]string{"priya.patel", "emma.larsson", "sarah.chen"}), false)
 
-	// Earlier today
-	events["earlier"] = map[string]interface{}{
-		"calendarIds": map[string]bool{calendarID: true},
-		"title":       "Morning Coffee Chat",
-		"description": "Informal catch-up with the remote team.",
-		"start":       today.Add(8 * time.Hour).Format("2006-01-02T15:04:05"),
-		"duration":    "PT30M",
-		"timeZone":    "Europe/Stockholm",
-		"status":      "confirmed",
-	}
+	// --- Tuesday ---
+	tue := monday.AddDate(0, 0, 1)
+
+	// 9:00 Standup [wave-meeting]
+	addEvent("tue-standup", "Daily Standup",
+		"Quick sync on progress, blockers, and plans for the day.\n\n[wave-meeting]",
+		"PT15M", tue.Add(9*time.Hour),
+		participantsFromLocals([]string{"sarah.chen", "marcus.johnson", "alex.rivera", "emma.larsson"}), false)
+
+	// 10:30 1:1 with Manager (30min) [wave-meeting]
+	addEvent("tue-1on1", "1:1 with Manager",
+		"Weekly check-in. Topics: career growth, project updates, team feedback.\n\n[wave-meeting]",
+		"PT30M", tue.Add(10*time.Hour+30*time.Minute),
+		participantsFromLocals([]string{"sarah.chen", "marcus.johnson"}), false)
+
+	// 13:00 Architecture Review (1h)
+	addEvent("tue-arch", "Architecture Review",
+		"Discuss the proposed API v3 migration and data layer changes.",
+		"PT1H", tue.Add(13*time.Hour),
+		participantsFromLocals([]string{"marcus.johnson", "sarah.chen", "alex.rivera"}), false)
+
+	// 15:00 Tech Talk (45min) [wave-meeting]
+	addEvent("tue-techtalk", "Tech Talk: JMAP Protocol Deep Dive",
+		"Internal presentation on JMAP and how it compares to IMAP. Presented by Marcus.\n\n[wave-meeting]",
+		"PT45M", tue.Add(15*time.Hour),
+		participantsFromLocals([]string{"marcus.johnson", "sarah.chen", "alex.rivera", "priya.patel"}), false)
+
+	// --- Wednesday ---
+	wed := monday.AddDate(0, 0, 2)
+
+	// 9:00 Standup [wave-meeting]
+	addEvent("wed-standup", "Daily Standup",
+		"Quick sync on progress, blockers, and plans for the day.\n\n[wave-meeting]",
+		"PT15M", wed.Add(9*time.Hour),
+		participantsFromLocals([]string{"sarah.chen", "marcus.johnson", "alex.rivera", "emma.larsson"}), false)
+
+	// 11:00 Customer Demo (1h) [wave-meeting]
+	addEvent("wed-demo", "Customer Demo - Northwind Corp",
+		"Demo the new webmail features to the Northwind Corp team. Prepare the staging environment.\n\n[wave-meeting]",
+		"PT1H", wed.Add(11*time.Hour),
+		participantsFromLocals([]string{"emma.larsson", "priya.patel", "marcus.johnson"}), false)
+
+	// 14:00 Pair Programming (2h)
+	addEvent("wed-pair", "Pair Programming: Email Threading",
+		"Pair on the email threading implementation. Focus on JMAP conversation grouping.",
+		"PT2H", wed.Add(14*time.Hour),
+		participantsFromLocals([]string{"marcus.johnson", "alex.rivera"}), false)
+
+	// --- Thursday ---
+	thu := monday.AddDate(0, 0, 3)
+
+	// 9:00 Standup [wave-meeting]
+	addEvent("thu-standup", "Daily Standup",
+		"Quick sync on progress, blockers, and plans for the day.\n\n[wave-meeting]",
+		"PT15M", thu.Add(9*time.Hour),
+		participantsFromLocals([]string{"sarah.chen", "marcus.johnson", "alex.rivera", "emma.larsson"}), false)
+
+	// 10:00 Retrospective (1h)
+	addEvent("thu-retro", "Sprint Retrospective",
+		"Sprint retrospective - what went well, what to improve, action items.",
+		"PT1H", thu.Add(10*time.Hour),
+		participantsFromLocals([]string{"emma.larsson", "sarah.chen", "marcus.johnson", "priya.patel"}), false)
+
+	// 13:30 Budget Planning (1h)
+	addEvent("thu-budget", "Budget Planning - Q2",
+		"Q2 budget review with finance. Bring your team's resource requests.",
+		"PT1H", thu.Add(13*time.Hour+30*time.Minute),
+		participantsFromLocals([]string{"sarah.chen", "emma.larsson"}), false)
+
+	// 16:00 Team Social (30min)
+	addEvent("thu-social", "Team Social",
+		"Casual catch-up. Bring your beverage of choice!",
+		"PT30M", thu.Add(16*time.Hour),
+		participantsFromLocals([]string{"emma.larsson", "sarah.chen", "marcus.johnson", "priya.patel"}), false)
+
+	// --- Friday ---
+	fri := monday.AddDate(0, 0, 4)
+
+	// 9:00 Standup [wave-meeting]
+	addEvent("fri-standup", "Daily Standup",
+		"Quick sync on progress, blockers, and plans for the day.\n\n[wave-meeting]",
+		"PT15M", fri.Add(9*time.Hour),
+		participantsFromLocals([]string{"sarah.chen", "marcus.johnson", "alex.rivera", "emma.larsson"}), false)
+
+	// 10:00 Roadmap Review (1.5h)
+	addEvent("fri-roadmap", "Product Roadmap Review - H2 2026",
+		"Review H2 2026 product roadmap with stakeholders. Come prepared with your team's priorities.",
+		"PT1H30M", fri.Add(10*time.Hour),
+		participantsFromLocals([]string{"emma.larsson", "sarah.chen", "marcus.johnson", "priya.patel"}), false)
+
+	// 14:00 Friday Wrap-up (30min)
+	addEvent("fri-wrapup", "Friday Wrap-up",
+		"End-of-week sync. Share wins, review next week's plan.",
+		"PT30M", fri.Add(14*time.Hour),
+		participantsFromLocals([]string{"sarah.chen", "marcus.johnson", "alex.rivera"}), false)
+
+	// ==================== REST OF MARCH (scattered events) ====================
+
+	// Mar 28-29 (Saturday-Sunday): Company Offsite (all-day)
+	sat := monday.AddDate(0, 0, 5)
+	addEvent("offsite", "Company Offsite",
+		"Annual company offsite at Grand Hotel. Team building, strategy sessions, and dinner.",
+		"P2D", sat,
+		participantsFromLocals([]string{"sarah.chen", "marcus.johnson", "emma.larsson", "priya.patel"}), true)
+
+	// Mar 30 (Monday next week): Morning Coffee Chat + Project Kickoff
+	nextMon := monday.AddDate(0, 0, 7)
+
+	addEvent("next-coffee", "Morning Coffee Chat",
+		"Informal catch-up with the remote team. No agenda, just vibes.",
+		"PT30M", nextMon.Add(9*time.Hour),
+		participantsFromLocals([]string{"emma.larsson", "alex.rivera", "priya.patel"}), false)
+
+	addEvent("next-kickoff", "Project Kickoff: Notifications Revamp",
+		"Kick off the notifications revamp project. Review scope, timeline, and team assignments.",
+		"PT1H", nextMon.Add(14*time.Hour),
+		participantsFromLocals([]string{"sarah.chen", "marcus.johnson", "priya.patel", "emma.larsson"}), false)
+
+	// Mar 31 (Tuesday next week): Board Preparation + Executive Lunch
+	nextTue := monday.AddDate(0, 0, 8)
+
+	addEvent("next-board", "Board Preparation",
+		"Prepare materials and talking points for the board meeting next week.",
+		"PT2H", nextTue.Add(10*time.Hour),
+		participantsFromLocals([]string{"sarah.chen", "emma.larsson"}), false)
+
+	addEvent("next-lunch", "Executive Lunch",
+		"Monthly executive team lunch at the Italian restaurant.",
+		"PT1H", nextTue.Add(12*time.Hour),
+		participantsFromLocals([]string{"sarah.chen", "emma.larsson", "marcus.johnson"}), false)
 
 	// Send in batches of 10
 	keys := make([]string, 0, len(events))

@@ -34,5 +34,5 @@ Thumbs.db
 coverage/
 *.cover
 *.out
-seed
+/seed
 web/public/mediapipe/
