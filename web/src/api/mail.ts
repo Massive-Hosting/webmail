@@ -748,7 +748,10 @@ function buildEmailObject(params: SaveDraftParams) {
     from: params.from
       ? [{ name: params.from.name, email: params.from.email }]
       : undefined,
-    to: params.to.map((r) => ({ name: r.name ?? r.email, email: r.email })),
+    to:
+      params.to.length > 0
+        ? params.to.map((r) => ({ name: r.name ?? r.email, email: r.email }))
+        : undefined,
     cc:
       params.cc.length > 0
         ? params.cc.map((r) => ({ name: r.name ?? r.email, email: r.email }))
