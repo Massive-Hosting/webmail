@@ -115,6 +115,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [defaultFormDate, setDefaultFormDate] = useState<Date | undefined>();
   const [defaultFormHour, setDefaultFormHour] = useState<number | undefined>();
+  const [defaultAttendees, setDefaultAttendees] = useState<string[] | undefined>();
 
   // Event popover state
   const [popoverEvent, setPopoverEvent] = useState<CalendarEvent | null>(null);
@@ -540,6 +541,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
               onCreateEvent={(date, hour, attendees) => {
                 setDefaultFormDate(date);
                 setDefaultFormHour(hour);
+                setDefaultAttendees(attendees);
                 setEditingEvent(null);
                 setFormOpen(true);
               }}
@@ -567,6 +569,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
         dayEvents={events}
         defaultDate={defaultFormDate}
         defaultHour={defaultFormHour}
+        defaultAttendees={defaultAttendees}
         onSave={handleSave}
         onDelete={handleDelete}
       />

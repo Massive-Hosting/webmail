@@ -27,6 +27,7 @@ interface EventFormProps {
   dayEvents?: CalendarEvent[];
   defaultDate?: Date;
   defaultHour?: number;
+  defaultAttendees?: string[];
   onSave: (data: CalendarEventCreate | CalendarEventUpdate, eventId?: string) => void;
   onDelete?: (eventId: string) => void;
 }
@@ -78,6 +79,7 @@ export const EventForm = React.memo(function EventForm({
   dayEvents,
   defaultDate,
   defaultHour,
+  defaultAttendees,
   onSave,
   onDelete,
 }: EventFormProps) {
@@ -191,10 +193,16 @@ export const EventForm = React.memo(function EventForm({
           );
         })
         .catch(() => setAttendees([]));
+    } else if (defaultAttendees && defaultAttendees.length > 0) {
+      // Pre-populate from team view click
+      setAttendees(defaultAttendees.map((email) => ({
+        name: email.split("@")[0].replace(".", " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        email,
+      })));
     } else {
       setAttendees([]);
     }
-  }, [event, open, calendars, defaultDate, defaultHour]);
+  }, [event, open, calendars, defaultDate, defaultHour, defaultAttendees]);
 
   const { results: contactResults } = useContactSearch(attendeeInput, attendeeInput.length >= 1);
 
