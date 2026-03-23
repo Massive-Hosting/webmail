@@ -760,7 +760,7 @@ function buildEmailObject(params: SaveDraftParams) {
       params.bcc.length > 0
         ? params.bcc.map((r) => ({ name: r.name ?? r.email, email: r.email }))
         : undefined,
-    subject: params.subject,
+    subject: params.subject || undefined,
     bodyValues: {
       html: { value: params.bodyHTML, isEncodingProblem: false, isTruncated: false },
       text: { value: params.bodyText, isEncodingProblem: false, isTruncated: false },

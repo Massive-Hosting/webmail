@@ -299,6 +299,8 @@
   "editor.aiPresetSimplify": "Sprache vereinfachen",
   "editor.fontSize": "Schriftgröße",
   "editor.fontSizeDefault": "Größe",
+  "editor.aiComposeTitle": "KI-Verfassen",
+  "editor.aiComposePlaceholder": "Was möchten Sie schreiben?",
   "contacts.new": "Neu",
   "contacts.importContacts": "Kontakte importieren",
   "contacts.exportContacts": "Kontakte exportieren",

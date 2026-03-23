@@ -299,6 +299,8 @@
   "editor.aiPresetSimplify": "Simplify language",
   "editor.fontSize": "Font size",
   "editor.fontSizeDefault": "Size",
+  "editor.aiComposeTitle": "AI Compose",
+  "editor.aiComposePlaceholder": "What would you like to write?",
   "contacts.new": "New",
   "contacts.importContacts": "Import contacts",
   "contacts.exportContacts": "Export contacts",

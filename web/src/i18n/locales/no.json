@@ -299,6 +299,8 @@
   "editor.aiPresetSimplify": "Forenkle språket",
   "editor.fontSize": "Skriftstørrelse",
   "editor.fontSizeDefault": "Størrelse",
+  "editor.aiComposeTitle": "AI-skriving",
+  "editor.aiComposePlaceholder": "Hva vil du skrive?",
   "contacts.new": "Ny",
   "contacts.importContacts": "Importer kontakter",
   "contacts.exportContacts": "Eksporter kontakter",

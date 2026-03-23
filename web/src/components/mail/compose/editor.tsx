@@ -109,7 +109,7 @@ import {
   AArrowUp,
   AArrowDown,
 } from "lucide-react";
-import { rewriteWithAI } from "@/api/ai.ts";
+import { rewriteWithAI, composeWithAI } from "@/api/ai.ts";
 import { useAIEnabled } from "@/hooks/use-ai-enabled.ts";
 
 /** Upload an image file to the blob endpoint and return the blobId */
@@ -434,12 +434,11 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       rangeFrom = from;
       rangeTo = to;
     } else {
-      // No selection: get all text before quote/signature
+      // No selection: get all text before quote/signature (or empty for compose from scratch)
       const fullText = editor.state.doc.textContent;
       const sigIdx = fullText.indexOf('\n-- \n');
       const text = sigIdx !== -1 ? fullText.slice(0, sigIdx).trim() : fullText.trim();
-      if (!text) return;
-      setAiSelectedText(text);
+      setAiSelectedText(text); // May be empty — AI will generate from scratch
       let endPos = editor.state.doc.content.size;
       editor.state.doc.descendants((node, pos) => {
         if (node.isText && node.text?.includes('-- ')) {
@@ -472,7 +471,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
 
   // AI Edit: run the rewrite with a given instruction
   const runAiRewrite = useCallback(async (instruction: string, selectedText: string) => {
-    if (!selectedText || !instruction.trim()) return;
+    if (!instruction.trim()) return;
 
     aiAbortRef.current?.abort();
     const controller = new AbortController();
@@ -483,7 +482,10 @@ export const ComposeEditor = React.memo(function ComposeEditor({
 
     try {
       let result = "";
-      const stream = rewriteWithAI(selectedText, instruction.trim(), controller.signal);
+      // If no text selected, use compose mode (generate from scratch)
+      const stream = selectedText
+        ? rewriteWithAI(selectedText, instruction.trim(), controller.signal)
+        : composeWithAI(instruction.trim(), "", "professional", controller.signal);
       for await (const chunk of stream) {
         result += chunk;
         setAiResult(result);
@@ -815,11 +817,13 @@ export const ComposeEditor = React.memo(function ComposeEditor({
             <div className="flex items-center gap-2 min-w-0">
               <Sparkles size={14} style={{ color: "var(--color-text-accent)", flexShrink: 0 }} />
               <span className="text-xs font-medium" style={{ color: "var(--color-text-primary)" }}>
-                {t("editor.aiEditTitle")}
+                {aiSelectedText ? t("editor.aiEditTitle") : t("editor.aiComposeTitle")}
               </span>
-              <span className="text-xs truncate" style={{ color: "var(--color-text-tertiary)" }}>
-                — {aiSelectedText.length > 80 ? aiSelectedText.slice(0, 80) + '...' : aiSelectedText}
-              </span>
+              {aiSelectedText && (
+                <span className="text-xs truncate" style={{ color: "var(--color-text-tertiary)" }}>
+                  — {aiSelectedText.length > 80 ? aiSelectedText.slice(0, 80) + '...' : aiSelectedText}
+                </span>
+              )}
             </div>
             <button
               type="button"
@@ -874,7 +878,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
                   handleAiCancel();
                 }
               }}
-              placeholder={t("editor.aiEditPlaceholder")}
+              placeholder={aiSelectedText ? t("editor.aiEditPlaceholder") : t("editor.aiComposePlaceholder")}
               className="flex-1 text-sm px-3 py-2 rounded-md outline-none"
               style={{
                 backgroundColor: "var(--color-bg-primary)",
