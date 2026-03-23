@@ -269,6 +269,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
   const [aiResult, setAiResult] = useState("");
   const [aiStreaming, setAiStreaming] = useState(false);
   const [aiSelectedText, setAiSelectedText] = useState("");
+  const [aiQuotedContext, setAiQuotedContext] = useState("");
   const [aiSelectionRange, setAiSelectionRange] = useState<{ from: number; to: number } | null>(null);
   const aiAbortRef = useRef<AbortController | null>(null);
   const aiInputRef = useRef<HTMLInputElement>(null);
@@ -437,6 +438,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
     if (hasSelection) {
       const selectedText = editor.state.doc.textBetween(from, to, '\n');
       setAiSelectedText(selectedText);
+      setAiQuotedContext(""); // No extra context needed for explicit selection
       rangeFrom = from;
       rangeTo = to;
     } else {
@@ -464,9 +466,13 @@ export const ComposeEditor = React.memo(function ComposeEditor({
         }
       });
 
-      // Extract text up to the boundary
+      // Extract text up to the boundary (new content to edit)
       const text = editor.state.doc.textBetween(0, endPos, '\n').trim();
       setAiSelectedText(text); // May be empty — AI will generate from scratch
+      // Extract quoted text after boundary (for AI context, not for replacement)
+      const docSize = editor.state.doc.content.size;
+      const quoted = endPos < docSize ? editor.state.doc.textBetween(endPos, docSize, '\n').trim() : "";
+      setAiQuotedContext(quoted);
       rangeFrom = 0;
       rangeTo = endPos;
     }
@@ -504,8 +510,13 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       if (senderName) {
         fullInstruction = `The writer is "${senderName}". ${fullInstruction}`;
       }
-      if (composeMode && composeMode !== "new" && selectedText) {
+      if (composeMode && composeMode !== "new") {
         fullInstruction = `This is a ${composeMode} email. ${fullInstruction}`;
+      }
+      // Include quoted reply as context (so AI understands what's being replied to)
+      if (aiQuotedContext) {
+        fullInstruction += `\n\nFor context, the email being replied to says:\n"""${aiQuotedContext.slice(0, 2000)}"""`;
+        fullInstruction += `\n\nIMPORTANT: Only rewrite/generate the reply text. Do NOT include the quoted text in your output.`;
       }
       // If no text selected, use compose mode (generate from scratch)
       const stream = selectedText
@@ -566,6 +577,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
     setAiResult("");
     setAiInstruction("");
     setAiSelectedText("");
+    setAiQuotedContext("");
     setAiSelectionRange(null);
   }, [editor, aiResult, aiSelectionRange]);
 
@@ -581,6 +593,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
     setAiResult("");
     setAiInstruction("");
     setAiSelectedText("");
+    setAiQuotedContext("");
     setAiSelectionRange(null);
     setAiStreaming(false);
   }, [editor]);
