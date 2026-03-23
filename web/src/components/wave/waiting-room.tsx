@@ -46,6 +46,9 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
   const [selectedAudioDevice, setSelectedAudioDevice] = useState("");
   const [selectedVideoDevice, setSelectedVideoDevice] = useState("");
   const [showCallDevices, setShowCallDevices] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const screenTrackRef = useRef<MediaStreamTrack | null>(null);
+  const savedCamTrackRef = useRef<MediaStreamTrack | null>(null);
   const { handleProps: pipDragProps, containerStyle: pipDragStyle } = useDraggable({ x: typeof window !== "undefined" ? window.innerWidth - 260 : 600, y: typeof window !== "undefined" ? window.innerHeight - 220 : 400 });
   const { size: pipSize, resizeHandleProps: pipResizeProps } = useResizable({ width: 240, height: 180 });
 
@@ -406,40 +409,40 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
           )}
           <CallBtn active={audioEnabled} onClick={() => setAudioEnabled(!audioEnabled)} icon={audioEnabled ? <Mic size={20} /> : <MicOff size={20} />} danger={!audioEnabled} />
           <CallBtn active={videoEnabled} onClick={() => setVideoEnabled(!videoEnabled)} icon={videoEnabled ? <Video size={20} /> : <VideoOff size={20} />} danger={!videoEnabled} />
-          <CallBtn active={false} onClick={async () => {
+          <CallBtn active={isScreenSharing} onClick={async () => {
+            const pc = pcRef.current;
+            if (!pc) return;
+            if (isScreenSharing) {
+              screenTrackRef.current?.stop();
+              screenTrackRef.current = null;
+              const cam = savedCamTrackRef.current;
+              const sender = pc.getSenders().find((s) => s.track?.kind === "video" || !s.track);
+              if (sender && cam) await sender.replaceTrack(cam);
+              setIsScreenSharing(false);
+              return;
+            }
             try {
-              console.log("[Wave] Requesting screen share...");
               const ss = await navigator.mediaDevices.getDisplayMedia({ video: true });
-              console.log("[Wave] Got screen stream, tracks:", ss.getTracks().map(t => `${t.kind}:${t.readyState}:${t.enabled}`));
               const track = ss.getVideoTracks()[0];
-              if (!track) { console.warn("[Wave] No video track in screen stream"); return; }
-              if (track.readyState === "ended") { console.warn("[Wave] Screen track already ended"); return; }
-              const pc = pcRef.current;
-              if (!pc) { console.warn("[Wave] No peer connection"); return; }
-              const senders = pc.getSenders();
-              console.log("[Wave] PC senders:", senders.map(s => `${s.track?.kind ?? "null"}:${s.track?.readyState ?? "none"}`));
-              const sender = senders.find((s) => s.track?.kind === "video");
+              if (!track || track.readyState === "ended") return;
+              savedCamTrackRef.current = stream?.getVideoTracks()[0] ?? null;
+              const sender = pc.getSenders().find((s) => s.track?.kind === "video");
               if (sender) {
-                console.log("[Wave] Replacing video sender track");
                 await sender.replaceTrack(track);
-                console.log("[Wave] replaceTrack succeeded");
               } else {
-                const emptySender = senders.find((s) => !s.track);
-                if (emptySender) {
-                  console.log("[Wave] Found empty sender, replacing track");
-                  await emptySender.replaceTrack(track);
-                } else {
-                  console.log("[Wave] Adding new track to PC");
-                  pc.addTrack(track, ss);
-                }
+                pc.addTransceiver(track, { direction: "sendrecv" });
               }
+              screenTrackRef.current = track;
+              setIsScreenSharing(true);
               track.addEventListener("ended", () => {
-                console.log("[Wave] Screen share ended by user");
-                const cam = stream?.getVideoTracks()[0];
-                if (sender && cam) sender.replaceTrack(cam);
+                const cam = savedCamTrackRef.current;
+                const s = pc.getSenders().find((s) => s.track?.kind === "video" || !s.track);
+                if (s && cam) s.replaceTrack(cam);
+                setIsScreenSharing(false);
+                screenTrackRef.current = null;
               });
             } catch (e) { console.error("[Wave] Screen share failed:", e); }
-          }} icon={<Monitor size={20} />} />
+          }} icon={<Monitor size={20} />} danger={isScreenSharing} />
           <CallBtn icon={<Settings2 size={20} />} active={showCallDevices} onClick={() => setShowCallDevices(!showCallDevices)} />
           <button onClick={handleHangup} className="flex items-center justify-center w-14 h-14 rounded-full transition-transform hover:scale-105 active:scale-95" style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>
             <PhoneOff size={22} className="text-white" />
