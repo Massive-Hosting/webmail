@@ -92,7 +92,8 @@ export const DarkSelect = React.memo(function DarkSelect({
             <button
               key={opt.value}
               type="button"
-              onClick={() => { onChange(opt.value); setOpen(false); }}
+              onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); onChange(opt.value); setOpen(false); }}
               className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors"
               style={{
                 color: opt.value === value ? "white" : "rgba(255,255,255,0.7)",
