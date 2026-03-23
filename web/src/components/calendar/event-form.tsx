@@ -634,48 +634,80 @@ export const EventForm = React.memo(function EventForm({
                   </div>
                 </div>
 
-                {/* Attendee list */}
+                {/* Attendee list with free/busy indicator */}
                 {attendees.length > 0 && (
                   <div className="flex flex-col gap-1 ml-5">
-                    {attendees.map((a, attendeeIdx) => (
-                      <div
-                        key={a.email}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        {/* Color dot matching the busy slot bar */}
+                    {attendees.map((a) => {
+                      // Check if attendee is busy at the current event time
+                      const slots = attendeeBusySlots?.[a.email] ?? [];
+                      const [sh2, sm2] = startTime.split(":").map(Number);
+                      const eventStart = sh2 * 60 + sm2;
+                      const eventEnd = eventStart + durationMinutes;
+                      const isBusy = !allDay && slots.some((slot) => {
+                        const st = new Date(slot.start);
+                        // Only check slots on the same date
+                        const slotDate = format(st, "yyyy-MM-dd");
+                        if (slotDate !== startDate) return false;
+                        const slotStartMins = st.getHours() * 60 + st.getMinutes();
+                        const slotDur = parseDurationMinutes(slot.duration);
+                        const slotEndMins = slotStartMins + slotDur;
+                        // Exclude the event being edited (same start time and duration)
+                        if (isEditing && slotStartMins === eventStart && slotDur === durationMinutes) return false;
+                        return eventStart < slotEndMins && eventEnd > slotStartMins;
+                      });
+                      const hasBusyData = slots.length > 0 || Object.keys(attendeeBusySlots ?? {}).includes(a.email);
+
+                      return (
                         <div
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: BUSY_COLORS[attendeeIdx % BUSY_COLORS.length] }}
-                        />
-                        {isEditing && a.participationStatus && (
-                          <span className="shrink-0" title={
-                            a.participationStatus === "accepted" ? t("calendar.accepted")
-                              : a.participationStatus === "declined" ? t("calendar.declined")
-                              : a.participationStatus === "tentative" ? t("calendar.tentative")
-                              : t("calendar.needsAction")
-                          }>
-                            {a.participationStatus === "accepted" && <Check size={13} style={{ color: "#22c55e" }} />}
-                            {a.participationStatus === "declined" && <X size={13} style={{ color: "#ef4444" }} />}
-                            {a.participationStatus === "tentative" && <HelpCircle size={13} style={{ color: "#eab308" }} />}
-                            {a.participationStatus === "needs-action" && <Clock size={13} style={{ color: "#9ca3af" }} />}
+                          key={a.email}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          {/* Free/busy indicator */}
+                          {hasBusyData ? (
+                            <span
+                              className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded"
+                              style={isBusy ? {
+                                backgroundColor: "rgba(239,68,68,0.1)",
+                                color: "#ef4444",
+                                border: "1px solid rgba(239,68,68,0.2)",
+                              } : {
+                                backgroundColor: "rgba(34,197,94,0.1)",
+                                color: "#22c55e",
+                                border: "1px solid rgba(34,197,94,0.2)",
+                              }}
+                            >
+                              {isBusy ? t("calendar.busy") : t("calendar.free")}
+                            </span>
+                          ) : isEditing && a.participationStatus ? (
+                            <span className="shrink-0" title={
+                              a.participationStatus === "accepted" ? t("calendar.accepted")
+                                : a.participationStatus === "declined" ? t("calendar.declined")
+                                : a.participationStatus === "tentative" ? t("calendar.tentative")
+                                : t("calendar.needsAction")
+                            }>
+                              {a.participationStatus === "accepted" && <Check size={13} style={{ color: "#22c55e" }} />}
+                              {a.participationStatus === "declined" && <X size={13} style={{ color: "#ef4444" }} />}
+                              {a.participationStatus === "tentative" && <HelpCircle size={13} style={{ color: "#eab308" }} />}
+                              {a.participationStatus === "needs-action" && <Clock size={13} style={{ color: "#9ca3af" }} />}
+                            </span>
+                          ) : null}
+                          <span
+                            className="flex-1 truncate"
+                            style={{ color: "var(--color-text-secondary)" }}
+                          >
+                            {a.name ? `${a.name} <${a.email}>` : a.email}
                           </span>
-                        )}
-                        <span
-                          className="flex-1 truncate"
-                          style={{ color: "var(--color-text-secondary)" }}
-                        >
-                          {a.name ? `${a.name} <${a.email}>` : a.email}
-                        </span>
-                        <button
-                          type="button"
-                          className="p-0.5 rounded hover:bg-[var(--color-bg-tertiary)]"
-                          style={{ color: "var(--color-text-tertiary)" }}
-                          onClick={() => removeAttendee(a.email)}
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    ))}
+                          <button
+                            type="button"
+                            className="p-0.5 rounded hover:bg-[var(--color-bg-tertiary)]"
+                            style={{ color: "var(--color-text-tertiary)" }}
+                            onClick={() => removeAttendee(a.email)}
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1015,51 +1047,7 @@ function DayTimeline({
         );
       })}
 
-      {/* Attendee busy slots — thin colored bars per attendee */}
-      {attendeeBusySlots && (() => {
-        const attendeeCount = Object.keys(attendeeBusySlots).length;
-        const barWidth = Math.min(6, Math.max(3, Math.floor(24 / attendeeCount)));
-        return Object.entries(attendeeBusySlots).map(([email, slots], attendeeIdx) =>
-          slots.map((slot, slotIdx) => {
-            const slotStart = new Date(slot.start);
-            const slotStartMins = slotStart.getHours() * 60 + slotStart.getMinutes();
-            const slotDuration = parseDurationMinutes(slot.duration);
-            const slotTopMins = slotStartMins - TIMELINE_START_HOUR * 60;
-            const slotTop = (slotTopMins / 60) * HOUR_HEIGHT;
-            const slotHeight = (slotDuration / 60) * HOUR_HEIGHT;
-            if (slotTop + slotHeight < 0 || slotTop > totalHeight) return null;
-            const busyColor = BUSY_COLORS[attendeeIdx % BUSY_COLORS.length];
-            const attendeeName = email.split("@")[0];
-            // Position each attendee's bars side by side in the right margin
-            const barLeft = 52 + attendeeIdx * (barWidth + 1);
-            return (
-              <div
-                key={`busy-${email}-${slotIdx}`}
-                className="absolute rounded-sm overflow-hidden"
-                title={`${attendeeName} — busy`}
-                style={{
-                  top: Math.max(0, slotTop),
-                  left: barLeft,
-                  width: barWidth,
-                  height: Math.max(slotHeight, 4),
-                  backgroundColor: busyColor + "60",
-                  zIndex: 4,
-                  pointerEvents: "none",
-                }}
-              >
-                {false && slotHeight >= 14 && (
-                  <div
-                    className="text-[9px] font-medium px-1.5 pt-0.5 truncate"
-                    style={{ color: busyColor, opacity: 0.8 }}
-                  >
-                  {attendeeName}
-                </div>
-              )}
-            </div>
-          );
-        }),
-      );
-      })()}
+      {/* Busy slot bars removed — free/busy is now shown as badges on attendee names */}
 
       {/* Event block — red border if conflicts with attendee busy slots */}
       {(() => {

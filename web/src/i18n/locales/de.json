@@ -783,6 +783,8 @@
   "calendar.team": "Team",
   "calendar.noRoom": "Kein Raum",
   "calendar.waveMeeting": "Wave-Meeting",
+  "calendar.free": "Frei",
+  "calendar.busy": "Belegt",
   "wave.startCall": "Wave-Anruf starten",
   "wave.incomingVideoCall": "Eingehender Videoanruf",
   "wave.incomingAudioCall": "Eingehender Audioanruf",
