@@ -305,6 +305,7 @@ export const WaveLobby = React.memo(function WaveLobby({
           style={{
             width: 720,
             maxWidth: "94vw",
+            maxHeight: "92vh",
             backgroundColor: "#1c1917",
             border: "1px solid rgba(255, 255, 255, 0.08)",
             ...dragStyle,
@@ -331,6 +332,9 @@ export const WaveLobby = React.memo(function WaveLobby({
             </Dialog.Close>
           </div>
 
+          {/* Scrollable content area */}
+          <div className="flex-1 overflow-y-auto min-h-0">
+
           {/* Calling: peer info */}
           <div className="mx-6 mb-4 flex items-center gap-3 px-4 py-3 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
             <Avatar address={peerAddress} size={40} />
@@ -341,7 +345,7 @@ export const WaveLobby = React.memo(function WaveLobby({
           </div>
 
           {/* Video preview */}
-          <div className="mx-6 mb-4 relative rounded-xl overflow-hidden" style={{ aspectRatio: "4/3", backgroundColor: "#0c0a09" }}>
+          <div className="mx-6 mb-4 relative rounded-xl overflow-hidden" style={{ aspectRatio: "16/9", backgroundColor: "#0c0a09" }}>
             {/* Always mount the video element to preserve srcObject across toggles */}
             <video
               ref={videoRef}
@@ -427,12 +431,12 @@ export const WaveLobby = React.memo(function WaveLobby({
                 <Settings2 size={13} style={{ color: "rgba(255,255,255,0.4)" }} />
                 <label className="text-[11px] font-medium text-white/40">{t("wave.deviceSettings")}</label>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 {audioDevices.length > 0 && (
                   <DarkSelect
                     label={t("wave.microphone")}
                     value={selectedAudioDevice || audioDevices[0]?.deviceId || ""}
-                    options={audioDevices.map((d) => ({ value: d.deviceId, label: d.label || `Microphone ${d.deviceId.slice(0, 8)}` }))}
+                    options={audioDevices.map((d) => ({ value: d.deviceId, label: d.label || `Mic ${d.deviceId.slice(0, 8)}` }))}
                     onChange={setSelectedAudioDevice}
                   />
                 )}
@@ -440,7 +444,7 @@ export const WaveLobby = React.memo(function WaveLobby({
                   <DarkSelect
                     label={t("wave.camera")}
                     value={selectedVideoDevice || videoDevices[0]?.deviceId || ""}
-                    options={videoDevices.map((d) => ({ value: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0, 8)}` }))}
+                    options={videoDevices.map((d) => ({ value: d.deviceId, label: d.label || `Cam ${d.deviceId.slice(0, 8)}` }))}
                     onChange={setSelectedVideoDevice}
                   />
                 )}
@@ -450,8 +454,8 @@ export const WaveLobby = React.memo(function WaveLobby({
                   options={[
                     { value: "low", label: "360p" },
                     { value: "medium", label: "540p" },
-                    { value: "high", label: "720p HD" },
-                    { value: "hd", label: "1080p Full HD" },
+                    { value: "high", label: "720p" },
+                    { value: "hd", label: "1080p" },
                   ]}
                   onChange={(v) => useWaveStore.getState().setVideoQuality(v as VideoQuality)}
                 />
@@ -534,6 +538,8 @@ export const WaveLobby = React.memo(function WaveLobby({
               </div>
             </div>
           )}
+
+          </div>{/* end scrollable content */}
 
           {/* Start call button */}
           <div className="px-6 pb-6">
