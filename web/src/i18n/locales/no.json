@@ -830,6 +830,7 @@
   "wave.background": "Bakgrunn",
   "wave.loadingBackground": "Laster effekt...",
   "wave.roomCreateFailed": "Kunne ikke opprette samtalerom",
+  "wave.videoQuality": "Videokvalitet",
   "wave.recentCalls": "Nylige samtaler",
   "wave.callAgain": "Ring igjen",
   "wave.noRecentCalls": "Ingen nylige samtaler",

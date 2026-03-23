@@ -1,5 +1,13 @@
 /** Wave — WebRTC peer connection manager */
 
+import { useWaveStore, VIDEO_QUALITY_CONSTRAINTS } from "@/stores/wave-store.ts";
+
+/** Get current video constraints based on user's quality preference */
+export function getVideoConstraints(): MediaTrackConstraints {
+  const quality = useWaveStore.getState().videoQuality;
+  return VIDEO_QUALITY_CONSTRAINTS[quality];
+}
+
 export type CallState = "idle" | "ringing" | "connecting" | "connected" | "ended";
 
 export type NetworkQuality = "excellent" | "good" | "fair" | "poor" | "unknown";
@@ -186,7 +194,7 @@ export class WaveConnection {
         noiseSuppression: true,
         autoGainControl: true,
       },
-      video: video ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" } : false,
+      video: video ? { ...getVideoConstraints(), facingMode: "user" } : false,
     });
 
     for (const track of this.localStream.getTracks()) {

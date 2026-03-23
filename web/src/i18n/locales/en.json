@@ -830,6 +830,7 @@
   "wave.background": "Background",
   "wave.loadingBackground": "Loading effect...",
   "wave.roomCreateFailed": "Failed to create call room",
+  "wave.videoQuality": "Video quality",
   "wave.recentCalls": "Recent Calls",
   "wave.callAgain": "Call again",
   "wave.noRecentCalls": "No recent calls",

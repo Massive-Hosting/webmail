@@ -12,6 +12,8 @@ import { useDraggable } from "@/hooks/use-draggable.ts";
 import { DarkSelect } from "./dark-select.tsx";
 import { BackgroundProcessor, VIRTUAL_BACKGROUNDS, type BackgroundEffect } from "@/lib/wave-background.ts";
 import { unlockAudio } from "@/lib/wave-sounds.ts";
+import { getVideoConstraints } from "@/lib/wave.ts";
+import { useWaveStore, VIDEO_QUALITY_CONSTRAINTS, type VideoQuality } from "@/stores/wave-store.ts";
 
 interface WaveLobbyProps {
   open: boolean;
@@ -211,8 +213,8 @@ export const WaveLobby = React.memo(function WaveLobby({
 
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: true,
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: { ...getVideoConstraints(), facingMode: "user" },
       });
       setStream(mediaStream);
       setPermissionState("granted");
@@ -442,6 +444,17 @@ export const WaveLobby = React.memo(function WaveLobby({
                     onChange={setSelectedVideoDevice}
                   />
                 )}
+                <DarkSelect
+                  label={t("wave.videoQuality")}
+                  value={useWaveStore.getState().videoQuality}
+                  options={[
+                    { value: "low", label: "360p" },
+                    { value: "medium", label: "540p" },
+                    { value: "high", label: "720p HD" },
+                    { value: "hd", label: "1080p Full HD" },
+                  ]}
+                  onChange={(v) => useWaveStore.getState().setVideoQuality(v as VideoQuality)}
+                />
               </div>
             </div>
           )}

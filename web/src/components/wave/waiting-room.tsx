@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useDraggable, useResizable } from "@/hooks/use-draggable.ts";
 import { DarkSelect } from "./dark-select.tsx";
 import { playConnectSound, playDisconnectSound, unlockAudio } from "@/lib/wave-sounds.ts";
+import { getVideoConstraints } from "@/lib/wave.ts";
 
 interface WaitingRoomProps {
   open: boolean;
@@ -63,7 +64,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
     unlockAudio();
     (async () => {
       try {
-        const s = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        const s = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: { ...getVideoConstraints(), facingMode: "user" } });
         setStream(s);
         if (videoRef.current) videoRef.current.srcObject = s;
 

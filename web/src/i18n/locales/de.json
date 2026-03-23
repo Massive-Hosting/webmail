@@ -830,6 +830,7 @@
   "wave.background": "Hintergrund",
   "wave.loadingBackground": "Effekt wird geladen...",
   "wave.roomCreateFailed": "Fehler beim Erstellen des Anrufraums",
+  "wave.videoQuality": "Videoqualität",
   "wave.recentCalls": "Letzte Anrufe",
   "wave.callAgain": "Erneut anrufen",
   "wave.noRecentCalls": "Keine letzten Anrufe",

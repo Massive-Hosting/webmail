@@ -8,6 +8,7 @@ import {
 import { DarkSelect } from "./dark-select.tsx";
 import { useDraggable, useResizable } from "@/hooks/use-draggable.ts";
 import { playConnectSound, playDisconnectSound, unlockAudio } from "@/lib/wave-sounds.ts";
+import { getVideoConstraints } from "@/lib/wave.ts";
 
 interface RoomInfo {
   id: string;
@@ -108,8 +109,8 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
   const startPreview = useCallback(async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: true,
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: { ...getVideoConstraints(), facingMode: "user" },
       });
       setStream(mediaStream);
       if (videoRef.current) videoRef.current.srcObject = mediaStream;

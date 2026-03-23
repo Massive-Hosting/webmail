@@ -40,6 +40,19 @@ function saveCallHistory(history: CallHistoryEntry[]) {
   } catch { /* ignore */ }
 }
 
+export type VideoQuality = "low" | "medium" | "high" | "hd";
+
+export const VIDEO_QUALITY_CONSTRAINTS: Record<VideoQuality, MediaTrackConstraints> = {
+  low:    { width: { ideal: 640 },  height: { ideal: 360 },  frameRate: { ideal: 15 } },
+  medium: { width: { ideal: 960 },  height: { ideal: 540 },  frameRate: { ideal: 24 } },
+  high:   { width: { ideal: 1280 }, height: { ideal: 720 },  frameRate: { ideal: 30 } },
+  hd:     { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } },
+};
+
+function loadVideoQuality(): VideoQuality {
+  try { return (localStorage.getItem("wave_video_quality") as VideoQuality) || "high"; } catch { return "high"; }
+}
+
 interface WaveState {
   callState: CallState;
   callId: string | null;
@@ -76,7 +89,11 @@ interface WaveState {
   // Call history
   callHistory: CallHistoryEntry[];
 
+  // Video quality
+  videoQuality: VideoQuality;
+
   // Actions
+  setVideoQuality: (quality: VideoQuality) => void;
   setCallState: (state: CallState) => void;
   setCall: (callId: string, peerEmail: string, peerName: string) => void;
   setMuted: (muted: boolean) => void;
@@ -112,7 +129,12 @@ export const useWaveStore = create<WaveState>((set) => ({
   unreadChat: 0,
   reactions: [],
   callHistory: loadCallHistory(),
+  videoQuality: loadVideoQuality(),
 
+  setVideoQuality: (quality) => {
+    try { localStorage.setItem("wave_video_quality", quality); } catch { /* ignore */ }
+    set({ videoQuality: quality });
+  },
   setCallState: (callState) =>
     set((s) => ({
       callState,
