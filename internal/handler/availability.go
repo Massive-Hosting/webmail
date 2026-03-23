@@ -299,6 +299,8 @@ func (h *AvailabilityHandler) queryBusySlots(ctx context.Context, sess *session.
 	req.SetBasicAuth("admin", sess.StalwartToken)
 	req.Header.Set("Content-Type", "application/json")
 
+	h.log.Debug().Str("url", req.URL.String()).Str("accountId", accountID).Str("body", string(body)).Msg("querying calendar events")
+
 	resp, err := h.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -306,6 +308,8 @@ func (h *AvailabilityHandler) queryBusySlots(ctx context.Context, sess *session.
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		h.log.Warn().Int("status", resp.StatusCode).Str("response", string(respBody)).Msg("JMAP calendar query failed")
 		return nil, fmt.Errorf("JMAP returned %d", resp.StatusCode)
 	}
 
