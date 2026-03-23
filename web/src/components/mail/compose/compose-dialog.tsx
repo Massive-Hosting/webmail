@@ -255,11 +255,10 @@ export const ComposePanel = React.memo(function ComposePanel({
       updateDraft(draftId, {
         saving: false,
         consecutiveSaveFailures: failures,
-        // Only show error to user after 3 consecutive failures
-        saveError: failures >= 3 ? `${t("compose.failedToSaveDraft")}: ${errMsg}` : undefined,
+        saveError: `${t("compose.failedToSaveDraft")}: ${errMsg}`,
       });
-      // Retry silently after a delay if under the threshold
-      if (failures < 3) {
+      // Retry after a delay
+      if (failures < 5) {
         setTimeout(() => handleAutoSave(), 5000);
       }
     }
@@ -1247,7 +1246,7 @@ function SaveIndicator({
   if (saveError) {
     return (
       <span className="compose-dialog__save-indicator compose-dialog__save-indicator--error" title={saveError}>
-        {t("compose.saveFailed")}
+        {saveError}
       </span>
     );
   }
