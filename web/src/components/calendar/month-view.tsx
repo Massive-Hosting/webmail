@@ -1,6 +1,7 @@
 /** Month view: 6-week grid with events */
 
 import React, { useMemo, useCallback } from "react";
+import { Video } from "lucide-react";
 import type { CalendarEvent, Calendar } from "@/types/calendar.ts";
 import {
   startOfMonth,
@@ -235,6 +236,9 @@ const EventChip = React.memo(function EventChip({
       onClick={handleClick}
       title={event.title}
     >
+      {event.description?.includes("[wave-meeting]") && (
+        <Video size={10} className="shrink-0" style={{ color: "#6366f1" }} />
+      )}
       {!event.showWithoutTime && (
         <span className="shrink-0 text-[10px] opacity-75">
           {format(parseISO(event.start), "h:mm")}

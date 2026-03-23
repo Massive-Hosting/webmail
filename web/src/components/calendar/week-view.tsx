@@ -1,6 +1,7 @@
 /** Week view: 7-column time grid with hourly rows */
 
 import React, { useMemo, useCallback, useEffect, useRef, useState } from "react";
+import { Video } from "lucide-react";
 import type { CalendarEvent, Calendar } from "@/types/calendar.ts";
 import {
   startOfWeek,
@@ -505,7 +506,12 @@ const TimedEventBlock = React.memo(function TimedEventBlock({
       onPointerDown={handlePointerDown}
       title={event.title}
     >
-      <div className="text-[11px] font-medium truncate">{event.title}</div>
+      <div className="text-[11px] font-medium truncate flex items-center gap-0.5">
+        {event.description?.includes("[wave-meeting]") && (
+          <Video size={10} className="shrink-0" style={{ color: "#6366f1" }} />
+        )}
+        {event.title}
+      </div>
       {height > 40 && (
         <div className="text-[10px] opacity-75 truncate">
           {format(parseISO(event.start), "h:mm a")}
@@ -548,7 +554,12 @@ const AllDayChip = React.memo(function AllDayChip({
       }}
       onClick={handleClick}
     >
-      {event.title}
+      <span className="flex items-center gap-0.5">
+        {event.description?.includes("[wave-meeting]") && (
+          <Video size={10} className="shrink-0" style={{ color: "#6366f1" }} />
+        )}
+        {event.title}
+      </span>
     </button>
   );
 });

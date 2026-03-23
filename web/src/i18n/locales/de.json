@@ -782,6 +782,7 @@
   "security.revoke": "Widerrufen",
   "calendar.team": "Team",
   "calendar.noRoom": "Kein Raum",
+  "calendar.waveMeeting": "Wave-Meeting",
   "wave.startCall": "Wave-Anruf starten",
   "wave.incomingVideoCall": "Eingehender Videoanruf",
   "wave.incomingAudioCall": "Eingehender Audioanruf",

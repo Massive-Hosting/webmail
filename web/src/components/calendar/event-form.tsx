@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, Plus, Trash2, MapPin, Clock, Users, Bell, Palette, Repeat, Check, HelpCircle, Loader2 } from "lucide-react";
+import { X, Plus, Trash2, MapPin, Clock, Users, Bell, Palette, Repeat, Check, HelpCircle, Loader2, Video } from "lucide-react";
 import type {
   CalendarEvent,
   CalendarEventCreate,
@@ -94,7 +94,7 @@ export const EventForm = React.memo(function EventForm({
   }, [event, defaultDate, defaultHour]);
 
   const [title, setTitle] = useState(event?.title ?? "");
-  const [description, setDescription] = useState(event?.description ?? "");
+  const [description, setDescription] = useState((event?.description ?? "").replace("[wave-meeting]", "").trim());
   const [location, setLocation] = useState(event?.location ?? "");
   const [startDate, setStartDate] = useState(
     defaultStart.substring(0, 10),
@@ -126,6 +126,7 @@ export const EventForm = React.memo(function EventForm({
     return "";
   });
   const [eventColor, setEventColor] = useState(event?.color ?? "");
+  const [waveMeeting, setWaveMeeting] = useState(false);
 
   // Attendee management
   const [attendeeInput, setAttendeeInput] = useState("");
@@ -135,11 +136,12 @@ export const EventForm = React.memo(function EventForm({
   useEffect(() => {
     if (!open) return;
     setTitle(event?.title ?? "");
-    setDescription(event?.description ?? "");
+    setDescription((event?.description ?? "").replace("[wave-meeting]", "").trim());
     setLocation(event?.location ?? "");
     setAllDay(event?.showWithoutTime ?? false);
     setDurationMinutes(parseDurationMinutes(event?.duration));
     setEventColor(event?.color ?? "");
+    setWaveMeeting(event?.description?.includes("[wave-meeting]") ?? false);
     setAttendeeInput("");
 
     if (event) {
@@ -314,10 +316,16 @@ export const EventForm = React.memo(function EventForm({
             }
           : undefined;
 
+      // Build description with wave-meeting marker
+      let finalDescription = description.replace("[wave-meeting]", "").trim();
+      if (waveMeeting) {
+        finalDescription = finalDescription ? `${finalDescription} [wave-meeting]` : "[wave-meeting]";
+      }
+
       const data: CalendarEventCreate = {
         calendarIds,
         title: title.trim(),
-        description: description.trim() || undefined,
+        description: finalDescription || undefined,
         location: location.trim() || undefined,
         start,
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -345,6 +353,7 @@ export const EventForm = React.memo(function EventForm({
       attendees,
       reminder,
       eventColor,
+      waveMeeting,
       event,
       onSave,
       onOpenChange,
@@ -656,6 +665,20 @@ export const EventForm = React.memo(function EventForm({
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* Wave Meeting toggle */}
+              <div className="flex items-center gap-2 px-1 py-2">
+                <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: "var(--color-text-secondary)" }}>
+                  <input
+                    type="checkbox"
+                    checked={waveMeeting}
+                    onChange={(e) => setWaveMeeting(e.target.checked)}
+                    style={{ accentColor: "var(--color-bg-accent)" }}
+                  />
+                  <Video size={14} style={{ color: waveMeeting ? "#6366f1" : "var(--color-text-tertiary)" }} />
+                  {t("calendar.waveMeeting")}
+                </label>
               </div>
 
               {/* Reminder */}

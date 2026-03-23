@@ -1,6 +1,7 @@
 /** Day view: Single column with hourly rows */
 
 import React, { useMemo, useCallback, useEffect, useRef, useState } from "react";
+import { Video } from "lucide-react";
 import type { CalendarEvent, Calendar } from "@/types/calendar.ts";
 import {
   isToday,
@@ -249,7 +250,12 @@ export const DayView = React.memo(function DayView({
                   onClickEvent(event, e.currentTarget);
                 }}
               >
-                {event.title}
+                <span className="flex items-center gap-0.5">
+                  {event.description?.includes("[wave-meeting]") && (
+                    <Video size={10} className="shrink-0" style={{ color: "#6366f1" }} />
+                  )}
+                  {event.title}
+                </span>
               </button>
             );
           })}
@@ -336,7 +342,10 @@ export const DayView = React.memo(function DayView({
                   }}
                   title={event.title}
                 >
-                  <div className="text-sm font-medium truncate">
+                  <div className="text-sm font-medium truncate flex items-center gap-1">
+                    {event.description?.includes("[wave-meeting]") && (
+                      <Video size={12} className="shrink-0" style={{ color: "#6366f1" }} />
+                    )}
                     {event.title}
                   </div>
                   {height > 40 && (
@@ -351,7 +360,7 @@ export const DayView = React.memo(function DayView({
                   )}
                   {height > 80 && event.description && (
                     <div className="text-xs opacity-50 truncate mt-0.5">
-                      {event.description}
+                      {event.description.replace("[wave-meeting]", "").trim()}
                     </div>
                   )}
                 </button>

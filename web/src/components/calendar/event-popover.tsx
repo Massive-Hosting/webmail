@@ -2,7 +2,7 @@
 
 import React, { useCallback } from "react";
 import * as Popover from "@radix-ui/react-popover";
-import { X, Edit2, Trash2, MapPin, Clock, Calendar as CalendarIcon, Users, Check, HelpCircle } from "lucide-react";
+import { X, Edit2, Trash2, MapPin, Clock, Calendar as CalendarIcon, Users, Check, HelpCircle, Video } from "lucide-react";
 import type { CalendarEvent, Calendar, Participant } from "@/types/calendar.ts";
 import { format, parseISO, getEventEnd, getEventColor, formatEventTime } from "@/hooks/use-calendar.ts";
 import { useTranslation } from "react-i18next";
@@ -127,6 +127,15 @@ export const EventPopover = React.memo(function EventPopover({
               </div>
             </div>
 
+            {/* Wave Meeting badge */}
+            {event.description?.includes("[wave-meeting]") && (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium mb-3"
+                style={{ backgroundColor: "rgba(99,102,241,0.1)", color: "#6366f1", border: "1px solid rgba(99,102,241,0.15)" }}>
+                <Video size={12} />
+                {t("calendar.waveMeeting")}
+              </div>
+            )}
+
             {/* Details */}
             <div className="flex flex-col gap-2 text-sm">
               {/* Date and time */}
@@ -244,16 +253,19 @@ export const EventPopover = React.memo(function EventPopover({
               )}
 
               {/* Description */}
-              {event.description && (
-                <div
-                  className="text-xs mt-1 whitespace-pre-wrap"
-                  style={{ color: "var(--color-text-tertiary)" }}
-                >
-                  {event.description.length > 200
-                    ? event.description.substring(0, 200) + "..."
-                    : event.description}
-                </div>
-              )}
+              {event.description && (() => {
+                const displayDescription = event.description.replace("[wave-meeting]", "").trim();
+                return displayDescription ? (
+                  <div
+                    className="text-xs mt-1 whitespace-pre-wrap"
+                    style={{ color: "var(--color-text-tertiary)" }}
+                  >
+                    {displayDescription.length > 200
+                      ? displayDescription.substring(0, 200) + "..."
+                      : displayDescription}
+                  </div>
+                ) : null;
+              })()}
             </div>
           </div>
         </Popover.Content>
