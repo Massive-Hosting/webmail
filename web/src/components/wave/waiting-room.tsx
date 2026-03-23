@@ -400,13 +400,20 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
             try {
               const ss = await navigator.mediaDevices.getDisplayMedia({ video: true });
               const track = ss.getVideoTracks()[0];
-              const sender = pcRef.current?.getSenders().find((s) => s.track?.kind === "video");
-              if (sender && track) await sender.replaceTrack(track);
+              if (!track) return;
+              const pc = pcRef.current;
+              if (!pc) return;
+              const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+              if (sender) {
+                await sender.replaceTrack(track);
+              } else {
+                pc.addTrack(track, ss);
+              }
               track.addEventListener("ended", () => {
                 const cam = stream?.getVideoTracks()[0];
                 if (sender && cam) sender.replaceTrack(cam);
               });
-            } catch { /* user cancelled */ }
+            } catch (e) { console.error("[Wave] Screen share failed:", e); }
           }} icon={<Monitor size={20} />} />
           <CallBtn icon={<Settings2 size={20} />} active={showCallDevices} onClick={() => setShowCallDevices(!showCallDevices)} />
           <button onClick={handleHangup} className="flex items-center justify-center w-14 h-14 rounded-full transition-transform hover:scale-105 active:scale-95" style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>

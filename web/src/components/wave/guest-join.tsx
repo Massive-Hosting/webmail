@@ -400,13 +400,22 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
               try {
                 const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
                 const screenTrack = screenStream.getVideoTracks()[0];
-                const sender = pcRef.current?.getSenders().find((s) => s.track?.kind === "video");
-                if (sender && screenTrack) await sender.replaceTrack(screenTrack);
+                if (!screenTrack) return;
+                const pc = pcRef.current;
+                if (!pc) return;
+                const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+                if (sender) {
+                  await sender.replaceTrack(screenTrack);
+                } else {
+                  pc.addTrack(screenTrack, screenStream);
+                }
                 screenTrack.addEventListener("ended", () => {
                   const camTrack = stream?.getVideoTracks()[0];
                   if (sender && camTrack) sender.replaceTrack(camTrack);
                 });
-              } catch { /* user cancelled */ }
+              } catch (e) {
+                console.error("[Wave] Screen share failed:", e);
+              }
             }}
             icon={<Monitor size={20} />}
           />
