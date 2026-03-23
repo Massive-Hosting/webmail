@@ -242,12 +242,18 @@ interface ComposeEditorProps {
   content: string;
   onChange: (html: string) => void;
   placeholder?: string;
+  /** Sender name for AI context */
+  senderName?: string;
+  /** Compose mode for AI context */
+  composeMode?: string;
 }
 
 export const ComposeEditor = React.memo(function ComposeEditor({
   content,
   onChange,
   placeholder: placeholderProp,
+  senderName,
+  composeMode,
 }: ComposeEditorProps) {
   const { t } = useTranslation();
   const aiEnabled = useAIEnabled();
@@ -434,22 +440,33 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       rangeFrom = from;
       rangeTo = to;
     } else {
-      // No selection: get all text before quote/signature (or empty for compose from scratch)
-      const fullText = editor.state.doc.textContent;
-      const sigIdx = fullText.indexOf('\n-- \n');
-      const text = sigIdx !== -1 ? fullText.slice(0, sigIdx).trim() : fullText.trim();
-      setAiSelectedText(text); // May be empty — AI will generate from scratch
+      // No selection: get new content only (before signature AND quoted reply)
+      // Walk the document to find the first boundary node:
+      // - signature separator paragraph (text content "-- " or "--")
+      // - blockquote (quoted reply)
+      // - any node whose DOM has border-left style (reply quoting)
       let endPos = editor.state.doc.content.size;
       editor.state.doc.descendants((node, pos) => {
-        if (node.isText && node.text?.includes('-- ')) {
-          const resolved = editor.state.doc.resolve(pos);
-          const parent = resolved.parent;
-          if (parent.textContent.trim() === '--') {
-            endPos = Math.min(endPos, resolved.before());
-            return false;
-          }
+        // Signature separator
+        if (node.type.name === "paragraph" && (node.textContent.trim() === "--" || node.textContent === "-- ")) {
+          endPos = Math.min(endPos, pos);
+          return false;
+        }
+        // Blockquote (quoted reply)
+        if (node.type.name === "blockquote") {
+          endPos = Math.min(endPos, pos);
+          return false;
+        }
+        // Hard rule or horizontal rule often precedes forwarded text
+        if (node.type.name === "horizontalRule") {
+          endPos = Math.min(endPos, pos);
+          return false;
         }
       });
+
+      // Extract text up to the boundary
+      const text = editor.state.doc.textBetween(0, endPos, '\n').trim();
+      setAiSelectedText(text); // May be empty — AI will generate from scratch
       rangeFrom = 0;
       rangeTo = endPos;
     }
@@ -482,10 +499,18 @@ export const ComposeEditor = React.memo(function ComposeEditor({
 
     try {
       let result = "";
+      // Build context-aware instruction
+      let fullInstruction = instruction.trim();
+      if (senderName) {
+        fullInstruction = `The writer is "${senderName}". ${fullInstruction}`;
+      }
+      if (composeMode && composeMode !== "new" && selectedText) {
+        fullInstruction = `This is a ${composeMode} email. ${fullInstruction}`;
+      }
       // If no text selected, use compose mode (generate from scratch)
       const stream = selectedText
-        ? rewriteWithAI(selectedText, instruction.trim(), controller.signal)
-        : composeWithAI(instruction.trim(), "", "professional", controller.signal);
+        ? rewriteWithAI(selectedText, fullInstruction, controller.signal)
+        : composeWithAI(fullInstruction, "", "professional", controller.signal);
       for await (const chunk of stream) {
         result += chunk;
         setAiResult(result);

@@ -899,6 +899,8 @@ export const ComposePanel = React.memo(function ComposePanel({
           <ComposeEditor
             content={draft.bodyHTML}
             onChange={(html) => updateDraft(draftId, { bodyHTML: html })}
+            senderName={draft.from?.name || draft.from?.email}
+            composeMode={draft.composeMode}
           />
         </div>
 
