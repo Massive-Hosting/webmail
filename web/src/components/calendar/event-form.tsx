@@ -1010,45 +1010,51 @@ function DayTimeline({
         );
       })}
 
-      {/* Attendee busy slots (free/busy overlay) */}
-      {attendeeBusySlots && Object.entries(attendeeBusySlots).map(([email, slots], attendeeIdx) =>
-        slots.map((slot, slotIdx) => {
-          const slotStart = new Date(slot.start);
-          const slotStartMins = slotStart.getHours() * 60 + slotStart.getMinutes();
-          const slotDuration = parseDurationMinutes(slot.duration);
-          const slotTopMins = slotStartMins - TIMELINE_START_HOUR * 60;
-          const slotTop = (slotTopMins / 60) * HOUR_HEIGHT;
-          const slotHeight = (slotDuration / 60) * HOUR_HEIGHT;
-          if (slotTop + slotHeight < 0 || slotTop > totalHeight) return null;
-          const busyColor = BUSY_COLORS[attendeeIdx % BUSY_COLORS.length];
-          const attendeeName = email.split("@")[0];
-          return (
-            <div
-              key={`busy-${email}-${slotIdx}`}
-              className="absolute rounded-sm overflow-hidden"
-              style={{
-                top: Math.max(0, slotTop),
-                left: 52,
-                right: 8,
-                height: Math.max(slotHeight, 12),
-                backgroundColor: busyColor + "18",
-                borderLeft: `3px solid ${busyColor}`,
-                zIndex: 4,
-                pointerEvents: "none",
-              }}
-            >
-              {slotHeight >= 14 && (
-                <div
-                  className="text-[9px] font-medium px-1.5 pt-0.5 truncate"
-                  style={{ color: busyColor, opacity: 0.8 }}
-                >
+      {/* Attendee busy slots — thin colored bars per attendee */}
+      {attendeeBusySlots && (() => {
+        const attendeeCount = Object.keys(attendeeBusySlots).length;
+        const barWidth = Math.min(6, Math.max(3, Math.floor(24 / attendeeCount)));
+        return Object.entries(attendeeBusySlots).map(([email, slots], attendeeIdx) =>
+          slots.map((slot, slotIdx) => {
+            const slotStart = new Date(slot.start);
+            const slotStartMins = slotStart.getHours() * 60 + slotStart.getMinutes();
+            const slotDuration = parseDurationMinutes(slot.duration);
+            const slotTopMins = slotStartMins - TIMELINE_START_HOUR * 60;
+            const slotTop = (slotTopMins / 60) * HOUR_HEIGHT;
+            const slotHeight = (slotDuration / 60) * HOUR_HEIGHT;
+            if (slotTop + slotHeight < 0 || slotTop > totalHeight) return null;
+            const busyColor = BUSY_COLORS[attendeeIdx % BUSY_COLORS.length];
+            const attendeeName = email.split("@")[0];
+            // Position each attendee's bars side by side in the right margin
+            const barLeft = 52 + attendeeIdx * (barWidth + 1);
+            return (
+              <div
+                key={`busy-${email}-${slotIdx}`}
+                className="absolute rounded-sm overflow-hidden"
+                title={`${attendeeName} — busy`}
+                style={{
+                  top: Math.max(0, slotTop),
+                  left: barLeft,
+                  width: barWidth,
+                  height: Math.max(slotHeight, 4),
+                  backgroundColor: busyColor + "60",
+                  zIndex: 4,
+                  pointerEvents: "none",
+                }}
+              >
+                {false && slotHeight >= 14 && (
+                  <div
+                    className="text-[9px] font-medium px-1.5 pt-0.5 truncate"
+                    style={{ color: busyColor, opacity: 0.8 }}
+                  >
                   {attendeeName}
                 </div>
               )}
             </div>
           );
         }),
-      )}
+      );
+      })()}
 
       {/* Event block — red border if conflicts with attendee busy slots */}
       {(() => {
