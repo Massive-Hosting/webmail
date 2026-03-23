@@ -383,9 +383,11 @@ export const ComposeEditor = React.memo(function ComposeEditor({
 
   // Apply font size to editor element so placeholder text inherits it
   useEffect(() => {
-    if (editor) {
-      const el = editor.view.dom as HTMLElement;
-      el.style.fontSize = editorFontSize || "";
+    if (editor && editor.isEditable) {
+      try {
+        const el = editor.view.dom as HTMLElement;
+        el.style.fontSize = editorFontSize || "";
+      } catch { /* editor not mounted yet */ }
     }
   }, [editor, editorFontSize]);
 
