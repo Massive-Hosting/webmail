@@ -53,7 +53,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
     goToDate,
     dateRange,
     title,
-  } = useCalendarNavigation("month");
+  } = useCalendarNavigation("week");
 
   const queryClient = useQueryClient();
   const { calendars, createCalendar, updateCalendar, deleteCalendar } = useCalendars();
