@@ -1,6 +1,7 @@
 /** Wave — WebRTC peer connection manager */
 
 import { useWaveStore, VIDEO_QUALITY_CONSTRAINTS } from "@/stores/wave-store.ts";
+import { NoiseSuppressor } from "@/lib/wave-noise.ts";
 
 /** Get current video constraints based on user's quality preference */
 export function getVideoConstraints(): MediaTrackConstraints {
@@ -34,6 +35,7 @@ export class WaveConnection {
   private pc: RTCPeerConnection;
   private localStream: MediaStream | null = null;
   private screenStream: MediaStream | null = null;
+  private noiseSuppressor: NoiseSuppressor | null = null;
   private state: CallState = "idle";
   private opts: WaveCallOptions;
   private statsInterval: ReturnType<typeof setInterval> | null = null;
@@ -197,6 +199,18 @@ export class WaveConnection {
       video: video ? { ...getVideoConstraints(), facingMode: "user" } : false,
     });
 
+    // Apply RNNoise if enabled
+    const nsEnabled = useWaveStore.getState().noiseSuppression;
+    if (nsEnabled) {
+      try {
+        if (!this.noiseSuppressor) this.noiseSuppressor = new NoiseSuppressor();
+        this.localStream = await this.noiseSuppressor.start(this.localStream);
+        console.log("[Wave] RNNoise enabled");
+      } catch (e) {
+        console.error("[Wave] RNNoise failed, using raw audio:", e);
+      }
+    }
+
     for (const track of this.localStream.getTracks()) {
       this.pc.addTrack(track, this.localStream);
     }
@@ -338,6 +352,12 @@ export class WaveConnection {
     this.opts.onLocalStream(this.localStream);
   }
 
+  /** Replace the local video track on the peer connection (for background effects) */
+  async replaceLocalVideoTrack(newTrack: MediaStreamTrack) {
+    const sender = this.pc.getSenders().find((s) => s.track?.kind === "video");
+    if (sender) await sender.replaceTrack(newTrack);
+  }
+
   stopScreenShare(): void {
     if (this.screenStream) {
       for (const track of this.screenStream.getTracks()) {
@@ -357,6 +377,9 @@ export class WaveConnection {
   hangup(): void {
     if (this.statsInterval) clearInterval(this.statsInterval);
     if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+
+    this.noiseSuppressor?.stop();
+    this.noiseSuppressor = null;
 
     if (this.localStream) {
       for (const track of this.localStream.getTracks()) {

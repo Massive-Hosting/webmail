@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useState, useCallback } from "react";
 import {
   Mic, MicOff, Video, VideoOff, Monitor, PhoneOff, Maximize2, Minimize2,
   Loader2, Wifi, WifiOff, MessageCircle, Smile, PictureInPicture, X, Send,
-  Settings2,
+  Settings2, ImageIcon, Ban,
 } from "lucide-react";
 import { useWaveStore } from "@/stores/wave-store.ts";
 import type { ChatMessage } from "@/stores/wave-store.ts";
@@ -15,6 +15,7 @@ import { useDraggable, useResizable } from "@/hooks/use-draggable.ts";
 import type { NetworkQuality } from "@/lib/wave.ts";
 import { DarkSelect } from "./dark-select.tsx";
 import { playConnectSound, playDisconnectSound } from "@/lib/wave-sounds.ts";
+import { BackgroundProcessor, VIRTUAL_BACKGROUNDS, type BackgroundEffect } from "@/lib/wave-background.ts";
 
 const REACTION_EMOJIS = ["👍", "👏", "😂", "❤️", "🎉", "🤔", "👋", "🔥"];
 
@@ -35,7 +36,7 @@ export const WaveCall = React.memo(function WaveCall() {
   const unreadChat = useWaveStore((s) => s.unreadChat);
   const reactions = useWaveStore((s) => s.reactions);
 
-  const { hangup, toggleMute, toggleVideo, toggleScreenShare, sendChat, sendReaction, enablePiP, switchAudioDevice, switchVideoDevice } = useWave();
+  const { hangup, toggleMute, toggleVideo, toggleScreenShare, sendChat, sendReaction, enablePiP, switchAudioDevice, switchVideoDevice, replaceLocalVideoTrack } = useWave();
   const setChatOpen = useWaveStore((s) => s.setChatOpen);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -47,6 +48,10 @@ export const WaveCall = React.memo(function WaveCall() {
   const [showReactions, setShowReactions] = useState(false);
   const [chatText, setChatText] = useState("");
   const [showDeviceSettings, setShowDeviceSettings] = useState(false);
+  const [showBackgrounds, setShowBackgrounds] = useState(false);
+  const [bgEffect, setBgEffect] = useState<BackgroundEffect>({ mode: "none" });
+  const [bgLoading, setBgLoading] = useState(false);
+  const bgProcessorRef = useRef<BackgroundProcessor | null>(null);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedAudioDevice, setSelectedAudioDevice] = useState("");
@@ -351,12 +356,90 @@ export const WaveCall = React.memo(function WaveCall() {
               />
             )}
 
+            {/* Background effects */}
+            <div className="relative">
+              <ControlButton
+                icon={<ImageIcon size={20} />}
+                active={bgEffect.mode !== "none"}
+                onClick={() => { setShowBackgrounds(!showBackgrounds); setShowDeviceSettings(false); }}
+                title={t("wave.background")}
+              />
+              {showBackgrounds && (
+                <div className="absolute bottom-14 left-1/2 -translate-x-1/2 p-4 rounded-xl w-96 animate-scale-in"
+                  style={{ backgroundColor: "rgba(28,25,23,0.95)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", backdropFilter: "blur(12px)", zIndex: 10 }}>
+                  <label className="text-[11px] font-medium text-white/40 block mb-2">{t("wave.background")}</label>
+                  {bgLoading && <div className="text-xs text-white/30 mb-2">{t("wave.loadingBackground")}</div>}
+                  <div className="grid grid-cols-5 gap-2">
+                    {/* None option */}
+                    <button
+                      onClick={async () => {
+                        setBgEffect({ mode: "none" });
+                        bgProcessorRef.current?.stop();
+                        bgProcessorRef.current = null;
+                        // Restore original stream to local video
+                        if (localVideoRef.current && localStream) {
+                          localVideoRef.current.srcObject = localStream;
+                          const origTrack = localStream.getVideoTracks()[0];
+                          if (origTrack) await replaceLocalVideoTrack(origTrack);
+                        }
+                      }}
+                      className="relative aspect-square rounded-lg overflow-hidden transition-all hover:scale-105"
+                      style={{
+                        backgroundColor: "rgba(255,255,255,0.08)",
+                        border: bgEffect.mode === "none" ? "2px solid #6366f1" : "2px solid transparent",
+                      }}
+                    >
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Ban size={16} style={{ color: "rgba(255,255,255,0.4)" }} />
+                      </div>
+                    </button>
+                    {/* Virtual backgrounds */}
+                    {VIRTUAL_BACKGROUNDS.map((bg) => (
+                      <button
+                        key={bg.id}
+                        onClick={async () => {
+                          if (!localStream) return;
+                          setBgLoading(true);
+                          const effect: BackgroundEffect = bg.mode === "blur"
+                            ? { mode: "blur", blurStrength: bg.blurStrength }
+                            : { mode: "image", imageUrl: bg.preview };
+                          setBgEffect(effect);
+                          try {
+                            if (!bgProcessorRef.current) bgProcessorRef.current = new BackgroundProcessor();
+                            bgProcessorRef.current.setInput(localStream);
+                            bgProcessorRef.current.setEffect(effect);
+                            const processed = await bgProcessorRef.current.start();
+                            if (localVideoRef.current) localVideoRef.current.srcObject = processed;
+                            const videoTrack = processed.getVideoTracks()[0];
+                            if (videoTrack) await replaceLocalVideoTrack(videoTrack);
+                          } catch (e) {
+                            console.error("[Wave] Background failed:", e);
+                            setBgEffect({ mode: "none" });
+                          } finally {
+                            setBgLoading(false);
+                          }
+                        }}
+                        className="relative aspect-square rounded-lg overflow-hidden transition-all hover:scale-105"
+                        style={{
+                          background: bg.preview,
+                          border: (bgEffect.mode === bg.mode && (bg.mode === "blur" ? bgEffect.blurStrength === bg.blurStrength : bgEffect.imageUrl === bg.preview))
+                            ? "2px solid #6366f1" : "2px solid transparent",
+                        }}
+                      >
+                        <span className="absolute bottom-0.5 left-0 right-0 text-[8px] font-medium text-white/80 text-center drop-shadow-sm">{bg.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Device settings */}
             <div className="relative">
               <ControlButton
                 icon={<Settings2 size={20} />}
                 active={showDeviceSettings}
-                onClick={() => setShowDeviceSettings(!showDeviceSettings)}
+                onClick={() => { setShowDeviceSettings(!showDeviceSettings); setShowBackgrounds(false); }}
                 title="Device settings"
               />
               {showDeviceSettings && (

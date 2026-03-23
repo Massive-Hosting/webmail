@@ -299,6 +299,13 @@ export function useWave() {
     }
   }, []);
 
+  /** Replace the local video track on the peer connection (for background effects) */
+  const replaceLocalVideoTrack = useCallback(async (track: MediaStreamTrack) => {
+    if (waveConnection) {
+      await waveConnection.replaceLocalVideoTrack(track);
+    }
+  }, []);
+
   /** Enable browser Picture-in-Picture on the remote video element */
   const enablePiP = useCallback(async (videoElement: HTMLVideoElement | null) => {
     if (!videoElement || !document.pictureInPictureEnabled) return;
@@ -323,5 +330,6 @@ export function useWave() {
     enablePiP,
     switchAudioDevice,
     switchVideoDevice,
+    replaceLocalVideoTrack,
   };
 }

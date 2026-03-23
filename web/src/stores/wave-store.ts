@@ -53,6 +53,10 @@ function loadVideoQuality(): VideoQuality {
   try { return (localStorage.getItem("wave_video_quality") as VideoQuality) || "high"; } catch { return "high"; }
 }
 
+function loadNoiseSuppression(): boolean {
+  try { return localStorage.getItem("wave_noise_suppression") === "true"; } catch { return false; }
+}
+
 interface WaveState {
   callState: CallState;
   callId: string | null;
@@ -92,8 +96,12 @@ interface WaveState {
   // Video quality
   videoQuality: VideoQuality;
 
+  // Noise suppression
+  noiseSuppression: boolean;
+
   // Actions
   setVideoQuality: (quality: VideoQuality) => void;
+  setNoiseSuppression: (enabled: boolean) => void;
   setCallState: (state: CallState) => void;
   setCall: (callId: string, peerEmail: string, peerName: string) => void;
   setMuted: (muted: boolean) => void;
@@ -130,10 +138,15 @@ export const useWaveStore = create<WaveState>((set) => ({
   reactions: [],
   callHistory: loadCallHistory(),
   videoQuality: loadVideoQuality(),
+  noiseSuppression: loadNoiseSuppression(),
 
   setVideoQuality: (quality) => {
     try { localStorage.setItem("wave_video_quality", quality); } catch { /* ignore */ }
     set({ videoQuality: quality });
+  },
+  setNoiseSuppression: (enabled) => {
+    try { localStorage.setItem("wave_noise_suppression", String(enabled)); } catch { /* ignore */ }
+    set({ noiseSuppression: enabled });
   },
   setCallState: (callState) =>
     set((s) => ({

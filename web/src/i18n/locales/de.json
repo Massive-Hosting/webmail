@@ -837,6 +837,7 @@
   "wave.audioCall": "Audioanruf",
   "wave.videoCall": "Videoanruf",
   "wave.duration": "{{duration}}",
+  "wave.noiseSuppression": "Rauschunterdr\u00fcckung",
   "action.selectAll": "Alle auswählen",
   "action.deselectAll": "Auswahl aufheben",
   "action.mute": "Stummschalten",

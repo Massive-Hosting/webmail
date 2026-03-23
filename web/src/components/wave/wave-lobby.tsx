@@ -40,6 +40,8 @@ export const WaveLobby = React.memo(function WaveLobby({
   const { t } = useTranslation();
   const email = useAuthStore((s) => s.email);
   const displayName = useAuthStore((s) => s.displayName);
+  const noiseSuppression = useWaveStore((s) => s.noiseSuppression);
+  const setNoiseSuppression = useWaveStore((s) => s.setNoiseSuppression);
 
   const { handleProps: dragHandleProps, containerStyle: dragStyle } = useDraggable();
 
@@ -421,6 +423,13 @@ export const WaveLobby = React.memo(function WaveLobby({
               active={bgEffect.mode !== "none"}
               accent={showBackgrounds}
               onClick={() => setShowBackgrounds(!showBackgrounds)}
+            />
+            <LobbyToggle
+              icon={<Volume2 size={18} />}
+              label={t("wave.noiseSuppression")}
+              active={noiseSuppression}
+              accent={noiseSuppression}
+              onClick={() => setNoiseSuppression(!noiseSuppression)}
             />
           </div>
 

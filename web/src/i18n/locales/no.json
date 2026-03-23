@@ -837,6 +837,7 @@
   "wave.audioCall": "Lydsamtale",
   "wave.videoCall": "Videosamtale",
   "wave.duration": "{{duration}}",
+  "wave.noiseSuppression": "St\u00f8ydemping",
   "action.selectAll": "Velg alle",
   "action.deselectAll": "Fjern valg",
   "action.mute": "Demp",

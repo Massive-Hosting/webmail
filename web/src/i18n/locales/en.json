@@ -837,6 +837,7 @@
   "wave.audioCall": "Audio call",
   "wave.videoCall": "Video call",
   "wave.duration": "{{duration}}",
+  "wave.noiseSuppression": "Noise cancel",
   "action.selectAll": "Select all",
   "action.deselectAll": "Deselect all",
   "action.mute": "Mute",
