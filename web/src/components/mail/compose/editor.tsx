@@ -255,6 +255,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const linkInputRef = useRef<HTMLInputElement>(null);
+  const [editorFontSize, setEditorFontSize] = useState("");
 
   // AI Edit state
   const [aiEditOpen, setAiEditOpen] = useState(false);
@@ -379,6 +380,14 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       lastContentRef.current = editor.getHTML();
     }
   });
+
+  // Apply font size to editor element so placeholder text inherits it
+  useEffect(() => {
+    if (editor) {
+      const el = editor.view.dom as HTMLElement;
+      el.style.fontSize = editorFontSize || "";
+    }
+  }, [editor, editorFontSize]);
 
   const handleLinkSubmit = useCallback(() => {
     if (!editor) return;
@@ -692,6 +701,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
           value={editor.getAttributes("textStyle").fontSize || ""}
           onChange={(e) => {
             const val = e.target.value;
+            setEditorFontSize(val);
             if (val) {
               editor.chain().focus().setMark("textStyle", { fontSize: val }).run();
             } else {
