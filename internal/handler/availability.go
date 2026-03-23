@@ -256,7 +256,7 @@ func (h *AvailabilityHandler) resolveAccountID(ctx context.Context, sess *sessio
 		return "", err
 	}
 
-	return crockfordBase32Encode(result.Data.ID), nil
+	return stalwartAccountID(result.Data.ID), nil
 }
 
 func (h *AvailabilityHandler) queryBusySlots(ctx context.Context, sess *session.SessionData, accountID, start, end string) ([]busySlot, error) {
@@ -731,10 +731,11 @@ func (h *AvailabilityHandler) listResourcePrincipals(ctx context.Context, sess *
 	return entries, nil
 }
 
-// Crockford base32 encoding for Stalwart JMAP accountId resolution.
-const crockfordAlphabet = "0123456789abcdefghjkmnpqrstvwxyz"
+// stalwartAccountID converts a Stalwart principal numeric ID to the JMAP account ID string.
+// Stalwart uses base36 encoding: 0-9 for IDs 0-9, then a-z for IDs 10-35, etc.
+const base36Alphabet = "0123456789abcdefghijklmnopqrstuvwxyz"
 
-func crockfordBase32Encode(n uint32) string {
+func stalwartAccountID(n uint32) string {
 	if n == 0 {
 		return "0"
 	}
@@ -742,8 +743,8 @@ func crockfordBase32Encode(n uint32) string {
 	i := len(buf)
 	for n > 0 {
 		i--
-		buf[i] = crockfordAlphabet[n%32]
-		n /= 32
+		buf[i] = base36Alphabet[n%36]
+		n /= 36
 	}
 	return string(buf[i:])
 }
