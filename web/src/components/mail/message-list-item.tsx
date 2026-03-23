@@ -236,21 +236,27 @@ export const MessageListItem = React.memo(
                   className="message-list-item__attachment-icon"
                 />
               )}
-              <button
-                onClick={handleStarClick}
-                className={`message-list-item__star-btn ${flagged ? "message-list-item__star-btn--active" : ""}`}
-                aria-label={flagged ? t("action.removeStar") : t("action.addStar")}
-              >
-                <Star
-                  size={15}
-                  fill={flagged ? "currentColor" : "none"}
-                  strokeWidth={flagged ? 0 : 1.5}
-                />
-              </button>
+              {/* Star shown only when flagged (always visible) or on mobile */}
+              {flagged && (
+                <button
+                  onClick={handleStarClick}
+                  className="message-list-item__star-btn message-list-item__star-btn--active"
+                  aria-label={t("action.removeStar")}
+                >
+                  <Star size={15} fill="currentColor" strokeWidth={0} />
+                </button>
+              )}
             </div>
 
             {/* Quick action overlay on hover (desktop) */}
             <div className="message-list-item__quick-actions">
+              <button
+                className={`message-list-item__quick-action-btn ${flagged ? "message-list-item__quick-action-btn--starred" : ""}`}
+                onClick={(e) => { e.stopPropagation(); onStar(email.id, !flagged); }}
+                title={flagged ? t("action.removeStar") : t("action.addStar")}
+              >
+                <Star size={14} fill={flagged ? "currentColor" : "none"} strokeWidth={flagged ? 0 : 1.5} />
+              </button>
               {onArchive && (
                 <button
                   className="message-list-item__quick-action-btn"

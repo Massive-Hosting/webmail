@@ -277,14 +277,10 @@
   .message-list-item:hover .message-list-item__quick-actions {
     display: flex;
   }
+}
 
-  .message-list-item:hover .message-list-item__star-btn {
-    opacity: 0;
-  }
-
-  .message-list-item:hover .message-list-item__star-btn--active {
-    opacity: 1;
-  }
+.message-list-item__quick-action-btn--starred {
+  color: #f59e0b !important;
 }
 
 .message-list-item__quick-action-btn {
