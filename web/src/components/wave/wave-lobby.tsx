@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { useDraggable } from "@/hooks/use-draggable.ts";
 import { DarkSelect } from "./dark-select.tsx";
 import { BackgroundProcessor, VIRTUAL_BACKGROUNDS, type BackgroundEffect } from "@/lib/wave-background.ts";
+import { unlockAudio } from "@/lib/wave-sounds.ts";
 
 interface WaveLobbyProps {
   open: boolean;
@@ -264,6 +265,7 @@ export const WaveLobby = React.memo(function WaveLobby({
   }, [stream, audioEnabled, reconnectAudioAnalyser]);
 
   const handleStartCall = useCallback(() => {
+    unlockAudio();
     // Stop preview stream — the actual call will create its own
     if (stream) {
       for (const track of stream.getTracks()) track.stop();

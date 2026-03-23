@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { DarkSelect } from "./dark-select.tsx";
 import { useDraggable, useResizable } from "@/hooks/use-draggable.ts";
-import { playConnectSound, playDisconnectSound } from "@/lib/wave-sounds.ts";
+import { playConnectSound, playDisconnectSound, unlockAudio } from "@/lib/wave-sounds.ts";
 
 interface RoomInfo {
   id: string;
@@ -153,6 +153,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
 
   const joinCall = useCallback(async () => {
     if (!stream) return;
+    unlockAudio();
     setRoomState("connecting");
 
     // Fetch TURN credentials
@@ -313,30 +314,34 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
   if (roomState === "connected" || roomState === "connecting") {
     return (
       <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
-        {/* Remote video */}
+        {/* Remote video — with fallback for audio-only peers */}
         <div className="flex-1 relative min-h-0">
-          {remoteStream ? (
-            <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center border border-white/10">
-                <span className="text-3xl font-bold text-white/60">{(room?.host_name || "H")[0].toUpperCase()}</span>
-              </div>
-            </div>
-          )}
-          {roomState === "connecting" && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+          {remoteStream && <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />}
+          {(!remoteStream || (remoteStream && remoteStream.getVideoTracks().length === 0)) && (
+            <div className="absolute inset-0 flex items-center justify-center" style={{ background: "radial-gradient(ellipse at center, #1a1040 0%, #0c0a09 60%, #000 100%)" }}>
               <div className="text-center">
-                <div className="relative w-24 h-24 mx-auto mb-4">
-                  <div className="absolute inset-0 rounded-full" style={{ border: "2px solid rgba(99,102,241,0.3)", animation: "wave-ping 2s cubic-bezier(0,0,0.2,1) infinite" }} />
-                  <div className="absolute inset-2 rounded-full" style={{ border: "1.5px solid rgba(99,102,241,0.2)", animation: "wave-ping 2s cubic-bezier(0,0,0.2,1) infinite 0.5s" }} />
-                  <div className="absolute inset-4 rounded-full flex items-center justify-center" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)" }}>
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center animate-pulse" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.4), rgba(139,92,246,0.4))", boxShadow: "0 0 20px rgba(99,102,241,0.3)" }}>
-                      <Phone size={16} className="text-white/80" />
+                {roomState === "connecting" ? (
+                  <>
+                    <div className="relative w-24 h-24 mx-auto mb-4">
+                      <div className="absolute inset-0 rounded-full" style={{ border: "2px solid rgba(99,102,241,0.3)", animation: "wave-ping 2s cubic-bezier(0,0,0.2,1) infinite" }} />
+                      <div className="absolute inset-2 rounded-full" style={{ border: "1.5px solid rgba(99,102,241,0.2)", animation: "wave-ping 2s cubic-bezier(0,0,0.2,1) infinite 0.5s" }} />
+                      <div className="absolute inset-4 rounded-full flex items-center justify-center" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)" }}>
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center animate-pulse" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.4), rgba(139,92,246,0.4))", boxShadow: "0 0 20px rgba(99,102,241,0.3)" }}>
+                          <Phone size={16} className="text-white/80" />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <p className="text-white/60 text-sm">Connecting to {room?.host_name}...</p>
+                    <p className="text-white/60 text-sm">Connecting to {room?.host_name}...</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))", border: "1px solid rgba(255,255,255,0.1)" }}>
+                      <span className="text-3xl font-bold text-white/60">{(room?.host_name || "H")[0].toUpperCase()}</span>
+                    </div>
+                    <p className="text-white/70 text-sm font-medium">{room?.host_name}</p>
+                    <p className="text-white/30 text-xs mt-1"><VideoOff size={12} className="inline mr-1" />Camera off</p>
+                  </>
+                )}
               </div>
             </div>
           )}

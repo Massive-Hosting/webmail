@@ -1,21 +1,42 @@
 /** Wave call sound effects — synthesized via Web Audio API */
 
 let audioCtx: AudioContext | null = null;
+let unlocked = false;
 
-function getAudioContext(): AudioContext {
-  if (!audioCtx) {
-    audioCtx = new AudioContext();
+function getAudioContext(): AudioContext | null {
+  try {
+    if (!audioCtx) {
+      audioCtx = new AudioContext();
+    }
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume().catch(() => {});
+    }
+    return audioCtx;
+  } catch {
+    return null;
   }
-  if (audioCtx.state === "suspended") {
-    audioCtx.resume();
+}
+
+/** Unlock audio context on first user gesture (call from click/touch handlers) */
+export function unlockAudio() {
+  if (unlocked) return;
+  const ctx = getAudioContext();
+  if (ctx) {
+    // Play a silent buffer to unlock
+    const buffer = ctx.createBuffer(1, 1, 22050);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start(0);
+    unlocked = true;
   }
-  return audioCtx;
 }
 
 /** Rising chime — played when call connects */
 export function playConnectSound() {
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
 
     // Two-note rising chime
@@ -40,6 +61,7 @@ export function playConnectSound() {
 export function playDisconnectSound() {
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
 
     const osc = ctx.createOscillator();
@@ -60,6 +82,7 @@ export function playDisconnectSound() {
 export function playRingPulse() {
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
 
     const osc = ctx.createOscillator();
