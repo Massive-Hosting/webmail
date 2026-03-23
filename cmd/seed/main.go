@@ -403,6 +403,74 @@ func (c *client) cleanEmails() error {
 	return err
 }
 
+func (c *client) cleanContacts() error {
+	resp, err := c.jmapCall(jmapRequest{
+		Using: []string{"urn:ietf:params:jmap:contacts"},
+		MethodCalls: [][]interface{}{
+			{"ContactCard/query", map[string]interface{}{
+				"accountId": c.accountID,
+				"limit":     1000,
+			}, "0"},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	var queryResult struct {
+		IDs []string `json:"ids"`
+	}
+	if err := json.Unmarshal(resp.MethodResponses[0][1], &queryResult); err != nil {
+		return err
+	}
+	if len(queryResult.IDs) == 0 {
+		return nil
+	}
+	_, err = c.jmapCall(jmapRequest{
+		Using: []string{"urn:ietf:params:jmap:contacts"},
+		MethodCalls: [][]interface{}{
+			{"ContactCard/set", map[string]interface{}{
+				"accountId": c.accountID,
+				"destroy":   queryResult.IDs,
+			}, "0"},
+		},
+	})
+	return err
+}
+
+func (c *client) cleanCalendarEvents() error {
+	resp, err := c.jmapCall(jmapRequest{
+		Using: []string{"urn:ietf:params:jmap:calendars"},
+		MethodCalls: [][]interface{}{
+			{"CalendarEvent/query", map[string]interface{}{
+				"accountId": c.accountID,
+				"limit":     1000,
+			}, "0"},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	var queryResult struct {
+		IDs []string `json:"ids"`
+	}
+	if err := json.Unmarshal(resp.MethodResponses[0][1], &queryResult); err != nil {
+		return err
+	}
+	if len(queryResult.IDs) == 0 {
+		return nil
+	}
+	_, err = c.jmapCall(jmapRequest{
+		Using: []string{"urn:ietf:params:jmap:calendars"},
+		MethodCalls: [][]interface{}{
+			{"CalendarEvent/set", map[string]interface{}{
+				"accountId": c.accountID,
+				"destroy":   queryResult.IDs,
+			}, "0"},
+		},
+	})
+	return err
+}
+
 // --- Email data ---
 
 type emailSpec struct {
@@ -1208,9 +1276,15 @@ func seedAccount(baseURL, webmailURL string, acct account, clean bool) error {
 	}
 
 	if clean {
-		fmt.Println("  Cleaning existing emails...")
+		fmt.Println("  Cleaning existing data...")
 		if err := c.cleanEmails(); err != nil {
 			return fmt.Errorf("cleaning emails: %w", err)
+		}
+		if err := c.cleanContacts(); err != nil {
+			fmt.Printf("  Warning: could not clean contacts: %v\n", err)
+		}
+		if err := c.cleanCalendarEvents(); err != nil {
+			fmt.Printf("  Warning: could not clean calendar: %v\n", err)
 		}
 	}
 
