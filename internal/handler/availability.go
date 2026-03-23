@@ -399,25 +399,30 @@ func (h *AvailabilityHandler) searchPrincipals(ctx context.Context, sess *sessio
 		if p.Type != "individual" {
 			continue
 		}
-		// Filter to same domain and matching query.
+		// Find the first email matching the domain (skip aliases to avoid duplicates).
+		var primaryEmail string
 		for _, email := range p.Emails {
-			if domainFromEmail(email) != domain {
-				continue
+			if domainFromEmail(email) == domain {
+				primaryEmail = email
+				break
 			}
-			// Don't include the requester themselves.
-			if email == sess.Email {
-				continue
-			}
-			name := p.Description
-			if name == "" {
-				name = p.Name
-			}
-			if strings.Contains(strings.ToLower(name), queryLower) ||
-				strings.Contains(strings.ToLower(email), queryLower) {
-				entries = append(entries, directoryEntry{Email: email, Name: name})
-				if len(entries) >= limit {
-					return entries, nil
-				}
+		}
+		if primaryEmail == "" {
+			continue
+		}
+		// Don't include the requester themselves.
+		if primaryEmail == sess.Email {
+			continue
+		}
+		name := p.Description
+		if name == "" {
+			name = p.Name
+		}
+		if query == "" || strings.Contains(strings.ToLower(name), queryLower) ||
+			strings.Contains(strings.ToLower(primaryEmail), queryLower) {
+			entries = append(entries, directoryEntry{Email: primaryEmail, Name: name})
+			if len(entries) >= limit {
+				return entries, nil
 			}
 		}
 	}

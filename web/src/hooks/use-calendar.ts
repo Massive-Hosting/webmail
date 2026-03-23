@@ -114,7 +114,7 @@ export function useCalendars() {
 
 // ---- Calendar navigation ----
 
-export function useCalendarNavigation(initialView: CalendarViewMode = "month") {
+export function useCalendarNavigation(initialView: CalendarViewMode = "week") {
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialView);
   const [currentDate, setCurrentDate] = useState(new Date());
 
