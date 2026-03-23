@@ -267,11 +267,7 @@ func (h *AvailabilityHandler) queryBusySlots(ctx context.Context, sess *session.
 				"CalendarEvent/query",
 				map[string]interface{}{
 					"accountId": accountID,
-					"filter": map[string]interface{}{
-						"after":  start,
-						"before": end,
-					},
-					"limit": 200,
+					"limit":     200,
 				},
 				"q0",
 			},
@@ -296,7 +292,7 @@ func (h *AvailabilityHandler) queryBusySlots(ctx context.Context, sess *session.
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, sess.StalwartURL+"/jmap/", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, sess.StalwartURL+"/jmap", bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
@@ -511,7 +507,7 @@ func (h *AvailabilityHandler) queryVacationResponse(ctx context.Context, sess *s
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, sess.StalwartURL+"/jmap/", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, sess.StalwartURL+"/jmap", bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
