@@ -1,6 +1,7 @@
 /** Dark-themed custom dropdown for device selection in Wave lobby/guest pages */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 
 interface DarkSelectProps {
@@ -17,23 +18,45 @@ export const DarkSelect = React.memo(function DarkSelect({
   onChange,
 }: DarkSelectProps) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const selected = options.find((o) => o.value === value);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  // Position the dropdown relative to the button using a portal
+  const updatePosition = useCallback(() => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const dropdownHeight = Math.min(options.length * 32 + 8, 180);
+    // Open upward if not enough space below
+    const openUp = spaceBelow < dropdownHeight + 8;
+    setPos({
+      top: openUp ? rect.top - dropdownHeight - 4 : rect.bottom + 4,
+      left: rect.left,
+      width: rect.width,
+    });
+  }, [options.length]);
 
   // Close on outside click
   useEffect(() => {
     if (!open) return;
+    updatePosition();
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (buttonRef.current?.contains(target)) return;
+      if (dropdownRef.current?.contains(target)) return;
+      setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
+  }, [open, updatePosition]);
 
   return (
-    <div ref={ref} className="relative">
+    <div>
       <label className="text-[11px] font-medium text-white/40 block mb-1">{label}</label>
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between h-9 px-3 text-xs rounded-lg outline-none cursor-pointer transition-colors"
@@ -50,10 +73,15 @@ export const DarkSelect = React.memo(function DarkSelect({
           transition: "transform 150ms ease",
         }} />
       </button>
-      {open && (
+      {open && pos && createPortal(
         <div
-          className="absolute z-[10000] left-0 right-0 mt-1 py-1 rounded-lg overflow-y-auto animate-scale-in"
+          ref={dropdownRef}
+          className="fixed py-1 rounded-lg overflow-y-auto animate-scale-in"
           style={{
+            top: pos.top,
+            left: pos.left,
+            width: pos.width,
+            zIndex: 99999,
             backgroundColor: "#1c1917",
             border: "1px solid rgba(255,255,255,0.12)",
             boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
@@ -83,7 +111,8 @@ export const DarkSelect = React.memo(function DarkSelect({
               <span className="truncate">{opt.label}</span>
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
