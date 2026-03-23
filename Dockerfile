@@ -4,6 +4,10 @@ WORKDIR /app/web
 COPY web/package*.json ./
 RUN npm ci --ignore-scripts
 COPY web/ ./
+# Copy MediaPipe WASM + model to public dir (served as static assets, loaded on demand)
+RUN mkdir -p public/mediapipe/wasm public/mediapipe/models \
+    && cp node_modules/@mediapipe/tasks-vision/wasm/* public/mediapipe/wasm/ \
+    && node -e "const https=require('https'),fs=require('fs');https.get('https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',r=>{r.pipe(fs.createWriteStream('public/mediapipe/models/selfie_segmenter.tflite'))})"
 RUN npm run build
 
 # Stage 2: Backend build

@@ -46,22 +46,40 @@ async function getSegmenter(): Promise<ImageSegmenter | null> {
 
   segmenterLoading = true;
   try {
-    const vision = await FilesetResolver.forVisionTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.33/wasm"
-    );
+    console.log("[Wave] Loading MediaPipe vision WASM...");
+    const vision = await FilesetResolver.forVisionTasks("/mediapipe/wasm");
+    console.log("[Wave] Creating image segmenter...");
     segmenter = await ImageSegmenter.createFromOptions(vision, {
       baseOptions: {
-        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite",
+        modelAssetPath: "/mediapipe/models/selfie_segmenter.tflite",
         delegate: "GPU",
       },
       runningMode: "VIDEO",
       outputCategoryMask: true,
       outputConfidenceMasks: false,
     });
+    console.log("[Wave] Segmenter ready");
     return segmenter;
   } catch (e) {
     console.error("[Wave] Failed to load segmenter:", e);
-    return null;
+    // Try again without GPU delegate (CPU fallback)
+    try {
+      console.log("[Wave] Retrying segmenter with CPU delegate...");
+      const vision = await FilesetResolver.forVisionTasks("/mediapipe/wasm");
+      segmenter = await ImageSegmenter.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: "/mediapipe/models/selfie_segmenter.tflite",
+        },
+        runningMode: "VIDEO",
+        outputCategoryMask: true,
+        outputConfidenceMasks: false,
+      });
+      console.log("[Wave] Segmenter ready (CPU fallback)");
+      return segmenter;
+    } catch (e2) {
+      console.error("[Wave] CPU fallback also failed:", e2);
+      return null;
+    }
   } finally {
     segmenterLoading = false;
   }
@@ -233,8 +251,8 @@ export class BackgroundProcessor {
             this.ctx.putImageData(frame, 0, 0);
             mask.close();
           }
-        } catch {
-          // Segmentation failed — draw raw frame
+        } catch (e) {
+          console.error("[Wave] Segmentation failed:", e);
           this.ctx.drawImage(this.videoEl, 0, 0, this.width, this.height);
         }
       } else {
