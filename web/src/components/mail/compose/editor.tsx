@@ -40,7 +40,14 @@ import {
   Undo,
   Redo,
   LinkIcon as LinkOff,
+  Sparkles,
+  Check,
+  X,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
+import { rewriteWithAI } from "@/api/ai.ts";
+import { useAIEnabled } from "@/hooks/use-ai-enabled.ts";
 
 /** Upload an image file to the blob endpoint and return the blobId */
 async function uploadImageBlob(file: File): Promise<string> {
@@ -180,10 +187,22 @@ export const ComposeEditor = React.memo(function ComposeEditor({
   placeholder: placeholderProp,
 }: ComposeEditorProps) {
   const { t } = useTranslation();
+  const aiEnabled = useAIEnabled();
   const placeholder = placeholderProp ?? t("compose.writeMessage");
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const linkInputRef = useRef<HTMLInputElement>(null);
+
+  // AI Edit state
+  const [aiEditOpen, setAiEditOpen] = useState(false);
+  const [aiInstruction, setAiInstruction] = useState("");
+  const [aiResult, setAiResult] = useState("");
+  const [aiStreaming, setAiStreaming] = useState(false);
+  const [aiSelectedText, setAiSelectedText] = useState("");
+  const [aiSelectionRange, setAiSelectionRange] = useState<{ from: number; to: number } | null>(null);
+  const aiAbortRef = useRef<AbortController | null>(null);
+  const aiInputRef = useRef<HTMLInputElement>(null);
+  const aiEditRef = useRef<() => void>(() => {});
 
   const editor = useEditor({
     extensions: [
@@ -254,6 +273,12 @@ export const ComposeEditor = React.memo(function ComposeEditor({
           "min-height: 200px; max-height: 60vh; overflow-y: auto; outline: none; padding: 12px 16px;",
       },
       handleKeyDown: (_view, event) => {
+        // Ctrl+Shift+E: AI Edit
+        if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'e') {
+          event.preventDefault();
+          aiEditRef.current();
+          return true;
+        }
         // Tab key indentation in lists
         if (event.key === "Tab") {
           if (editor?.isActive("listItem")) {
@@ -317,6 +342,119 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       editor.chain().focus().setImage({ src: url }).run();
     }
   }, [editor]);
+
+  // AI Edit: trigger the popover
+  const handleAiEdit = useCallback(() => {
+    if (!editor) return;
+    const { from, to } = editor.state.selection;
+    const hasSelection = from !== to;
+
+    if (hasSelection) {
+      const selectedText = editor.state.doc.textBetween(from, to, '\n');
+      setAiSelectedText(selectedText);
+      setAiSelectionRange({ from, to });
+    } else {
+      // No selection: get all text before quote/signature
+      const fullText = editor.state.doc.textContent;
+      const sigIdx = fullText.indexOf('\n-- \n');
+      const text = sigIdx !== -1 ? fullText.slice(0, sigIdx).trim() : fullText.trim();
+      if (!text) return;
+      setAiSelectedText(text);
+      // Walk the doc to find the signature node position
+      let endPos = editor.state.doc.content.size;
+      editor.state.doc.descendants((node, pos) => {
+        if (node.isText && node.text?.includes('-- ')) {
+          const resolved = editor.state.doc.resolve(pos);
+          const parent = resolved.parent;
+          if (parent.textContent.trim() === '--') {
+            endPos = Math.min(endPos, resolved.before());
+            return false;
+          }
+        }
+      });
+      setAiSelectionRange({ from: 0, to: endPos });
+    }
+
+    setAiEditOpen(true);
+    setAiResult("");
+    setAiInstruction("");
+    setTimeout(() => aiInputRef.current?.focus(), 50);
+  }, [editor]);
+
+  // Keep the ref updated so the keyboard shortcut can access it
+  aiEditRef.current = handleAiEdit;
+
+  // AI Edit: run the rewrite with a given instruction
+  const runAiRewrite = useCallback(async (instruction: string, selectedText: string) => {
+    if (!selectedText || !instruction.trim()) return;
+
+    aiAbortRef.current?.abort();
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
+
+    setAiStreaming(true);
+    setAiResult("");
+
+    try {
+      let result = "";
+      const stream = rewriteWithAI(selectedText, instruction.trim(), controller.signal);
+      for await (const chunk of stream) {
+        result += chunk;
+        setAiResult(result);
+      }
+    } catch (e) {
+      if ((e as Error).name !== 'AbortError') {
+        console.error("[AI] Rewrite failed:", e);
+      }
+    } finally {
+      setAiStreaming(false);
+    }
+  }, []);
+
+  // AI Edit: submit from the input field
+  const handleAiRewrite = useCallback(() => {
+    runAiRewrite(aiInstruction, aiSelectedText);
+  }, [runAiRewrite, aiInstruction, aiSelectedText]);
+
+  // AI Edit: quick preset
+  const handleAiPreset = useCallback((preset: string) => {
+    setAiInstruction(preset);
+    runAiRewrite(preset, aiSelectedText);
+  }, [runAiRewrite, aiSelectedText]);
+
+  // AI Edit: accept the result
+  const handleAiAccept = useCallback(() => {
+    if (!editor || !aiResult || !aiSelectionRange) return;
+
+    const htmlResult = aiResult
+      .split(/\n\s*\n/)
+      .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+      .join('');
+
+    editor.chain()
+      .focus()
+      .setTextSelection(aiSelectionRange)
+      .deleteSelection()
+      .insertContent(htmlResult)
+      .run();
+
+    setAiEditOpen(false);
+    setAiResult("");
+    setAiInstruction("");
+    setAiSelectedText("");
+    setAiSelectionRange(null);
+  }, [editor, aiResult, aiSelectionRange]);
+
+  // AI Edit: cancel
+  const handleAiCancel = useCallback(() => {
+    aiAbortRef.current?.abort();
+    setAiEditOpen(false);
+    setAiResult("");
+    setAiInstruction("");
+    setAiSelectedText("");
+    setAiSelectionRange(null);
+    setAiStreaming(false);
+  }, []);
 
   if (!editor) {
     return null;
@@ -455,6 +593,17 @@ export const ComposeEditor = React.memo(function ComposeEditor({
           active={editor.isActive({ textAlign: "right" })}
           onClick={() => editor.chain().focus().setTextAlign("right").run()}
         />
+
+        {aiEnabled && (
+          <>
+            <ToolbarDivider />
+            <ToolbarButton
+              icon={<Sparkles size={15} />}
+              label={t("editor.aiEdit")}
+              onClick={handleAiEdit}
+            />
+          </>
+        )}
       </div>
 
       {/* Link input popup */}
@@ -509,6 +658,147 @@ export const ComposeEditor = React.memo(function ComposeEditor({
           >
             {t("compose.cancel")}
           </button>
+        </div>
+      )}
+
+      {/* AI Edit popover */}
+      {aiEditOpen && (
+        <div
+          className="flex flex-col gap-2 px-4 py-3"
+          style={{
+            backgroundColor: "var(--color-bg-tertiary)",
+            borderBottom: "1px solid var(--color-border-secondary)",
+          }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <Sparkles size={14} style={{ color: "var(--color-text-accent)", flexShrink: 0 }} />
+              <span className="text-xs font-medium" style={{ color: "var(--color-text-primary)" }}>
+                {t("editor.aiEditTitle")}
+              </span>
+              <span className="text-xs truncate" style={{ color: "var(--color-text-tertiary)" }}>
+                — {aiSelectedText.length > 80 ? aiSelectedText.slice(0, 80) + '...' : aiSelectedText}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleAiCancel}
+              className="p-1 rounded hover:bg-[var(--color-bg-secondary)]"
+              style={{ color: "var(--color-text-tertiary)" }}
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              <X size={14} />
+            </button>
+          </div>
+
+          {/* Quick presets */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {[
+              t("editor.aiPresetGrammar"),
+              t("editor.aiPresetProfessional"),
+              t("editor.aiPresetConcise"),
+              t("editor.aiPresetFriendly"),
+              t("editor.aiPresetSimplify"),
+            ].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => handleAiPreset(preset)}
+                className="px-2 py-1 text-xs rounded-md transition-colors hover:bg-[var(--color-bg-secondary)]"
+                style={{
+                  color: "var(--color-text-secondary)",
+                  border: "1px solid var(--color-border-secondary)",
+                }}
+                disabled={aiStreaming}
+                onMouseDown={(e) => e.preventDefault()}
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
+
+          {/* Instruction input */}
+          <div className="flex items-center gap-2">
+            <input
+              ref={aiInputRef}
+              type="text"
+              value={aiInstruction}
+              onChange={(e) => setAiInstruction(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleAiRewrite();
+                }
+                if (e.key === "Escape") {
+                  handleAiCancel();
+                }
+              }}
+              placeholder={t("editor.aiEditPlaceholder")}
+              className="flex-1 text-sm px-3 py-2 rounded-md outline-none"
+              style={{
+                backgroundColor: "var(--color-bg-primary)",
+                color: "var(--color-text-primary)",
+                border: "1px solid var(--color-border-primary)",
+              }}
+              disabled={aiStreaming}
+            />
+            <button
+              type="button"
+              onClick={handleAiRewrite}
+              disabled={!aiInstruction.trim() || aiStreaming}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md transition-colors disabled:opacity-40"
+              style={{
+                backgroundColor: "var(--color-bg-accent)",
+                color: "white",
+              }}
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              {aiStreaming ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+              {aiStreaming ? t("editor.aiGenerating") : t("editor.aiRewrite")}
+            </button>
+          </div>
+
+          {/* Result preview */}
+          {aiResult && (
+            <div className="rounded-md p-3" style={{ backgroundColor: "var(--color-bg-primary)", border: "1px solid var(--color-border-secondary)" }}>
+              <pre className="text-sm whitespace-pre-wrap" style={{ color: "var(--color-text-primary)", fontFamily: "inherit", margin: 0 }}>
+                {aiResult}
+              </pre>
+              <div className="flex items-center gap-2 mt-2 pt-2" style={{ borderTop: "1px solid var(--color-border-secondary)" }}>
+                <button
+                  type="button"
+                  onClick={handleAiAccept}
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors"
+                  style={{ backgroundColor: "var(--color-bg-accent)", color: "white" }}
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  <Check size={12} />
+                  {t("editor.aiAccept")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAiResult(""); setAiInstruction(""); setTimeout(() => aiInputRef.current?.focus(), 50); }}
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors hover:bg-[var(--color-bg-secondary)]"
+                  style={{ color: "var(--color-text-secondary)", border: "1px solid var(--color-border-secondary)" }}
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  <RefreshCw size={12} />
+                  {t("editor.aiRefine")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAiCancel}
+                  className="px-2.5 py-1 text-xs rounded transition-colors hover:bg-[var(--color-bg-secondary)]"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  {t("editor.aiCancel")}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
