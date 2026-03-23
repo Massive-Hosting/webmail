@@ -73,7 +73,12 @@ export const TaskTray = React.memo(function TaskTray() {
   const [tasks, dispatch] = useReducer(taskReducer, new Map<string, TaskEntry>());
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Filter out long-running timer tasks (snooze, scheduled-send) that aren't
+  // meaningful to show as progress bars — they sit at 50% until the timer fires.
+  const HIDDEN_TASK_TYPES = new Set(["snooze", "scheduled-send"]);
+
   const handleProgress = useCallback((event: TaskProgressEvent) => {
+    if (HIDDEN_TASK_TYPES.has(event.taskType)) return;
     dispatch({ type: "update", event });
   }, []);
 
