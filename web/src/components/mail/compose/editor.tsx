@@ -501,13 +501,20 @@ export const ComposeEditor = React.memo(function ComposeEditor({
   const handleAiAccept = useCallback(() => {
     if (!editor || !aiResult || !aiSelectionRange) return;
 
+    // Capture text styles from the selection before replacing
+    editor.chain().focus().setTextSelection(aiSelectionRange).run();
+    const attrs = editor.getAttributes("textStyle");
+    const fontSize = attrs?.fontSize;
+
     // Clear the highlight decoration
     const clearTr = editor.state.tr.setMeta(aiHighlightKey, { clear: true });
     editor.view.dispatch(clearTr);
 
+    // Build HTML with preserved styles
+    const styleAttr = fontSize ? ` style="font-size: ${fontSize}"` : "";
     const htmlResult = aiResult
       .split(/\n\s*\n/)
-      .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+      .map(p => `<p>${fontSize ? `<span${styleAttr}>${p.replace(/\n/g, '<br>')}</span>` : p.replace(/\n/g, '<br>')}</p>`)
       .join('');
 
     editor.chain()
