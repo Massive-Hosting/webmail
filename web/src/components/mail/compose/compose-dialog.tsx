@@ -250,12 +250,13 @@ export const ComposePanel = React.memo(function ComposePanel({
       queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
     } catch (err) {
       const failures = (currentDraft.consecutiveSaveFailures ?? 0) + 1;
-      console.warn("[compose] Auto-save failed (attempt " + failures + "):", err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.warn("[compose] Auto-save failed (attempt " + failures + "):", errMsg);
       updateDraft(draftId, {
         saving: false,
         consecutiveSaveFailures: failures,
         // Only show error to user after 3 consecutive failures
-        saveError: failures >= 3 ? t("compose.failedToSaveDraft") : undefined,
+        saveError: failures >= 3 ? `${t("compose.failedToSaveDraft")}: ${errMsg}` : undefined,
       });
       // Retry silently after a delay if under the threshold
       if (failures < 3) {
@@ -1245,7 +1246,7 @@ function SaveIndicator({
   const { t } = useTranslation();
   if (saveError) {
     return (
-      <span className="compose-dialog__save-indicator compose-dialog__save-indicator--error">
+      <span className="compose-dialog__save-indicator compose-dialog__save-indicator--error" title={saveError}>
         {t("compose.saveFailed")}
       </span>
     );
