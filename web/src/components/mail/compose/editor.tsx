@@ -18,7 +18,68 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Typography from "@tiptap/extension-typography";
 import CharacterCount from "@tiptap/extension-character-count";
 import { Extension } from "@tiptap/core";
-import { Plugin } from "@tiptap/pm/state";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Decoration, DecorationSet } from "@tiptap/pm/view";
+
+/** Plugin that renders a persistent highlight decoration for the AI edit selection */
+const aiHighlightKey = new PluginKey("aiHighlight");
+const AiSelectionHighlight = Extension.create({
+  name: "aiSelectionHighlight",
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: aiHighlightKey,
+        state: {
+          init() { return DecorationSet.empty; },
+          apply(tr, set) {
+            const meta = tr.getMeta(aiHighlightKey);
+            if (meta?.clear) return DecorationSet.empty;
+            if (meta?.from != null && meta?.to != null) {
+              const deco = Decoration.inline(meta.from, meta.to, {
+                style: "background-color: rgba(99, 102, 241, 0.15); border-radius: 2px;",
+              });
+              return DecorationSet.create(tr.doc, [deco]);
+            }
+            return set.map(tr.mapping, tr.doc);
+          },
+        },
+        props: {
+          decorations(state) { return aiHighlightKey.getState(state); },
+        },
+      }),
+    ];
+  },
+});
+
+/** Custom FontSize extension — adds fontSize attribute to TextStyle */
+const FontSize = Extension.create({
+  name: "fontSize",
+  addGlobalAttributes() {
+    return [{
+      types: ["textStyle"],
+      attributes: {
+        fontSize: {
+          default: null,
+          parseHTML: (element) => element.style.fontSize || null,
+          renderHTML: (attributes) => {
+            if (!attributes.fontSize) return {};
+            return { style: `font-size: ${attributes.fontSize}` };
+          },
+        },
+      },
+    }];
+  },
+  addCommands() {
+    return {
+      setFontSize: (size: string) => ({ chain }: { chain: any }) => {
+        return chain().setMark("textStyle", { fontSize: size }).run();
+      },
+      unsetFontSize: () => ({ chain }: { chain: any }) => {
+        return chain().setMark("textStyle", { fontSize: null }).removeEmptyTextStyle().run();
+      },
+    } as any;
+  },
+});
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -45,6 +106,8 @@ import {
   X,
   RefreshCw,
   Loader2,
+  AArrowUp,
+  AArrowDown,
 } from "lucide-react";
 import { rewriteWithAI } from "@/api/ai.ts";
 import { useAIEnabled } from "@/hooks/use-ai-enabled.ts";
@@ -260,6 +323,8 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       }),
       Typography,
       CharacterCount,
+      FontSize,
+      AiSelectionHighlight,
       InlineImageUpload,
     ],
     content,
@@ -349,10 +414,14 @@ export const ComposeEditor = React.memo(function ComposeEditor({
     const { from, to } = editor.state.selection;
     const hasSelection = from !== to;
 
+    let rangeFrom: number;
+    let rangeTo: number;
+
     if (hasSelection) {
       const selectedText = editor.state.doc.textBetween(from, to, '\n');
       setAiSelectedText(selectedText);
-      setAiSelectionRange({ from, to });
+      rangeFrom = from;
+      rangeTo = to;
     } else {
       // No selection: get all text before quote/signature
       const fullText = editor.state.doc.textContent;
@@ -360,7 +429,6 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       const text = sigIdx !== -1 ? fullText.slice(0, sigIdx).trim() : fullText.trim();
       if (!text) return;
       setAiSelectedText(text);
-      // Walk the doc to find the signature node position
       let endPos = editor.state.doc.content.size;
       editor.state.doc.descendants((node, pos) => {
         if (node.isText && node.text?.includes('-- ')) {
@@ -372,12 +440,19 @@ export const ComposeEditor = React.memo(function ComposeEditor({
           }
         }
       });
-      setAiSelectionRange({ from: 0, to: endPos });
+      rangeFrom = 0;
+      rangeTo = endPos;
     }
 
+    setAiSelectionRange({ from: rangeFrom, to: rangeTo });
     setAiEditOpen(true);
     setAiResult("");
     setAiInstruction("");
+
+    // Apply persistent highlight decoration on the selected range
+    const tr = editor.state.tr.setMeta(aiHighlightKey, { from: rangeFrom, to: rangeTo });
+    editor.view.dispatch(tr);
+
     setTimeout(() => aiInputRef.current?.focus(), 50);
   }, [editor]);
 
@@ -426,6 +501,10 @@ export const ComposeEditor = React.memo(function ComposeEditor({
   const handleAiAccept = useCallback(() => {
     if (!editor || !aiResult || !aiSelectionRange) return;
 
+    // Clear the highlight decoration
+    const clearTr = editor.state.tr.setMeta(aiHighlightKey, { clear: true });
+    editor.view.dispatch(clearTr);
+
     const htmlResult = aiResult
       .split(/\n\s*\n/)
       .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
@@ -448,13 +527,18 @@ export const ComposeEditor = React.memo(function ComposeEditor({
   // AI Edit: cancel
   const handleAiCancel = useCallback(() => {
     aiAbortRef.current?.abort();
+    // Clear the highlight decoration
+    if (editor) {
+      const clearTr = editor.state.tr.setMeta(aiHighlightKey, { clear: true });
+      editor.view.dispatch(clearTr);
+    }
     setAiEditOpen(false);
     setAiResult("");
     setAiInstruction("");
     setAiSelectedText("");
     setAiSelectionRange(null);
     setAiStreaming(false);
-  }, []);
+  }, [editor]);
 
   if (!editor) {
     return null;
@@ -593,6 +677,42 @@ export const ComposeEditor = React.memo(function ComposeEditor({
           active={editor.isActive({ textAlign: "right" })}
           onClick={() => editor.chain().focus().setTextAlign("right").run()}
         />
+
+        <ToolbarDivider />
+
+        {/* Font size */}
+        <select
+          value={editor.getAttributes("textStyle").fontSize || ""}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val) {
+              editor.chain().focus().setMark("textStyle", { fontSize: val }).run();
+            } else {
+              editor.chain().focus().setMark("textStyle", { fontSize: null }).removeEmptyTextStyle().run();
+            }
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="text-xs px-1 py-1 rounded outline-none cursor-pointer"
+          style={{
+            backgroundColor: "transparent",
+            color: "var(--color-text-secondary)",
+            border: "1px solid var(--color-border-secondary)",
+            height: 28,
+          }}
+          title={t("editor.fontSize")}
+        >
+          <option value="">{t("editor.fontSizeDefault")}</option>
+          <option value="10px">10</option>
+          <option value="12px">12</option>
+          <option value="14px">14</option>
+          <option value="16px">16</option>
+          <option value="18px">18</option>
+          <option value="20px">20</option>
+          <option value="24px">24</option>
+          <option value="28px">28</option>
+          <option value="32px">32</option>
+          <option value="36px">36</option>
+        </select>
 
         {aiEnabled && (
           <>
@@ -813,7 +933,9 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       )}
 
       {/* Editor area */}
-      <EditorContent editor={editor} />
+      <div className={aiEditOpen ? "ai-edit-active" : ""}>
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 });

@@ -297,6 +297,8 @@
   "editor.aiPresetConcise": "Make more concise",
   "editor.aiPresetFriendly": "Make more friendly",
   "editor.aiPresetSimplify": "Simplify language",
+  "editor.fontSize": "Font size",
+  "editor.fontSizeDefault": "Size",
   "contacts.new": "New",
   "contacts.importContacts": "Import contacts",
   "contacts.exportContacts": "Export contacts",

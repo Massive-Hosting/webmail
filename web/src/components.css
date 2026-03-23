@@ -3413,3 +3413,8 @@
   color: var(--color-text-tertiary);
   flex-shrink: 0;
 }
+
+/* ---- AI Edit: dim editor while AI panel is open ---- */
+.ai-edit-active .ProseMirror {
+  caret-color: transparent;
+}
