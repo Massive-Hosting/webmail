@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -88,21 +89,93 @@ type jmapSession struct {
 // --- Client ---
 
 type client struct {
-	baseURL    string
-	email      string
-	password   string
-	httpClient *http.Client
-	accountID  string
-	session    *jmapSession
+	baseURL     string
+	webmailURL  string
+	email       string
+	password    string
+	httpClient  *http.Client
+	accountID   string
+	session     *jmapSession
+	sessionCookie string // webmail API session cookie
 }
 
-func newClient(baseURL, email, password string) *client {
+func newClient(baseURL, webmailURL, email, password string) *client {
 	return &client{
 		baseURL:    strings.TrimRight(baseURL, "/"),
+		webmailURL: strings.TrimRight(webmailURL, "/"),
 		email:      email,
 		password:   password,
-		httpClient: &http.Client{Timeout: 30 * time.Second},
+		httpClient: &http.Client{
+			Timeout: 30 * time.Second,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		},
 	}
+}
+
+// loginWebmail authenticates with the webmail API and stores the session cookie.
+func (c *client) loginWebmail() error {
+	if c.webmailURL == "" {
+		return fmt.Errorf("no webmail URL configured")
+	}
+	body, _ := json.Marshal(map[string]string{"email": c.email, "password": c.password})
+	resp, err := c.httpClient.Post(c.webmailURL+"/api/auth/login", "application/json", bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("login request: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 && resp.StatusCode != 302 {
+		b, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("login failed (%d): %s", resp.StatusCode, string(b))
+	}
+	// Extract session cookie
+	for _, cookie := range resp.Cookies() {
+		if cookie.Name == "webmail_session" || cookie.Name == "session" || cookie.Name == "sid" {
+			c.sessionCookie = cookie.Name + "=" + cookie.Value
+			return nil
+		}
+	}
+	// Try any cookie
+	if len(resp.Cookies()) > 0 {
+		ck := resp.Cookies()[0]
+		c.sessionCookie = ck.Name + "=" + ck.Value
+		return nil
+	}
+	return fmt.Errorf("no session cookie in login response")
+}
+
+// saveParticipants saves event participants to the webmail DB via the webmail API.
+func (c *client) saveParticipants(eventID string, participants []map[string]string) error {
+	if c.sessionCookie == "" {
+		if err := c.loginWebmail(); err != nil {
+			return err
+		}
+	}
+
+	body, err := json.Marshal(participants)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("PUT", c.webmailURL+"/api/events/"+eventID+"/participants", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Cookie", c.sessionCookie)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		b, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("PUT participants failed (%d): %s", resp.StatusCode, string(b))
+	}
+	return nil
 }
 
 func (c *client) fetchSession() error {
@@ -1121,10 +1194,10 @@ func generateDraftEmails(acctEmail string, mb *mailboxes) []emailSpec {
 
 // --- Seed function ---
 
-func seedAccount(baseURL string, acct account, clean bool) error {
+func seedAccount(baseURL, webmailURL string, acct account, clean bool) error {
 	fmt.Printf("Seeding %s...\n", acct.Email)
 
-	c := newClient(baseURL, acct.Email, acct.Password)
+	c := newClient(baseURL, webmailURL, acct.Email, acct.Password)
 	if err := c.fetchSession(); err != nil {
 		return fmt.Errorf("fetching session for %s: %w", acct.Email, err)
 	}
@@ -1681,11 +1754,14 @@ func seedCalendarEvents(c *client, acctEmail string) (int, error) {
 		"PT1H", nextTue.Add(12*time.Hour),
 		participantsFromLocals([]string{"sarah.chen", "emma.larsson", "marcus.johnson"}), false)
 
-	// Send in batches of 10
+	// Send in batches of 10 and collect created event IDs
 	keys := make([]string, 0, len(events))
 	for k := range events {
 		keys = append(keys, k)
 	}
+
+	// Map from creation key to server-assigned event ID
+	createdIDs := map[string]string{}
 
 	total := 0
 	batchSize := 10
@@ -1699,7 +1775,7 @@ func seedCalendarEvents(c *client, acctEmail string) (int, error) {
 			batch[k] = events[k]
 		}
 
-		_, err := c.jmapCall(jmapRequest{
+		resp, err := c.jmapCall(jmapRequest{
 			Using: []string{"urn:ietf:params:jmap:calendars", "urn:ietf:params:jmap:principals"},
 			MethodCalls: [][]interface{}{
 				{"CalendarEvent/set", map[string]interface{}{
@@ -1711,7 +1787,64 @@ func seedCalendarEvents(c *client, acctEmail string) (int, error) {
 		if err != nil {
 			return total, fmt.Errorf("creating calendar events batch: %w", err)
 		}
+
+		// Parse created IDs from response
+		var setResult struct {
+			Created map[string]struct {
+				ID string `json:"id"`
+			} `json:"created"`
+		}
+		if err := json.Unmarshal(resp.MethodResponses[0][1], &setResult); err == nil {
+			for key, val := range setResult.Created {
+				createdIDs[key] = val.ID
+			}
+		}
+
 		total += len(batch)
+	}
+
+	// Save participants to webmail DB via the webmail API
+	participantsSaved := 0
+	for key, eventID := range createdIDs {
+		evt, ok := events[key].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		parts, ok := evt["participants"].(map[string]interface{})
+		if !ok || len(parts) == 0 {
+			continue
+		}
+
+		// Build participant list for the webmail API
+		var apiParts []map[string]string
+		for _, p := range parts {
+			pm, ok := p.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			role := "attendee"
+			if roles, ok := pm["roles"].(map[string]bool); ok && roles["owner"] {
+				role = "owner"
+			}
+			apiParts = append(apiParts, map[string]string{
+				"eventId": eventID,
+				"email":   fmt.Sprint(pm["email"]),
+				"name":    fmt.Sprint(pm["name"]),
+				"role":    role,
+				"status":  "accepted",
+			})
+		}
+
+		if err := c.saveParticipants(eventID, apiParts); err != nil {
+			// Non-fatal — log and continue
+			fmt.Printf("  Warning: could not save participants for %s: %v\n", key, err)
+			continue
+		}
+		participantsSaved++
+	}
+
+	if participantsSaved > 0 {
+		fmt.Printf("  Saved participants for %d events\n", participantsSaved)
 	}
 
 	return total, nil
@@ -1725,7 +1858,13 @@ func main() {
 		defaultURL = "http://10.10.10.200:8081"
 	}
 
+	defaultWebmailURL := os.Getenv("WEBMAIL_URL")
+	if defaultWebmailURL == "" {
+		defaultWebmailURL = "https://webmail.massive-hosting.com"
+	}
+
 	url := flag.String("url", defaultURL, "Stalwart URL")
+	webmailURL := flag.String("webmail-url", defaultWebmailURL, "Webmail API URL (for participant storage)")
 	email := flag.String("email", "", "Account to seed (default: seeds both test accounts)")
 	password := flag.String("password", "test1234", "Account password")
 	clean := flag.Bool("clean", false, "Delete all existing data before seeding")
@@ -1737,7 +1876,7 @@ func main() {
 	}
 
 	for _, acct := range accounts {
-		if err := seedAccount(*url, acct, *clean); err != nil {
+		if err := seedAccount(*url, *webmailURL, acct, *clean); err != nil {
 			fmt.Fprintf(os.Stderr, "Error seeding %s: %v\n", acct.Email, err)
 			os.Exit(1)
 		}
