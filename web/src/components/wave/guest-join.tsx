@@ -403,18 +403,34 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
             active={false}
             onClick={async () => {
               try {
+                console.log("[Wave] Requesting screen share...");
                 const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                console.log("[Wave] Got screen stream, tracks:", screenStream.getTracks().map(t => `${t.kind}:${t.readyState}:${t.enabled}`));
                 const screenTrack = screenStream.getVideoTracks()[0];
-                if (!screenTrack) return;
+                if (!screenTrack) { console.warn("[Wave] No video track in screen stream"); return; }
+                if (screenTrack.readyState === "ended") { console.warn("[Wave] Screen track already ended"); return; }
                 const pc = pcRef.current;
-                if (!pc) return;
-                const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+                if (!pc) { console.warn("[Wave] No peer connection"); return; }
+                const senders = pc.getSenders();
+                console.log("[Wave] PC senders:", senders.map(s => `${s.track?.kind ?? "null"}:${s.track?.readyState ?? "none"}`));
+                const sender = senders.find((s) => s.track?.kind === "video");
                 if (sender) {
+                  console.log("[Wave] Replacing video sender track");
                   await sender.replaceTrack(screenTrack);
+                  console.log("[Wave] replaceTrack succeeded");
                 } else {
-                  pc.addTrack(screenTrack, screenStream);
+                  // No video sender — try finding one without a track (audio-only join)
+                  const emptySender = senders.find((s) => !s.track);
+                  if (emptySender) {
+                    console.log("[Wave] Found empty sender, replacing track");
+                    await emptySender.replaceTrack(screenTrack);
+                  } else {
+                    console.log("[Wave] Adding new track to PC");
+                    pc.addTrack(screenTrack, screenStream);
+                  }
                 }
                 screenTrack.addEventListener("ended", () => {
+                  console.log("[Wave] Screen share ended by user");
                   const camTrack = stream?.getVideoTracks()[0];
                   if (sender && camTrack) sender.replaceTrack(camTrack);
                 });
