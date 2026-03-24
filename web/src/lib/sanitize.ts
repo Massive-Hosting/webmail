@@ -138,15 +138,25 @@ export function sanitizeEmailHtml(
         hasExternalImages = true;
         node.setAttribute("data-external-src", src);
         node.removeAttribute("src");
-        // Check if this looks like a small icon (width/height attrs or tiny dimensions)
+        // Detect small icons, tracking pixels, and social media badges
         const w = parseInt(node.getAttribute("width") ?? "0", 10);
         const h = parseInt(node.getAttribute("height") ?? "0", 10);
-        const isIcon = (w > 0 && w <= 32) || (h > 0 && h <= 32);
-        if (isIcon) {
-          // Hide small icons entirely (social media badges, tracking pixels)
+        const alt = (node.getAttribute("alt") ?? "").toLowerCase();
+        const srcLower = src.toLowerCase();
+        const isSmallByAttr = (w > 0 && w <= 32) || (h > 0 && h <= 32);
+        const isTrackingPixel = (w === 1 && h === 1) || (w === 0 && h === 0) ||
+          srcLower.includes("track") || srcLower.includes("pixel") || srcLower.includes("beacon") ||
+          srcLower.includes("open.") || srcLower.includes("/o.gif") || srcLower.includes("/t.gif");
+        const isSocialIcon = /\b(linkedin|facebook|twitter|instagram|youtube|github|x\.com|social|icon)\b/i.test(srcLower + " " + alt);
+        const isLikelyIcon = isSmallByAttr || isTrackingPixel || isSocialIcon ||
+          // Images inside link tags that look like icon buttons
+          (node.parentElement?.tagName === "A" && (w <= 48 || h <= 48 || (!w && !h && alt.length <= 20)));
+
+        if (isLikelyIcon) {
+          // Hide icons, tracking pixels, social badges
           node.setAttribute("style", "display:none;");
         } else {
-          // Show a clean placeholder for content images
+          // Show a clean placeholder for actual content images
           node.setAttribute(
             "style",
             "display:inline-block;min-width:60px;min-height:40px;background:var(--color-bg-tertiary);border-radius:4px;border:1px dashed var(--color-border-secondary);",
