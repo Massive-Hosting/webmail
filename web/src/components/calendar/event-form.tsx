@@ -643,16 +643,26 @@ export const EventForm = React.memo(function EventForm({
                       const [sh2, sm2] = startTime.split(":").map(Number);
                       const eventStart = sh2 * 60 + sm2;
                       const eventEnd = eventStart + durationMinutes;
+                      // When editing, compute the original event's time to exclude it from busy check
+                      let origStartMins = -1;
+                      let origDur = -1;
+                      let origDate = "";
+                      if (isEditing && event) {
+                        const origStart = new Date(event.start);
+                        origStartMins = origStart.getHours() * 60 + origStart.getMinutes();
+                        origDur = parseDurationMinutes(event.duration);
+                        origDate = format(origStart, "yyyy-MM-dd");
+                      }
                       const isBusy = !allDay && slots.some((slot) => {
                         const st = new Date(slot.start);
-                        // Only check slots on the same date
                         const slotDate = format(st, "yyyy-MM-dd");
                         if (slotDate !== startDate) return false;
                         const slotStartMins = st.getHours() * 60 + st.getMinutes();
                         const slotDur = parseDurationMinutes(slot.duration);
                         const slotEndMins = slotStartMins + slotDur;
-                        // Exclude the event being edited (same start time and duration)
-                        if (isEditing && slotStartMins === eventStart && slotDur === durationMinutes) return false;
+                        // Exclude the event being edited (match against original time)
+                        if (isEditing && slotDate === origDate &&
+                            slotStartMins === origStartMins && slotDur === origDur) return false;
                         return eventStart < slotEndMins && eventEnd > slotStartMins;
                       });
                       const hasBusyData = slots.length > 0 || Object.keys(attendeeBusySlots ?? {}).includes(a.email);
