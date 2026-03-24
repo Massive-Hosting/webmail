@@ -135,7 +135,6 @@ export function sanitizeEmailHtml(
         }
       } else if (src && !src.startsWith("data:") && !src.startsWith("/api/blob/")) {
         // External image — block and offer to load
-        hasExternalImages = true;
         node.setAttribute("data-external-src", src);
         node.removeAttribute("src");
         // Detect small icons, tracking pixels, and social media badges
@@ -153,10 +152,11 @@ export function sanitizeEmailHtml(
           (node.parentElement?.tagName === "A" && (w <= 48 || h <= 48 || (!w && !h && alt.length <= 20)));
 
         if (isLikelyIcon) {
-          // Hide icons, tracking pixels, social badges
+          // Hide icons, tracking pixels, social badges — don't show banner for these
           node.setAttribute("style", "display:none;");
         } else {
-          // Show a clean placeholder for actual content images
+          // Actual content image — show placeholder and banner
+          hasExternalImages = true;
           node.setAttribute(
             "style",
             "display:inline-block;min-width:60px;min-height:40px;background:var(--color-bg-tertiary);border-radius:4px;border:1px dashed var(--color-border-secondary);",

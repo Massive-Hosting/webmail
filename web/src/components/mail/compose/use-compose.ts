@@ -224,7 +224,17 @@ function getEmailBodyHTML(email: Email): string {
             }
           }
         }
-        return html;
+        // Strip external image tags (they'd show as broken in the compose editor)
+        // Keep only images with src starting with / (internal) or data: (embedded)
+        const container = document.createElement("div");
+        container.innerHTML = html;
+        for (const img of Array.from(container.querySelectorAll("img"))) {
+          const src = img.getAttribute("src") ?? "";
+          if (!src || (!src.startsWith("/") && !src.startsWith("data:"))) {
+            img.remove();
+          }
+        }
+        return container.innerHTML;
       }
     }
   }
