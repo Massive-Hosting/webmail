@@ -140,7 +140,8 @@ export const SettingsDialog = React.memo(function SettingsDialog({
               <div
                 className="flex items-center gap-1.5 px-2 py-1.5 mb-1 rounded-md text-sm"
                 style={{
-                  backgroundColor: "var(--color-bg-tertiary)",
+                  backgroundColor: "var(--color-bg-primary)",
+                  border: "1px solid var(--color-border-primary)",
                   color: "var(--color-text-secondary)",
                 }}
               >
@@ -150,8 +151,8 @@ export const SettingsDialog = React.memo(function SettingsDialog({
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder={t("settingsDialog.searchPlaceholder", { defaultValue: "Search settings..." })}
-                  className="bg-transparent border-none outline-none text-sm w-full"
-                  style={{ color: "var(--color-text-primary)" }}
+                  className="border-none outline-none text-sm w-full"
+                  style={{ color: "var(--color-text-primary)", backgroundColor: "transparent", borderRadius: 0 }}
                 />
               </div>
               {visibleTabs.includes("general") && (
