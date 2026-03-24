@@ -156,7 +156,19 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
   }, []);
 
   const joinCall = useCallback(async () => {
-    if (!stream) return;
+    let mediaStream = stream;
+    if (!mediaStream) {
+      // Try to get at least audio if preview failed
+      console.warn("[Wave] No preview stream, attempting audio-only...");
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setStream(mediaStream);
+        setVideoEnabled(false);
+      } catch (e) {
+        console.error("[Wave] Cannot get any media:", e);
+        return;
+      }
+    }
     unlockAudio();
     setRoomState("connecting");
 
@@ -174,8 +186,8 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
     const pc = new RTCPeerConnection({ iceServers });
     pcRef.current = pc;
 
-    for (const track of stream.getTracks()) {
-      pc.addTrack(track, stream);
+    for (const track of mediaStream.getTracks()) {
+      pc.addTrack(track, mediaStream);
     }
 
     pc.ontrack = (e) => {
