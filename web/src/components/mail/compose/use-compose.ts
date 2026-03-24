@@ -212,7 +212,19 @@ function getEmailBodyHTML(email: Email): string {
   if (email.htmlBody && email.bodyValues) {
     for (const part of email.htmlBody) {
       if (part.partId && email.bodyValues[part.partId]) {
-        return email.bodyValues[part.partId].value;
+        let html = email.bodyValues[part.partId].value;
+        // Resolve cid: references to blob URLs so inline images show in replies
+        if (email.attachments) {
+          for (const att of email.attachments) {
+            if (att.cid && att.blobId) {
+              html = html.replace(
+                new RegExp(`cid:${att.cid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
+                `/api/blob/${att.blobId}/inline`,
+              );
+            }
+          }
+        }
+        return html;
       }
     }
   }

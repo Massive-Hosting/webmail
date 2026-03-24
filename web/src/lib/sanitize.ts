@@ -138,11 +138,21 @@ export function sanitizeEmailHtml(
         hasExternalImages = true;
         node.setAttribute("data-external-src", src);
         node.removeAttribute("src");
-        node.setAttribute(
-          "style",
-          "display:inline-block;width:20px;height:20px;background:var(--color-bg-tertiary);border-radius:2px;",
-        );
-        node.setAttribute("alt", node.getAttribute("alt") || "[External image]");
+        // Check if this looks like a small icon (width/height attrs or tiny dimensions)
+        const w = parseInt(node.getAttribute("width") ?? "0", 10);
+        const h = parseInt(node.getAttribute("height") ?? "0", 10);
+        const isIcon = (w > 0 && w <= 32) || (h > 0 && h <= 32);
+        if (isIcon) {
+          // Hide small icons entirely (social media badges, tracking pixels)
+          node.setAttribute("style", "display:none;");
+        } else {
+          // Show a clean placeholder for content images
+          node.setAttribute(
+            "style",
+            "display:inline-block;min-width:60px;min-height:40px;background:var(--color-bg-tertiary);border-radius:4px;border:1px dashed var(--color-border-secondary);",
+          );
+        }
+        node.setAttribute("alt", "");
       }
     }
 
