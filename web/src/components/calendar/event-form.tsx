@@ -852,6 +852,8 @@ export const EventForm = React.memo(function EventForm({
                   otherEvents={otherDayEvents}
                   calendars={calendars}
                   attendeeBusySlots={attendeeBusySlots}
+                  currentDate={startDate}
+                  editingEvent={event}
                 />
               </div>
             )}
@@ -878,6 +880,10 @@ interface DayTimelineProps {
   otherEvents?: CalendarEvent[];
   calendars?: Calendar[];
   attendeeBusySlots?: Record<string, BusySlot[]>;
+  /** The date being edited (yyyy-MM-dd) for filtering busy slots */
+  currentDate?: string;
+  /** Original event being edited (for self-exclusion in conflict check) */
+  editingEvent?: CalendarEvent | null;
 }
 
 function DayTimeline({
@@ -890,6 +896,8 @@ function DayTimeline({
   otherEvents,
   calendars,
   attendeeBusySlots,
+  currentDate,
+  editingEvent,
 }: DayTimelineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<{
@@ -1062,11 +1070,26 @@ function DayTimeline({
       {/* Event block — red border if conflicts with attendee busy slots */}
       {(() => {
         const eventEndMinutes = startMinutes + durationMinutes;
-        const hasConflict = attendeeBusySlots && Object.values(attendeeBusySlots).some((slots) =>
+        // Compute original event time for self-exclusion (same logic as attendee badges)
+        let origStartMins2 = -1;
+        let origDur2 = -1;
+        let origDate2 = "";
+        if (editingEvent) {
+          const origStart2 = new Date(editingEvent.start);
+          origStartMins2 = origStart2.getHours() * 60 + origStart2.getMinutes();
+          origDur2 = parseDurationMinutes(editingEvent.duration);
+          origDate2 = format(origStart2, "yyyy-MM-dd");
+        }
+        const hasConflict = attendeeBusySlots && currentDate && Object.values(attendeeBusySlots).some((slots) =>
           slots.some((slot) => {
             const slotStart = new Date(slot.start);
+            const slotDate = format(slotStart, "yyyy-MM-dd");
+            if (slotDate !== currentDate) return false;
             const slotStartMins = slotStart.getHours() * 60 + slotStart.getMinutes();
-            const slotEndMins = slotStartMins + parseDurationMinutes(slot.duration);
+            const slotDur = parseDurationMinutes(slot.duration);
+            const slotEndMins = slotStartMins + slotDur;
+            // Exclude the event being edited
+            if (editingEvent && slotDate === origDate2 && slotStartMins === origStartMins2 && slotDur === origDur2) return false;
             return startMinutes < slotEndMins && eventEndMinutes > slotStartMins;
           }),
         );
@@ -1141,76 +1164,7 @@ function DayTimeline({
         );
       })()}
 
-      {/* Attendee legend + suggested free slot */}
-      {attendeeBusySlots && Object.keys(attendeeBusySlots).length > 0 && (
-        <div
-          className="absolute left-0 right-0 px-2 py-2 space-y-1.5"
-          style={{ top: totalHeight + 4 }}
-        >
-          {/* Legend */}
-          <div className="flex flex-wrap gap-x-3 gap-y-1">
-            {Object.keys(attendeeBusySlots).map((email, idx) => (
-              <div key={email} className="flex items-center gap-1">
-                <div
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{ backgroundColor: BUSY_COLORS[idx % BUSY_COLORS.length] }}
-                />
-                <span className="text-[9px] truncate" style={{ color: "var(--color-text-tertiary)", maxWidth: 100 }}>
-                  {email.split("@")[0]}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Suggested free slot */}
-          {(() => {
-            const allSlots = Object.values(attendeeBusySlots).flat();
-            if (allSlots.length === 0) return null;
-
-            // Find first free slot of the right duration between 8am-6pm
-            const workStart = 8 * 60;
-            const workEnd = 18 * 60;
-            const busyRanges = allSlots
-              .map((s) => {
-                const st = new Date(s.start);
-                const startM = st.getHours() * 60 + st.getMinutes();
-                return { start: startM, end: startM + parseDurationMinutes(s.duration) };
-              })
-              .sort((a, b) => a.start - b.start);
-
-            let cursor = workStart;
-            let freeStart: number | null = null;
-            for (const range of busyRanges) {
-              if (range.start >= cursor + durationMinutes) {
-                freeStart = cursor;
-                break;
-              }
-              cursor = Math.max(cursor, range.end);
-            }
-            if (freeStart === null && cursor + durationMinutes <= workEnd) {
-              freeStart = cursor;
-            }
-
-            if (freeStart === null || (freeStart === startMinutes)) return null;
-
-            const fh = Math.floor(freeStart / 60);
-            const fm = freeStart % 60;
-            const freeTimeStr = `${String(fh).padStart(2, "0")}:${String(fm).padStart(2, "0")}`;
-
-            return (
-              <button
-                type="button"
-                onClick={() => onStartTimeChange(freeTimeStr)}
-                className="flex items-center gap-1.5 text-[10px] font-medium px-2 py-1 rounded-md transition-colors hover:bg-[var(--color-bg-tertiary)]"
-                style={{ color: "var(--color-bg-success)" }}
-              >
-                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--color-bg-success)" }} />
-                Everyone free at {freeTimeStr} — click to move
-              </button>
-            );
-          })()}
-        </div>
-      )}
+      {/* Legend and free slot suggestion removed — Free/Busy badges on attendee names are clearer */}
     </div>
   );
 }
