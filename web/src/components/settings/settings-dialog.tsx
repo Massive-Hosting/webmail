@@ -154,6 +154,15 @@ export const SettingsDialog = React.memo(function SettingsDialog({
                   className="border-none outline-none text-sm w-full"
                   style={{ color: "var(--color-text-primary)", backgroundColor: "transparent", borderRadius: 0 }}
                 />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="p-0.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                    style={{ color: "var(--color-text-tertiary)", flexShrink: 0 }}
+                  >
+                    <X size={14} />
+                  </button>
+                )}
               </div>
               {visibleTabs.includes("general") && (
                 <TabTrigger value="general">
