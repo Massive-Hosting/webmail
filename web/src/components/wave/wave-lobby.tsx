@@ -321,8 +321,8 @@ export const WaveLobby = React.memo(function WaveLobby({
           onEscapeKeyDown={(e) => e.preventDefault()}
           className={`fixed z-[9999] rounded-2xl overflow-hidden flex flex-col animate-scale-in ${dragStyle.left == null ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" : ""}`}
           style={{
-            width: 720,
-            maxWidth: "94vw",
+            width: 860,
+            maxWidth: "96vw",
             maxHeight: "92vh",
             backgroundColor: "#1c1917",
             border: "1px solid rgba(255, 255, 255, 0.08)",
@@ -456,7 +456,7 @@ export const WaveLobby = React.memo(function WaveLobby({
                 <Settings2 size={13} style={{ color: "rgba(255,255,255,0.4)" }} />
                 <label className="text-[11px] font-medium text-white/40">{t("wave.deviceSettings")}</label>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-4 gap-3">
                 {audioDevices.length > 0 && (
                   <DarkSelect
                     label={t("wave.microphone")}
