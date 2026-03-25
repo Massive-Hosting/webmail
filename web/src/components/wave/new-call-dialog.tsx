@@ -65,7 +65,7 @@ export const NewCallDialog = React.memo(function NewCallDialog({
         const merged: Recipient[] = [];
 
         // Add contacts first
-        for (const c of contacts) {
+        for (const c of (contacts ?? [])) {
           const email = c.emails?.[0]?.address;
           if (!email || email === userEmail) continue;
           const key = email.toLowerCase();
@@ -79,7 +79,7 @@ export const NewCallDialog = React.memo(function NewCallDialog({
         }
 
         // Add directory entries (same-tenant colleagues)
-        for (const d of directory) {
+        for (const d of (directory ?? [])) {
           const key = d.email.toLowerCase();
           if (seen.has(key) || d.email === userEmail) continue;
           seen.add(key);
@@ -147,6 +147,7 @@ export const NewCallDialog = React.memo(function NewCallDialog({
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         />
         <Dialog.Content
+          aria-describedby={undefined}
           className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full rounded-xl animate-scale-in overflow-hidden flex flex-col"
           style={{
             backgroundColor: "var(--color-bg-elevated)",

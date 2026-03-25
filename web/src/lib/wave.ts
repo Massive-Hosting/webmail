@@ -302,7 +302,14 @@ export class WaveConnection {
       if (sender) {
         await sender.replaceTrack(screenTrack);
       } else {
-        this.pc.addTrack(screenTrack, this.screenStream);
+        try {
+          this.pc.addTrack(screenTrack, this.screenStream);
+        } catch (addErr) {
+          console.warn("[Wave] addTrack failed:", addErr);
+          screenTrack.stop();
+          this.screenStream = null;
+          return null;
+        }
       }
 
       // When user stops sharing via browser UI

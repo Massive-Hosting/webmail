@@ -443,8 +443,13 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
                 if (sender) {
                   await sender.replaceTrack(screenTrack);
                 } else {
-                  // No senders at all — add the track directly
-                  pc.addTrack(screenTrack, screenStream);
+                  try {
+                    pc.addTrack(screenTrack, screenStream);
+                  } catch (addErr) {
+                    console.warn("[Wave] addTrack failed, screen share not supported in this state:", addErr);
+                    screenTrack.stop();
+                    return;
+                  }
                 }
                 // Show screen share in local PiP
                 if (videoRef.current) videoRef.current.srcObject = screenStream;

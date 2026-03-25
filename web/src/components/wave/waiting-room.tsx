@@ -433,7 +433,14 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
               if (sender) {
                 await sender.replaceTrack(track);
               } else {
-                pc.addTrack(track, ss);
+                // No sender found — try addTrack (may fail in Firefox after negotiation)
+                try {
+                  pc.addTrack(track, ss);
+                } catch (addErr) {
+                  console.warn("[Wave] addTrack failed, screen share not supported in this state:", addErr);
+                  track.stop();
+                  return;
+                }
               }
               // Show screen share in local PiP
               if (videoRef.current) videoRef.current.srcObject = ss;
