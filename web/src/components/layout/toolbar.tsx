@@ -218,11 +218,12 @@ export const Toolbar = React.memo(function Toolbar({
 
             <DropdownMenu.Portal>
               <DropdownMenu.Content
-                className="z-50 min-w-[220px] rounded-lg py-1 animate-scale-in"
+                className="min-w-[220px] rounded-lg py-1 animate-scale-in"
                 style={{
                   backgroundColor: "var(--color-bg-elevated)",
                   border: "1px solid var(--color-border-primary)",
                   boxShadow: "var(--shadow-lg)",
+                  zIndex: 100,
                 }}
                 sideOffset={6}
                 align="end"
