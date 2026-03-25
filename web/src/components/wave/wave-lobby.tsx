@@ -301,7 +301,12 @@ export const WaveLobby = React.memo(function WaveLobby({
         <Dialog.Content
           data-draggable
           aria-describedby={undefined}
-          onInteractOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => {
+            // Allow clicks on portal elements (DarkSelect dropdowns render outside dialog)
+            const target = e.target as HTMLElement | null;
+            if (target && !target.closest("[data-draggable]")) return;
+            e.preventDefault();
+          }}
           onEscapeKeyDown={(e) => e.preventDefault()}
           className={`fixed z-[9999] rounded-2xl overflow-hidden flex flex-col animate-scale-in ${dragStyle.left == null ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" : ""}`}
           style={{
