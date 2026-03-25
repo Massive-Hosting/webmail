@@ -71,6 +71,7 @@ function ToolbarIconButton({
           border: "1px solid var(--color-border-primary)",
           borderRadius: "var(--radius-sm)",
           fontWeight: 500,
+          zIndex: 100,
         }}
         sideOffset={6}
       >
