@@ -426,18 +426,24 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
               const track = ss.getVideoTracks()[0];
               if (!track || track.readyState === "ended") return;
               savedCamTrackRef.current = stream?.getVideoTracks()[0] ?? null;
-              const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+              const senders = pc.getSenders();
+              const sender = senders.find((s) => s.track?.kind === "video")
+                ?? senders.find((s) => s.track != null)
+                ?? senders[0];
               if (sender) {
                 await sender.replaceTrack(track);
               } else {
-                pc.addTransceiver(track, { direction: "sendrecv" });
+                pc.addTrack(track, ss);
               }
+              // Show screen share in local PiP
+              if (videoRef.current) videoRef.current.srcObject = ss;
               screenTrackRef.current = track;
               setIsScreenSharing(true);
               track.addEventListener("ended", () => {
                 const cam = savedCamTrackRef.current;
-                const s = pc.getSenders().find((s) => s.track?.kind === "video" || !s.track);
+                const s = pc.getSenders().find((s) => s.track?.kind === "video" || !s.track) ?? pc.getSenders()[0];
                 if (s && cam) s.replaceTrack(cam);
+                if (videoRef.current && stream) videoRef.current.srcObject = stream;
                 setIsScreenSharing(false);
                 screenTrackRef.current = null;
               });

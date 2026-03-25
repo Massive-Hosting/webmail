@@ -435,18 +435,27 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
                 const screenTrack = screenStream.getVideoTracks()[0];
                 if (!screenTrack || screenTrack.readyState === "ended") return;
                 savedCamTrackRef.current = stream?.getVideoTracks()[0] ?? null;
-                const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+                // Find video sender — try exact match first, then any sender with a track, then any sender
+                const senders = pc.getSenders();
+                const sender = senders.find((s) => s.track?.kind === "video")
+                  ?? senders.find((s) => s.track != null)
+                  ?? senders[0];
                 if (sender) {
                   await sender.replaceTrack(screenTrack);
                 } else {
-                  pc.addTransceiver(screenTrack, { direction: "sendrecv" });
+                  // No senders at all — add the track directly
+                  pc.addTrack(screenTrack, screenStream);
                 }
+                // Show screen share in local PiP
+                if (videoRef.current) videoRef.current.srcObject = screenStream;
                 screenTrackRef.current = screenTrack;
                 setIsScreenSharing(true);
                 screenTrack.addEventListener("ended", () => {
                   const cam = savedCamTrackRef.current;
-                  const s = pc.getSenders().find((s) => s.track?.kind === "video" || !s.track);
+                  const s = pc.getSenders().find((s) => s.track?.kind === "video" || !s.track) ?? pc.getSenders()[0];
                   if (s && cam) s.replaceTrack(cam);
+                  // Restore camera in local PiP
+                  if (videoRef.current && stream) videoRef.current.srcObject = stream;
                   setIsScreenSharing(false);
                   screenTrackRef.current = null;
                 });

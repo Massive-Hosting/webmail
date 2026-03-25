@@ -238,8 +238,12 @@ export function useWave() {
       waveConnection.stopScreenShare();
       s.setScreenSharing(false);
     } else {
-      const stream = await waveConnection.startScreenShare();
-      if (stream) s.setScreenSharing(true);
+      const screenStream = await waveConnection.startScreenShare();
+      if (screenStream) {
+        s.setScreenSharing(true);
+        // Show screen share in local PiP so sharer can see what they're sharing
+        s.setLocalStream(screenStream);
+      }
     }
   }, []);
 

@@ -292,9 +292,17 @@ export class WaveConnection {
       });
 
       const screenTrack = this.screenStream.getVideoTracks()[0];
-      const sender = this.pc.getSenders().find((s) => s.track?.kind === "video");
-      if (sender && screenTrack) {
+      if (!screenTrack || screenTrack.readyState === "ended") return null;
+
+      // Find video sender — try exact match, then any sender with a track, then first sender
+      const senders = this.pc.getSenders();
+      const sender = senders.find((s) => s.track?.kind === "video")
+        ?? senders.find((s) => s.track != null)
+        ?? senders[0];
+      if (sender) {
         await sender.replaceTrack(screenTrack);
+      } else {
+        this.pc.addTrack(screenTrack, this.screenStream);
       }
 
       // When user stops sharing via browser UI
@@ -303,7 +311,8 @@ export class WaveConnection {
       });
 
       return this.screenStream;
-    } catch {
+    } catch (e) {
+      console.error("[Wave] Screen share failed:", e);
       return null;
     }
   }
@@ -367,9 +376,16 @@ export class WaveConnection {
 
       // Revert to camera
       const cameraTrack = this.localStream?.getVideoTracks()[0];
-      const sender = this.pc.getSenders().find((s) => s.track?.kind === "video");
+      const senders = this.pc.getSenders();
+      const sender = senders.find((s) => s.track?.kind === "video")
+        ?? senders.find((s) => s.track != null)
+        ?? senders[0];
       if (sender && cameraTrack) {
         sender.replaceTrack(cameraTrack).catch(() => {});
+      }
+      // Restore local camera stream in PiP
+      if (this.localStream) {
+        this.opts.onLocalStream(this.localStream);
       }
     }
   }
