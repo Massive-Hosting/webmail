@@ -49,8 +49,10 @@ export const WaveLobby = React.memo(function WaveLobby({
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [speakerDevices, setSpeakerDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedAudioDevice, setSelectedAudioDevice] = useState("");
   const [selectedVideoDevice, setSelectedVideoDevice] = useState("");
+  const [selectedSpeaker, setSelectedSpeaker] = useState("");
   const [showDeviceSettings, setShowDeviceSettings] = useState(false);
   const [showBackgrounds, setShowBackgrounds] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
@@ -141,6 +143,10 @@ export const WaveLobby = React.memo(function WaveLobby({
         if (newTrack) {
           newTrack.enabled = videoEnabled;
           stream.addTrack(newTrack);
+        }
+        // Force video element to re-render with new track
+        if (videoRef.current && stream) {
+          videoRef.current.srcObject = stream;
         }
       } catch (e) {
         console.error("[Wave] Failed to switch video device:", e);
@@ -245,6 +251,11 @@ export const WaveLobby = React.memo(function WaveLobby({
         devices
           .filter((d) => d.kind === "videoinput")
           .map((d) => ({ deviceId: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0, 4)}`, kind: d.kind })),
+      );
+      setSpeakerDevices(
+        devices
+          .filter((d) => d.kind === "audiooutput")
+          .map((d) => ({ deviceId: d.deviceId, label: d.label || `Speaker ${d.deviceId.slice(0, 4)}`, kind: d.kind })),
       );
     } catch (err) {
       console.error("[Wave] Media access error:", err);
@@ -460,6 +471,14 @@ export const WaveLobby = React.memo(function WaveLobby({
                     value={selectedVideoDevice || videoDevices[0]?.deviceId || ""}
                     options={videoDevices.map((d) => ({ value: d.deviceId, label: d.label || `Cam ${d.deviceId.slice(0, 8)}` }))}
                     onChange={setSelectedVideoDevice}
+                  />
+                )}
+                {speakerDevices.length > 0 && (
+                  <DarkSelect
+                    label={t("wave.speaker")}
+                    value={selectedSpeaker || speakerDevices[0]?.deviceId || ""}
+                    options={speakerDevices.map((d) => ({ value: d.deviceId, label: d.label || `Speaker ${d.deviceId.slice(0, 4)}` }))}
+                    onChange={setSelectedSpeaker}
                   />
                 )}
                 <DarkSelect

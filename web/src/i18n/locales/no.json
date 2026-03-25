@@ -804,6 +804,7 @@
   "wave.deviceSettings": "Enhetsinnstillinger",
   "wave.microphone": "Mikrofon",
   "wave.camera": "Kamera",
+  "wave.speaker": "H\u00f8yttaler",
   "wave.permissionDenied": "Tilgang til kamera og mikrofon ble nektet. Tillat tilgang i nettleserinnstillingene og pr\u00f8v igjen.",
   "wave.permissionPending": "Tillat tilgang til kamera og mikrofon for \u00e5 forh\u00e5ndsvise videoen din.",
   "wave.newCall": "Nytt Wave-anrop",

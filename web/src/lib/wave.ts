@@ -363,7 +363,13 @@ export class WaveConnection {
       newTrack.enabled = current?.enabled ?? true;
       this.localStream.addTrack(newTrack);
       const sender = this.pc.getSenders().find((s) => s.track?.kind === "video");
-      if (sender && !this.screenStream) await sender.replaceTrack(newTrack);
+      if (sender && !this.screenStream) {
+        try {
+          await sender.replaceTrack(newTrack);
+        } catch (e) {
+          console.error("[Wave] replaceTrack failed during video device switch:", e);
+        }
+      }
     }
     this.opts.onLocalStream(this.localStream);
   }

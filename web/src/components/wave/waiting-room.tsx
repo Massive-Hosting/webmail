@@ -43,8 +43,10 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
   const [audioLevel, setAudioLevel] = useState(0);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [speakerDevices, setSpeakerDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedAudioDevice, setSelectedAudioDevice] = useState("");
   const [selectedVideoDevice, setSelectedVideoDevice] = useState("");
+  const [selectedSpeaker, setSelectedSpeaker] = useState("");
   const [showCallDevices, setShowCallDevices] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const screenTrackRef = useRef<MediaStreamTrack | null>(null);
@@ -96,6 +98,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
         const devices = await navigator.mediaDevices.enumerateDevices();
         setAudioDevices(devices.filter(d => d.kind === "audioinput"));
         setVideoDevices(devices.filter(d => d.kind === "videoinput"));
+        setSpeakerDevices(devices.filter(d => d.kind === "audiooutput"));
       } catch {
         // Audio only fallback
         try {
@@ -262,6 +265,10 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
           const sender = pcRef.current?.getSenders().find((s) => s.track?.kind === "video");
           if (sender) await sender.replaceTrack(newTrack);
         }
+        // Force video element to re-render with new track
+        if (videoRef.current && stream) {
+          videoRef.current.srcObject = stream;
+        }
       } catch (e) { console.error("[Wave] Failed to switch video:", e); }
     })();
   }, [selectedVideoDevice]);
@@ -279,6 +286,13 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
       remoteVideoRef.current.srcObject = remoteStream;
     }
   }, [remoteStream]);
+
+  // Apply speaker (audio output) selection to remote video element
+  useEffect(() => {
+    if (remoteVideoRef.current && selectedSpeaker && 'setSinkId' in remoteVideoRef.current) {
+      (remoteVideoRef.current as any).setSinkId(selectedSpeaker).catch(() => {});
+    }
+  }, [selectedSpeaker, remoteStream]);
 
   // Play connect/disconnect sounds
   useEffect(() => {
@@ -328,7 +342,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
       <div className="fixed inset-0 z-[9998] bg-black flex flex-col overflow-hidden">
         <div className="flex-1 relative min-h-0">
           {/* Remote video — with fallback for audio-only peers */}
-          {remoteStream && <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />}
+          {remoteStream && <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-contain" style={{ backgroundColor: "#000" }} />}
           {(!remoteStream || (remoteStream && remoteStream.getVideoTracks().length === 0)) && (
             <div className="absolute inset-0 flex items-center justify-center" style={{ background: "radial-gradient(ellipse at center, #1a1040 0%, #0c0a09 60%, #000 100%)" }}>
               <div className="text-center">
@@ -404,6 +418,9 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
               )}
               {videoDevices.length > 0 && (
                 <DarkSelect label="Camera" value={selectedVideoDevice || videoDevices[0]?.deviceId || ""} options={videoDevices.map(d => ({ value: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0,4)}` }))} onChange={setSelectedVideoDevice} />
+              )}
+              {speakerDevices.length > 0 && (
+                <DarkSelect label="Speaker" value={selectedSpeaker || speakerDevices[0]?.deviceId || ""} options={speakerDevices.map(d => ({ value: d.deviceId, label: d.label || `Speaker ${d.deviceId.slice(0,4)}` }))} onChange={setSelectedSpeaker} />
               )}
             </div>
           )}
@@ -567,6 +584,9 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
               )}
               {videoDevices.length > 0 && (
                 <DarkSelect label="Camera" value={selectedVideoDevice || videoDevices[0]?.deviceId || ""} options={videoDevices.map(d => ({ value: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0,4)}` }))} onChange={setSelectedVideoDevice} />
+              )}
+              {speakerDevices.length > 0 && (
+                <DarkSelect label="Speaker" value={selectedSpeaker || speakerDevices[0]?.deviceId || ""} options={speakerDevices.map(d => ({ value: d.deviceId, label: d.label || `Speaker ${d.deviceId.slice(0,4)}` }))} onChange={setSelectedSpeaker} />
               )}
             </div>
           </div>

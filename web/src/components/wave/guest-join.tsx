@@ -37,8 +37,10 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
   const savedCamTrackRef = useRef<MediaStreamTrack | null>(null);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [speakerDevices, setSpeakerDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedAudioDevice, setSelectedAudioDevice] = useState("");
   const [selectedVideoDevice, setSelectedVideoDevice] = useState("");
+  const [selectedSpeaker, setSelectedSpeaker] = useState("");
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [callDuration, setCallDuration] = useState(0);
@@ -143,6 +145,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
       const devices = await navigator.mediaDevices.enumerateDevices();
       setAudioDevices(devices.filter((d) => d.kind === "audioinput"));
       setVideoDevices(devices.filter((d) => d.kind === "videoinput"));
+      setSpeakerDevices(devices.filter((d) => d.kind === "audiooutput"));
     } catch {
       // Fallback — audio only
       try {
@@ -278,6 +281,13 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
     }
   }, [remoteStream]);
 
+  // Apply speaker (audio output) selection to remote video element
+  useEffect(() => {
+    if (remoteVideoRef.current && selectedSpeaker && 'setSinkId' in remoteVideoRef.current) {
+      (remoteVideoRef.current as any).setSinkId(selectedSpeaker).catch(() => {});
+    }
+  }, [selectedSpeaker, remoteStream]);
+
   const hangup = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "call-end", to: "__host__", payload: JSON.stringify({ callId: roomId }) }));
@@ -332,7 +342,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
       <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
         {/* Remote video — with fallback for audio-only peers */}
         <div className="flex-1 relative min-h-0">
-          {remoteStream && <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />}
+          {remoteStream && <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-contain" style={{ backgroundColor: "#000" }} />}
           {(!remoteStream || (remoteStream && remoteStream.getVideoTracks().length === 0)) && (
             <div className="absolute inset-0 flex items-center justify-center" style={{ background: "radial-gradient(ellipse at center, #1a1040 0%, #0c0a09 60%, #000 100%)" }}>
               <div className="text-center">
@@ -410,6 +420,9 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
               )}
               {videoDevices.length > 0 && (
                 <DarkSelect label="Camera" value={selectedVideoDevice || videoDevices[0]?.deviceId || ""} options={videoDevices.map(d => ({ value: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0,4)}` }))} onChange={setSelectedVideoDevice} />
+              )}
+              {speakerDevices.length > 0 && (
+                <DarkSelect label="Speaker" value={selectedSpeaker || speakerDevices[0]?.deviceId || ""} options={speakerDevices.map(d => ({ value: d.deviceId, label: d.label || `Speaker ${d.deviceId.slice(0,4)}` }))} onChange={setSelectedSpeaker} />
               )}
             </div>
           )}
@@ -597,6 +610,14 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
                   value={selectedVideoDevice || videoDevices[0]?.deviceId || ""}
                   options={videoDevices.map((d) => ({ value: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0, 4)}` }))}
                   onChange={setSelectedVideoDevice}
+                />
+              )}
+              {speakerDevices.length > 0 && (
+                <DarkSelect
+                  label="Speaker"
+                  value={selectedSpeaker || speakerDevices[0]?.deviceId || ""}
+                  options={speakerDevices.map((d) => ({ value: d.deviceId, label: d.label || `Speaker ${d.deviceId.slice(0, 4)}` }))}
+                  onChange={setSelectedSpeaker}
                 />
               )}
             </div>

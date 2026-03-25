@@ -54,8 +54,10 @@ export const WaveCall = React.memo(function WaveCall() {
   const bgProcessorRef = useRef<BackgroundProcessor | null>(null);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [speakerDevices, setSpeakerDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedAudioDevice, setSelectedAudioDevice] = useState("");
   const [selectedVideoDevice, setSelectedVideoDevice] = useState("");
+  const [selectedSpeaker, setSelectedSpeaker] = useState("");
   const prevCallState = useRef(callState);
   const { handleProps: dragHandleProps, containerStyle: dragStyle } = useDraggable();
   const { handleProps: pipDragProps, containerStyle: pipDragStyle } = useDraggable({ x: window.innerWidth - 260, y: window.innerHeight - 220 });
@@ -91,6 +93,7 @@ export const WaveCall = React.memo(function WaveCall() {
     navigator.mediaDevices.enumerateDevices().then(devices => {
       setAudioDevices(devices.filter(d => d.kind === "audioinput"));
       setVideoDevices(devices.filter(d => d.kind === "videoinput"));
+      setSpeakerDevices(devices.filter(d => d.kind === "audiooutput"));
     });
   }, [localStream]);
 
@@ -105,6 +108,13 @@ export const WaveCall = React.memo(function WaveCall() {
     if (!selectedVideoDevice) return;
     switchVideoDevice(selectedVideoDevice);
   }, [selectedVideoDevice, switchVideoDevice]);
+
+  // Apply speaker (audio output) selection to remote video element
+  useEffect(() => {
+    if (remoteVideoRef.current && selectedSpeaker && 'setSinkId' in remoteVideoRef.current) {
+      (remoteVideoRef.current as any).setSinkId(selectedSpeaker).catch(() => {});
+    }
+  }, [selectedSpeaker, remoteStream]);
 
   // Call duration timer
   useEffect(() => {
@@ -214,7 +224,7 @@ export const WaveCall = React.memo(function WaveCall() {
           {/* Remote video / avatar */}
           <div className="flex-1 relative overflow-hidden flex items-center justify-center">
             {callState === "connected" && hasRemoteVideo ? (
-              <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-contain" />
+              <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-contain" style={{ backgroundColor: "#000" }} />
             ) : (
               <div className="flex flex-col items-center gap-4">
                 <Avatar address={peerAddress} size={96} />
@@ -450,6 +460,9 @@ export const WaveCall = React.memo(function WaveCall() {
                   )}
                   {videoDevices.length > 0 && (
                     <DarkSelect label="Camera" value={selectedVideoDevice || videoDevices[0]?.deviceId || ""} options={videoDevices.map(d => ({ value: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0,4)}` }))} onChange={setSelectedVideoDevice} />
+                  )}
+                  {speakerDevices.length > 0 && (
+                    <DarkSelect label="Speaker" value={selectedSpeaker || speakerDevices[0]?.deviceId || ""} options={speakerDevices.map(d => ({ value: d.deviceId, label: d.label || `Speaker ${d.deviceId.slice(0,4)}` }))} onChange={setSelectedSpeaker} />
                   )}
                 </div>
               )}
