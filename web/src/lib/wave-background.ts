@@ -93,10 +93,14 @@ async function getSegmenter(): Promise<ImageSegmenter | null> {
 export class BackgroundProcessor {
   private width: number;
   private height: number;
-  private canvas: OffscreenCanvas | HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
-  private bgCanvas: OffscreenCanvas | HTMLCanvasElement;
-  private bgCtx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+  private canvas: HTMLCanvasElement;
+  private ctx: CanvasRenderingContext2D;
+  private bgCanvas: HTMLCanvasElement;
+  private bgCtx: CanvasRenderingContext2D;
+  private maskCanvas: HTMLCanvasElement;
+  private maskCtx: CanvasRenderingContext2D;
+  private personCanvas: HTMLCanvasElement;
+  private personCtx: CanvasRenderingContext2D;
   private videoEl: HTMLVideoElement;
   private effect: BackgroundEffect = { mode: "none" };
   private running = false;
@@ -109,16 +113,22 @@ export class BackgroundProcessor {
   constructor(width = 640, height = 480) {
     this.width = width;
     this.height = height;
-    // Use regular canvas for compatibility (OffscreenCanvas doesn't support captureStream)
-    this.canvas = document.createElement("canvas");
-    this.canvas.width = width;
-    this.canvas.height = height;
-    this.ctx = this.canvas.getContext("2d")!;
 
-    this.bgCanvas = document.createElement("canvas");
-    this.bgCanvas.width = width;
-    this.bgCanvas.height = height;
+    const makeCanvas = (w: number, h: number) => {
+      const c = document.createElement("canvas");
+      c.width = w;
+      c.height = h;
+      return c;
+    };
+
+    this.canvas = makeCanvas(width, height);
+    this.ctx = this.canvas.getContext("2d")!;
+    this.bgCanvas = makeCanvas(width, height);
     this.bgCtx = this.bgCanvas.getContext("2d")!;
+    this.maskCanvas = makeCanvas(width, height);
+    this.maskCtx = this.maskCanvas.getContext("2d")!;
+    this.personCanvas = makeCanvas(width, height);
+    this.personCtx = this.personCanvas.getContext("2d")!;
 
     this.videoEl = document.createElement("video");
     this.videoEl.playsInline = true;
@@ -135,10 +145,10 @@ export class BackgroundProcessor {
       const settings = track.getSettings();
       this.width = settings.width || 640;
       this.height = settings.height || 480;
-      this.canvas.width = this.width;
-      this.canvas.height = this.height;
-      this.bgCanvas.width = this.width;
-      this.bgCanvas.height = this.height;
+      for (const c of [this.canvas, this.bgCanvas, this.maskCanvas, this.personCanvas]) {
+        c.width = this.width;
+        c.height = this.height;
+      }
     }
   }
 
@@ -202,95 +212,61 @@ export class BackgroundProcessor {
       if (seg) {
         try {
           const result = seg.segmentForVideo(this.videoEl, performance.now());
-
-          // Prefer confidence mask (smooth 0-1 blending) over category mask (binary)
           const confidenceMasks = result.confidenceMasks;
           const categoryMask = result.categoryMask;
+          const mask = confidenceMasks?.[0] ?? categoryMask;
 
-          if (confidenceMasks && confidenceMasks.length > 0) {
-            // Confidence mask: float array where 1.0 = person, 0.0 = background
-            const confidence = confidenceMasks[0].getAsFloat32Array();
-
+          if (mask) {
             if (!this._maskLogged) {
               this._maskLogged = true;
-              console.log(`[Wave] Using confidence mask: ${confidence.length} values, canvas=${this.width}x${this.height}`);
+              console.log(`[Wave] Mask available: ${confidenceMasks ? "confidence" : "category"}, canvas=${this.width}x${this.height}`);
             }
 
-            this.ctx.drawImage(this.videoEl, 0, 0, this.width, this.height);
-            const frame = this.ctx.getImageData(0, 0, this.width, this.height);
+            // === GPU-accelerated compositing (no getImageData/putImageData) ===
 
-            // Prepare background
+            // Step 1: Render the mask to maskCanvas as grayscale image
+            const maskData = confidenceMasks?.[0]
+              ? confidenceMasks[0].getAsFloat32Array()
+              : categoryMask!.getAsUint8Array();
+            const isFloat = !!confidenceMasks?.[0];
+
+            const maskImageData = this.maskCtx.createImageData(this.width, this.height);
+            const pixelCount = Math.min(maskData.length, this.width * this.height);
+            for (let i = 0; i < pixelCount; i++) {
+              const alpha = isFloat ? (maskData[i] * 255) : (maskData[i] > 0 ? 255 : 0);
+              const pi = i * 4;
+              maskImageData.data[pi] = 255;     // R
+              maskImageData.data[pi + 1] = 255; // G
+              maskImageData.data[pi + 2] = 255; // B
+              maskImageData.data[pi + 3] = alpha; // A = person confidence
+            }
+            this.maskCtx.putImageData(maskImageData, 0, 0);
+
+            // Step 2: Extract person using mask as alpha (destination-in compositing)
+            this.personCtx.clearRect(0, 0, this.width, this.height);
+            this.personCtx.drawImage(this.videoEl, 0, 0, this.width, this.height);
+            this.personCtx.globalCompositeOperation = "destination-in";
+            this.personCtx.drawImage(this.maskCanvas, 0, 0);
+            this.personCtx.globalCompositeOperation = "source-over";
+
+            // Step 3: Draw background to output canvas
             if (this.effect.mode === "blur") {
-              this.bgCtx.filter = `blur(${this.effect.blurStrength || 15}px)`;
-              this.bgCtx.drawImage(this.videoEl, 0, 0, this.width, this.height);
-              this.bgCtx.filter = "none";
+              this.ctx.filter = `blur(${this.effect.blurStrength || 15}px)`;
+              this.ctx.drawImage(this.videoEl, 0, 0, this.width, this.height);
+              this.ctx.filter = "none";
             } else if (this.effect.mode === "image") {
               if (this.bgImage) {
-                this.bgCtx.drawImage(this.bgImage, 0, 0, this.width, this.height);
-              } else if (this.gradientBg) {
-                this.bgCtx.fillStyle = this.gradientBg;
-                this.bgCtx.fillRect(0, 0, this.width, this.height);
-              }
-            }
-            const bg = this.bgCtx.getImageData(0, 0, this.width, this.height);
-
-            // Alpha-blend person/background using confidence
-            const pixelCount = Math.min(confidence.length, frame.data.length / 4);
-            for (let i = 0; i < pixelCount; i++) {
-              const alpha = confidence[i]; // 1.0 = person, 0.0 = background
-              if (alpha < 0.99) {
-                const pi = i * 4;
-                const bgAlpha = 1.0 - alpha;
-                frame.data[pi]     = frame.data[pi] * alpha + bg.data[pi] * bgAlpha;
-                frame.data[pi + 1] = frame.data[pi + 1] * alpha + bg.data[pi + 1] * bgAlpha;
-                frame.data[pi + 2] = frame.data[pi + 2] * alpha + bg.data[pi + 2] * bgAlpha;
+                this.ctx.drawImage(this.bgImage, 0, 0, this.width, this.height);
+              } else {
+                // Gradient was pre-rendered to bgCanvas
+                this.ctx.drawImage(this.bgCanvas, 0, 0);
               }
             }
 
-            this.ctx.putImageData(frame, 0, 0);
-            confidenceMasks[0].close();
-          } else if (categoryMask) {
-            // Fallback: category mask (binary)
-            const maskData = categoryMask.getAsUint8Array();
+            // Step 4: Draw person on top of background
+            this.ctx.drawImage(this.personCanvas, 0, 0);
 
-            if (!this._maskLogged) {
-              this._maskLogged = true;
-              let zeros = 0, nonzeros = 0;
-              for (let i = 0; i < Math.min(maskData.length, 10000); i++) {
-                if (maskData[i] === 0) zeros++; else nonzeros++;
-              }
-              console.log(`[Wave] Category mask: zeros=${zeros} nonzeros=${nonzeros} total=${maskData.length}`);
-            }
-
-            this.ctx.drawImage(this.videoEl, 0, 0, this.width, this.height);
-            const frame = this.ctx.getImageData(0, 0, this.width, this.height);
-
-            if (this.effect.mode === "blur") {
-              this.bgCtx.filter = `blur(${this.effect.blurStrength || 15}px)`;
-              this.bgCtx.drawImage(this.videoEl, 0, 0, this.width, this.height);
-              this.bgCtx.filter = "none";
-            } else if (this.effect.mode === "image") {
-              if (this.bgImage) {
-                this.bgCtx.drawImage(this.bgImage, 0, 0, this.width, this.height);
-              } else if (this.gradientBg) {
-                this.bgCtx.fillStyle = this.gradientBg;
-                this.bgCtx.fillRect(0, 0, this.width, this.height);
-              }
-            }
-            const bg = this.bgCtx.getImageData(0, 0, this.width, this.height);
-
-            const pixelCount = Math.min(maskData.length, frame.data.length / 4);
-            for (let i = 0; i < pixelCount; i++) {
-              if (maskData[i] === 0) {
-                const pi = i * 4;
-                frame.data[pi] = bg.data[pi];
-                frame.data[pi + 1] = bg.data[pi + 1];
-                frame.data[pi + 2] = bg.data[pi + 2];
-              }
-            }
-
-            this.ctx.putImageData(frame, 0, 0);
-            categoryMask.close();
+            mask.close();
           }
         } catch (e) {
           console.error("[Wave] Segmentation failed:", e);
