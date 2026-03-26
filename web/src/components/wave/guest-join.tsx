@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Volume2,
-  Settings2, Loader2, Monitor, Maximize, Minimize2,
+  Settings2, Loader2, Monitor, Maximize, Minimize2, MessageCircle, Send, X, Smile,
 } from "lucide-react";
 import { DarkSelect } from "./dark-select.tsx";
 import { useDraggable, useResizable } from "@/hooks/use-draggable.ts";
@@ -33,6 +33,14 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
   const [audioLevel, setAudioLevel] = useState(0);
   const [showCallDevices, setShowCallDevices] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{ id: string; from: "me" | "peer"; text: string; timestamp: number }>>([]);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [unreadChat, setUnreadChat] = useState(0);
+  const [chatText, setChatText] = useState("");
+  const [showReactions, setShowReactions] = useState(false);
+  const [floatingReactions, setFloatingReactions] = useState<Array<{ id: string; emoji: string }>>([]);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLInputElement>(null);
   const screenTrackRef = useRef<MediaStreamTrack | null>(null);
   const savedCamTrackRef = useRef<MediaStreamTrack | null>(null);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
@@ -250,6 +258,24 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
         if (msg.type === "call-end") {
           setRoomState("ended");
         }
+
+        if (msg.type === "call-chat") {
+          const chatPayload = typeof msg.payload === "string" ? JSON.parse(msg.payload) : msg.payload;
+          setChatMessages(prev => [...prev, {
+            id: `${Date.now()}-${Math.random()}`,
+            from: "peer",
+            text: chatPayload.text,
+            timestamp: Date.now(),
+          }]);
+          if (!chatOpen) setUnreadChat(prev => prev + 1);
+        }
+
+        if (msg.type === "call-reaction") {
+          const reactionPayload = typeof msg.payload === "string" ? JSON.parse(msg.payload) : msg.payload;
+          const id = `${Date.now()}-${Math.random()}`;
+          setFloatingReactions(prev => [...prev, { id, emoji: reactionPayload.emoji }]);
+          setTimeout(() => setFloatingReactions(prev => prev.filter(r => r.id !== id)), 3000);
+        }
       } catch { /* ignore parse errors */ }
     };
 
@@ -287,6 +313,29 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
       (remoteVideoRef.current as any).setSinkId(selectedSpeaker).catch(() => {});
     }
   }, [selectedSpeaker, remoteStream]);
+
+  const sendChatMessage = useCallback(() => {
+    if (!chatText.trim() || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const text = chatText.trim();
+    wsRef.current.send(JSON.stringify({
+      type: "call-chat",
+      to: "__all__",
+      payload: JSON.stringify({ text }),
+    }));
+    setChatMessages(prev => [...prev, {
+      id: `${Date.now()}-${Math.random()}`,
+      from: "me",
+      text,
+      timestamp: Date.now(),
+    }]);
+    setChatText("");
+    chatInputRef.current?.focus();
+  }, [chatText]);
+
+  // Auto-scroll chat
+  useEffect(() => {
+    if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+  }, [chatMessages.length]);
 
   const hangup = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -428,6 +477,34 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
           )}
           <ControlButton active={audioEnabled} onClick={() => setAudioEnabled(!audioEnabled)} icon={audioEnabled ? <Mic size={20} /> : <MicOff size={20} />} />
           <ControlButton active={videoEnabled} onClick={() => setVideoEnabled(!videoEnabled)} icon={videoEnabled ? <Video size={20} /> : <VideoOff size={20} />} />
+          <div className="relative">
+            <ControlButton active={chatOpen} onClick={() => { setChatOpen(!chatOpen); if (!chatOpen) setUnreadChat(0); }} icon={<MessageCircle size={20} />} />
+            {unreadChat > 0 && !chatOpen && (
+              <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                {unreadChat > 9 ? "9+" : unreadChat}
+              </div>
+            )}
+          </div>
+          <div className="relative">
+            <ControlButton active={showReactions} onClick={() => setShowReactions(!showReactions)} icon={<Smile size={20} />} />
+            {showReactions && (
+              <div className="absolute bottom-14 left-1/2 -translate-x-1/2 flex gap-1 px-2 py-1.5 rounded-xl animate-scale-in"
+                style={{ backgroundColor: "#1c1917", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>
+                {["👍", "👏", "😂", "❤️", "🎉", "🤔", "👋", "🔥"].map((emoji) => (
+                  <button
+                    key={emoji}
+                    onClick={() => {
+                      wsRef.current?.send(JSON.stringify({ type: "call-reaction", to: "__all__", payload: JSON.stringify({ emoji }) }));
+                      setShowReactions(false);
+                    }}
+                    className="w-9 h-9 flex items-center justify-center rounded-lg text-xl transition-transform hover:scale-125 active:scale-90 hover:bg-white/10"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <ControlButton
             active={isScreenSharing}
             onClick={async () => {
@@ -492,10 +569,77 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
             <PhoneOff size={22} className="text-white" />
           </button>
         </div>
+        {/* Floating reactions */}
+        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none">
+          {floatingReactions.map((r) => (
+            <div key={r.id} className="absolute text-4xl" style={{ left: `${Math.random() * 200 - 100}px`, animation: "reaction-float 3s ease-out forwards" }}>
+              {r.emoji}
+            </div>
+          ))}
+        </div>
+        {/* Chat panel */}
+        {chatOpen && (
+          <div className="absolute top-0 right-0 bottom-0 w-80 flex flex-col z-[9999]"
+            style={{ backgroundColor: "rgba(28,25,23,0.95)", borderLeft: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <span className="text-white/80 text-sm font-medium">Chat</span>
+              <button onClick={() => setChatOpen(false)} className="p-1 rounded hover:bg-white/10" style={{ color: "rgba(255,255,255,0.4)" }}>
+                <X size={14} />
+              </button>
+            </div>
+            {/* Messages */}
+            <div ref={chatScrollRef} className="flex-1 overflow-y-auto px-3 py-2 space-y-2 min-h-0">
+              {chatMessages.length === 0 && (
+                <div className="text-center py-8 text-white/20 text-xs">No messages yet</div>
+              )}
+              {chatMessages.map((msg) => {
+                const isMe = msg.from === "me";
+                const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                return (
+                  <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                    <div className="max-w-[85%] px-3 py-1.5 rounded-xl text-xs"
+                      style={{
+                        backgroundColor: isMe ? "rgba(59,130,246,0.2)" : "rgba(255,255,255,0.06)",
+                        color: isMe ? "#93c5fd" : "rgba(255,255,255,0.8)",
+                        borderBottomRightRadius: isMe ? 4 : undefined,
+                        borderBottomLeftRadius: !isMe ? 4 : undefined,
+                      }}>
+                      <p className="break-words whitespace-pre-wrap">{msg.text}</p>
+                      <span className="block text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>{time}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Input */}
+            <div className="px-3 pb-3 pt-1">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <input
+                  ref={chatInputRef}
+                  type="text"
+                  value={chatText}
+                  onChange={(e) => setChatText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") sendChatMessage(); }}
+                  placeholder="Type a message..."
+                  className="flex-1 bg-transparent text-xs outline-none"
+                  style={{ color: "rgba(255,255,255,0.85)" }}
+                />
+                <button onClick={sendChatMessage} disabled={!chatText.trim()} className="p-1 rounded transition-colors hover:bg-white/10 disabled:opacity-30" style={{ color: "rgba(255,255,255,0.5)" }}>
+                  <Send size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <style>{`
           @keyframes wave-ping {
             0% { transform: scale(1); opacity: 1; }
             75%, 100% { transform: scale(1.5); opacity: 0; }
+          }
+          @keyframes reaction-float {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-150px) scale(1.5); opacity: 0; }
           }
         `}</style>
       </div>
