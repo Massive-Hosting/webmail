@@ -805,6 +805,7 @@
   "wave.microphone": "Mikrofon",
   "wave.camera": "Kamera",
   "wave.speaker": "Lautsprecher",
+  "wave.softFocus": "Weichzeichner",
   "wave.permissionDenied": "Zugriff auf Kamera und Mikrofon wurde verweigert. Bitte erlauben Sie den Zugriff in Ihren Browsereinstellungen.",
   "wave.permissionPending": "Erlauben Sie den Zugriff auf Kamera und Mikrofon, um Ihre Videovorschau zu sehen.",
   "wave.newCall": "Neuer Wave-Anruf",

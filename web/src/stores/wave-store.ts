@@ -57,6 +57,10 @@ function loadNoiseSuppression(): boolean {
   try { return localStorage.getItem("wave_noise_suppression") === "true"; } catch { return false; }
 }
 
+function loadSoftFocus(): number {
+  try { return parseFloat(localStorage.getItem("wave_soft_focus") ?? "0") || 0; } catch { return 0; }
+}
+
 interface WaveState {
   callState: CallState;
   callId: string | null;
@@ -99,9 +103,13 @@ interface WaveState {
   // Noise suppression
   noiseSuppression: boolean;
 
+  // Soft focus (0 = off, 0.5-3 = blur strength in px)
+  softFocus: number;
+
   // Actions
   setVideoQuality: (quality: VideoQuality) => void;
   setNoiseSuppression: (enabled: boolean) => void;
+  setSoftFocus: (value: number) => void;
   setCallState: (state: CallState) => void;
   setCall: (callId: string, peerEmail: string, peerName: string) => void;
   setMuted: (muted: boolean) => void;
@@ -139,7 +147,12 @@ export const useWaveStore = create<WaveState>((set) => ({
   callHistory: loadCallHistory(),
   videoQuality: loadVideoQuality(),
   noiseSuppression: loadNoiseSuppression(),
+  softFocus: loadSoftFocus(),
 
+  setSoftFocus: (value) => {
+    try { localStorage.setItem("wave_soft_focus", String(value)); } catch { /* ignore */ }
+    set({ softFocus: value });
+  },
   setVideoQuality: (quality) => {
     try { localStorage.setItem("wave_video_quality", quality); } catch { /* ignore */ }
     set({ videoQuality: quality });

@@ -42,6 +42,8 @@ export const WaveLobby = React.memo(function WaveLobby({
   const displayName = useAuthStore((s) => s.displayName);
   const noiseSuppression = useWaveStore((s) => s.noiseSuppression);
   const setNoiseSuppression = useWaveStore((s) => s.setNoiseSuppression);
+  const softFocus = useWaveStore((s) => s.softFocus);
+  const setSoftFocus = useWaveStore((s) => s.setSoftFocus);
 
   const { handleProps: dragHandleProps, containerStyle: dragStyle } = useDraggable();
 
@@ -491,6 +493,25 @@ export const WaveLobby = React.memo(function WaveLobby({
                     { value: "hd", label: "1080p" },
                   ]}
                   onChange={(v) => useWaveStore.getState().setVideoQuality(v as VideoQuality)}
+                />
+              </div>
+              {/* Soft focus slider */}
+              <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-medium text-white/40">{t("wave.softFocus")}</label>
+                  <span className="text-[10px] text-white/30">
+                    {softFocus === 0 ? "Off" : `${softFocus.toFixed(1)}px`}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="3"
+                  step="0.5"
+                  value={softFocus}
+                  onChange={(e) => setSoftFocus(parseFloat(e.target.value))}
+                  className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                  style={{ backgroundColor: "rgba(255,255,255,0.1)", accentColor: "#6366f1" }}
                 />
               </div>
             </div>

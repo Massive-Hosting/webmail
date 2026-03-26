@@ -2,6 +2,7 @@
 
 import { useWaveStore, VIDEO_QUALITY_CONSTRAINTS } from "@/stores/wave-store.ts";
 import { NoiseSuppressor } from "@/lib/wave-noise.ts";
+import { SoftFocusProcessor } from "@/lib/wave-soft-focus.ts";
 
 /** Get current video constraints based on user's quality preference */
 export function getVideoConstraints(): MediaTrackConstraints {
@@ -36,6 +37,7 @@ export class WaveConnection {
   private localStream: MediaStream | null = null;
   private screenStream: MediaStream | null = null;
   private noiseSuppressor: NoiseSuppressor | null = null;
+  private softFocusProcessor: SoftFocusProcessor | null = null;
   private state: CallState = "idle";
   private opts: WaveCallOptions;
   private statsInterval: ReturnType<typeof setInterval> | null = null;
@@ -208,6 +210,27 @@ export class WaveConnection {
         console.log("[Wave] RNNoise enabled");
       } catch (e) {
         console.error("[Wave] RNNoise failed, using raw audio:", e);
+      }
+    }
+
+    // Apply soft focus if enabled
+    const softFocus = useWaveStore.getState().softFocus;
+    if (softFocus > 0 && video) {
+      try {
+        this.softFocusProcessor = new SoftFocusProcessor();
+        this.softFocusProcessor.setInput(this.localStream);
+        this.softFocusProcessor.setBlur(softFocus);
+        const processedStream = this.softFocusProcessor.start();
+        // Replace video track with the processed one, keep audio from original
+        const processedVideo = processedStream.getVideoTracks()[0];
+        const originalAudio = this.localStream.getAudioTracks()[0];
+        const combinedStream = new MediaStream();
+        if (originalAudio) combinedStream.addTrack(originalAudio);
+        if (processedVideo) combinedStream.addTrack(processedVideo);
+        this.localStream = combinedStream;
+        console.log(`[Wave] Soft focus enabled: ${softFocus}px`);
+      } catch (e) {
+        console.error("[Wave] Soft focus failed:", e);
       }
     }
 
@@ -409,6 +432,8 @@ export class WaveConnection {
 
     this.noiseSuppressor?.stop();
     this.noiseSuppressor = null;
+    this.softFocusProcessor?.stop();
+    this.softFocusProcessor = null;
 
     if (this.localStream) {
       for (const track of this.localStream.getTracks()) {
