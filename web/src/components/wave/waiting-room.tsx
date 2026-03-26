@@ -122,9 +122,13 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
     };
   }, [open]);
 
-  // Connect to room WebSocket and wait for guest
+  // Keep a ref to the current stream so the WS handler can access it
+  const streamRef = useRef<MediaStream | null>(null);
+  useEffect(() => { streamRef.current = stream; }, [stream]);
+
+  // Connect to room WebSocket immediately (don't wait for stream)
   useEffect(() => {
-    if (!open || !stream) return;
+    if (!open) return;
 
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(`${proto}//${window.location.host}/api/call-rooms/${roomId}/ws`);
@@ -142,6 +146,22 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
         if (msg.type === "call-accept") {
           setStatus("connecting");
 
+          // Wait for media stream if not ready yet
+          let mediaStream = streamRef.current;
+          if (!mediaStream) {
+            console.log("[Wave] Waiting for media stream...");
+            for (let i = 0; i < 50; i++) {
+              await new Promise((r) => setTimeout(r, 200));
+              mediaStream = streamRef.current;
+              if (mediaStream) break;
+            }
+          }
+          if (!mediaStream) {
+            console.error("[Wave] No media stream available after waiting");
+            setStatus("ended");
+            return;
+          }
+
           // Fetch TURN credentials
           let iceServers: RTCIceServer[] = [{ urls: "stun:stun.l.google.com:19302" }];
           try {
@@ -155,8 +175,8 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
           const pc = new RTCPeerConnection({ iceServers });
           pcRef.current = pc;
 
-          for (const track of stream.getTracks()) {
-            pc.addTrack(track, stream);
+          for (const track of mediaStream.getTracks()) {
+            pc.addTrack(track, mediaStream);
           }
 
           pc.ontrack = (ev) => {
@@ -238,7 +258,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
     return () => {
       ws.close();
     };
-  }, [open, stream, roomId]);
+  }, [open, roomId]);
 
   // Toggle tracks
   useEffect(() => {
