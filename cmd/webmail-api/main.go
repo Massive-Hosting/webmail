@@ -28,6 +28,9 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// version is set via ldflags at build time: -ldflags "-X main.version=v1.0.0"
+var version = "dev"
+
 func main() {
 	log := zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).
 		With().Timestamp().Caller().Logger()

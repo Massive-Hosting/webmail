@@ -1,0 +1,205 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  GO_VERSION: '1.25'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: cd web && npm ci --ignore-scripts
+
+      - name: Copy MediaPipe + RNNoise assets
+        run: |
+          cd web
+          mkdir -p public/mediapipe/wasm public/mediapipe/models public/rnnoise
+          cp node_modules/@mediapipe/tasks-vision/wasm/* public/mediapipe/wasm/
+          cp node_modules/@jitsi/rnnoise-wasm/dist/rnnoise.wasm public/rnnoise/
+          curl -sL -o public/mediapipe/models/selfie_segmenter.tflite \
+            "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite"
+
+      - name: Build frontend
+        run: cd web && npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: web/dist
+
+  build-binaries:
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            suffix: linux-amd64
+          - goos: linux
+            goarch: arm64
+            suffix: linux-arm64
+          - goos: darwin
+            goarch: amd64
+            suffix: darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            suffix: darwin-arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: web/dist
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          go build -tags embedstatic \
+            -ldflags "-s -w -X main.version=${{ github.ref_name }}" \
+            -o webmail-${{ matrix.suffix }} \
+            ./cmd/webmail-api
+
+      - name: Package with migrations
+        run: |
+          tar czf webmail-${{ matrix.suffix }}.tar.gz \
+            webmail-${{ matrix.suffix }} \
+            migrations/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.suffix }}
+          path: webmail-${{ matrix.suffix }}.tar.gz
+
+  docker:
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: web/dist
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.release
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  release:
+    needs: [build-binaries, docker]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: binary-*
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            webmail-linux-amd64.tar.gz
+            webmail-linux-arm64.tar.gz
+            webmail-darwin-amd64.tar.gz
+            webmail-darwin-arm64.tar.gz
+          body: |
+            ## Installation
+
+            ### Docker (recommended)
+            ```bash
+            docker run -d \
+              -e STALWART_URL=http://your-stalwart:8081 \
+              -e STALWART_ADMIN_TOKEN=your-admin-token \
+              -e SECRET_ENCRYPTION_KEY=$(openssl rand -hex 32) \
+              -e WEBMAIL_DATABASE_URL=postgres://user:pass@host:5432/webmail \
+              -e VALKEY_URL=redis://host:6379/0 \
+              -p 8095:8095 \
+              ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ```
+
+            ### Binary
+            ```bash
+            tar xzf webmail-linux-amd64.tar.gz
+            # Run migrations first
+            goose -dir migrations postgres "postgres://..." up
+            # Start the server
+            STALWART_URL=http://your-stalwart:8081 \
+            STALWART_ADMIN_TOKEN=your-admin-token \
+            SECRET_ENCRYPTION_KEY=$(openssl rand -hex 32) \
+            WEBMAIL_DATABASE_URL=postgres://... \
+            VALKEY_URL=redis://... \
+            ./webmail-linux-amd64
+            ```
+
+            ### Requirements
+            - [Stalwart Mail Server](https://stalw.art) with JMAP enabled
+            - PostgreSQL database
+            - Redis/Valkey instance
+
+            ### Optional
+            - `AI_ENABLED=true` + `AI_BASE_URL` + `AI_API_KEY` for AI assistant
+            - `TURN_SECRET` + `TURN_SERVERS` for Wave video call relay
+            - `TEMPORAL_ADDRESS` for scheduled send / snooze workflows
