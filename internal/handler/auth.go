@@ -13,6 +13,7 @@ import (
 	"webmail/internal/db"
 	"webmail/internal/hosting"
 	"webmail/internal/middleware"
+	"webmail/internal/model"
 	"webmail/internal/session"
 
 	"github.com/rs/zerolog"
@@ -22,9 +23,12 @@ import (
 type AuthHandler struct {
 	store        *session.Store
 	queries      *db.Queries
-	coreClient   *hosting.CoreAPIClient
+	coreClient   *hosting.CoreAPIClient // nil in standalone mode
 	loginLimiter *middleware.LoginRateLimiter
 	log          zerolog.Logger
+	// Standalone mode: direct Stalwart connection
+	stalwartURL   string
+	stalwartToken string
 }
 
 // NewAuthHandler creates a new authentication handler.
@@ -41,6 +45,25 @@ func NewAuthHandler(
 		coreClient:   coreClient,
 		loginLimiter: loginLimiter,
 		log:          log,
+	}
+}
+
+// NewStandaloneAuthHandler creates an auth handler for standalone mode (no hosting platform).
+func NewStandaloneAuthHandler(
+	store *session.Store,
+	queries *db.Queries,
+	stalwartURL string,
+	stalwartToken string,
+	loginLimiter *middleware.LoginRateLimiter,
+	log zerolog.Logger,
+) *AuthHandler {
+	return &AuthHandler{
+		store:         store,
+		queries:       queries,
+		loginLimiter:  loginLimiter,
+		log:           log,
+		stalwartURL:   stalwartURL,
+		stalwartToken: stalwartToken,
 	}
 }
 
@@ -100,59 +123,80 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	// Resolve Stalwart context: check DB cache first, then core API.
-	sc, err := h.queries.GetStalwartContext(ctx, req.Email)
-	if err != nil {
-		h.log.Error().Err(err).Msg("failed to query stalwart context cache")
-	}
-	if sc == nil {
-		// Cache miss: fetch from core API.
-		sc, err = h.coreClient.GetStalwartContext(ctx, req.Email)
+	var sc *model.StalwartContext
+	var accountID string
+
+	if h.stalwartURL != "" {
+		// Standalone mode: use configured Stalwart URL directly.
+		sc = &model.StalwartContext{
+			StalwartURL:   h.stalwartURL,
+			StalwartToken: h.stalwartToken,
+		}
+		var err error
+		accountID, err = validateStalwartCredentials(ctx, sc.StalwartURL, req.Email, req.Password)
 		if err != nil {
-			h.log.Error().Err(err).Msg("failed to resolve stalwart context from core API")
+			h.log.Debug().Str("email", req.Email).Msg("stalwart authentication failed")
 			writeJSON(w, http.StatusUnauthorized, errorResponse{"invalid_credentials"})
 			return
 		}
-		// Cache the result.
-		if cacheErr := h.queries.UpsertStalwartContext(ctx, req.Email, sc); cacheErr != nil {
-			h.log.Error().Err(cacheErr).Msg("failed to cache stalwart context")
-		}
-		// Sync collaboration settings from core API to domain_settings table.
+		// Ensure domain_settings row exists (enable free/busy and directory by default in standalone).
 		domain := emailDomain(req.Email)
 		if domain != "" {
 			_ = h.queries.UpsertDomainSettings(ctx, &db.DomainSettings{
 				Domain:           domain,
-				FreeBusyEnabled:  sc.FreeBusyEnabled,
-				DirectoryEnabled: sc.DirectoryEnabled,
+				FreeBusyEnabled:  true,
+				DirectoryEnabled: true,
 			})
 		}
-	}
-
-	// Validate credentials against Stalwart JMAP session endpoint.
-	accountID, err := validateStalwartCredentials(ctx, sc.StalwartURL, req.Email, req.Password)
-	if err != nil {
-		h.log.Debug().Str("email", req.Email).Msg("stalwart authentication failed")
-
-		// If we used cached context and it failed, retry with fresh context from core API.
-		freshSC, freshErr := h.coreClient.GetStalwartContext(ctx, req.Email)
-		if freshErr != nil {
-			writeJSON(w, http.StatusUnauthorized, errorResponse{"invalid_credentials"})
-			return
+	} else {
+		// Hosted mode: resolve Stalwart context via DB cache + core API.
+		var err error
+		sc, err = h.queries.GetStalwartContext(ctx, req.Email)
+		if err != nil {
+			h.log.Error().Err(err).Msg("failed to query stalwart context cache")
 		}
-		if freshSC.StalwartURL != sc.StalwartURL {
-			// Context was stale, retry with fresh URL.
-			if cacheErr := h.queries.UpsertStalwartContext(ctx, req.Email, freshSC); cacheErr != nil {
-				h.log.Error().Err(cacheErr).Msg("failed to update stalwart context cache")
-			}
-			sc = freshSC
-			accountID, err = validateStalwartCredentials(ctx, sc.StalwartURL, req.Email, req.Password)
+		if sc == nil {
+			sc, err = h.coreClient.GetStalwartContext(ctx, req.Email)
 			if err != nil {
+				h.log.Error().Err(err).Msg("failed to resolve stalwart context from core API")
 				writeJSON(w, http.StatusUnauthorized, errorResponse{"invalid_credentials"})
 				return
 			}
-		} else {
-			writeJSON(w, http.StatusUnauthorized, errorResponse{"invalid_credentials"})
-			return
+			if cacheErr := h.queries.UpsertStalwartContext(ctx, req.Email, sc); cacheErr != nil {
+				h.log.Error().Err(cacheErr).Msg("failed to cache stalwart context")
+			}
+			domain := emailDomain(req.Email)
+			if domain != "" {
+				_ = h.queries.UpsertDomainSettings(ctx, &db.DomainSettings{
+					Domain:           domain,
+					FreeBusyEnabled:  sc.FreeBusyEnabled,
+					DirectoryEnabled: sc.DirectoryEnabled,
+				})
+			}
+		}
+
+		accountID, err = validateStalwartCredentials(ctx, sc.StalwartURL, req.Email, req.Password)
+		if err != nil {
+			h.log.Debug().Str("email", req.Email).Msg("stalwart authentication failed")
+			freshSC, freshErr := h.coreClient.GetStalwartContext(ctx, req.Email)
+			if freshErr != nil {
+				writeJSON(w, http.StatusUnauthorized, errorResponse{"invalid_credentials"})
+				return
+			}
+			if freshSC.StalwartURL != sc.StalwartURL {
+				if cacheErr := h.queries.UpsertStalwartContext(ctx, req.Email, freshSC); cacheErr != nil {
+					h.log.Error().Err(cacheErr).Msg("failed to update stalwart context cache")
+				}
+				sc = freshSC
+				accountID, err = validateStalwartCredentials(ctx, sc.StalwartURL, req.Email, req.Password)
+				if err != nil {
+					writeJSON(w, http.StatusUnauthorized, errorResponse{"invalid_credentials"})
+					return
+				}
+			} else {
+				writeJSON(w, http.StatusUnauthorized, errorResponse{"invalid_credentials"})
+				return
+			}
 		}
 	}
 

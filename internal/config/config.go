@@ -32,6 +32,11 @@ type Config struct {
 	// TURN server for WebRTC NAT traversal.
 	TURNSecret  string
 	TURNServers string // Comma-separated TURN URIs
+
+	// Standalone mode: connect directly to Stalwart without the hosting platform.
+	// Set STALWART_URL and STALWART_ADMIN_TOKEN to enable.
+	StalwartURL        string
+	StalwartAdminToken string
 }
 
 // Load reads configuration from environment variables with sensible defaults.
@@ -53,6 +58,8 @@ func Load() (*Config, error) {
 		AIMaxTokens:        envIntOr("AI_MAX_TOKENS", 1024),
 		TURNSecret:         os.Getenv("TURN_SECRET"),
 		TURNServers:        os.Getenv("TURN_SERVERS"),
+		StalwartURL:        os.Getenv("STALWART_URL"),
+		StalwartAdminToken: os.Getenv("STALWART_ADMIN_TOKEN"),
 	}
 
 	// Parse allowed origins.
@@ -77,17 +84,27 @@ func Load() (*Config, error) {
 	}
 
 	// Validate required fields.
-	if cfg.CoreAPIURL == "" {
-		return nil, errors.New("WEBMAIL_CORE_API_URL is required")
-	}
-	if cfg.CoreAPIKey == "" {
-		return nil, errors.New("WEBMAIL_API_KEY is required")
+	if cfg.StalwartURL != "" && cfg.StalwartAdminToken != "" {
+		// Standalone mode: direct Stalwart connection, no hosting platform needed.
+		// CoreAPIURL and CoreAPIKey are optional.
+	} else {
+		if cfg.CoreAPIURL == "" {
+			return nil, errors.New("WEBMAIL_CORE_API_URL is required (or set STALWART_URL + STALWART_ADMIN_TOKEN for standalone mode)")
+		}
+		if cfg.CoreAPIKey == "" {
+			return nil, errors.New("WEBMAIL_API_KEY is required (or set STALWART_URL + STALWART_ADMIN_TOKEN for standalone mode)")
+		}
 	}
 	if len(cfg.SecretEncryptionKey) == 0 {
 		return nil, errors.New("SECRET_ENCRYPTION_KEY is required")
 	}
 
 	return cfg, nil
+}
+
+// IsStandalone returns true when running in standalone mode (direct Stalwart, no hosting platform).
+func (c *Config) IsStandalone() bool {
+	return c.StalwartURL != "" && c.StalwartAdminToken != ""
 }
 
 func envOr(key, fallback string) string {

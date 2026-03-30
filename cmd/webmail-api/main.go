@@ -79,9 +79,6 @@ func main() {
 	// Initialize session store backed by Valkey.
 	sessStore := session.NewStore(rdb, cfg.SessionMaxAge, cfg.SecretEncryptionKey)
 
-	// Core API client.
-	coreClient := hosting.NewCoreAPIClient(cfg.CoreAPIURL, cfg.CoreAPIKey)
-
 	// WebSocket hub.
 	hub := ws.NewHub(log)
 	defer hub.Shutdown()
@@ -90,8 +87,15 @@ func main() {
 	rateLimiter := middleware.NewRateLimiter(cfg.RateLimitPerMinute)
 	loginLimiter := middleware.NewLoginRateLimiter()
 
-	// Handlers.
-	authHandler := handler.NewAuthHandler(sessStore, queries, coreClient, loginLimiter, log)
+	// Auth handler: standalone or hosted mode.
+	var authHandler *handler.AuthHandler
+	if cfg.IsStandalone() {
+		log.Info().Str("stalwart", cfg.StalwartURL).Msg("standalone mode: direct Stalwart connection")
+		authHandler = handler.NewStandaloneAuthHandler(sessStore, queries, cfg.StalwartURL, cfg.StalwartAdminToken, loginLimiter, log)
+	} else {
+		coreClient := hosting.NewCoreAPIClient(cfg.CoreAPIURL, cfg.CoreAPIKey)
+		authHandler = handler.NewAuthHandler(sessStore, queries, coreClient, loginLimiter, log)
+	}
 	proxyHandler := handler.NewProxyHandler(log)
 	blobHandler := handler.NewBlobHandler(cfg.MaxUploadSize, log)
 	settingsHandler := handler.NewSettingsHandler(queries, log)
