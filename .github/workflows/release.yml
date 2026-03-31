@@ -63,9 +63,6 @@ jobs:
             goarch: arm64
             suffix: linux-arm64
           - goos: darwin
-            goarch: amd64
-            suffix: darwin-amd64
-          - goos: darwin
             goarch: arm64
             suffix: darwin-arm64
     steps:
@@ -163,7 +160,6 @@ jobs:
           files: |
             webmail-linux-amd64.tar.gz
             webmail-linux-arm64.tar.gz
-            webmail-darwin-amd64.tar.gz
             webmail-darwin-arm64.tar.gz
           body: |
             ## Installation
