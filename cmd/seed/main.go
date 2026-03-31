@@ -1936,7 +1936,7 @@ func seedCalendarEvents(c *client, acctEmail string) (int, error) {
 func main() {
 	defaultURL := os.Getenv("STALWART_URL")
 	if defaultURL == "" {
-		defaultURL = "http://10.10.10.200:8081"
+		defaultURL = "http://localhost:8081"
 	}
 
 	defaultWebmailURL := os.Getenv("WEBMAIL_URL")
@@ -1967,7 +1967,7 @@ func main() {
 	// (webmail API doesn't have a write endpoint for this — it's managed via control panel)
 	dbURL := os.Getenv("WEBMAIL_DATABASE_URL")
 	if dbURL == "" {
-		dbURL = "postgres://webmail:webmail@10.10.10.200:5432/webmail?sslmode=disable"
+		dbURL = "postgres://webmail:webmail@127.0.0.1:5432/webmail?sslmode=disable"
 	}
 	fmt.Println("Enabling free/busy and directory...")
 	if db, err := openDB(dbURL); err != nil {

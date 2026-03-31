@@ -69,7 +69,7 @@ Add to the core API router (authenticated via ServiceAuth middleware):
 - Returns:
   ```json
   {
-    "stalwart_url": "http://10.10.10.200:8081",
+    "stalwart_url": "http://localhost:8081",
     "stalwart_token": "...",
     "fqdn": "example.com"
   }

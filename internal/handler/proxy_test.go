@@ -208,7 +208,7 @@ func TestJMAPProxySieveAllowed(t *testing.T) {
 
 // TestStalwartIntegration tests against a real Stalwart instance if available.
 func TestStalwartIntegration(t *testing.T) {
-	stalwartURL := "http://10.10.10.200:8081"
+	stalwartURL := "http://localhost:8081"
 
 	// Check connectivity.
 	client := &http.Client{Timeout: 3 * time.Second}

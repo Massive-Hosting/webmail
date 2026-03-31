@@ -33,12 +33,12 @@ export default defineConfig({
       reuseExistingServer: true,
       env: {
         WEBMAIL_LISTEN_ADDR: ':8095',
-        WEBMAIL_DATABASE_URL: 'postgres://webmail:webmail@10.10.10.200:5432/webmail',
-        WEBMAIL_CORE_API_URL: 'http://10.10.10.200:8090',
+        WEBMAIL_DATABASE_URL: 'postgres://webmail:webmail@127.0.0.1:5432/webmail',
+        WEBMAIL_CORE_API_URL: 'http://localhost:8090',
         WEBMAIL_API_KEY: 'hst_dev_webmail_key_00000000000',
         SECRET_ENCRYPTION_KEY: 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
-        VALKEY_URL: 'redis://10.10.10.200:6379/0',
-        TEMPORAL_ADDRESS: '10.10.10.200:7233',
+        VALKEY_URL: 'redis://127.0.0.1:6379/0',
+        TEMPORAL_ADDRESS: '127.0.0.1:7233',
       },
     },
     {

@@ -285,7 +285,9 @@ An embedded **Temporal worker** runs in-process for background operations: bulk 
 - [Stalwart Mail Server](https://stalw.art) with JMAP enabled (v0.9+ recommended)
 - Docker and Docker Compose (for the recommended install method)
 
-### Quick Start with Docker Compose
+### Quick Start — Connect to Existing Stalwart
+
+If you already have Stalwart Mail Server running:
 
 ```bash
 # Download the compose file and env template
@@ -293,7 +295,7 @@ curl -O https://raw.githubusercontent.com/Massive-Hosting/webmail/main/docker-co
 curl -O https://raw.githubusercontent.com/Massive-Hosting/webmail/main/.env.standalone
 
 # Edit the config — you need to set at minimum:
-#   STALWART_URL        → your Stalwart server's JMAP URL
+#   STALWART_URL         → your Stalwart server's JMAP URL
 #   STALWART_ADMIN_TOKEN → your Stalwart admin token
 #   SECRET_ENCRYPTION_KEY → generate with: openssl rand -hex 32
 nano .env.standalone
@@ -305,6 +307,35 @@ docker compose up -d
 Open [http://localhost:8095](http://localhost:8095) and log in with any email account from your Stalwart server. Database migrations run automatically on first start.
 
 > **Where to find your Stalwart admin token:** In your Stalwart configuration file, look for `authentication.fallback-admin.secret`. This is the token you need for `STALWART_ADMIN_TOKEN`. It's used server-side only for free/busy lookups and directory search — it's never exposed to browsers.
+
+### Quick Start — Full Stack (includes Stalwart)
+
+Don't have a mail server yet? This sets up everything — Stalwart Mail Server, the webmail, and all dependencies — in one command:
+
+```bash
+# Download the full compose file and env template
+curl -O https://raw.githubusercontent.com/Massive-Hosting/webmail/main/docker-compose.full.yml
+curl -O https://raw.githubusercontent.com/Massive-Hosting/webmail/main/.env.standalone
+
+# Generate an encryption key and set it in the env file
+sed -i "s/change-me-generate-with-openssl-rand-hex-32/$(openssl rand -hex 32)/" .env.standalone
+
+# Start the full stack
+docker compose -f docker-compose.full.yml up -d
+
+# Get the Stalwart admin password (auto-generated on first run)
+docker compose -f docker-compose.full.yml logs stalwart 2>&1 | grep -i password
+```
+
+Then:
+1. Open [http://localhost:8080](http://localhost:8080) — Stalwart admin UI. Log in with `admin` and the password from the logs.
+2. Create your domain and email accounts in Stalwart.
+3. Copy the admin token from Stalwart (Settings → Authentication → Fallback Admin Secret).
+4. Set `STALWART_ADMIN_TOKEN` in `.env.standalone` and restart:
+   ```bash
+   docker compose -f docker-compose.full.yml restart webmail
+   ```
+5. Open [http://localhost:8095](http://localhost:8095) and log in with an email account you created.
 
 ### Binary Install
 

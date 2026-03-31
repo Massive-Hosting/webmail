@@ -1,0 +1,78 @@
+# Complete stack: Webmail + Stalwart Mail Server + all dependencies
+#
+# This is a fully self-contained email setup — no existing mail server needed.
+#
+# Usage:
+#   1. Copy this file and .env.standalone to your server
+#   2. Start the stack:
+#        docker compose -f docker-compose.full.yml up -d
+#   3. Get the Stalwart admin password:
+#        docker compose -f docker-compose.full.yml logs stalwart 2>&1 | grep "admin"
+#   4. Open http://localhost:8080 to access the Stalwart admin UI
+#      - Create your domain and email accounts
+#      - Copy the admin token from Settings → Authentication → Fallback Admin Secret
+#   5. Set STALWART_ADMIN_TOKEN in .env.standalone to the token from step 4
+#   6. Restart the webmail to pick up the token:
+#        docker compose -f docker-compose.full.yml restart webmail
+#   7. Open http://localhost:8095 and log in with an email account you created
+#
+# See README.md for full configuration reference.
+
+services:
+  stalwart:
+    image: stalwartlabs/mail-server:latest
+    ports:
+      - "8080:8080"   # Admin UI + JMAP (HTTP)
+      - "25:25"        # SMTP
+      - "587:587"      # SMTP submission
+      - "465:465"      # SMTPS
+      - "143:143"      # IMAP
+      - "993:993"      # IMAPS
+      - "4190:4190"    # ManageSieve
+    volumes:
+      - stalwart_data:/opt/stalwart-mail
+    restart: unless-stopped
+
+  webmail:
+    image: ghcr.io/massive-hosting/webmail:latest
+    ports: ["8095:8095"]
+    env_file: .env.standalone
+    environment:
+      # Override to point at the Stalwart container
+      STALWART_URL: http://stalwart:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_started
+      stalwart:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: webmail
+      POSTGRES_USER: webmail
+      POSTGRES_PASSWORD: webmail
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U webmail"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    restart: unless-stopped
+
+  # Optional: enables snooze and scheduled send
+  # Uncomment to enable:
+  # temporal:
+  #   image: temporalio/auto-setup:latest
+  #   restart: unless-stopped
+
+volumes:
+  stalwart_data:
+  pgdata:
