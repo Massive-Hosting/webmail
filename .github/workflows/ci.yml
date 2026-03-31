@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  GO_VERSION: '1.25'
+
+jobs:
+  go:
+    name: Go tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./... -v -race
+
+  frontend:
+    name: Frontend tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: cd web && npm ci --ignore-scripts
+
+      - name: Type check
+        run: cd web && npx tsc --noEmit
+
+      - name: Unit tests
+        run: cd web && npx vitest run
+
+      - name: Build
+        run: |
+          cd web
+          mkdir -p public/mediapipe/wasm public/mediapipe/models public/rnnoise
+          cp node_modules/@mediapipe/tasks-vision/wasm/* public/mediapipe/wasm/
+          cp node_modules/@jitsi/rnnoise-wasm/dist/rnnoise.wasm public/rnnoise/
+          touch public/mediapipe/models/selfie_segmenter.tflite
+          npm run build

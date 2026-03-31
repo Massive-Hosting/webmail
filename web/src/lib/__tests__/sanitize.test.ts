@@ -41,12 +41,20 @@ describe("sanitizeEmailHtml", () => {
     expect(result.html).toContain('rel="noopener noreferrer"');
   });
 
-  it("replaces external images with placeholder and flags hasExternalImages", () => {
+  it("hides tracking pixel images without flagging hasExternalImages", () => {
     const result = sanitizeEmailHtml('<img src="https://tracker.com/pixel.png" alt="pic">');
+    // Tracking pixels are hidden entirely (display:none), no banner shown
+    expect(result.hasExternalImages).toBe(false);
+    expect(result.html).toMatch(/display:\s*none/);
+    expect(result.html).toContain("data-external-src");
+    expect(result.html).not.toMatch(/\ssrc="https:\/\/tracker\.com/);
+  });
+
+  it("flags hasExternalImages for actual content images", () => {
+    const result = sanitizeEmailHtml('<img src="https://example.com/photo.jpg" alt="A photo" width="400" height="300">');
     expect(result.hasExternalImages).toBe(true);
     expect(result.html).toContain("data-external-src");
-    // The original src= should be removed (only data-external-src remains)
-    expect(result.html).not.toMatch(/\ssrc="https:\/\/tracker\.com/);
+    expect(result.html).not.toMatch(/\ssrc="https:\/\/example\.com/);
   });
 
   it("preserves data: URI images", () => {

@@ -2,6 +2,8 @@
 
 **A modern, JMAP-native webmail client built for speed and polish.**
 
+[![CI](https://github.com/Massive-Hosting/webmail/actions/workflows/ci.yml/badge.svg)](https://github.com/Massive-Hosting/webmail/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Go](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
