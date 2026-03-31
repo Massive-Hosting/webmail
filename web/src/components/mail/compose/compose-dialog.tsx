@@ -802,9 +802,8 @@ export const ComposePanel = React.memo(function ComposePanel({
             <button
               type="button"
               onClick={handleInsertSignature}
-              className="compose-dialog__window-btn"
-              title={t("compose.insertSignature")}
               className="compose-dialog__window-btn ml-1"
+              title={t("compose.insertSignature")}
             >
               <FileSignature size={14} />
             </button>
