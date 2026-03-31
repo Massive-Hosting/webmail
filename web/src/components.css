@@ -112,11 +112,17 @@
 
 .message-list-item[data-selected] {
   background-color: var(--color-message-selected);
+  outline: 1.5px solid var(--color-bg-accent);
+  outline-offset: -1.5px;
   box-shadow: inset 3px 0 0 0 var(--color-bg-accent);
+  z-index: 1;
+  position: relative;
 }
 
 .message-list-item[data-selected]:hover {
   background-color: var(--color-message-selected);
+  outline: 1.5px solid var(--color-bg-accent);
+  outline-offset: -1.5px;
   box-shadow: inset 3px 0 0 0 var(--color-bg-accent);
 }
 

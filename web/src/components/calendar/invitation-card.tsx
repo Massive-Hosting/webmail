@@ -164,7 +164,7 @@ function RequestCard({
       className="mx-6 my-3 rounded-lg overflow-hidden"
       style={{
         border: "1px solid var(--color-border-primary)",
-        backgroundColor: "var(--color-bg-secondary)",
+        backgroundColor: "var(--color-bg-primary)",
       }}
     >
       {/* Header */}
@@ -368,7 +368,7 @@ function ReplyCard({ event }: { event: ParsedVEvent }) {
       className="mx-6 my-3 rounded-lg overflow-hidden"
       style={{
         border: "1px solid var(--color-border-primary)",
-        backgroundColor: "var(--color-bg-secondary)",
+        backgroundColor: "var(--color-bg-primary)",
       }}
     >
       <div
@@ -429,7 +429,7 @@ function CancellationCard({ event }: { event: ParsedVEvent }) {
       className="mx-6 my-3 rounded-lg overflow-hidden"
       style={{
         border: "1px solid var(--color-border-primary)",
-        backgroundColor: "var(--color-bg-secondary)",
+        backgroundColor: "var(--color-bg-primary)",
       }}
     >
       {/* Header - Cancellation */}

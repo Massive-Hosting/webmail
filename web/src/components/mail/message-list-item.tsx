@@ -507,17 +507,43 @@ export const ThreadHeaderItem = React.memo(
               className="message-list-item__attachment-icon"
             />
           )}
-          <button
-            onClick={handleStarClick}
-            className={`message-list-item__star-btn ${flagged ? "message-list-item__star-btn--active" : ""}`}
-            aria-label={flagged ? t("action.removeStar") : t("action.addStar")}
+          {flagged && (
+            <button
+              onClick={handleStarClick}
+              className="message-list-item__star-btn message-list-item__star-btn--active"
+              aria-label={t("action.removeStar")}
+            >
+              <Star size={15} fill="currentColor" strokeWidth={0} />
+            </button>
+          )}
+        </div>
+
+        {/* Quick action overlay on hover (desktop) */}
+        <div className="message-list-item__quick-actions">
+          <button className={`message-list-item__quick-action-btn ${flagged ? "message-list-item__quick-action-btn--starred" : ""}`}
+            onClick={(e) => { e.stopPropagation(); onStar(email.id, !flagged); }}
+            title={flagged ? t("action.removeStar") : t("action.addStar")}
           >
-            <Star
-              size={15}
-              fill={flagged ? "currentColor" : "none"}
-              strokeWidth={flagged ? 0 : 1.5}
-            />
+            <Star size={14} fill={flagged ? "currentColor" : "none"} strokeWidth={flagged ? 0 : 1.5} />
           </button>
+          {onArchive && (
+            <button className="message-list-item__quick-action-btn"
+              onClick={(e) => { e.stopPropagation(); onArchive([email.id]); }}
+              title={t("action.archive")}
+            ><Archive size={14} /></button>
+          )}
+          {onDelete && (
+            <button className="message-list-item__quick-action-btn"
+              onClick={(e) => { e.stopPropagation(); onDelete([email.id]); }}
+              title={t("action.delete")}
+            ><Trash2 size={14} /></button>
+          )}
+          {onMarkRead && (
+            <button className="message-list-item__quick-action-btn"
+              onClick={(e) => { e.stopPropagation(); onMarkRead([email.id], unread); }}
+              title={unread ? t("action.markAsRead") : t("action.markAsUnread")}
+            >{unread ? <MailOpen size={14} /> : <Mail size={14} />}</button>
+          )}
         </div>
       </div>
         </ContextMenu.Trigger>
@@ -707,17 +733,43 @@ export const ThreadChildItem = React.memo(
                   className="message-list-item__attachment-icon"
                 />
               )}
-              <button
-                onClick={handleStarClick}
-                className={`message-list-item__star-btn ${flagged ? "message-list-item__star-btn--active" : ""}`}
-                aria-label={flagged ? t("action.removeStar") : t("action.addStar")}
+              {flagged && (
+                <button
+                  onClick={handleStarClick}
+                  className="message-list-item__star-btn message-list-item__star-btn--active"
+                  aria-label={t("action.removeStar")}
+                >
+                  <Star size={15} fill="currentColor" strokeWidth={0} />
+                </button>
+              )}
+            </div>
+
+            {/* Quick action overlay on hover (desktop) */}
+            <div className="message-list-item__quick-actions">
+              <button className={`message-list-item__quick-action-btn ${flagged ? "message-list-item__quick-action-btn--starred" : ""}`}
+                onClick={(e) => { e.stopPropagation(); onStar(email.id, !flagged); }}
+                title={flagged ? t("action.removeStar") : t("action.addStar")}
               >
-                <Star
-                  size={15}
-                  fill={flagged ? "currentColor" : "none"}
-                  strokeWidth={flagged ? 0 : 1.5}
-                />
+                <Star size={14} fill={flagged ? "currentColor" : "none"} strokeWidth={flagged ? 0 : 1.5} />
               </button>
+              {onArchive && (
+                <button className="message-list-item__quick-action-btn"
+                  onClick={(e) => { e.stopPropagation(); onArchive([email.id]); }}
+                  title={t("action.archive")}
+                ><Archive size={14} /></button>
+              )}
+              {onDelete && (
+                <button className="message-list-item__quick-action-btn"
+                  onClick={(e) => { e.stopPropagation(); onDelete([email.id]); }}
+                  title={t("action.delete")}
+                ><Trash2 size={14} /></button>
+              )}
+              {onMarkRead && (
+                <button className="message-list-item__quick-action-btn"
+                  onClick={(e) => { e.stopPropagation(); onMarkRead([email.id], unread); }}
+                  title={unread ? t("action.markAsRead") : t("action.markAsUnread")}
+                >{unread ? <MailOpen size={14} /> : <Mail size={14} />}</button>
+              )}
             </div>
           </div>
         </ContextMenu.Trigger>
