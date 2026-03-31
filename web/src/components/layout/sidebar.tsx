@@ -1,6 +1,6 @@
 /** Sidebar with folder tree — premium design */
 
-import React, { lazy, Suspense, useState, useCallback, useRef, useEffect } from "react";
+import React, { lazy, Suspense } from "react";
 import { FolderTree } from "@/components/mail/folder-tree.tsx";
 import { SavedSearchesList } from "@/components/mail/saved-searches-list.tsx";
 import { useUIStore } from "@/stores/ui-store.ts";
@@ -13,8 +13,6 @@ const AgendaSidebar = lazy(() =>
   import("@/components/calendar/agenda-sidebar.tsx").then((m) => ({ default: m.AgendaSidebar }))
 );
 import {
-  ChevronLeft,
-  ChevronRight,
   Phone,
   Video,
   PhoneCall,
@@ -23,11 +21,9 @@ import { useTranslation } from "react-i18next";
 
 export const Sidebar = React.memo(function Sidebar() {
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
-  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const sidebarWidth = useUIStore((s) => s.sidebarWidth);
   const activeView = useUIStore((s) => s.activeView);
   const setActiveView = useUIStore((s) => s.setActiveView);
-  const { t } = useTranslation();
 
   const width = sidebarCollapsed ? 0 : sidebarWidth;
 

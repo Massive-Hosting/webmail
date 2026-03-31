@@ -178,7 +178,7 @@ export const DayView = React.memo(function DayView({
   );
 
   const handlePointerUp = useCallback(
-    (_e: React.PointerEvent<HTMLDivElement>) => {
+    () => {
       if (!dragState || !onEventTimeChange) {
         setDragState(null);
         return;

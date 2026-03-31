@@ -10,11 +10,9 @@ import {
   endOfWeek,
   addDays,
   isSameMonth,
-  isSameDay,
   isToday,
   format,
   parseISO,
-  getEventEnd,
   getEventColor,
   isEventOnDay,
 } from "@/hooks/use-calendar.ts";

@@ -1,6 +1,6 @@
 /** Calendar invitation card for .ics attachments in email messages */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
   CalendarDays,
   MapPin,
@@ -9,7 +9,6 @@ import {
   Check,
   HelpCircle,
   XCircle,
-  Trash2,
   Loader2,
 } from "lucide-react";
 import {
@@ -20,7 +19,7 @@ import {
   type ParsedInvitation,
   type ParsedVEvent,
 } from "@/lib/icalendar.ts";
-import { createCalendarEvent, deleteCalendarEvent, sendInvitationReply } from "@/api/calendar.ts";
+import { createCalendarEvent, sendInvitationReply } from "@/api/calendar.ts";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchCalendars } from "@/api/calendar.ts";
 import { useAuthStore } from "@/stores/auth-store.ts";
@@ -364,8 +363,6 @@ function ReplyCard({ event }: { event: ParsedVEvent }) {
 
 function CancellationCard({ event }: { event: ParsedVEvent }) {
   const { t } = useTranslation();
-  const [removed, setRemoved] = useState(false);
-  const queryClient = useQueryClient();
 
   const dateTimeStr = formatEventDateTime(event);
 

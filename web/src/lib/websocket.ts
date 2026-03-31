@@ -403,7 +403,7 @@ export class WebSocketClient {
   }
 
   /** Attempt delta sync for Email changes; fall back to full invalidation */
-  private async handleEmailDeltaSync(_newState: string) {
+  private async handleEmailDeltaSync() {
     const store = useJMAPStateStore.getState();
     const sinceState = store.emailState;
 
@@ -418,7 +418,7 @@ export class WebSocketClient {
       const changes = await fetchEmailChanges(sinceState);
       store.setEmailState(changes.newState);
       this.applyEmailChanges(changes);
-    } catch (err: unknown) {
+    } catch {
       // cannotCalculateChanges or any other error: fall back to full invalidation
       store.setEmailState(null as unknown as string);
       void this.queryClient.invalidateQueries({ queryKey: ["emails"] });
@@ -427,7 +427,7 @@ export class WebSocketClient {
   }
 
   /** Attempt delta sync for Mailbox changes; fall back to full invalidation */
-  private async handleMailboxDeltaSync(_newState: string) {
+  private async handleMailboxDeltaSync() {
     const store = useJMAPStateStore.getState();
     const sinceState = store.mailboxState;
 

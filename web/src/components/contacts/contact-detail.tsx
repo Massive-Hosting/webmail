@@ -33,7 +33,6 @@ interface ContactDetailProps {
 
 export const ContactDetail = React.memo(function ContactDetail({
   contact,
-  onEdit,
   onDelete,
   onComposeEmail,
   onSave,

@@ -5,7 +5,7 @@
  * Or:    cd web && npx playwright test ../showcase/capture-screenshots.ts
  */
 
-import { test, expect, type Page } from "@playwright/test";
+import { test, type Page } from "@playwright/test";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -36,6 +36,7 @@ async function screenshot(page: Page, name: string) {
   await page.screenshot({ path: join(SCREENSHOTS_DIR, `${name}.png`), fullPage: false });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function screenshotElement(page: Page, selector: string, name: string) {
   const el = page.locator(selector).first();
   await el.screenshot({ path: join(SCREENSHOTS_DIR, `${name}.png`) });

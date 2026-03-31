@@ -7,13 +7,11 @@ import { useQuery } from "@tanstack/react-query";
 import {
   X,
   Lock,
-  Unlock,
   CheckCircle2,
   XCircle,
   AlertTriangle,
   Copy,
   Check,
-  ArrowDown,
   Search,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";

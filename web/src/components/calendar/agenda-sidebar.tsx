@@ -1,19 +1,17 @@
 /** Agenda sidebar showing today's events */
 
 import React, { useMemo, useCallback, useState } from "react";
-import { Calendar as CalendarIcon, ChevronDown, ChevronRight, MapPin } from "lucide-react";
-import type { CalendarEvent, Calendar } from "@/types/calendar.ts";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import type { CalendarEvent } from "@/types/calendar.ts";
 import {
   format,
   parseISO,
-  isToday,
   isEventOnDay,
   getEventColor,
   formatEventTime,
   getEventEnd,
 } from "@/hooks/use-calendar.ts";
 import { useCalendars, useCalendarEvents } from "@/hooks/use-calendar.ts";
-import { useUIStore } from "@/stores/ui-store.ts";
 import { useTranslation } from "react-i18next";
 
 interface AgendaSidebarProps {

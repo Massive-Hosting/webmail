@@ -262,7 +262,7 @@ export function parseSieveScript(script: string): FilterRule[] {
         const actions: FilterAction[] = [];
 
         // Skip forward to find the if block (may be commented out)
-        let blockLines: string[] = [];
+        const blockLines: string[] = [];
         const isDisabled = !meta.enabled;
 
         // Collect lines until we hit an empty line or next META

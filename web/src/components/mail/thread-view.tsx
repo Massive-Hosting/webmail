@@ -1,6 +1,6 @@
 /** Thread view - stacked messages with expand/collapse and visual connectors */
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useThread } from "@/hooks/use-thread.ts";
 import { MessageView } from "./message-view.tsx";
 import { Avatar } from "@/components/ui/avatar.tsx";
@@ -134,7 +134,7 @@ function ThreadContent({
         )}
 
         {/* Render earlier messages only when expanded */}
-        {showEarlierMessages && earlierEmails.map((email, index) => {
+        {showEarlierMessages && earlierEmails.map((email) => {
           const isExpanded = expandedIds.has(email.id);
           return (
             <div key={email.id} className="thread-view__message-wrapper">

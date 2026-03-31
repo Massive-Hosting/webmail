@@ -281,13 +281,12 @@ function AdvancedSettings({
   publicKeyArmored,
   email,
   onDelete,
-  loading,
 }: {
   keyInfo: NonNullable<ReturnType<typeof usePGPStore.getState>["keyInfo"]>;
   publicKeyArmored: string | null;
   email: string | null;
   onDelete: (email: string) => Promise<void>;
-  loading: boolean;
+  loading?: boolean;
 }) {
   const { t } = useTranslation();
   const confirm = useConfirm();

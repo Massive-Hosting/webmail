@@ -88,7 +88,7 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
     },
     onMutate: async (params) => {
       await queryClient.cancelQueries({ queryKey });
-      const prev = queryClient.getQueryData(queryKey) as ReturnType<typeof useInfiniteQueryData>;
+      const prev = queryClient.getQueryData(queryKey) as InfiniteQueryData;
       queryClient.setQueryData(
         queryKey,
         optimisticUpdateEmail(prev, params.emailId, (email) => {
@@ -151,7 +151,7 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
     },
     onMutate: async (params) => {
       await queryClient.cancelQueries({ queryKey });
-      const prev = queryClient.getQueryData(queryKey) as ReturnType<typeof useInfiniteQueryData>;
+      const prev = queryClient.getQueryData(queryKey) as InfiniteQueryData;
       let data = prev;
       for (const emailId of params.emailIds) {
         data = optimisticUpdateEmail(data, emailId, (email) => {
@@ -197,7 +197,7 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
     },
     onMutate: async (params) => {
       await queryClient.cancelQueries({ queryKey });
-      const prev = queryClient.getQueryData(queryKey) as ReturnType<typeof useInfiniteQueryData>;
+      const prev = queryClient.getQueryData(queryKey) as InfiniteQueryData;
       // Flatten original emails before removal for index lookup
       const originalEmails = prev?.pages?.flatMap((p) => p.emails) ?? [];
       // Remove from current list optimistically (read fresh from cache)
@@ -265,7 +265,7 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
     },
     onMutate: async (emailIds) => {
       await queryClient.cancelQueries({ queryKey });
-      const prev = queryClient.getQueryData(queryKey) as ReturnType<typeof useInfiniteQueryData>;
+      const prev = queryClient.getQueryData(queryKey) as InfiniteQueryData;
       // Flatten original emails before removal for index lookup
       const originalEmails = prev?.pages?.flatMap((p) => p.emails) ?? [];
       let data = prev;
@@ -342,7 +342,7 @@ export function useMessages(mailboxId: string | null, filter?: JMAPFilter) {
 
 /** Optimistic update helper: update a single email in the paginated query data */
 function optimisticUpdateEmail(
-  data: ReturnType<typeof useInfiniteQueryData>,
+  data: InfiniteQueryData,
   emailId: string,
   updater: (email: EmailListItem) => EmailListItem,
 ) {
@@ -358,7 +358,7 @@ function optimisticUpdateEmail(
 
 /** Optimistic remove helper */
 function optimisticRemoveEmail(
-  data: ReturnType<typeof useInfiniteQueryData>,
+  data: InfiniteQueryData,
   emailId: string,
 ) {
   if (!data) return data;
@@ -373,9 +373,7 @@ function optimisticRemoveEmail(
 }
 
 /** Type helper for the paginated query data structure */
-function useInfiniteQueryData(): {
+type InfiniteQueryData = {
   pages: { emails: EmailListItem[]; total: number; position: number; threadCounts: Record<string, number> }[];
   pageParams: unknown[];
-} | undefined {
-  return undefined;
-}
+} | undefined;

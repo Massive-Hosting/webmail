@@ -5,7 +5,7 @@ import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 import { useUIStore } from "@/stores/ui-store.ts";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
-import type { Mailbox, MailboxRole } from "@/types/mail.ts";
+import type { Mailbox } from "@/types/mail.ts";
 import {
   Inbox,
   FileEdit,
@@ -23,7 +23,6 @@ import {
   Clock,
   Users,
 } from "lucide-react";
-import type { VirtualFolder } from "@/stores/ui-store.ts";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { queryEmailIds, updateEmails, destroyEmails } from "@/api/mail.ts";
 import { useQueryClient } from "@tanstack/react-query";

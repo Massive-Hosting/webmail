@@ -1,7 +1,7 @@
 /** Print email utility — opens a clean print window */
 
 import type { Email, EmailAddress } from "@/types/mail.ts";
-import { formatAddress, formatAddressList, formatFullDate, formatFileSize } from "@/lib/format.ts";
+import { formatFullDate, formatFileSize } from "@/lib/format.ts";
 
 function escapeHtml(str: string): string {
   return str

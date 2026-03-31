@@ -1,6 +1,6 @@
 /** Virtualized contact list with alphabetical sections */
 
-import React, { useRef, useCallback, useMemo, useState } from "react";
+import React, { useRef, useCallback, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Search, UserPlus, Users } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state.tsx";

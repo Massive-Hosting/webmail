@@ -9,7 +9,6 @@ import { Avatar } from "@/components/ui/avatar.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import {
   formatAddress,
-  formatAddressList,
   formatFullDate,
   formatRelativeDate,
   formatFileSize,
@@ -27,7 +26,6 @@ import {
   Forward,
   MoreHorizontal,
   Phone,
-  Paperclip,
   Download,
   ImageOff,
   ChevronDown,
@@ -217,7 +215,6 @@ function MessageContent({ email }: { email: Email }) {
     return parseSpamStatus(raw as string | null);
   }, [email]);
 
-  const selectedMailboxId = useUIStore((s) => s.selectedMailboxId);
   const { findByRole } = useMailboxes();
   const isInJunk = useMemo(() => {
     const junk = findByRole("junk");

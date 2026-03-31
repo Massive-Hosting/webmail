@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Volume2,
-  Settings2, Loader2, Monitor, Maximize, Minimize2, MessageCircle, Send, X, Smile,
+  Settings2, Loader2, Monitor, MessageCircle, Send, X, Smile,
 } from "lucide-react";
 import { DarkSelect } from "./dark-select.tsx";
 import { useDraggable, useResizable } from "@/hooks/use-draggable.ts";
@@ -310,7 +310,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
   // Apply speaker (audio output) selection to remote video element
   useEffect(() => {
     if (remoteVideoRef.current && selectedSpeaker && 'setSinkId' in remoteVideoRef.current) {
-      (remoteVideoRef.current as any).setSinkId(selectedSpeaker).catch(() => {});
+      (remoteVideoRef.current as HTMLVideoElement & { setSinkId: (id: string) => Promise<void> }).setSinkId(selectedSpeaker).catch(() => {});
     }
   }, [selectedSpeaker, remoteStream]);
 
@@ -835,8 +835,8 @@ function FullScreenBg({ children }: { children: React.ReactNode }) {
 }
 
 /** Lobby toggle button */
-function LobbyBtn({ icon, label, active, danger, accent, onClick }: {
-  icon: React.ReactNode; label: string; active: boolean; danger?: boolean; accent?: boolean; onClick: () => void;
+function LobbyBtn({ icon, label, danger, accent, onClick }: {
+  icon: React.ReactNode; label: string; active?: boolean; danger?: boolean; accent?: boolean; onClick: () => void;
 }) {
   const bg = danger ? "rgba(239,68,68,0.15)" : accent ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.06)";
   const border = danger ? "rgba(239,68,68,0.25)" : accent ? "rgba(99,102,241,0.25)" : "rgba(255,255,255,0.08)";

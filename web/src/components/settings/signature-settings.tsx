@@ -11,7 +11,6 @@ import { useAuthStore } from "@/stores/auth-store.ts";
 
 export const SignatureSettings = React.memo(function SignatureSettings() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const loginEmail = useAuthStore((s) => s.email);
   const { data: identities, isLoading } = useQuery({
     queryKey: ["identities"],

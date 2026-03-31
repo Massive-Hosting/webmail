@@ -5,11 +5,20 @@
  * RNNoise operates on 480-sample frames at 48kHz.
  */
 
+interface RNNoiseDenoiseState {
+  processFrame(frame: Float32Array): void;
+  destroy(): void;
+}
+
+interface RNNoiseModule {
+  DenoiseState: new () => RNNoiseDenoiseState;
+}
+
 const RNNOISE_SAMPLE_LENGTH = 480;
 
-let rnnoiseModule: any = null;
+let rnnoiseModule: RNNoiseModule | null = null;
 
-async function loadRNNoise(): Promise<any> {
+async function loadRNNoise(): Promise<RNNoiseModule> {
   if (rnnoiseModule) return rnnoiseModule;
 
   // Dynamic import of the rnnoise-wasm module
@@ -19,7 +28,7 @@ async function loadRNNoise(): Promise<any> {
       if (file.endsWith(".wasm")) return "/rnnoise/rnnoise.wasm";
       return file;
     },
-  });
+  }) as RNNoiseModule;
   return rnnoiseModule;
 }
 
@@ -32,7 +41,7 @@ export class NoiseSuppressor {
   private source: MediaStreamAudioSourceNode | null = null;
   private processor: ScriptProcessorNode | null = null;
   private destination: MediaStreamAudioDestinationNode | null = null;
-  private denoiseState: any = null;
+  private denoiseState: RNNoiseDenoiseState | null = null;
   private running = false;
 
   async start(inputStream: MediaStream): Promise<MediaStream> {
@@ -47,7 +56,7 @@ export class NoiseSuppressor {
     this.processor = this.ctx.createScriptProcessor(4096, 1, 1);
     this.destination = this.ctx.createMediaStreamDestination();
 
-    this.denoiseState = new rnnoise.DenoiseState();
+    this.denoiseState = new (rnnoise.DenoiseState)();
     this.running = true;
 
     // Buffer to accumulate samples for 480-sample frame processing

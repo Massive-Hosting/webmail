@@ -9,7 +9,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { jmapRequest } from "./mail.ts";
 import type { JMAPRequest } from "@/types/jmap.ts";
-import type { Mailbox, EmailListItem, Thread, Identity } from "@/types/mail.ts";
+import type { Mailbox, Identity } from "@/types/mail.ts";
 import { useJMAPStateStore } from "@/stores/jmap-state-store.ts";
 import { useAuthStore } from "@/stores/auth-store.ts";
 
@@ -19,20 +19,6 @@ const MAILBOX_PROPERTIES = [
   "myRights",
 ];
 
-const EMAIL_LIST_PROPERTIES = [
-  "id",
-  "threadId",
-  "mailboxIds",
-  "from",
-  "to",
-  "cc",
-  "subject",
-  "receivedAt",
-  "size",
-  "preview",
-  "keywords",
-  "hasAttachment",
-];
 
 /**
  * Fetch all initial mail data in a single batched JMAP request.

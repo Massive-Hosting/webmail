@@ -188,7 +188,7 @@ export const ContactsPage = React.memo(function ContactsPage() {
       if (imported > 0) {
         toast.success(t("contacts.imported", { count: imported }));
       }
-    } catch (err) {
+    } catch {
       toast.error(t("contacts.importFailed"));
     }
   }, []);

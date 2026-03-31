@@ -35,8 +35,7 @@ import { RecipientInput } from "./recipient-input.tsx";
 import { AttachmentList, DragDropZone, useAttachmentUpload } from "./attachment-list.tsx";
 import { sendEmail, saveDraft, destroyDraft, fetchIdentities, fetchMailboxes } from "@/api/mail.ts";
 import { startScheduledSend } from "@/api/tasks.ts";
-import { addHours, setHours, setMinutes, setSeconds, addDays, nextMonday, isPast } from "date-fns";
-import type { Email, Identity } from "@/types/mail.ts";
+import { addHours, setHours, setMinutes, setSeconds, addDays, nextMonday } from "date-fns";
 import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -289,7 +288,7 @@ export const ComposePanel = React.memo(function ComposePanel({
           const signed = await signMessage(plainText, pgpPrivateKey, pgpPassphrase);
           plainText = signed;
           finalHTML = `<pre style="white-space: pre-wrap; font-family: sans-serif;">${escapeHtml(signed)}</pre>`;
-        } catch (err) {
+        } catch {
           toast.error(t("compose.failedToSign"));
         }
       }
@@ -318,7 +317,7 @@ export const ComposePanel = React.memo(function ComposePanel({
           );
           plainText = encrypted;
           finalHTML = `<pre style="white-space: pre-wrap; font-family: monospace; font-size: 12px;">${escapeHtml(encrypted)}</pre>`;
-        } catch (err) {
+        } catch {
           updateDraft(draftId, { saving: false });
           toast.error(t("compose.failedToEncrypt"));
           return;
@@ -351,7 +350,7 @@ export const ComposePanel = React.memo(function ComposePanel({
       // Refresh mailbox counts
       queryClient.invalidateQueries({ queryKey: ["emails"] });
       queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
-    } catch (err) {
+    } catch {
       updateDraft(draftId, { saving: false });
       toast.error(t("compose.failedToSend"));
     }
@@ -513,7 +512,7 @@ export const ComposePanel = React.memo(function ComposePanel({
 
       queryClient.invalidateQueries({ queryKey: ["emails"] });
       queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
-    } catch (err) {
+    } catch {
       updateDraft(draftId, { saving: false });
       toast.error(t("tasks.failedToStart"));
     }
@@ -694,7 +693,6 @@ export const ComposePanel = React.memo(function ComposePanel({
   if (isMinimized) {
     return (
       <MinimizedBar
-        draftId={draftId}
         subject={draft.subject}
         to={draft.to}
         onMaximize={() => maximizeDraft(draftId)}
@@ -972,7 +970,7 @@ export const ComposePanel = React.memo(function ComposePanel({
                     <DropdownMenu.Item
                       className="action-bar__dropdown-item"
                       onSelect={() => {
-                        let monday = nextMonday(new Date());
+                        const monday = nextMonday(new Date());
                         handleScheduleSend(setSeconds(setMinutes(setHours(monday, 9), 0), 0));
                       }}
                     >
@@ -1185,13 +1183,11 @@ export const ComposePanel = React.memo(function ComposePanel({
 // ---- Minimized bar ----
 
 function MinimizedBar({
-  draftId,
   subject,
   to,
   onMaximize,
   onClose,
 }: {
-  draftId: string;
   subject: string;
   to: DraftState["to"];
   onMaximize: () => void;

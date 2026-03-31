@@ -17,13 +17,12 @@ function getDensityRowHeight(): number {
   return parseInt(val, 10) || 72;
 }
 
-const DATE_GROUP_HEADER_HEIGHT = 28;
 
 /** A virtual row can be a standalone message, a thread header, a thread child, or a date group header */
 type VirtualRow =
   | { type: "message"; email: EmailListItem }
   | { type: "thread-header"; email: EmailListItem; threadId: string; messageCount: number; isExpanded: boolean }
-  | { type: "thread-child"; email: EmailListItem; threadId: string; isFirst: boolean; isLast: boolean }
+  | { type: "thread-child"; email: EmailListItem; threadId: string; isLast: boolean }
   | { type: "date-group-header"; group: string; label: string };
 
 interface MessageListProps {
@@ -47,7 +46,6 @@ interface MessageListProps {
 /** Component that fetches and renders thread children when a thread is expanded */
 function ExpandedThreadChildren({
   threadId,
-  parentEmail,
   rowHeight,
   onSelectMessage,
   selectedEmailId,
@@ -114,7 +112,6 @@ function ExpandedThreadChildren({
           isSelected={email.id === selectedEmailId}
           isFocused={email.id === selectedEmailId && selectionSource !== "header"}
           isMultiSelected={selectedEmailIds.has(email.id)}
-          isFirst={index === 0}
           isLast={index === emails.length - 1}
           onClick={onSelectMessage}
           onStar={onStar}
@@ -456,11 +453,10 @@ function DateGroupHeader({ label }: { label: string }) {
 function LoadMoreTrigger({
   onFetchNextPage,
   isFetchingNextPage,
-  rowHeight,
 }: {
   onFetchNextPage: () => void;
   isFetchingNextPage: boolean;
-  rowHeight: number;
+  rowHeight?: number;
 }) {
   const triggerRef = useRef<HTMLDivElement>(null);
 

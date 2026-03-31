@@ -144,7 +144,7 @@ export function AppShell() {
   const { emails, starEmail, markRead, moveEmails, destroyEmails } = useMessages(effectiveMailboxId, virtualFilter);
   const { email: selectedEmail } = useMessage(selectedEmailId);
   const { open: openCompose } = useCompose();
-  const { bulkThreshold, startBulkMove, startBulkDelete, startBulkMarkRead } = useTasks();
+  const { bulkThreshold, startBulkMove, startBulkDelete } = useTasks();
 
   // Search results
   const search = useSearch();

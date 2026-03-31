@@ -1,9 +1,8 @@
 /** Team availability grid — shows free/busy for all colleagues in a week view */
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { fetchTeamAvailability, type TeamMember, type BusySlot } from "@/api/availability.ts";
-import { Loader2, ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { fetchTeamAvailability, type TeamMember } from "@/api/availability.ts";
+import { Loader2, Plus } from "lucide-react";
 import { format, addDays, startOfWeek } from "date-fns";
 
 interface TeamAvailabilityProps {
@@ -22,7 +21,6 @@ export const TeamAvailability = React.memo(function TeamAvailability({
   currentDate,
   onCreateEvent,
 }: TeamAvailabilityProps) {
-  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [selectedDay, setSelectedDay] = useState(0); // 0-4 (Mon-Fri)

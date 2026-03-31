@@ -1,13 +1,11 @@
 /** Wave Waiting Room — host waits here after sending invite to external guest */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
 import {
-  Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Copy, Check, Loader2, X,
+  Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Copy, Check, X,
   Monitor, Volume2, Settings2, MessageCircle, Send, Smile,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { useDraggable, useResizable } from "@/hooks/use-draggable.ts";
 import { DarkSelect } from "./dark-select.tsx";
 import { playConnectSound, playDisconnectSound, unlockAudio } from "@/lib/wave-sounds.ts";
@@ -802,7 +800,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
   );
 });
 
-function LobbyBtn({ icon, active, danger, onClick }: { icon: React.ReactNode; active: boolean; danger?: boolean; onClick: () => void }) {
+function LobbyBtn({ icon, danger, onClick }: { icon: React.ReactNode; active?: boolean; danger?: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick} className="flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-150 hover:scale-[1.05] active:scale-[0.95]" style={{
       backgroundColor: danger ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.06)",
@@ -814,7 +812,7 @@ function LobbyBtn({ icon, active, danger, onClick }: { icon: React.ReactNode; ac
   );
 }
 
-function CallBtn({ active, danger, onClick, icon }: { active: boolean; danger?: boolean; onClick: () => void; icon: React.ReactNode }) {
+function CallBtn({ danger, onClick, icon }: { active?: boolean; danger?: boolean; onClick: () => void; icon: React.ReactNode }) {
   return (
     <button onClick={onClick} className={`flex items-center justify-center w-12 h-12 rounded-full transition-all duration-150 hover:scale-105 active:scale-95 ${danger ? "" : "wave-surface-border"}`} style={{
       backgroundColor: danger ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.1)",

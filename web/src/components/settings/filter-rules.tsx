@@ -49,7 +49,7 @@ import { SieveEditor } from "./sieve-editor.tsx";
 /** Main filter rules panel */
 export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
   const { t } = useTranslation();
-  const { rules, isLoading, saveRules, isSaving } = useFilterRules();
+  const { rules, isLoading, saveRules } = useFilterRules();
   const [showSieve, setShowSieve] = useState(false);
   const [localRules, setLocalRules] = useState<FilterRule[] | null>(null);
   const [editingRule, setEditingRule] = useState<FilterRule | null>(null);

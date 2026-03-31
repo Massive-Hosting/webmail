@@ -21,7 +21,7 @@ import {
   Tag,
   Check,
 } from "lucide-react";
-import { addHours, setHours, setMinutes, setSeconds, addDays, nextMonday, isPast, format } from "date-fns";
+import { addHours, setHours, setMinutes, setSeconds, addDays, nextMonday, format } from "date-fns";
 import { startSnooze } from "@/api/tasks.ts";
 import { updateEmails } from "@/api/mail.ts";
 import { useQueryClient } from "@tanstack/react-query";
@@ -88,7 +88,6 @@ export const ActionBar = React.memo(function ActionBar({
   onMarkRead,
   onStar,
   onMute,
-  onSnooze,
   onToggleLabel,
 }: ActionBarProps) {
   const { t } = useTranslation();

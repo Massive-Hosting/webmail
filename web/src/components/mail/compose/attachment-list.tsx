@@ -15,7 +15,7 @@ import {
 import { formatFileSize } from "@/lib/format.ts";
 import { useComposeStore, type AttachmentState } from "@/stores/compose-store.ts";
 import { toast } from "sonner";
-import { useTranslation } from "react-i18next";
+
 import i18n from "@/i18n/index.ts";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
@@ -177,9 +177,6 @@ export const AttachmentList = React.memo(function AttachmentList({
   attachments,
 }: AttachmentListProps) {
   const removeAttachment = useComposeStore((s) => s.removeAttachment);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { uploadFiles } = useAttachmentUpload(draftId);
-
   if (attachments.length === 0) return null;
 
   return (

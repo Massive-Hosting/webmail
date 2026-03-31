@@ -1,8 +1,8 @@
 /** New Wave Call dialog — search contacts/directory or type an email to start a call */
 
-import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Phone, Video, X, Search, Users, BookUser, Send } from "lucide-react";
+import { Phone, X, Search, Users, BookUser, Send } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/auth-store.ts";
 import { Avatar } from "@/components/ui/avatar.tsx";

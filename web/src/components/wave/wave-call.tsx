@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import {
   Mic, MicOff, Video, VideoOff, Monitor, PhoneOff, Maximize2, Minimize2,
-  Loader2, Wifi, WifiOff, MessageCircle, Smile, PictureInPicture, X, Send,
+  MessageCircle, Smile, PictureInPicture, X, Send,
   Settings2, ImageIcon, Ban,
 } from "lucide-react";
 import { useWaveStore } from "@/stores/wave-store.ts";
@@ -112,7 +112,7 @@ export const WaveCall = React.memo(function WaveCall() {
   // Apply speaker (audio output) selection to remote video element
   useEffect(() => {
     if (remoteVideoRef.current && selectedSpeaker && 'setSinkId' in remoteVideoRef.current) {
-      (remoteVideoRef.current as any).setSinkId(selectedSpeaker).catch(() => {});
+      (remoteVideoRef.current as HTMLVideoElement & { setSinkId: (id: string) => Promise<void> }).setSinkId(selectedSpeaker).catch(() => {});
     }
   }, [selectedSpeaker, remoteStream]);
 

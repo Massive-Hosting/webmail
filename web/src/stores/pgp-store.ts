@@ -89,7 +89,7 @@ interface PGPState {
   setTrustLevel: (email: string, level: TrustLevel) => void;
 }
 
-export const usePGPStore = create<PGPState>((set, get) => ({
+export const usePGPStore = create<PGPState>((set) => ({
   isSetUp: false,
   isUnlocked: false,
   privateKeyArmored: null,

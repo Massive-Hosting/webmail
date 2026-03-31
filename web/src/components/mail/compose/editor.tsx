@@ -71,16 +71,16 @@ const FontSize = Extension.create({
   },
   addCommands() {
     return {
-      setFontSize: (size: string) => ({ chain }: { chain: any }) => {
+      setFontSize: (size: string) => ({ chain }: { chain: () => { setMark: (name: string, attrs: Record<string, unknown>) => { run: () => boolean } } }) => {
         return chain().setMark("textStyle", { fontSize: size }).run();
       },
-      unsetFontSize: () => ({ chain }: { chain: any }) => {
+      unsetFontSize: () => ({ chain }: { chain: () => { setMark: (name: string, attrs: Record<string, unknown>) => { removeEmptyTextStyle: () => { run: () => boolean } } } }) => {
         return chain().setMark("textStyle", { fontSize: null }).removeEmptyTextStyle().run();
       },
-    } as any;
+    } as Record<string, (...args: unknown[]) => unknown>;
   },
 });
-import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Bold,
@@ -106,8 +106,6 @@ import {
   X,
   RefreshCw,
   Loader2,
-  AArrowUp,
-  AArrowDown,
 } from "lucide-react";
 import { rewriteWithAI, composeWithAI } from "@/api/ai.ts";
 import { useAIEnabled } from "@/hooks/use-ai-enabled.ts";
@@ -126,20 +124,6 @@ async function uploadImageBlob(file: File): Promise<string> {
   return result.blobId;
 }
 
-/** Create a placeholder element shown while an inline image uploads */
-function createPlaceholder(): HTMLElement {
-  const el = document.createElement("span");
-  el.contentEditable = "false";
-  el.className = "inline-image-placeholder";
-  el.style.cssText =
-    "display: inline-block; width: 120px; height: 80px; background: var(--color-bg-tertiary, #e5e7eb); border-radius: 4px; vertical-align: middle; position: relative;";
-  const spinner = document.createElement("span");
-  spinner.style.cssText =
-    "position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--color-text-tertiary, #9ca3af); font-size: 12px;";
-  spinner.textContent = "\u2026";
-  el.appendChild(spinner);
-  return el;
-}
 
 /**
  * Tiptap extension that handles image drop and paste events.
@@ -172,13 +156,7 @@ const InlineImageUpload = Extension.create({
             const insertPos = dropPos?.pos ?? view.state.selection.to;
 
             for (const image of images) {
-              // Insert placeholder
-              const placeholder = createPlaceholder();
-              const placeholderWidget =
-                view.state.schema.text(" ");
-              // We'll use a simpler approach: insert a temporary text node, then replace
-              // Actually, insert the image directly after upload; show nothing blocking
-
+              // Insert the image directly after upload
               uploadImageBlob(image)
                 .then((blobId) => {
                   const { schema } = view.state;

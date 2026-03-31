@@ -3,7 +3,7 @@
 import React from "react";
 import { Sun, Moon, Monitor, Minimize2, Maximize2 } from "lucide-react";
 import { useSettingsStore } from "@/stores/settings-store.ts";
-import type { ThemeMode, DensityMode, StartPage } from "@/stores/settings-store.ts";
+import type { ThemeMode, DensityMode } from "@/stores/settings-store.ts";
 import { useTranslation } from "react-i18next";
 import { LANGUAGES } from "@/i18n/index.ts";
 import { StyledSelect } from "@/components/ui/styled-select.tsx";
@@ -141,13 +141,12 @@ function SettingSection({
 }
 
 function ThemeButton({
-  mode,
   label,
   icon,
   active,
   onClick,
 }: {
-  mode: ThemeMode;
+  mode?: ThemeMode;
   label: string;
   icon: React.ReactNode;
   active: boolean;
@@ -169,13 +168,12 @@ function ThemeButton({
 }
 
 function DensityButton({
-  mode,
   label,
   icon,
   active,
   onClick,
 }: {
-  mode: DensityMode;
+  mode?: DensityMode;
   label: string;
   icon: React.ReactNode;
   active: boolean;

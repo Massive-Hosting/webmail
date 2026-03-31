@@ -31,7 +31,7 @@ import * as ContextMenu from "@radix-ui/react-context-menu";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { DateTimePickerDialog } from "@/components/ui/datetime-picker-dialog.tsx";
-import { addHours, setHours, setMinutes, setSeconds, addDays, nextMonday, isPast, format } from "date-fns";
+import { addHours, setHours, setMinutes, setSeconds, addDays, nextMonday, format } from "date-fns";
 import { startSnooze } from "@/api/tasks.ts";
 import { updateEmails } from "@/api/mail.ts";
 import { toast } from "sonner";
@@ -588,7 +588,6 @@ interface ThreadChildItemProps {
   isSelected: boolean;
   isFocused?: boolean;
   isMultiSelected: boolean;
-  isFirst: boolean;
   isLast: boolean;
   onClick: (email: EmailListItem, event: React.MouseEvent) => void;
   onStar: (emailId: string, flagged: boolean) => void;
@@ -611,7 +610,6 @@ export const ThreadChildItem = React.memo(
     isSelected,
     isFocused,
     isMultiSelected,
-    isFirst,
     isLast,
     onClick,
     onStar,
@@ -803,7 +801,6 @@ export const ThreadChildItem = React.memo(
     prev.isSelected === next.isSelected &&
     prev.isFocused === next.isFocused &&
     prev.isMultiSelected === next.isMultiSelected &&
-    prev.isFirst === next.isFirst &&
     prev.isLast === next.isLast &&
     prev.email.keywords === next.email.keywords &&
     prev.onReply === next.onReply &&
@@ -834,7 +831,6 @@ function MessageContextMenu({
   onStar,
   onArchive,
   onDelete,
-  onProperties,
   onPrint,
 }: {
   email: EmailListItem;
@@ -848,7 +844,6 @@ function MessageContextMenu({
   onStar: (emailId: string, flagged: boolean) => void;
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
-  onProperties?: (email: EmailListItem) => void;
   onPrint?: (email: EmailListItem) => void;
 }) {
   const { t } = useTranslation();

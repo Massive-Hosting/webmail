@@ -1,6 +1,6 @@
 /** Accounts settings: current account info, shared resources, and domain settings */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Mail, Users, Folder, BookOpen, Calendar, Building2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/auth-store.ts";

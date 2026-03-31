@@ -12,13 +12,12 @@ import type { EmailListItem } from "@/types/mail.ts";
 import { useCompose } from "@/components/mail/compose/use-compose.ts";
 import { EmailPropertiesDialog } from "@/components/mail/email-properties-dialog.tsx";
 import { useMessage } from "@/hooks/use-message.ts";
-import { fetchEmail, fetchIdentities, updateEmails } from "@/api/mail.ts";
+import { fetchEmail, fetchIdentities } from "@/api/mail.ts";
 import { printEmail } from "@/lib/print.ts";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search,
   X,
-  CheckCircle,
   FileEdit,
   Trash2,
   AlertTriangle,
@@ -30,7 +29,6 @@ import {
   Clock,
   RefreshCw,
   PartyPopper,
-  Pencil,
   Send,
   Archive,
 } from "lucide-react";
@@ -180,16 +178,6 @@ export function MailListPane({
       moveEmails(emailIds, selectedMailboxId, trashMailbox.id);
     }
   }, [trashMailbox, selectedMailboxId, moveEmails]);
-
-  // Mute/unmute handler
-  const handleMute = useCallback(async (emailIds: string[], muted: boolean) => {
-    const updates: Record<string, Record<string, unknown>> = {};
-    for (const id of emailIds) {
-      updates[id] = { "keywords/$muted": muted ? true : null };
-    }
-    await updateEmails(updates);
-    queryClient.invalidateQueries({ queryKey: ["emails"] });
-  }, [queryClient]);
 
   // Select-all checkbox
   const checkboxRef = useRef<HTMLInputElement>(null);

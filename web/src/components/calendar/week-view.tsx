@@ -6,13 +6,9 @@ import type { CalendarEvent, Calendar } from "@/types/calendar.ts";
 import {
   startOfWeek,
   addDays,
-  isSameDay,
   isToday,
   format,
   parseISO,
-  startOfDay,
-  differenceInMinutes,
-  getEventEnd,
   getEventColor,
   parseDurationMinutes,
   isEventOnDay,
@@ -259,7 +255,6 @@ const DayColumn = React.memo(function DayColumn({
   today,
   events,
   calendars,
-  hours,
   onClickSlot,
   onClickEvent,
   onEventTimeChange,
@@ -312,7 +307,7 @@ const DayColumn = React.memo(function DayColumn({
   );
 
   const handlePointerUp = useCallback(
-    (_e: React.PointerEvent<HTMLDivElement>) => {
+    () => {
       if (!dragState || !onEventTimeChange) {
         setDragState(null);
         return;
@@ -575,7 +570,6 @@ function CurrentTimeIndicator({ days }: { days: Date[] }) {
     return null;
 
   const top = (minutesSinceStart / 60) * HOUR_HEIGHT;
-  const left = 64 + (todayIdx / days.length) * (100 - 0); // approximate
 
   return (
     <div

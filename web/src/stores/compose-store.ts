@@ -1,7 +1,7 @@
 /** Compose/draft state management */
 
 import { create } from "zustand";
-import type { EmailAddress, Identity } from "@/types/mail.ts";
+import type { Identity } from "@/types/mail.ts";
 
 export interface Recipient {
   name: string | null;

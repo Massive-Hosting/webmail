@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, Plus, Trash2, MapPin, Clock, Users, Bell, Palette, Repeat, Check, HelpCircle, Loader2, Video } from "lucide-react";
+import { X, Trash2, MapPin, Clock, Users, Bell, Palette, Repeat, Check, HelpCircle, Video } from "lucide-react";
 import type {
   CalendarEvent,
   CalendarEventCreate,
@@ -805,7 +805,6 @@ export const EventForm = React.memo(function EventForm({
 /* Day timeline component with drag-to-move and resize-to-change      */
 /* ------------------------------------------------------------------ */
 
-const BUSY_COLORS = ["#ef4444", "#f59e0b", "#8b5cf6", "#06b6d4", "#ec4899"];
 
 interface DayTimelineProps {
   startTime: string;     // "HH:mm"
@@ -847,7 +846,6 @@ function DayTimeline({
   const [sh, sm] = startTime.split(":").map(Number);
   const startMinutes = sh * 60 + sm;
 
-  const totalTimelineMinutes = (TIMELINE_END_HOUR - TIMELINE_START_HOUR + 1) * 60;
   const totalHeight = TIMELINE_HOURS.length * HOUR_HEIGHT;
 
   // Position of the event block relative to the timeline

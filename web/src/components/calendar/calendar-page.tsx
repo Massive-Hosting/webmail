@@ -36,8 +36,6 @@ import { sendInvitationEmails } from "@/api/calendar.ts";
 import { saveEventParticipants, deleteEventParticipants, type EventParticipant } from "@/api/participants.ts";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth-store.ts";
-import { EmptyState } from "@/components/ui/empty-state.tsx";
-import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -50,7 +48,6 @@ export const CalendarPage = React.memo(function CalendarPage() {
     goToToday,
     goNext,
     goPrev,
-    goToDate,
     dateRange,
     title,
   } = useCalendarNavigation("week");

@@ -1,19 +1,12 @@
 /** Storage settings — quota display and cleanup actions */
 
 import React, { useCallback, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 import { HardDrive, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import { destroyEmails, fetchEmails } from "@/api/mail.ts";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
-}
 
 export const StorageSettings = React.memo(function StorageSettings() {
   const { t } = useTranslation();

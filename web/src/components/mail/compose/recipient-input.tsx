@@ -7,7 +7,6 @@ import type { Recipient } from "@/stores/compose-store.ts";
 import {
   useContactSearch,
   getContactDisplayName,
-  getContactInitials,
   getFrequentContacts,
 } from "@/hooks/use-contacts.ts";
 import type { Contact } from "@/types/contacts.ts";

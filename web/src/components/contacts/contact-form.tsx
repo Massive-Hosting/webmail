@@ -3,7 +3,6 @@
 import React, { useState, useCallback, useRef } from "react";
 import { Plus, X, Save, XCircle, Camera } from "lucide-react";
 import type { Contact, ContactEmail, ContactPhone, ContactAddress, ContactUrl } from "@/types/contacts.ts";
-import { getContactDisplayName, getContactInitials } from "@/hooks/use-contacts.ts";
 import { getAvatarColor } from "@/lib/format.ts";
 import { toast } from "sonner";
 import { StyledSelect } from "@/components/ui/styled-select.tsx";

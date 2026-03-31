@@ -494,12 +494,6 @@ export const AICopilot = React.memo(function AICopilot({
   );
 });
 
-/** Check if text looks like an email draft (has greeting-like pattern) */
-function looksLikeEmailDraft(text: string): boolean {
-  const greetings = /^(hi|hello|hey|dear|good morning|good afternoon|greetings|hei|hallo|sehr geehrte)/im;
-  const signoffs = /(best regards|kind regards|sincerely|thanks|cheers|regards|med vennlig hilsen|mit freundlichen grüßen|vennlig hilsen|mvh)\s*[,.]?\s*$/im;
-  return greetings.test(text) || signoffs.test(text);
-}
 
 function escapeHtml(text: string): string {
   return text

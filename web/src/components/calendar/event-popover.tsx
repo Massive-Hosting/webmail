@@ -1,10 +1,10 @@
 /** Event detail popover */
 
-import React, { useCallback } from "react";
+import React from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { X, Edit2, Trash2, MapPin, Clock, Calendar as CalendarIcon, Users, Check, HelpCircle, Video } from "lucide-react";
 import type { CalendarEvent, Calendar, Participant } from "@/types/calendar.ts";
-import { format, parseISO, getEventEnd, getEventColor, formatEventTime } from "@/hooks/use-calendar.ts";
+import { format, parseISO, getEventColor, formatEventTime } from "@/hooks/use-calendar.ts";
 import { useTranslation } from "react-i18next";
 
 interface EventPopoverProps {

@@ -1,7 +1,7 @@
 /** Security settings: TOTP 2FA and App Passwords (alongside PGP) */
 
 import React, { useState, useCallback, useEffect } from "react";
-import { Shield, Smartphone, Key, Plus, Trash2, Copy, Check, Loader2, Eye, EyeOff } from "lucide-react";
+import { Shield, Smartphone, Key, Plus, Trash2, Copy, Loader2, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {

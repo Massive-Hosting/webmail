@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
-  X, Mic, MicOff, Video, VideoOff, Phone, Monitor, Settings2, Volume2, ImageIcon, Ban,
+  X, Mic, MicOff, Video, VideoOff, Phone, Settings2, Volume2, ImageIcon, Ban,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar.tsx";
 import { useAuthStore } from "@/stores/auth-store.ts";
@@ -13,7 +13,7 @@ import { DarkSelect } from "./dark-select.tsx";
 import { BackgroundProcessor, VIRTUAL_BACKGROUNDS, type BackgroundEffect } from "@/lib/wave-background.ts";
 import { unlockAudio } from "@/lib/wave-sounds.ts";
 import { getVideoConstraints } from "@/lib/wave.ts";
-import { useWaveStore, VIDEO_QUALITY_CONSTRAINTS, type VideoQuality } from "@/stores/wave-store.ts";
+import { useWaveStore, type VideoQuality } from "@/stores/wave-store.ts";
 
 interface WaveLobbyProps {
   open: boolean;
@@ -55,7 +55,6 @@ export const WaveLobby = React.memo(function WaveLobby({
   const [selectedAudioDevice, setSelectedAudioDevice] = useState("");
   const [selectedVideoDevice, setSelectedVideoDevice] = useState("");
   const [selectedSpeaker, setSelectedSpeaker] = useState("");
-  const [showDeviceSettings, setShowDeviceSettings] = useState(false);
   const [showBackgrounds, setShowBackgrounds] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -619,14 +618,13 @@ export const WaveLobby = React.memo(function WaveLobby({
 function LobbyToggle({
   icon,
   label,
-  active,
   danger,
   accent,
   onClick,
 }: {
   icon: React.ReactNode;
   label: string;
-  active: boolean;
+  active?: boolean;
   danger?: boolean;
   accent?: boolean;
   onClick: () => void;

@@ -1,6 +1,6 @@
 /** Free/busy availability and tenant directory APIs */
 
-import { apiPost, apiGet, apiPut } from "./client.ts";
+import { apiPost, apiGet } from "./client.ts";
 
 // --- Free/Busy ---
 

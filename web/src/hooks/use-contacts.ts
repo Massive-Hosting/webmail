@@ -13,7 +13,7 @@ import {
   updateAddressBook as apiUpdateAddressBook,
   deleteAddressBook as apiDeleteAddressBook,
 } from "@/api/contacts.ts";
-import type { Contact, ContactCreate, ContactUpdate, AddressBook } from "@/types/contacts.ts";
+import type { Contact, ContactCreate, ContactUpdate } from "@/types/contacts.ts";
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 

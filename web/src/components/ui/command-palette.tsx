@@ -3,8 +3,8 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import {
   Inbox, Send, FileEdit, Archive, Trash2, AlertTriangle,
-  Pencil, Reply, Forward, Search, Settings, Moon, Sun,
-  Calendar, Users as ContactsIcon, Star, Mail, Command, Phone,
+  Pencil, Search, Settings, Sun,
+  Calendar, Users as ContactsIcon, Command, Phone,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useUIStore } from "@/stores/ui-store.ts";

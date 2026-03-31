@@ -17,9 +17,6 @@ import {
   decryptMessage,
   verifySignature,
   extractPGPBlock,
-  formatFingerprint,
-  type DecryptResult,
-  type VerifyResult,
 } from "@/lib/pgp.ts";
 import { detectPGPContent } from "@/lib/pgp-detect.ts";
 import { lookupPublicKey } from "@/lib/pgp-lookup.ts";

@@ -113,7 +113,8 @@ function splitParams(str: string): string[] {
 }
 
 /** Parse an iCalendar date/time string into an ISO datetime string */
-export function parseICalDateTime(value: string, tzid?: string): string {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function parseICalDateTime(value: string, _tzid?: string): string {
   // Format: YYYYMMDD or YYYYMMDDTHHmmss or YYYYMMDDTHHmmssZ
   const clean = value.trim();
 
