@@ -31,6 +31,15 @@ export function useWave() {
   const displayName = useAuthStore((s) => s.displayName);
   const unsubRef = useRef<(() => void) | null>(null);
 
+  const cleanup = useCallback(() => {
+    if (waveConnection) {
+      waveConnection.hangup();
+      waveConnection = null;
+    }
+    if (wsClient) wsClient.keepAlive = false;
+    useWaveStore.getState().reset();
+  }, []);
+
   // Subscribe to WebSocket call messages
   useEffect(() => {
     if (!wsClient || unsubRef.current) return;
@@ -106,16 +115,7 @@ export function useWave() {
       unsubRef.current?.();
       unsubRef.current = null;
     };
-  }, []);
-
-  const cleanup = useCallback(() => {
-    if (waveConnection) {
-      waveConnection.hangup();
-      waveConnection = null;
-    }
-    if (wsClient) wsClient.keepAlive = false;
-    useWaveStore.getState().reset();
-  }, []);
+  }, [cleanup]);
 
   const startCall = useCallback(
     async (peerEmail: string, video: boolean) => {

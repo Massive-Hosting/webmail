@@ -1,6 +1,6 @@
 /** Chip-based recipient input for To/Cc/Bcc fields with contact autocomplete */
 
-import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo, startTransition } from "react";
 import { X, UserPlus, UserCog, Copy, Trash2 } from "lucide-react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import type { Recipient } from "@/stores/compose-store.ts";
@@ -114,7 +114,7 @@ export const RecipientInput = React.memo(function RecipientInput({
 
   // Reset highlight when suggestions change
   useEffect(() => {
-    setHighlightedIndex(0);
+    startTransition(() => setHighlightedIndex(0));
   }, [suggestions.length]);
 
   /** Parse an email string into a Recipient */

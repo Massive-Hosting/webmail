@@ -37,16 +37,6 @@ function getGuestRoomId(): string | null {
 }
 
 export default function App() {
-  // Guest Wave call join — public page, no auth required
-  const guestRoomId = getGuestRoomId();
-  if (guestRoomId) {
-    return (
-      <Suspense fallback={<LoadingScreen />}>
-        <WaveGuestJoin roomId={guestRoomId} />
-      </Suspense>
-    );
-  }
-
   const [authState, setAuthState] = useState<AuthState>("loading");
   const loadSettings = useSettingsStore((s) => s.loadFromServer);
   const setSession = useAuthStore((s) => s.setSession);
@@ -75,6 +65,16 @@ export default function App() {
     loadSettings();
     void prefetchInitialMailData(queryClient);
   }, [loadSettings, setSession]);
+
+  // Guest Wave call join — public page, no auth required
+  const guestRoomId = getGuestRoomId();
+  if (guestRoomId) {
+    return (
+      <Suspense fallback={<LoadingScreen />}>
+        <WaveGuestJoin roomId={guestRoomId} />
+      </Suspense>
+    );
+  }
 
   if (authState === "loading") {
     return <LoadingScreen />;

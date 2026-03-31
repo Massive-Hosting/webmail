@@ -1,6 +1,6 @@
 /** Team availability grid — shows free/busy for all colleagues in a week view */
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, startTransition } from "react";
 import { fetchTeamAvailability, type TeamMember } from "@/api/availability.ts";
 import { Loader2, Plus } from "lucide-react";
 import { format, addDays, startOfWeek } from "date-fns";
@@ -30,7 +30,7 @@ export const TeamAvailability = React.memo(function TeamAvailability({
 
   // Fetch team availability for the selected day
   useEffect(() => {
-    setLoading(true);
+    startTransition(() => setLoading(true));
     const day = weekDays[selectedDay];
     const dayStart = format(day, "yyyy-MM-dd") + "T00:00:00";
     const dayEnd = format(day, "yyyy-MM-dd") + "T23:59:59";

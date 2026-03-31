@@ -1,6 +1,6 @@
 /** Reusable date/time picker dialog for scheduling and snooze */
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, startTransition } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, CalendarClock } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -27,9 +27,11 @@ export const DateTimePickerDialog = React.memo(function DateTimePickerDialog({
   useEffect(() => {
     if (open) {
       const defaultDate = new Date(Date.now() + 60 * 60 * 1000);
-      setDateValue(formatDateForInput(defaultDate));
-      setTimeValue(formatTimeForInput(defaultDate));
-      setError("");
+      startTransition(() => {
+        setDateValue(formatDateForInput(defaultDate));
+        setTimeValue(formatTimeForInput(defaultDate));
+        setError("");
+      });
     }
   }, [open]);
 

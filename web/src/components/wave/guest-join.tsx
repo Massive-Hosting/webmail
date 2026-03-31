@@ -1,6 +1,6 @@
 /** Wave Guest Join — dangerously sexy public lobby for external call recipients */
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, startTransition } from "react";
 import {
   Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Volume2,
   Settings2, Loader2, Monitor, MessageCircle, Send, X, Smile,
@@ -38,7 +38,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
   const [unreadChat, setUnreadChat] = useState(0);
   const [chatText, setChatText] = useState("");
   const [showReactions, setShowReactions] = useState(false);
-  const [floatingReactions, setFloatingReactions] = useState<Array<{ id: string; emoji: string }>>([]);
+  const [floatingReactions, setFloatingReactions] = useState<Array<{ id: string; emoji: string; left: number }>>([]);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
   const screenTrackRef = useRef<MediaStreamTrack | null>(null);
@@ -81,43 +81,6 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
         setRoomState("error");
       });
   }, [roomId]);
-
-  // Start media preview once room is loaded
-  useEffect(() => {
-    if (roomState !== "ready") return;
-    startPreview();
-    return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    };
-  }, [roomState]);
-
-  // Audio/video toggle — track.enabled
-  useEffect(() => {
-    if (!stream) return;
-    for (const t of stream.getAudioTracks()) t.enabled = audioEnabled;
-  }, [audioEnabled, stream]);
-
-  useEffect(() => {
-    if (!stream) return;
-    for (const t of stream.getVideoTracks()) t.enabled = videoEnabled;
-  }, [videoEnabled, stream]);
-
-  // Play connect/disconnect sounds
-  useEffect(() => {
-    if (roomState === "connected") playConnectSound();
-    if (roomState === "ended") playDisconnectSound();
-  }, [roomState]);
-
-  // Call duration timer
-  useEffect(() => {
-    if (roomState === "connected") {
-      callStartRef.current = Date.now();
-      timerRef.current = setInterval(() => {
-        setCallDuration(Math.floor((Date.now() - callStartRef.current) / 1000));
-      }, 1000);
-    }
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [roomState]);
 
   const startPreview = useCallback(async () => {
     try {
@@ -166,6 +129,43 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
     }
   }, []);
 
+  // Start media preview once room is loaded
+  useEffect(() => {
+    if (roomState !== "ready") return;
+    startTransition(() => { startPreview(); });
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [roomState, startPreview]);
+
+  // Audio/video toggle — track.enabled
+  useEffect(() => {
+    if (!stream) return;
+    for (const t of stream.getAudioTracks()) t.enabled = audioEnabled;
+  }, [audioEnabled, stream]);
+
+  useEffect(() => {
+    if (!stream) return;
+    for (const t of stream.getVideoTracks()) t.enabled = videoEnabled;
+  }, [videoEnabled, stream]);
+
+  // Play connect/disconnect sounds
+  useEffect(() => {
+    if (roomState === "connected") playConnectSound();
+    if (roomState === "ended") playDisconnectSound();
+  }, [roomState]);
+
+  // Call duration timer
+  useEffect(() => {
+    if (roomState === "connected") {
+      callStartRef.current = Date.now();
+      timerRef.current = setInterval(() => {
+        setCallDuration(Math.floor((Date.now() - callStartRef.current) / 1000));
+      }, 1000);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [roomState]);
+
   const joinCall = useCallback(async () => {
     let mediaStream = stream;
     if (!mediaStream) {
@@ -201,24 +201,24 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
       pc.addTrack(track, mediaStream);
     }
 
-    pc.ontrack = (e) => {
+    pc.addEventListener("track", (e) => {
       if (e.streams[0]) {
         setRemoteStream(e.streams[0]);
         if (remoteVideoRef.current) remoteVideoRef.current.srcObject = e.streams[0];
       }
-    };
+    });
 
-    pc.onconnectionstatechange = () => {
+    pc.addEventListener("connectionstatechange", () => {
       if (pc.connectionState === "connected") setRoomState("connected");
       if (pc.connectionState === "failed" || pc.connectionState === "closed") setRoomState("ended");
-    };
+    });
 
     // Connect guest WebSocket
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(`${proto}//${window.location.host}/api/call-rooms/${roomId}/ws`);
     wsRef.current = ws;
 
-    pc.onicecandidate = (e) => {
+    pc.addEventListener("icecandidate", (e) => {
       if (e.candidate && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
           type: "call-signal",
@@ -226,9 +226,9 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
           payload: JSON.stringify({ callId: roomId, signal: { type: "ice-candidate", candidate: e.candidate } }),
         }));
       }
-    };
+    });
 
-    ws.onmessage = async (e) => {
+    ws.addEventListener("message", async (e) => {
       try {
         const msg = JSON.parse(e.data);
         if (msg.type === "ping") {
@@ -273,25 +273,25 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
         if (msg.type === "call-reaction") {
           const reactionPayload = typeof msg.payload === "string" ? JSON.parse(msg.payload) : msg.payload;
           const id = `${Date.now()}-${Math.random()}`;
-          setFloatingReactions(prev => [...prev, { id, emoji: reactionPayload.emoji }]);
+          setFloatingReactions(prev => [...prev, { id, emoji: reactionPayload.emoji, left: Math.random() * 200 - 100 }]);
           setTimeout(() => setFloatingReactions(prev => prev.filter(r => r.id !== id)), 3000);
         }
       } catch { /* ignore parse errors */ }
-    };
+    });
 
-    ws.onopen = () => {
+    ws.addEventListener("open", () => {
       // Announce presence to host
       ws.send(JSON.stringify({
         type: "call-accept",
         to: "__host__",
         payload: JSON.stringify({ callId: roomId, guestName: guestName || "Guest" }),
       }));
-    };
+    });
 
-    ws.onclose = () => {
+    ws.addEventListener("close", () => {
       if (roomState !== "ended") setRoomState("ended");
-    };
-  }, [stream, roomId, guestName, roomState]);
+    });
+  }, [stream, roomId, guestName, roomState, chatOpen]);
 
   // Keep local video element synced with stream (re-attaches after state transitions)
   useEffect(() => {
@@ -573,7 +573,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
         {/* Floating reactions */}
         <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none">
           {floatingReactions.map((r) => (
-            <div key={r.id} className="absolute text-4xl" style={{ left: `${Math.random() * 200 - 100}px`, animation: "reaction-float 3s ease-out forwards" }}>
+            <div key={r.id} className="absolute text-4xl" style={{ left: `${r.left}px`, animation: "reaction-float 3s ease-out forwards" }}>
               {r.emoji}
             </div>
           ))}

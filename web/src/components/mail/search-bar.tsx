@@ -1,6 +1,6 @@
 /** Search bar with visual dropdown — quick filters, recent searches, and narrowing chips */
 
-import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo, startTransition } from "react";
 import {
   Search,
   X,
@@ -73,7 +73,7 @@ export const SearchBar = React.memo(function SearchBar({
   // Sync local query from store when cleared externally
   useEffect(() => {
     if (!isSearchActive && query === "") {
-      setLocalQuery("");
+      startTransition(() => setLocalQuery(""));
     }
   }, [isSearchActive, query]);
 

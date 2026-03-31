@@ -1,6 +1,6 @@
 /** Signature settings — edit per-identity signatures via JMAP Identity/set */
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, startTransition } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchIdentities, jmapRequest } from "@/api/mail.ts";
 import type { Identity } from "@/types/mail.ts";
@@ -23,7 +23,7 @@ export const SignatureSettings = React.memo(function SignatureSettings() {
   // Auto-select first identity
   useEffect(() => {
     if (!selectedId && identities && identities.length > 0) {
-      setSelectedId(identities[0].id);
+      startTransition(() => setSelectedId(identities[0].id));
     }
   }, [selectedId, identities]);
 

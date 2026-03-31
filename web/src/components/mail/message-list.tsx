@@ -278,7 +278,7 @@ export const MessageList = React.memo(function MessageList({
         toggleThread(threadId);
       }
     },
-    [toggleThread, expandedThreads, setSelectedEmail, selectedEmailId, handleItemClick],
+    [toggleThread, expandedThreads, setSelectedEmail, selectedEmailId, handleItemClick, setSelectionSource],
   );
 
   const handleThreadChildSelect = useCallback(

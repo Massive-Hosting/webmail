@@ -1,6 +1,6 @@
 /** Settings dialog with vertical tabs for all settings sections */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, startTransition } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Tabs from "@radix-ui/react-tabs";
 import {
@@ -69,8 +69,10 @@ export const SettingsDialog = React.memo(function SettingsDialog({
   // Reset search and tab when dialog opens
   useEffect(() => {
     if (open) {
-      setSearchTerm("");
-      setActiveTab(initialTab);
+      startTransition(() => {
+        setSearchTerm("");
+        setActiveTab(initialTab);
+      });
     }
   }, [open, initialTab]);
 
@@ -85,7 +87,7 @@ export const SettingsDialog = React.memo(function SettingsDialog({
   // Auto-switch to first matching tab when search changes
   useEffect(() => {
     if (searchTerm.trim() && visibleTabs.length > 0 && !visibleTabs.includes(activeTab)) {
-      setActiveTab(visibleTabs[0]);
+      startTransition(() => setActiveTab(visibleTabs[0]));
     }
   }, [searchTerm, visibleTabs, activeTab]);
 

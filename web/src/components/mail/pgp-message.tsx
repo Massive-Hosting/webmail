@@ -47,6 +47,7 @@ interface PGPStatus {
 /**
  * Hook that handles PGP detection, decryption, and verification for a message.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function usePGPMessage(bodyText: string | null, senderEmail: string): PGPStatus & {
   decrypting: boolean;
   handleDecrypt: () => Promise<void>;

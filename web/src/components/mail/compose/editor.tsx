@@ -402,7 +402,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
     if (url) {
       editor.chain().focus().setImage({ src: url }).run();
     }
-  }, [editor]);
+  }, [editor, t]);
 
   // AI Edit: trigger the popover
   const handleAiEdit = useCallback(() => {
@@ -511,7 +511,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
     } finally {
       setAiStreaming(false);
     }
-  }, []);
+  }, [senderName, composeMode, aiQuotedContext]);
 
   // AI Edit: submit from the input field
   const handleAiRewrite = useCallback(() => {
@@ -1072,6 +1072,7 @@ function ToolbarDivider() {
 }
 
 /** Convert Tiptap HTML to email-safe HTML with inline styles */
+// eslint-disable-next-line react-refresh/only-export-components
 export function toEmailSafeHTML(html: string): string {
   // Create a temporary DOM to transform styles
   const container = document.createElement("div");

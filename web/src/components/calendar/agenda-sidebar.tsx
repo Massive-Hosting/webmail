@@ -1,7 +1,7 @@
 /** Agenda sidebar showing today's events */
 
 import React, { useMemo, useCallback, useState } from "react";
-import { ChevronDown, ChevronRight, Calendar as CalendarIcon, MapPin } from "lucide-react";
+import { ChevronDown, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import type { CalendarEvent } from "@/types/calendar.ts";
 import {
   format,
@@ -32,9 +32,15 @@ export const AgendaSidebar = React.memo(function AgendaSidebar({
 
   const { calendars } = useCalendars();
 
+  const todayStart = useMemo(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }, []);
+  const todayEnd = useMemo(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59);
+  }, []);
   const today = new Date();
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
 
   const { events } = useCalendarEvents(
     calendars.map((c) => c.id),
@@ -76,7 +82,7 @@ export const AgendaSidebar = React.memo(function AgendaSidebar({
   );
 
   // Determine current/next event
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
   const currentOrNextId = useMemo(() => {
     for (const event of todayEvents) {
       if (event.showWithoutTime) continue;

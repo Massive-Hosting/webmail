@@ -1,6 +1,6 @@
 /** Compose dialog - inline, pop-out, fullscreen, and minimized modes - premium design */
 
-import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import React, { useCallback, useEffect, useRef, useState, useMemo, startTransition } from "react";
 import {
   X,
   Minus,
@@ -52,6 +52,7 @@ import { StyledSelect } from "@/components/ui/styled-select.tsx";
 import { useConfirm } from "@/contexts/confirm-context.tsx";
 
 // Re-export useCompose from its own module (keeps it out of the lazy-loaded chunk)
+// eslint-disable-next-line react-refresh/only-export-components
 export { useCompose } from "./use-compose.ts";
 import { escapeHtml } from "./use-compose.ts";
 
@@ -74,6 +75,7 @@ export const ComposePanel = React.memo(function ComposePanel({
   const { uploadFiles } = useAttachmentUpload(draftId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleAutoSaveRef = useRef<() => void>(() => {});
   const undoSendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const undoSendToastIdRef = useRef<string | number | undefined>(undefined);
   const queryClient = useQueryClient();
@@ -105,8 +107,10 @@ export const ComposePanel = React.memo(function ComposePanel({
   // Set PGP defaults
   useEffect(() => {
     if (pgpIsSetUp && pgpIsUnlocked) {
-      setPgpSign(pgpSignDefault === "always");
-      setPgpEncrypt(pgpEncryptDefault === "always");
+      startTransition(() => {
+        setPgpSign(pgpSignDefault === "always");
+        setPgpEncrypt(pgpEncryptDefault === "always");
+      });
     }
   }, [pgpIsSetUp, pgpIsUnlocked, pgpSignDefault, pgpEncryptDefault]);
 
@@ -156,38 +160,6 @@ export const ComposePanel = React.memo(function ComposePanel({
     }
   }, [draft, identities, draftId, updateDraft]);
 
-  // Auto-save timer: 3 seconds after last edit
-  useEffect(() => {
-    if (!draft?.isDirty) return;
-
-    if (autoSaveTimerRef.current) {
-      clearTimeout(autoSaveTimerRef.current);
-    }
-
-    autoSaveTimerRef.current = setTimeout(() => {
-      handleAutoSave();
-    }, 3000);
-
-    return () => {
-      if (autoSaveTimerRef.current) {
-        clearTimeout(autoSaveTimerRef.current);
-      }
-    };
-  }, [draft?.isDirty, draft?.subject, draft?.bodyHTML, draft?.to, draft?.cc, draft?.bcc]);
-
-  // beforeunload warning
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      const store = useComposeStore.getState();
-      const hasUnsaved = Array.from(store.drafts.values()).some((d) => d.isDirty);
-      if (hasUnsaved) {
-        e.preventDefault();
-      }
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, []);
-
   const handleAutoSave = useCallback(async () => {
     const currentDraft = useComposeStore.getState().drafts.get(draftId);
     if (!currentDraft || !currentDraft.isDirty) return;
@@ -206,7 +178,7 @@ export const ComposePanel = React.memo(function ComposePanel({
       }
       if (!mailboxId) {
         console.error("[compose] Cannot save draft: no Drafts mailbox found");
-        setTimeout(() => handleAutoSave(), 2000);
+        setTimeout(() => handleAutoSaveRef.current(), 2000);
         return;
       }
     }
@@ -258,10 +230,45 @@ export const ComposePanel = React.memo(function ComposePanel({
       });
       // Retry after a delay
       if (failures < 5) {
-        setTimeout(() => handleAutoSave(), 5000);
+        setTimeout(() => handleAutoSaveRef.current(), 5000);
       }
     }
-  }, [draftId, findByRole, updateDraft, queryClient]);
+  }, [draftId, findByRole, updateDraft, queryClient, t]);
+  useEffect(() => {
+    handleAutoSaveRef.current = handleAutoSave;
+  }, [handleAutoSave]);
+
+  // Auto-save timer: 3 seconds after last edit
+  useEffect(() => {
+    if (!draft?.isDirty) return;
+
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      handleAutoSave();
+    }, 3000);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [draft?.isDirty, draft?.subject, draft?.bodyHTML, draft?.to, draft?.cc, draft?.bcc, handleAutoSave]);
+
+  // beforeunload warning
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      const store = useComposeStore.getState();
+      const hasUnsaved = Array.from(store.drafts.values()).some((d) => d.isDirty);
+      if (hasUnsaved) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
 
   /** Actually perform the send (called immediately or after undo delay) */
   const executeSend = useCallback(async () => {

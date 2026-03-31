@@ -105,7 +105,7 @@ export const SmartReplyBar = React.memo(function SmartReplyBar({
         abortRef.current = null;
       }
     },
-    [email, getEmailBodyText, openCompose],
+    [email, getEmailBodyText, openCompose, t],
   );
 
   const handleSummarize = useCallback(async () => {

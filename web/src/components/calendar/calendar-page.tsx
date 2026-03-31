@@ -1,6 +1,6 @@
 /** Calendar page with toolbar, view switcher, and calendar views */
 
-import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import React, { useState, useCallback, useEffect, useMemo, useRef, startTransition } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -603,8 +603,10 @@ function CalendarSidebarItem({
   // Auto-enter rename mode for newly created calendars
   useEffect(() => {
     if (autoRename) {
-      setRenameValue(calendar.name);
-      setIsRenaming(true);
+      startTransition(() => {
+        setRenameValue(calendar.name);
+        setIsRenaming(true);
+      });
       onAutoRenameDone?.();
     }
   }, [autoRename, calendar.name, onAutoRenameDone]);

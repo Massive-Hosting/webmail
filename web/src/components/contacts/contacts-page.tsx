@@ -1,6 +1,6 @@
 /** Contacts page - two-pane layout with groups sidebar, list, and detail */
 
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect, startTransition } from "react";
 import { UserPlus, Upload, Download, Users } from "lucide-react";
 import { ContactList } from "./contact-list.tsx";
 import { ContactDetail } from "./contact-detail.tsx";
@@ -74,10 +74,12 @@ export const ContactsPage = React.memo(function ContactsPage() {
     const email = sessionStorage.getItem("newContactEmail");
     if (email) {
       const name = sessionStorage.getItem("newContactName");
-      setInitialEmail(email);
-      if (name) setInitialName(name);
-      setIsCreating(true);
-      setSelectedContactId(null);
+      startTransition(() => {
+        setInitialEmail(email);
+        if (name) setInitialName(name);
+        setIsCreating(true);
+        setSelectedContactId(null);
+      });
       sessionStorage.removeItem("newContactEmail");
       sessionStorage.removeItem("newContactName");
     }
@@ -191,7 +193,7 @@ export const ContactsPage = React.memo(function ContactsPage() {
     } catch {
       toast.error(t("contacts.importFailed"));
     }
-  }, []);
+  }, [t]);
 
   const handleExport = useCallback(() => {
     exportVCards(

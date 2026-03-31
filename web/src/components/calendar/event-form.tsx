@@ -1,6 +1,6 @@
 /** Event form dialog for create/edit */
 
-import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useRef, useEffect, startTransition } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, Trash2, MapPin, Clock, Users, Bell, Palette, Repeat, Check, HelpCircle, Video } from "lucide-react";
 import type {
@@ -137,71 +137,73 @@ export const EventForm = React.memo(function EventForm({
   // Sync form state when event prop changes (e.g., opening edit dialog).
   useEffect(() => {
     if (!open) return;
-    setTitle(event?.title ?? "");
-    setDescription((event?.description ?? "").replace("[wave-meeting]", "").trim());
-    setLocation(event?.location ?? "");
-    setAllDay(event?.showWithoutTime ?? false);
-    setDurationMinutes(parseDurationMinutes(event?.duration));
-    setEventColor(event?.color ?? "");
-    setWaveMeeting(event?.description?.includes("[wave-meeting]") ?? false);
-    setAttendeeInput("");
+    startTransition(() => {
+      setTitle(event?.title ?? "");
+      setDescription((event?.description ?? "").replace("[wave-meeting]", "").trim());
+      setLocation(event?.location ?? "");
+      setAllDay(event?.showWithoutTime ?? false);
+      setDurationMinutes(parseDurationMinutes(event?.duration));
+      setEventColor(event?.color ?? "");
+      setWaveMeeting(event?.description?.includes("[wave-meeting]") ?? false);
+      setAttendeeInput("");
 
-    if (event) {
-      const s = event.start;
-      setStartDate(s.substring(0, 10));
-      setStartTime(s.substring(11, 16));
-      setSelectedCalendarId(Object.keys(event.calendarIds)[0] ?? calendars[0]?.id ?? "");
-    } else {
-      const d = defaultDate ?? new Date();
-      const h = defaultHour ?? d.getHours();
-      d.setHours(h, 0, 0, 0);
-      const s = format(d, "yyyy-MM-dd'T'HH:mm:ss");
-      setStartDate(s.substring(0, 10));
-      setStartTime(s.substring(11, 16));
-      const def = calendars.find((c) => c.isDefault);
-      setSelectedCalendarId(def?.id ?? calendars[0]?.id ?? "");
-    }
-
-    if (!event?.recurrenceRules?.length) {
-      setRecurrence("none");
-    } else {
-      setRecurrence(event.recurrenceRules[0].frequency);
-    }
-
-    if (!event?.alerts) {
-      setReminder("-PT15M");
-    } else {
-      const alertValues = Object.values(event.alerts);
-      if (alertValues.length === 0) {
-        setReminder("");
+      if (event) {
+        const s = event.start;
+        setStartDate(s.substring(0, 10));
+        setStartTime(s.substring(11, 16));
+        setSelectedCalendarId(Object.keys(event.calendarIds)[0] ?? calendars[0]?.id ?? "");
       } else {
-        const trigger = alertValues[0].trigger;
-        setReminder("offset" in trigger ? trigger.offset : "");
+        const d = defaultDate ?? new Date();
+        const h = defaultHour ?? d.getHours();
+        d.setHours(h, 0, 0, 0);
+        const s = format(d, "yyyy-MM-dd'T'HH:mm:ss");
+        setStartDate(s.substring(0, 10));
+        setStartTime(s.substring(11, 16));
+        const def = calendars.find((c) => c.isDefault);
+        setSelectedCalendarId(def?.id ?? calendars[0]?.id ?? "");
       }
-    }
 
-    // Load attendees from webmail DB (Stalwart doesn't return participants via JMAP).
-    if (event?.id) {
-      getEventParticipants(event.id)
-        .then((participants) => {
-          setAttendees(
-            participants.map((p) => ({
-              name: p.name,
-              email: p.email,
-              participationStatus: p.status as Participant["participationStatus"],
-            })),
-          );
-        })
-        .catch(() => setAttendees([]));
-    } else if (defaultAttendees && defaultAttendees.length > 0) {
-      // Pre-populate from team view click
-      setAttendees(defaultAttendees.map((email) => ({
-        name: email.split("@")[0].replace(".", " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-        email,
-      })));
-    } else {
-      setAttendees([]);
-    }
+      if (!event?.recurrenceRules?.length) {
+        setRecurrence("none");
+      } else {
+        setRecurrence(event.recurrenceRules[0].frequency);
+      }
+
+      if (!event?.alerts) {
+        setReminder("-PT15M");
+      } else {
+        const alertValues = Object.values(event.alerts);
+        if (alertValues.length === 0) {
+          setReminder("");
+        } else {
+          const trigger = alertValues[0].trigger;
+          setReminder("offset" in trigger ? trigger.offset : "");
+        }
+      }
+
+      // Load attendees from webmail DB (Stalwart doesn't return participants via JMAP).
+      if (event?.id) {
+        getEventParticipants(event.id)
+          .then((participants) => {
+            setAttendees(
+              participants.map((p) => ({
+                name: p.name,
+                email: p.email,
+                participationStatus: p.status as Participant["participationStatus"],
+              })),
+            );
+          })
+          .catch(() => setAttendees([]));
+      } else if (defaultAttendees && defaultAttendees.length > 0) {
+        // Pre-populate from team view click
+        setAttendees(defaultAttendees.map((email) => ({
+          name: email.split("@")[0].replace(".", " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          email,
+        })));
+      } else {
+        setAttendees([]);
+      }
+    });
   }, [event, open, calendars, defaultDate, defaultHour, defaultAttendees]);
 
   const { results: contactResults } = useContactSearch(attendeeInput, attendeeInput.length >= 1);
@@ -210,7 +212,7 @@ export const EventForm = React.memo(function EventForm({
   const [attendeeBusySlots, setAttendeeBusySlots] = useState<Record<string, BusySlot[]>>({});
   useEffect(() => {
     if (attendees.length === 0 || allDay) {
-      setAttendeeBusySlots({});
+      startTransition(() => setAttendeeBusySlots({}));
       return;
     }
     const dayStart = `${startDate}T00:00:00`;
@@ -222,7 +224,7 @@ export const EventForm = React.memo(function EventForm({
           .catch(() => [a.email, []] as const),
       ),
     ).then((results) => {
-      setAttendeeBusySlots(Object.fromEntries(results));
+      startTransition(() => setAttendeeBusySlots(Object.fromEntries(results)));
     });
   }, [attendees, startDate, allDay]);
 

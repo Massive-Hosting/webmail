@@ -190,13 +190,15 @@ export const FolderTree = React.memo(function FolderTree() {
     queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
   }, [queryClient, t]);
 
+  const SKELETON_WIDTHS = [95, 110, 85, 100, 120, 90];
+
   if (isLoading) {
     return (
       <div className="p-2 flex flex-col gap-0.5">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="flex items-center gap-2.5 px-3 py-2">
             <Skeleton width={16} height={16} />
-            <Skeleton width={80 + Math.random() * 40} height={12} />
+            <Skeleton width={SKELETON_WIDTHS[i % SKELETON_WIDTHS.length]} height={12} />
           </div>
         ))}
       </div>

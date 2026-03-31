@@ -158,7 +158,7 @@ function OverviewTab({ email, headersData }: OverviewTabProps) {
     }
     // Single header value — may contain multiple values concatenated
     return parseReceivedHeaders([receivedRaw]);
-  }, [receivedRaw, headersData?.rawHeaders]);
+  }, [receivedRaw, headersData]);
 
   // Collect ALL Authentication-Results and ARC-Authentication-Results headers from rawHeaders
   const authHeaders = useMemo(() => {
@@ -169,7 +169,7 @@ function OverviewTab({ email, headersData }: OverviewTabProps) {
         return name === "authentication-results" || name === "arc-authentication-results";
       })
       .map((h) => h.value);
-  }, [headersData?.rawHeaders]);
+  }, [headersData]);
 
   const receivedStrings = useMemo(() => {
     if (headersData?.rawHeaders) {
@@ -178,7 +178,7 @@ function OverviewTab({ email, headersData }: OverviewTabProps) {
         .map((h) => h.value);
     }
     return receivedRaw ? [receivedRaw] : [];
-  }, [headersData?.rawHeaders, receivedRaw]);
+  }, [headersData, receivedRaw]);
 
   const authResults = useMemo(
     () => parseAuthResults(authHeaders, receivedStrings),
@@ -525,7 +525,7 @@ function RawHeadersTab({
     return headersData.rawHeaders
       .map((h) => `${h.name}: ${h.value}`)
       .join("\n");
-  }, [headersData?.rawHeaders]);
+  }, [headersData]);
 
   const handleCopy = useCallback(async () => {
     try {
@@ -547,7 +547,7 @@ function RawHeadersTab({
         ? `${h.name}: ${h.value}`.toLowerCase().includes(searchTerm.toLowerCase())
         : true,
     }));
-  }, [headersData?.rawHeaders, searchTerm]);
+  }, [headersData, searchTerm]);
 
   return (
     <div className="flex flex-col gap-3">

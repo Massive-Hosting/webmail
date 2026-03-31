@@ -52,7 +52,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
   const [unreadChat, setUnreadChat] = useState(0);
   const [chatText, setChatText] = useState("");
   const [showReactions, setShowReactions] = useState(false);
-  const [floatingReactions, setFloatingReactions] = useState<Array<{ id: string; emoji: string }>>([]);
+  const [floatingReactions, setFloatingReactions] = useState<Array<{ id: string; emoji: string; left: number }>>([]);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
   const screenTrackRef = useRef<MediaStreamTrack | null>(null);
@@ -243,7 +243,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
         if (msg.type === "call-reaction") {
           const payload = typeof msg.payload === "string" ? JSON.parse(msg.payload) : msg.payload;
           const id = `${Date.now()}-${Math.random()}`;
-          setFloatingReactions(prev => [...prev, { id, emoji: payload.emoji }]);
+          setFloatingReactions(prev => [...prev, { id, emoji: payload.emoji, left: Math.random() * 200 - 100 }]);
           setTimeout(() => setFloatingReactions(prev => prev.filter(r => r.id !== id)), 3000);
         }
       } catch { /* ignore parse errors */ }
@@ -334,7 +334,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
   // Apply speaker (audio output) selection to remote video element
   useEffect(() => {
     if (remoteVideoRef.current && selectedSpeaker && 'setSinkId' in remoteVideoRef.current) {
-      (remoteVideoRef.current as any).setSinkId(selectedSpeaker).catch(() => {});
+      (remoteVideoRef.current as HTMLVideoElement & { setSinkId: (id: string) => Promise<void> }).setSinkId(selectedSpeaker).catch(() => {});
     }
   }, [selectedSpeaker, remoteStream]);
 
@@ -576,7 +576,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
         {/* Floating reactions */}
         <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none">
           {floatingReactions.map((r) => (
-            <div key={r.id} className="absolute text-4xl" style={{ left: `${Math.random() * 200 - 100}px`, animation: "reaction-float 3s ease-out forwards" }}>
+            <div key={r.id} className="absolute text-4xl" style={{ left: `${r.left}px`, animation: "reaction-float 3s ease-out forwards" }}>
               {r.emoji}
             </div>
           ))}

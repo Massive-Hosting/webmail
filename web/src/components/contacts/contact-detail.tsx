@@ -54,7 +54,7 @@ export const ContactDetail = React.memo(function ContactDetail({
     navigator.clipboard.writeText(phone).then(() => {
       toast.success(t("contacts.phoneNumberCopied"));
     });
-  }, []);
+  }, [t]);
 
   const handleSave = useCallback(
     (updates: Partial<Contact>) => {

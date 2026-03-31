@@ -85,6 +85,7 @@ export const MessageListItem = React.memo(
 
     // Swipe gesture state (mobile only)
     const [swipeX, setSwipeX] = useState(0);
+    const [isSwipingActive, setIsSwipingActive] = useState(false);
     const touchStartRef = useRef<{ x: number; y: number } | null>(null);
     const isSwipingRef = useRef(false);
 
@@ -105,6 +106,7 @@ export const MessageListItem = React.memo(
         }
         if (Math.abs(dx) > 20) {
           isSwipingRef.current = true;
+          setIsSwipingActive(true);
         }
         return;
       }
@@ -123,6 +125,7 @@ export const MessageListItem = React.memo(
       setSwipeX(0);
       touchStartRef.current = null;
       isSwipingRef.current = false;
+      setIsSwipingActive(false);
     }, [swipeX, email.id, onArchive, onDelete]);
 
     const handleStarClick = useCallback(
@@ -171,7 +174,7 @@ export const MessageListItem = React.memo(
             onMouseEnter={() => onMouseEnter?.(email.id)}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
-            style={isMobile && swipeX !== 0 ? { transform: `translateX(${swipeX}px)`, transition: isSwipingRef.current ? 'none' : 'transform 200ms ease' } : undefined}
+            style={isMobile && swipeX !== 0 ? { transform: `translateX(${swipeX}px)`, transition: isSwipingActive ? 'none' : 'transform 200ms ease' } : undefined}
           >
             {/* Unread indicator - small blue dot */}
             <div className="message-list-item__indicator">
@@ -831,6 +834,7 @@ function MessageContextMenu({
   onStar,
   onArchive,
   onDelete,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onProperties,
   onPrint,
 }: {

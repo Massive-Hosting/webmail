@@ -141,7 +141,7 @@ export function MailListPane({
 
   const handleProperties = useCallback((emailItem: EmailListItem) => {
     setPropertiesEmailId(emailItem.id);
-  }, []);
+  }, [setPropertiesEmailId]);
 
   // Determine which emails are in the current list
   const displayEmails = searchActive ? searchEmails : emails;

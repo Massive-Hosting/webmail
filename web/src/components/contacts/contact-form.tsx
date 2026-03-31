@@ -144,7 +144,7 @@ export const ContactForm = React.memo(function ContactForm({
       fullName, givenName, surname, prefix, suffix,
       emails, phones, addresses, urls,
       orgName, orgDepartment, orgTitle, notes, birthday,
-      avatarBlobId, onSave,
+      avatarBlobId, onSave, t,
     ],
   );
 

@@ -46,33 +46,37 @@ export function useWebSocket(): {
   const clientRef = useRef<WebSocketClient | null>(null);
 
   // Create or reuse the client.
-  if (!clientRef.current) {
+  if (clientRef.current == null) {
     clientRef.current = getWSClient(queryClient);
   }
 
-  const client = clientRef.current;
-
   // Connect on mount.
   useEffect(() => {
+    const client = clientRef.current;
+    if (!client) return;
     client.connect();
 
     return () => {
       // Don't disconnect on unmount — the singleton persists across re-renders.
       // Disconnect is handled by destroyWSClient() on logout.
     };
-  }, [client]);
+  }, []);
 
   // Subscribe to status changes via useSyncExternalStore.
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
+      const client = clientRef.current;
+      if (!client) return () => {};
       return client.onStatusChange(onStoreChange);
     },
-    [client],
+    [],
   );
 
   const getSnapshot = useCallback(() => {
+    const client = clientRef.current;
+    if (!client) return "disconnected" as ConnectionStatus;
     return client.status;
-  }, [client]);
+  }, []);
 
   const status = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
@@ -89,7 +93,7 @@ export function useTaskProgress(handler: TaskProgressHandler) {
   const queryClient = useQueryClient();
   const clientRef = useRef<WebSocketClient | null>(null);
 
-  if (!clientRef.current) {
+  if (clientRef.current == null) {
     clientRef.current = getWSClient(queryClient);
   }
 

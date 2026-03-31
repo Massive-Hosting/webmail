@@ -168,7 +168,7 @@ export function AppShell() {
         setSelectedMailbox(sortedMailboxes[0].id);
       }
     }
-  }, [selectedMailboxId, sortedMailboxes, findByRole, setSelectedMailbox]);
+  }, [selectedMailboxId, sortedMailboxes, findByRole, setSelectedMailbox, virtualFolder]);
 
   // Responsive breakpoint
   useEffect(() => {
@@ -237,7 +237,7 @@ export function AppShell() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, []);
+  }, [t]);
 
   // Pick the active email list (search results or mailbox)
   const activeEmails = isSearchActive ? search.emails : emails;
