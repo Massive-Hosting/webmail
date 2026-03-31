@@ -104,15 +104,13 @@ export const ContactDetail = React.memo(function ContactDetail({
           )}
         </div>
         <h2
-          className="text-xl font-semibold text-center"
-          style={{ color: "var(--color-text-primary)" }}
+          className="text-xl font-semibold text-center text-primary"
         >
           {displayName}
         </h2>
         {contact.organization?.title && (
           <p
-            className="text-sm mt-1"
-            style={{ color: "var(--color-text-secondary)" }}
+            className="text-sm mt-1 text-secondary"
           >
             {contact.organization.title}
             {contact.organization.name ? ` ${t("contacts.atOrganization", { name: contact.organization.name })}` : ""}
@@ -122,13 +120,11 @@ export const ContactDetail = React.memo(function ContactDetail({
 
       {/* Action buttons */}
       <div
-        className="flex items-center justify-center gap-2 px-6 pb-4"
-        style={{ borderBottom: "1px solid var(--color-border-secondary)" }}
+        className="flex items-center justify-center gap-2 px-6 pb-4 border-b-secondary"
       >
         <button
           onClick={() => setIsEditing(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 hover:bg-[var(--color-bg-tertiary)]"
-          style={{ color: "var(--color-text-secondary)" }}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 hover:bg-[var(--color-bg-tertiary)] text-secondary"
         >
           <Edit2 size={14} />
           {t("contacts.edit")}
@@ -136,8 +132,7 @@ export const ContactDetail = React.memo(function ContactDetail({
         {primaryEmail && (
           <button
             onClick={() => onComposeEmail(primaryEmail, displayName)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 hover:bg-[var(--color-bg-tertiary)]"
-            style={{ color: "var(--color-text-accent)" }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 hover:bg-[var(--color-bg-tertiary)] text-accent"
           >
             <Mail size={14} />
             {t("contacts.email")}
@@ -146,8 +141,7 @@ export const ContactDetail = React.memo(function ContactDetail({
         {canWaveCall && onWaveCall && (
           <button
             onClick={() => onWaveCall(primaryEmail, displayName)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 hover:bg-[var(--color-bg-tertiary)]"
-            style={{ color: "var(--color-text-accent)" }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 hover:bg-[var(--color-bg-tertiary)] text-accent"
           >
             <Phone size={14} />
             {t("wave.startCall")}
@@ -155,8 +149,7 @@ export const ContactDetail = React.memo(function ContactDetail({
         )}
         <button
           onClick={() => setShowDeleteConfirm(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 hover:bg-[var(--color-bg-tertiary)]"
-          style={{ color: "var(--color-text-error, #dc2626)" }}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 hover:bg-[var(--color-bg-tertiary)] text-danger"
         >
           <Trash2 size={14} />
           {t("contacts.delete")}
@@ -173,8 +166,7 @@ export const ContactDetail = React.memo(function ContactDetail({
           }}
         >
           <p
-            className="mb-2"
-            style={{ color: "var(--color-text-error, #dc2626)" }}
+            className="mb-2 text-danger"
           >
             {t("contacts.deleteConfirm")}
           </p>
@@ -188,11 +180,7 @@ export const ContactDetail = React.memo(function ContactDetail({
             </button>
             <button
               onClick={() => setShowDeleteConfirm(false)}
-              className="px-3 py-1 text-xs font-medium rounded"
-              style={{
-                color: "var(--color-text-secondary)",
-                backgroundColor: "var(--color-bg-tertiary)",
-              }}
+              className="px-3 py-1 text-xs font-medium rounded text-secondary bg-tertiary"
             >
               {t("contacts.cancel")}
             </button>
@@ -209,18 +197,13 @@ export const ContactDetail = React.memo(function ContactDetail({
               <div key={i} className="flex items-center gap-2 group">
                 <button
                   onClick={() => onComposeEmail(email.address, displayName)}
-                  className="text-sm hover:underline"
-                  style={{ color: "var(--color-text-accent)" }}
+                  className="text-sm hover:underline text-accent"
                 >
                   {email.address}
                 </button>
                 {email.label && (
                   <span
-                    className="text-xs px-1.5 py-0.5 rounded"
-                    style={{
-                      backgroundColor: "var(--color-bg-tertiary)",
-                      color: "var(--color-text-tertiary)",
-                    }}
+                    className="text-xs px-1.5 py-0.5 rounded bg-tertiary text-tertiary"
                   >
                     {email.label}
                   </span>
@@ -237,24 +220,18 @@ export const ContactDetail = React.memo(function ContactDetail({
               <div key={i} className="flex items-center gap-2 group">
                 <button
                   onClick={() => handleCopyPhone(phone.number)}
-                  className="text-sm hover:underline flex items-center gap-1"
-                  style={{ color: "var(--color-text-primary)" }}
+                  className="text-sm hover:underline flex items-center gap-1 text-primary"
                   title={t("contacts.clickToCopy")}
                 >
                   {phone.number}
                   <Copy
                     size={12}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{ color: "var(--color-text-tertiary)" }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-tertiary"
                   />
                 </button>
                 {phone.label && (
                   <span
-                    className="text-xs px-1.5 py-0.5 rounded"
-                    style={{
-                      backgroundColor: "var(--color-bg-tertiary)",
-                      color: "var(--color-text-tertiary)",
-                    }}
+                    className="text-xs px-1.5 py-0.5 rounded bg-tertiary text-tertiary"
                   >
                     {phone.label}
                   </span>
@@ -270,8 +247,7 @@ export const ContactDetail = React.memo(function ContactDetail({
             {contact.addresses.map((addr, i) => (
               <div key={i} className="flex flex-col">
                 <span
-                  className="text-sm"
-                  style={{ color: "var(--color-text-primary)" }}
+                  className="text-sm text-primary"
                 >
                   {[addr.street, addr.city, addr.state, addr.postalCode, addr.country]
                     .filter(Boolean)
@@ -279,8 +255,7 @@ export const ContactDetail = React.memo(function ContactDetail({
                 </span>
                 {addr.label && (
                   <span
-                    className="text-xs mt-0.5"
-                    style={{ color: "var(--color-text-tertiary)" }}
+                    className="text-xs mt-0.5 text-tertiary"
                   >
                     {addr.label}
                   </span>
@@ -297,16 +272,14 @@ export const ContactDetail = React.memo(function ContactDetail({
               <div className="flex flex-col">
                 {contact.organization.name && (
                   <span
-                    className="text-sm"
-                    style={{ color: "var(--color-text-primary)" }}
+                    className="text-sm text-primary"
                   >
                     {contact.organization.name}
                   </span>
                 )}
                 {contact.organization.department && (
                   <span
-                    className="text-xs"
-                    style={{ color: "var(--color-text-tertiary)" }}
+                    className="text-xs text-tertiary"
                   >
                     {contact.organization.department}
                   </span>
@@ -319,8 +292,7 @@ export const ContactDetail = React.memo(function ContactDetail({
         {contact.birthday && (
           <DetailSection icon={<Cake size={16} />} label={t("contacts.birthday")}>
             <span
-              className="text-sm"
-              style={{ color: "var(--color-text-primary)" }}
+              className="text-sm text-primary"
             >
               {contact.birthday}
             </span>
@@ -336,19 +308,14 @@ export const ContactDetail = React.memo(function ContactDetail({
                   href={url.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm hover:underline flex items-center gap-1"
-                  style={{ color: "var(--color-text-accent)" }}
+                  className="text-sm hover:underline flex items-center gap-1 text-accent"
                 >
                   {url.url}
                   <ExternalLink size={12} />
                 </a>
                 {url.label && (
                   <span
-                    className="text-xs px-1.5 py-0.5 rounded"
-                    style={{
-                      backgroundColor: "var(--color-bg-tertiary)",
-                      color: "var(--color-text-tertiary)",
-                    }}
+                    className="text-xs px-1.5 py-0.5 rounded bg-tertiary text-tertiary"
                   >
                     {url.label}
                   </span>
@@ -362,8 +329,7 @@ export const ContactDetail = React.memo(function ContactDetail({
         {contact.notes && (
           <DetailSection icon={<StickyNote size={16} />} label={t("contacts.notes")}>
             <p
-              className="text-sm whitespace-pre-wrap"
-              style={{ color: "var(--color-text-primary)" }}
+              className="text-sm whitespace-pre-wrap text-primary"
             >
               {contact.notes}
             </p>
@@ -386,14 +352,12 @@ function DetailSection({
 }) {
   return (
     <div
-      className="py-3"
-      style={{ borderBottom: "1px solid var(--color-border-secondary)" }}
+      className="py-3 border-b-secondary"
     >
       <div className="flex items-center gap-2 mb-2">
-        <span style={{ color: "var(--color-text-tertiary)" }}>{icon}</span>
+        <span className="text-tertiary">{icon}</span>
         <span
-          className="text-xs font-semibold uppercase tracking-wider"
-          style={{ color: "var(--color-text-tertiary)" }}
+          className="text-xs font-semibold uppercase tracking-wider text-tertiary"
         >
           {label}
         </span>

@@ -391,7 +391,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
       <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
         {/* Remote video — with fallback for audio-only peers */}
         <div className="flex-1 relative min-h-0">
-          {remoteStream && <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-contain" style={{ backgroundColor: "#000" }} />}
+          {remoteStream && <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-contain bg-black" />}
           {(!remoteStream || (remoteStream && remoteStream.getVideoTracks().length === 0)) && (
             <div className="absolute inset-0 flex items-center justify-center" style={{ background: "radial-gradient(ellipse at center, #1a1040 0%, #0c0a09 60%, #000 100%)" }}>
               <div className="text-center">
@@ -400,18 +400,19 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
                     <div className="relative w-24 h-24 mx-auto mb-4">
                       <div className="absolute inset-0 rounded-full" style={{ border: "2px solid rgba(99,102,241,0.3)", animation: "wave-ping 2s cubic-bezier(0,0,0.2,1) infinite" }} />
                       <div className="absolute inset-2 rounded-full" style={{ border: "1.5px solid rgba(99,102,241,0.2)", animation: "wave-ping 2s cubic-bezier(0,0,0.2,1) infinite 0.5s" }} />
+
                       <div className="absolute inset-4 rounded-full flex items-center justify-center" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)" }}>
                         <div className="w-10 h-10 rounded-full flex items-center justify-center animate-pulse" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.4), rgba(139,92,246,0.4))", boxShadow: "0 0 20px rgba(99,102,241,0.3)" }}>
                           <Phone size={16} className="text-white/80" />
                         </div>
                       </div>
                     </div>
-                    <p className="text-white/60 text-sm">Connecting to {room?.host_name}...</p>
+                    <p className="wave-text-secondary text-sm">Connecting to {room?.host_name}...</p>
                   </>
                 ) : (
                   <>
-                    <div className="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))", border: "1px solid rgba(255,255,255,0.1)" }}>
-                      <span className="text-3xl font-bold text-white/60">{(room?.host_name || "H")[0].toUpperCase()}</span>
+                    <div className="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center wave-surface-border" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))", borderWidth: "1px", borderStyle: "solid" }}>
+                      <span className="text-3xl font-bold wave-text-secondary">{(room?.host_name || "H")[0].toUpperCase()}</span>
                     </div>
                     <p className="text-white/70 text-sm font-medium">{room?.host_name}</p>
                     <p className="text-white/30 text-xs mt-1"><VideoOff size={12} className="inline mr-1" />Camera off</p>
@@ -423,20 +424,19 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
           {/* Local PiP — draggable + resizable */}
           <div
             data-draggable
-            className="fixed z-[9999] rounded-xl overflow-hidden shadow-2xl"
+            className="fixed z-[9999] rounded-xl overflow-hidden shadow-2xl bg-[#292524]"
             style={{
               width: pipSize.width,
               height: pipSize.height,
               ...pipDragStyle,
               border: "1px solid rgba(255,255,255,0.15)",
-              backgroundColor: "#292524",
             }}
           >
             <div className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing" {...pipDragProps} />
             <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
             {!videoEnabled && (
               <div className="absolute inset-0 flex items-center justify-center bg-[#292524]">
-                <VideoOff size={18} style={{ color: "rgba(255,255,255,0.3)" }} />
+                <VideoOff size={18} className="wave-text-tertiary" />
               </div>
             )}
             {/* Resize handle */}
@@ -462,8 +462,8 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
         {/* Controls */}
         <div className="relative flex items-center justify-center gap-3 py-5" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4))" }}>
           {showCallDevices && (
-            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 p-4 rounded-xl w-80 space-y-3 animate-scale-in"
-              style={{ backgroundColor: "rgba(28,25,23,0.95)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", backdropFilter: "blur(12px)" }}>
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 p-4 rounded-xl w-80 space-y-3 animate-scale-in wave-surface-border"
+              style={{ backgroundColor: "rgba(28,25,23,0.95)", borderWidth: "1px", borderStyle: "solid", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", backdropFilter: "blur(12px)" }}>
               {audioDevices.length > 0 && (
                 <DarkSelect label="Microphone" value={selectedAudioDevice || audioDevices[0]?.deviceId || ""} options={audioDevices.map(d => ({ value: d.deviceId, label: d.label || `Mic ${d.deviceId.slice(0,4)}` }))} onChange={setSelectedAudioDevice} />
               )}
@@ -490,6 +490,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
             {showReactions && (
               <div className="absolute bottom-14 left-1/2 -translate-x-1/2 flex gap-1 px-2 py-1.5 rounded-xl animate-scale-in"
                 style={{ backgroundColor: "#1c1917", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>
+
                 {["👍", "👏", "😂", "❤️", "🎉", "🤔", "👋", "🔥"].map((emoji) => (
                   <button
                     key={emoji}
@@ -565,7 +566,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
             onClick={() => setShowCallDevices(!showCallDevices)}
             icon={<Settings2 size={20} />}
           />
-          <button onClick={hangup} className="flex items-center justify-center w-14 h-14 rounded-full transition-transform hover:scale-105 active:scale-95" style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>
+          <button onClick={hangup} className="flex items-center justify-center w-14 h-14 rounded-full transition-transform hover:scale-105 active:scale-95" style={{ background: "linear-gradient(135deg, var(--color-danger), #dc2626)" }}>
             <PhoneOff size={22} className="text-white" />
           </button>
         </div>
@@ -581,10 +582,11 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
         {chatOpen && (
           <div className="absolute top-0 right-0 bottom-0 w-80 flex flex-col z-[9999]"
             style={{ backgroundColor: "rgba(28,25,23,0.95)", borderLeft: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }}>
+
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <span className="text-white/80 text-sm font-medium">Chat</span>
-              <button onClick={() => setChatOpen(false)} className="p-1 rounded hover:bg-white/10" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <div className="flex items-center justify-between px-4 py-3 wave-surface-border" style={{ borderBottomWidth: "1px", borderBottomStyle: "solid" }}>
+              <span className="wave-text text-sm font-medium">Chat</span>
+              <button onClick={() => setChatOpen(false)} className="p-1 rounded hover:bg-white/10 wave-text-tertiary">
                 <X size={14} />
               </button>
             </div>
@@ -606,7 +608,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
                         borderBottomLeftRadius: !isMe ? 4 : undefined,
                       }}>
                       <p className="break-words whitespace-pre-wrap">{msg.text}</p>
-                      <span className="block text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>{time}</span>
+                      <span className="block text-[10px] mt-0.5 wave-text-tertiary">{time}</span>
                     </div>
                   </div>
                 );
@@ -614,7 +616,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
             </div>
             {/* Input */}
             <div className="px-3 pb-3 pt-1">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg wave-surface-elevated" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
                 <input
                   ref={chatInputRef}
                   type="text"
@@ -622,10 +624,9 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
                   onChange={(e) => setChatText(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") sendChatMessage(); }}
                   placeholder="Type a message..."
-                  className="flex-1 bg-transparent text-xs outline-none"
-                  style={{ color: "rgba(255,255,255,0.85)" }}
+                  className="flex-1 bg-transparent text-xs outline-none wave-text"
                 />
-                <button onClick={sendChatMessage} disabled={!chatText.trim()} className="p-1 rounded transition-colors hover:bg-white/10 disabled:opacity-30" style={{ color: "rgba(255,255,255,0.5)" }}>
+                <button onClick={sendChatMessage} disabled={!chatText.trim()} className="p-1 rounded transition-colors hover:bg-white/10 disabled:opacity-30 wave-text-secondary">
                   <Send size={14} />
                 </button>
               </div>
@@ -652,18 +653,18 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
       <div className="w-full max-w-lg mx-auto px-4">
         {/* Branding */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border wave-surface-border backdrop-blur-sm mb-6">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-white/60 text-xs font-medium tracking-wide uppercase">Wave Call</span>
+            <span className="wave-text-secondary text-xs font-medium tracking-wide uppercase">Wave Call</span>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">
             {room?.host_name} is calling
           </h1>
-          <p className="text-white/40 text-sm">Set up your camera and mic, then join the call</p>
+          <p className="wave-text-tertiary text-sm">Set up your camera and mic, then join the call</p>
         </div>
 
         {/* Video preview card */}
-        <div className="rounded-2xl overflow-hidden mb-6 relative" style={{ aspectRatio: "16/10", backgroundColor: "#0a0a0a", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-2xl overflow-hidden mb-6 relative wave-surface-border" style={{ aspectRatio: "16/10", backgroundColor: "#0a0a0a", borderWidth: "1px", borderStyle: "solid" }}>
           <video
             ref={videoRef}
             autoPlay playsInline muted
@@ -672,7 +673,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
           />
           {!videoEnabled && (
             <div className="w-full h-full flex flex-col items-center justify-center gap-3 relative z-10">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center border border-white/10">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center border wave-surface-border">
                 <span className="text-2xl font-bold text-white/70">{(guestName || "G")[0].toUpperCase()}</span>
               </div>
               <span className="text-white/30 text-xs">Camera off</span>
@@ -681,7 +682,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
           {/* Audio level meter */}
           {audioEnabled && stream && (
             <div className="absolute bottom-3 left-3 flex items-center gap-2">
-              <Volume2 size={14} style={{ color: "rgba(255,255,255,0.4)" }} />
+              <Volume2 size={14} className="wave-text-tertiary" />
               <div className="flex items-end gap-0.5 h-4">
                 {Array.from({ length: 12 }).map((_, i) => (
                   <div
@@ -689,7 +690,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
                     className="w-1 rounded-full transition-all duration-75"
                     style={{
                       height: Math.max(3, audioLevel > i / 12 ? audioLevel * 16 : 3),
-                      backgroundColor: audioLevel > i / 12 ? (i < 8 ? "#22c55e" : i < 10 ? "#f59e0b" : "#ef4444") : "rgba(255,255,255,0.1)",
+                      backgroundColor: audioLevel > i / 12 ? (i < 8 ? "var(--color-success)" : i < 10 ? "#f59e0b" : "var(--color-danger)") : "rgba(255,255,255,0.1)",
                     }}
                   />
                 ))}
@@ -705,11 +706,10 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
             value={guestName}
             onChange={(e) => setGuestName(e.target.value)}
             placeholder="Your name"
-            className="w-full px-4 py-3 rounded-xl text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-indigo-500/30"
+            className="w-full px-4 py-3 rounded-xl text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-indigo-500/30 wave-surface-elevated wave-text wave-surface-border"
             style={{
-              backgroundColor: "rgba(255,255,255,0.06)",
-              color: "white",
-              border: "1px solid rgba(255,255,255,0.1)",
+              borderWidth: "1px",
+              borderStyle: "solid",
             }}
           />
         </div>
@@ -736,8 +736,8 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
         {stream && (audioDevices.length > 0 || videoDevices.length > 0) && (
           <div className="mb-6 p-4 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
             <div className="flex items-center gap-1.5 mb-3">
-              <Settings2 size={13} style={{ color: "rgba(255,255,255,0.4)" }} />
-              <label className="text-[11px] font-medium text-white/40">Device settings</label>
+              <Settings2 size={13} className="wave-text-tertiary" />
+              <label className="text-[11px] font-medium wave-text-tertiary">Device settings</label>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {audioDevices.length > 0 && (
@@ -773,7 +773,7 @@ export const WaveGuestJoin = React.memo(function WaveGuestJoin({ roomId }: Guest
           onClick={joinCall}
           className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl text-sm font-bold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
           style={{
-            background: "linear-gradient(135deg, #22c55e, #16a34a)",
+            background: "linear-gradient(135deg, var(--color-success), #16a34a)",
             color: "white",
             boxShadow: "0 8px 32px rgba(34, 197, 94, 0.3), 0 0 0 1px rgba(34, 197, 94, 0.1)",
             letterSpacing: "0.02em",
@@ -815,7 +815,7 @@ function FullScreenBg({ children }: { children: React.ReactNode }) {
         <div
           className="absolute w-80 h-80 rounded-full opacity-[0.05]"
           style={{
-            background: "radial-gradient(circle, #22c55e, transparent 70%)",
+            background: "radial-gradient(circle, var(--color-success), transparent 70%)",
             bottom: "10%",
             right: "15%",
             animation: "float 25s ease-in-out infinite reverse",
@@ -840,7 +840,7 @@ function LobbyBtn({ icon, label, active, danger, accent, onClick }: {
 }) {
   const bg = danger ? "rgba(239,68,68,0.15)" : accent ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.06)";
   const border = danger ? "rgba(239,68,68,0.25)" : accent ? "rgba(99,102,241,0.25)" : "rgba(255,255,255,0.08)";
-  const color = danger ? "#f87171" : accent ? "#818cf8" : "rgba(255,255,255,0.75)";
+  const color = danger ? "var(--color-danger)" : accent ? "#818cf8" : "rgba(255,255,255,0.75)";
   return (
     <button
       onClick={onClick}
@@ -861,7 +861,7 @@ function ControlButton({ active, onClick, icon }: { active: boolean; onClick: ()
       style={{
         backgroundColor: active ? "rgba(255,255,255,0.1)" : "rgba(239,68,68,0.2)",
         border: `1px solid ${active ? "rgba(255,255,255,0.15)" : "rgba(239,68,68,0.3)"}`,
-        color: active ? "white" : "#f87171",
+        color: active ? "white" : "var(--color-danger)",
       }}
     >
       {icon}

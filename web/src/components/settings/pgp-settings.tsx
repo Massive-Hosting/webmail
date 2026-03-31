@@ -105,12 +105,12 @@ export const PGPSettingsPanel = React.memo(function PGPSettingsPanel() {
           border: "1px solid rgba(34, 197, 94, 0.2)",
         }}
       >
-        <ShieldCheck size={20} style={{ color: "#22c55e" }} />
+        <ShieldCheck size={20} className="text-success" />
         <div>
-          <p className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+          <p className="text-sm font-medium text-primary">
             {t("pgp.signingEnabled")}
           </p>
-          <p className="text-xs mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
+          <p className="text-xs mt-0.5 text-secondary">
             {t("pgp.signingEnabledDesc")}
           </p>
         </div>
@@ -118,10 +118,9 @@ export const PGPSettingsPanel = React.memo(function PGPSettingsPanel() {
 
       {error && (
         <div
-          className="flex items-center gap-2 p-3 rounded-md text-sm"
+          className="flex items-center gap-2 p-3 rounded-md text-sm text-danger"
           style={{
             backgroundColor: "rgba(239, 68, 68, 0.1)",
-            color: "var(--color-text-danger, #dc2626)",
             border: "1px solid rgba(239, 68, 68, 0.2)",
           }}
         >
@@ -132,18 +131,12 @@ export const PGPSettingsPanel = React.memo(function PGPSettingsPanel() {
 
       {/* Preferences */}
       <div className="flex flex-col gap-4">
-        <h3
-          className="text-sm font-semibold"
-          style={{ color: "var(--color-text-primary)" }}
-        >
+        <h3 className="text-sm font-semibold text-primary">
           {t("pgp.defaults")}
         </h3>
 
         <div className="flex items-center justify-between">
-          <label
-            className="text-sm"
-            style={{ color: "var(--color-text-secondary)" }}
-          >
+          <label className="text-sm text-secondary">
             {t("pgp.signOutgoing")}
           </label>
           <SelectDropdown
@@ -158,10 +151,7 @@ export const PGPSettingsPanel = React.memo(function PGPSettingsPanel() {
         </div>
 
         <div className="flex items-center justify-between">
-          <label
-            className="text-sm"
-            style={{ color: "var(--color-text-secondary)" }}
-          >
+          <label className="text-sm text-secondary">
             {t("pgp.encryptWhenAvailable")}
           </label>
           <SelectDropdown
@@ -176,10 +166,7 @@ export const PGPSettingsPanel = React.memo(function PGPSettingsPanel() {
         </div>
 
         <div className="flex items-center justify-between">
-          <label
-            className="text-sm"
-            style={{ color: "var(--color-text-secondary)" }}
-          >
+          <label className="text-sm text-secondary">
             {t("pgp.autoLookup")}
           </label>
           <button
@@ -206,8 +193,7 @@ export const PGPSettingsPanel = React.memo(function PGPSettingsPanel() {
       {/* Advanced section (collapsed by default) */}
       <button
         onClick={() => setShowAdvanced(!showAdvanced)}
-        className="flex items-center gap-1.5 text-sm font-medium"
-        style={{ color: "var(--color-text-accent)" }}
+        className="flex items-center gap-1.5 text-sm font-medium text-accent"
       >
         {showAdvanced ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         {t("pgp.advancedSettings")}
@@ -241,33 +227,23 @@ function SetupView({
   const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center text-center max-w-md mx-auto py-8">
-      <div
-        className="flex items-center justify-center w-14 h-14 rounded-2xl mb-4"
-        style={{ backgroundColor: "var(--color-bg-tertiary)" }}
-      >
-        <Shield size={28} style={{ color: "var(--color-text-secondary)" }} />
+      <div className="flex items-center justify-center w-14 h-14 rounded-2xl mb-4 bg-tertiary">
+        <Shield size={28} className="text-secondary" />
       </div>
 
-      <h3
-        className="text-lg font-semibold mb-2"
-        style={{ color: "var(--color-text-primary)" }}
-      >
+      <h3 className="text-lg font-semibold mb-2 text-primary">
         {t("pgp.digitallySignTitle")}
       </h3>
 
-      <p
-        className="text-sm mb-6 leading-relaxed"
-        style={{ color: "var(--color-text-secondary)" }}
-      >
+      <p className="text-sm mb-6 leading-relaxed text-secondary">
         {t("pgp.digitallySignDesc")}
       </p>
 
       {error && (
         <div
-          className="flex items-center gap-2 p-3 rounded-md text-sm mb-4 w-full"
+          className="flex items-center gap-2 p-3 rounded-md text-sm mb-4 w-full text-danger"
           style={{
             backgroundColor: "rgba(239, 68, 68, 0.1)",
-            color: "var(--color-text-danger, #dc2626)",
             border: "1px solid rgba(239, 68, 68, 0.2)",
           }}
         >
@@ -279,8 +255,7 @@ function SetupView({
       <button
         onClick={onSetup}
         disabled={loading}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-60"
-        style={{ backgroundColor: "var(--color-bg-accent)" }}
+        className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-60 bg-accent"
       >
         {loading ? (
           <Loader2 size={16} className="animate-spin" />
@@ -292,8 +267,7 @@ function SetupView({
 
       <button
         onClick={onImport}
-        className="mt-3 text-xs"
-        style={{ color: "var(--color-text-accent)" }}
+        className="mt-3 text-xs text-accent"
       >
         {t("pgp.importExistingKey")}
       </button>
@@ -382,45 +356,25 @@ function AdvancedSettings({
   return (
     <div className="flex flex-col gap-4">
       {/* Key card */}
-      <div
-        className="rounded-lg p-4"
-        style={{
-          backgroundColor: "var(--color-bg-secondary)",
-          border: "1px solid var(--color-border-secondary)",
-        }}
-      >
+      <div className="rounded-lg p-4 bg-secondary border-secondary">
         <div className="flex items-start gap-3">
           <Key
             size={16}
-            className="mt-0.5 shrink-0"
-            style={{ color: "var(--color-text-secondary)" }}
+            className="mt-0.5 shrink-0 text-secondary"
           />
           <div className="flex-1 min-w-0">
-            <p
-              className="text-sm font-medium"
-              style={{ color: "var(--color-text-primary)" }}
-            >
+            <p className="text-sm font-medium text-primary">
               {keyInfo.userIDs[0]?.email ?? email}
             </p>
-            <p
-              className="text-xs mt-1 font-mono"
-              style={{ color: "var(--color-text-tertiary)" }}
-            >
+            <p className="text-xs mt-1 font-mono text-tertiary">
               {formatFingerprint(keyInfo.fingerprint)}
             </p>
-            <div
-              className="flex items-center gap-3 mt-2 text-xs"
-              style={{ color: "var(--color-text-tertiary)" }}
-            >
+            <div className="flex items-center gap-3 mt-2 text-xs text-tertiary">
               <span>{t("pgp.algorithm", { algorithm: keyInfo.algorithm })}</span>
               <span>{t("pgp.created", { date: formatDate(keyInfo.created) })}</span>
               {keyInfo.expires && (
                 <span
-                  style={{
-                    color: keyInfo.isExpired
-                      ? "var(--color-text-danger, #dc2626)"
-                      : undefined,
-                  }}
+                  className={keyInfo.isExpired ? "text-danger" : ""}
                 >
                   {keyInfo.isExpired
                     ? t("pgp.expired", { date: formatDate(keyInfo.expires) })
@@ -430,10 +384,7 @@ function AdvancedSettings({
             </div>
 
             {keyInfo.isRevoked && (
-              <div
-                className="flex items-center gap-1 mt-2 text-xs"
-                style={{ color: "var(--color-text-danger, #dc2626)" }}
-              >
+              <div className="flex items-center gap-1 mt-2 text-xs text-danger">
                 <AlertTriangle size={12} />
                 {t("pgp.keyRevoked")}
               </div>
@@ -442,7 +393,7 @@ function AdvancedSettings({
         </div>
 
         {/* Key actions */}
-        <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: "1px solid var(--color-border-secondary)" }}>
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t-secondary">
           <ActionBtn
             icon={copied ? <Check size={12} /> : <Copy size={12} />}
             label={copied ? t("pgp.copied") : t("pgp.copyPublicKey")}
@@ -527,56 +478,37 @@ function ImportKeyDialog({
   }, [keyText, passphrase, email, onImport, onClose, t]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay">
       <div
-        className="w-full max-w-md rounded-lg p-6 flex flex-col gap-4"
-        style={{
-          backgroundColor: "var(--color-bg-elevated)",
-          border: "1px solid var(--color-border-primary)",
-          boxShadow: "var(--shadow-xl)",
-        }}
+        className="w-full max-w-md rounded-lg p-6 flex flex-col gap-4 bg-elevated border-primary"
+        style={{ boxShadow: "var(--shadow-xl)" }}
       >
-        <h3
-          className="text-base font-semibold"
-          style={{ color: "var(--color-text-primary)" }}
-        >
+        <h3 className="text-base font-semibold text-primary">
           {t("pgp.importTitle")}
         </h3>
 
         {error && (
           <div
-            className="text-sm p-2 rounded"
-            style={{
-              backgroundColor: "rgba(239, 68, 68, 0.1)",
-              color: "var(--color-text-danger, #dc2626)",
-            }}
+            className="text-sm p-2 rounded text-danger"
+            style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
           >
             {error}
           </div>
         )}
 
         <div className="flex flex-col gap-1.5">
-          <label
-            className="text-sm font-medium"
-            style={{ color: "var(--color-text-primary)" }}
-          >
+          <label className="text-sm font-medium text-primary">
             {t("pgp.privateKeyArmored")}
           </label>
           <textarea
             value={keyText}
             onChange={(e) => setKeyText(e.target.value)}
             placeholder="-----BEGIN PGP PRIVATE KEY BLOCK-----&#10;...&#10;-----END PGP PRIVATE KEY BLOCK-----"
-            className="w-full h-32 px-3 py-2 text-xs font-mono rounded-md outline-none resize-none"
-            style={{
-              backgroundColor: "var(--color-bg-primary)",
-              color: "var(--color-text-primary)",
-              border: "1px solid var(--color-border-primary)",
-            }}
+            className="w-full h-32 px-3 py-2 text-xs font-mono rounded-md outline-none resize-none bg-primary text-primary border-primary"
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 text-xs self-start"
-            style={{ color: "var(--color-text-accent)" }}
+            className="flex items-center gap-1.5 text-xs self-start text-accent"
           >
             <Upload size={12} />
             {t("pgp.uploadFile")}
@@ -591,10 +523,7 @@ function ImportKeyDialog({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label
-            className="text-sm font-medium"
-            style={{ color: "var(--color-text-primary)" }}
-          >
+          <label className="text-sm font-medium text-primary">
             {t("pgp.passphrase")}
           </label>
           <input
@@ -602,31 +531,21 @@ function ImportKeyDialog({
             value={passphrase}
             onChange={(e) => setPassphrase(e.target.value)}
             placeholder={t("pgp.passphrasePlaceholder")}
-            className="w-full h-9 px-3 text-sm rounded-md outline-none"
-            style={{
-              backgroundColor: "var(--color-bg-primary)",
-              color: "var(--color-text-primary)",
-              border: "1px solid var(--color-border-primary)",
-            }}
+            className="w-full h-9 px-3 text-sm rounded-md outline-none bg-primary text-primary border-primary"
           />
         </div>
 
         <div className="flex items-center justify-end gap-2 pt-2">
           <button
             onClick={onClose}
-            className="px-3 py-1.5 text-sm rounded-md"
-            style={{
-              color: "var(--color-text-secondary)",
-              backgroundColor: "var(--color-bg-tertiary)",
-            }}
+            className="px-3 py-1.5 text-sm rounded-md text-secondary bg-tertiary"
           >
             {t("pgp.cancel")}
           </button>
           <button
             onClick={handleImport}
             disabled={importing}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-md disabled:opacity-60"
-            style={{ backgroundColor: "var(--color-bg-accent)" }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-md disabled:opacity-60 bg-accent"
           >
             {importing && <Loader2 size={14} className="animate-spin" />}
             {t("pgp.import")}
@@ -652,12 +571,7 @@ function ActionBtn({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors hover:bg-[var(--color-bg-tertiary)]"
-      style={{
-        color: danger
-          ? "var(--color-text-danger, #dc2626)"
-          : "var(--color-text-secondary)",
-      }}
+      className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors hover:bg-[var(--color-bg-tertiary)] ${danger ? "text-danger" : "text-secondary"}`}
     >
       {icon}
       {label}

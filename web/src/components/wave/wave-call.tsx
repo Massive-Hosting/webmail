@@ -152,14 +152,13 @@ export const WaveCall = React.memo(function WaveCall() {
     return (
       <div
         data-draggable
-        className="fixed z-[9998] rounded-2xl overflow-hidden"
+        className="fixed z-[9998] rounded-2xl overflow-hidden wave-surface wave-surface-border"
         style={{
           width: 200,
           height: 150,
-          backgroundColor: "#1c1917",
           ...pipDragStyle,
           boxShadow: "0 12px 40px rgba(0, 0, 0, 0.4)",
-          border: "1px solid rgba(255, 255, 255, 0.1)",
+          border: "1px solid",
         }}
       >
         <div className="absolute inset-0 z-10" {...pipDragProps} onDoubleClick={() => setIsCompact(false)} />
@@ -175,7 +174,7 @@ export const WaveCall = React.memo(function WaveCall() {
           style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.7))" }}
         >
           <span className="text-white text-[10px] font-medium">{duration}</span>
-          <Maximize2 size={12} style={{ color: "rgba(255,255,255,0.6)" }} />
+          <Maximize2 size={12} className="wave-text-secondary" />
         </div>
       </div>
     );
@@ -282,7 +281,7 @@ export const WaveCall = React.memo(function WaveCall() {
                 <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
                 {isVideoOff && (
                   <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: "#292524" }}>
-                    <VideoOff size={20} style={{ color: "rgba(255,255,255,0.3)" }} />
+                    <VideoOff size={20} className="wave-text-tertiary" />
                   </div>
                 )}
                 {/* Resize handle */}
@@ -297,8 +296,7 @@ export const WaveCall = React.memo(function WaveCall() {
             {/* Minimize button */}
             <button
               onClick={() => setIsCompact(true)}
-              className="absolute top-4 right-4 p-2 rounded-lg transition-colors z-20"
-              style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)" }}
+              className="absolute top-4 right-4 p-2 rounded-lg transition-colors z-20 wave-surface-elevated wave-text-secondary"
             >
               <Minimize2 size={16} />
             </button>
@@ -340,8 +338,8 @@ export const WaveCall = React.memo(function WaveCall() {
               />
               {showReactions && (
                 <div
-                  className="absolute bottom-14 left-1/2 -translate-x-1/2 flex gap-1 px-2 py-1.5 rounded-xl animate-scale-in"
-                  style={{ backgroundColor: "#1c1917", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
+                  className="absolute bottom-14 left-1/2 -translate-x-1/2 flex gap-1 px-2 py-1.5 rounded-xl animate-scale-in wave-surface wave-surface-border"
+                  style={{ border: "1px solid", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
                 >
                   {REACTION_EMOJIS.map((emoji) => (
                     <button
@@ -375,10 +373,10 @@ export const WaveCall = React.memo(function WaveCall() {
                 title={t("wave.background")}
               />
               {showBackgrounds && (
-                <div className="absolute bottom-14 left-1/2 -translate-x-1/2 p-4 rounded-xl w-96 animate-scale-in"
-                  style={{ backgroundColor: "rgba(28,25,23,0.95)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", backdropFilter: "blur(12px)", zIndex: 10 }}>
-                  <label className="text-[11px] font-medium text-white/40 block mb-2">{t("wave.background")}</label>
-                  {bgLoading && <div className="text-xs text-white/30 mb-2">{t("wave.loadingBackground")}</div>}
+                <div className="absolute bottom-14 left-1/2 -translate-x-1/2 p-4 rounded-xl w-96 animate-scale-in wave-surface wave-surface-border"
+                  style={{ backgroundColor: "rgba(28,25,23,0.95)", border: "1px solid", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", backdropFilter: "blur(12px)", zIndex: 10 }}>
+                  <label className="text-[11px] font-medium wave-text-tertiary block mb-2">{t("wave.background")}</label>
+                  {bgLoading && <div className="text-xs wave-text-tertiary mb-2">{t("wave.loadingBackground")}</div>}
                   <div className="grid grid-cols-5 gap-2">
                     {/* None option */}
                     <button
@@ -393,14 +391,13 @@ export const WaveCall = React.memo(function WaveCall() {
                           if (origTrack) await replaceLocalVideoTrack(origTrack);
                         }
                       }}
-                      className="relative aspect-square rounded-lg overflow-hidden transition-all hover:scale-105"
+                      className="relative aspect-square rounded-lg overflow-hidden transition-all hover:scale-105 wave-surface-elevated"
                       style={{
-                        backgroundColor: "rgba(255,255,255,0.08)",
                         border: bgEffect.mode === "none" ? "2px solid #6366f1" : "2px solid transparent",
                       }}
                     >
                       <div className="w-full h-full flex items-center justify-center">
-                        <Ban size={16} style={{ color: "rgba(255,255,255,0.4)" }} />
+                        <Ban size={16} className="wave-text-tertiary" />
                       </div>
                     </button>
                     {/* Virtual backgrounds */}
@@ -453,8 +450,8 @@ export const WaveCall = React.memo(function WaveCall() {
                 title="Device settings"
               />
               {showDeviceSettings && (
-                <div className="absolute bottom-14 left-1/2 -translate-x-1/2 p-4 rounded-xl w-80 space-y-3 animate-scale-in"
-                  style={{ backgroundColor: "rgba(28,25,23,0.95)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", backdropFilter: "blur(12px)" }}>
+                <div className="absolute bottom-14 left-1/2 -translate-x-1/2 p-4 rounded-xl w-80 space-y-3 animate-scale-in wave-surface wave-surface-border"
+                  style={{ backgroundColor: "rgba(28,25,23,0.95)", border: "1px solid", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", backdropFilter: "blur(12px)" }}>
                   {audioDevices.length > 0 && (
                     <DarkSelect label="Microphone" value={selectedAudioDevice || audioDevices[0]?.deviceId || ""} options={audioDevices.map(d => ({ value: d.deviceId, label: d.label || `Mic ${d.deviceId.slice(0,4)}` }))} onChange={setSelectedAudioDevice} />
                   )}
@@ -474,7 +471,7 @@ export const WaveCall = React.memo(function WaveCall() {
             <button
               onClick={hangup}
               className="flex items-center justify-center w-14 h-14 rounded-full transition-all duration-150 hover:scale-105 active:scale-95"
-              style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)", color: "white", boxShadow: "0 4px 16px rgba(239, 68, 68, 0.4)" }}
+              style={{ background: "linear-gradient(135deg, var(--color-danger), var(--color-danger-dark))", color: "white", boxShadow: "0 4px 16px rgba(239, 68, 68, 0.4)" }}
               title={t("wave.hangUp")}
             >
               <PhoneOff size={22} />
@@ -485,13 +482,13 @@ export const WaveCall = React.memo(function WaveCall() {
         {/* Chat panel */}
         {chatOpen && (
           <div
-            className="flex flex-col shrink-0"
-            style={{ width: 300, borderLeft: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#1c1917" }}
+            className="flex flex-col shrink-0 wave-surface"
+            style={{ width: 300, borderLeft: "1px solid rgba(255,255,255,0.08)" }}
           >
             {/* Chat header */}
             <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <span className="text-white/80 text-sm font-medium">{t("wave.chat")}</span>
-              <button onClick={() => setChatOpen(false)} className="p-1 rounded hover:bg-white/10" style={{ color: "rgba(255,255,255,0.4)" }}>
+              <span className="wave-text text-sm font-medium">{t("wave.chat")}</span>
+              <button onClick={() => setChatOpen(false)} className="p-1 rounded hover:bg-white/10 wave-text-tertiary">
                 <X size={14} />
               </button>
             </div>
@@ -516,10 +513,9 @@ export const WaveCall = React.memo(function WaveCall() {
                   onChange={(e) => setChatText(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleSendChat(); }}
                   placeholder={t("wave.chatPlaceholder")}
-                  className="flex-1 bg-transparent text-xs outline-none"
-                  style={{ color: "rgba(255,255,255,0.85)" }}
+                  className="flex-1 bg-transparent text-xs outline-none wave-text"
                 />
-                <button onClick={handleSendChat} disabled={!chatText.trim()} className="p-1 rounded transition-colors hover:bg-white/10 disabled:opacity-30" style={{ color: "rgba(255,255,255,0.5)" }}>
+                <button onClick={handleSendChat} disabled={!chatText.trim()} className="p-1 rounded transition-colors hover:bg-white/10 disabled:opacity-30 wave-text-secondary">
                   <Send size={14} />
                 </button>
               </div>
@@ -546,10 +542,10 @@ export const WaveCall = React.memo(function WaveCall() {
 /** Network quality indicator */
 function NetworkIndicator({ quality }: { quality: NetworkQuality }) {
   const colors: Record<NetworkQuality, string> = {
-    excellent: "#22c55e",
-    good: "#22c55e",
+    excellent: "var(--color-success)",
+    good: "var(--color-success)",
     fair: "#f59e0b",
-    poor: "#ef4444",
+    poor: "var(--color-danger)",
     unknown: "rgba(255,255,255,0.3)",
   };
   const bars = quality === "excellent" ? 4 : quality === "good" ? 3 : quality === "fair" ? 2 : quality === "poor" ? 1 : 0;
@@ -588,7 +584,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
         }}
       >
         <p className="break-words whitespace-pre-wrap">{message.text}</p>
-        <span className="block text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>{time}</span>
+        <span className="block text-[10px] mt-0.5 wave-text-tertiary">{time}</span>
       </div>
     </div>
   );
@@ -605,7 +601,7 @@ function ControlButton({
       className="flex items-center justify-center w-11 h-11 rounded-full transition-all duration-150 hover:scale-105 active:scale-95"
       style={{
         backgroundColor: active ? (danger ? "rgba(239,68,68,0.2)" : "rgba(59,130,246,0.2)") : "rgba(255,255,255,0.08)",
-        color: active ? (danger ? "#ef4444" : "#60a5fa") : "rgba(255,255,255,0.8)",
+        color: active ? (danger ? "var(--color-danger)" : "#60a5fa") : "rgba(255,255,255,0.8)",
         border: `1px solid ${active ? (danger ? "rgba(239,68,68,0.3)" : "rgba(59,130,246,0.3)") : "rgba(255,255,255,0.08)"}`,
       }}
       title={title}

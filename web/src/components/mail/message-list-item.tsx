@@ -227,8 +227,7 @@ export const MessageListItem = React.memo(
               {email.keywords["$snoozed"] && (
                 <Clock
                   size={14}
-                  className="message-list-item__attachment-icon"
-                  style={{ color: "var(--color-accent)" }}
+                  className="message-list-item__attachment-icon text-accent"
                 />
               )}
               {email.hasAttachment && (
@@ -731,8 +730,7 @@ export const ThreadChildItem = React.memo(
               {email.keywords["$snoozed"] && (
                 <Clock
                   size={14}
-                  className="message-list-item__attachment-icon"
-                  style={{ color: "var(--color-accent)" }}
+                  className="message-list-item__attachment-icon text-accent"
                 />
               )}
               {email.hasAttachment && (
@@ -885,34 +883,24 @@ function MessageContextMenu({
     <>
     <ContextMenu.Portal>
       <ContextMenu.Content
-        className="min-w-[180px] p-1 text-sm animate-scale-in"
-        style={{
-          backgroundColor: "var(--color-bg-elevated)",
-          border: "1px solid var(--color-border-primary)",
-          boxShadow: "var(--shadow-lg)",
-          borderRadius: "var(--radius-md)",
-          zIndex: 50,
-        }}
+        className="ctx-menu animate-scale-in"
       >
         <ContextMenu.Item
-          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-          style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+          className="ctx-menu-item"
           onSelect={() => onReply?.(email)}
         >
           <Reply size={14} />
           {t("action.reply")}
         </ContextMenu.Item>
         <ContextMenu.Item
-          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-          style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+          className="ctx-menu-item"
           onSelect={() => onReplyAll?.(email)}
         >
           <ReplyAll size={14} />
           {t("action.replyAll")}
         </ContextMenu.Item>
         <ContextMenu.Item
-          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-          style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+          className="ctx-menu-item"
           onSelect={() => onForward?.(email)}
         >
           <Forward size={14} />
@@ -920,29 +908,25 @@ function MessageContextMenu({
         </ContextMenu.Item>
 
         <ContextMenu.Separator
-          className="my-1"
-          style={{ borderTop: "1px solid var(--color-border-primary)" }}
+          className="ctx-menu-separator"
         />
 
         <ContextMenu.Item
-          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-          style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+          className="ctx-menu-item"
           onSelect={() => onMarkRead?.([email.id], unread)}
         >
           {unread ? <MailOpen size={14} /> : <Mail size={14} />}
           {unread ? t("action.markAsRead") : t("action.markAsUnread")}
         </ContextMenu.Item>
         <ContextMenu.Item
-          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-          style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+          className="ctx-menu-item"
           onSelect={() => onStar(email.id, !flagged)}
         >
           <Star size={14} />
           {flagged ? t("action.unstar") : t("action.star")}
         </ContextMenu.Item>
         <ContextMenu.Item
-          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-          style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+          className="ctx-menu-item"
           onSelect={() => {
             const muted = !!email.keywords["$muted"];
             updateEmails({ [email.id]: { "keywords/$muted": muted ? null : true } }).then(() => {
@@ -957,22 +941,15 @@ function MessageContextMenu({
 
         <ContextMenu.Sub>
           <ContextMenu.SubTrigger
-            className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-            style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+            className="ctx-menu-item"
           >
             <Tag size={14} />
             {t("action.labels")}
           </ContextMenu.SubTrigger>
           <ContextMenu.Portal>
             <ContextMenu.SubContent
-              className="min-w-[140px] p-1 text-sm"
-              style={{
-                backgroundColor: "var(--color-bg-elevated)",
-                border: "1px solid var(--color-border-primary)",
-                boxShadow: "var(--shadow-lg)",
-                borderRadius: "var(--radius-md)",
-                zIndex: 51,
-              }}
+              className="ctx-menu"
+              style={{ zIndex: 51 }}
             >
               {LABEL_NAMES.map((name) => {
                 const color = LABEL_COLORS[name];
@@ -980,8 +957,7 @@ function MessageContextMenu({
                 return (
                   <ContextMenu.Item
                     key={name}
-                    className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                    style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+                    className="ctx-menu-item"
                     onSelect={() => {
                       updateEmails({ [email.id]: { [`keywords/$label_${name}`]: isActive ? null : true } });
                     }}
@@ -997,14 +973,12 @@ function MessageContextMenu({
         </ContextMenu.Sub>
 
         <ContextMenu.Separator
-          className="my-1"
-          style={{ borderTop: "1px solid var(--color-border-primary)" }}
+          className="ctx-menu-separator"
         />
 
         {email.keywords["$snoozed"] ? (
           <ContextMenu.Item
-            className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-            style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+            className="ctx-menu-item"
             onSelect={() => {
               // Optimistic removal from snoozed list
               queryClient.setQueriesData({ queryKey: ["emails"] }, (oldData: unknown) => {
@@ -1025,26 +999,18 @@ function MessageContextMenu({
         ) : (
           <ContextMenu.Sub>
             <ContextMenu.SubTrigger
-              className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-              style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+              className="ctx-menu-item"
             >
               <Clock size={14} />
               {t("action.snooze")}
             </ContextMenu.SubTrigger>
             <ContextMenu.Portal>
               <ContextMenu.SubContent
-                className="min-w-[160px] p-1 text-sm"
-                style={{
-                  backgroundColor: "var(--color-bg-elevated)",
-                  border: "1px solid var(--color-border-primary)",
-                  boxShadow: "var(--shadow-lg)",
-                  borderRadius: "var(--radius-md)",
-                  zIndex: 51,
-                }}
+                className="ctx-menu"
+                style={{ zIndex: 51 }}
               >
                 <ContextMenu.Item
-                  className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                  style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+                  className="ctx-menu-item"
                   onSelect={() => {
                     const now = new Date();
                     const hour = now.getHours();
@@ -1054,8 +1020,7 @@ function MessageContextMenu({
                   {t("action.laterToday")}
                 </ContextMenu.Item>
                 <ContextMenu.Item
-                  className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                  style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+                  className="ctx-menu-item"
                   onSelect={() => {
                     const tomorrow = addDays(new Date(), 1);
                     handleSnooze(setSeconds(setMinutes(setHours(tomorrow, 9), 0), 0));
@@ -1064,8 +1029,7 @@ function MessageContextMenu({
                   {t("action.tomorrowMorning")}
                 </ContextMenu.Item>
                 <ContextMenu.Item
-                  className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                  style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+                  className="ctx-menu-item"
                   onSelect={() => {
                     const monday = nextMonday(new Date());
                     handleSnooze(setSeconds(setMinutes(setHours(monday, 9), 0), 0));
@@ -1074,12 +1038,10 @@ function MessageContextMenu({
                   {t("action.mondayMorning")}
                 </ContextMenu.Item>
                 <ContextMenu.Separator
-                  className="my-1"
-                  style={{ borderTop: "1px solid var(--color-border-primary)" }}
+                  className="ctx-menu-separator"
                 />
                 <ContextMenu.Item
-                  className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                  style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+                  className="ctx-menu-item"
                   onSelect={() => {
                     setTimeout(() => setShowSnoozePicker(true), 100);
                   }}
@@ -1094,8 +1056,7 @@ function MessageContextMenu({
 
         {onArchive && (
           <ContextMenu.Item
-            className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-            style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+            className="ctx-menu-item"
             onSelect={() => onArchive([email.id])}
           >
             <Archive size={14} />
@@ -1103,16 +1064,14 @@ function MessageContextMenu({
           </ContextMenu.Item>
         )}
         <ContextMenu.Item
-          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-          style={{ color: "var(--color-text-primary)", borderRadius: "var(--radius-sm)" }}
+          className="ctx-menu-item"
           onSelect={() => onPrint?.(email)}
         >
           <Printer size={14} />
           {t("action.print")}
         </ContextMenu.Item>
         <ContextMenu.Item
-          className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-          style={{ color: "var(--color-text-danger)", borderRadius: "var(--radius-sm)" }}
+          className="ctx-menu-item ctx-menu-item--danger"
           onSelect={() => onDelete?.([email.id])}
         >
           <Trash2 size={14} />

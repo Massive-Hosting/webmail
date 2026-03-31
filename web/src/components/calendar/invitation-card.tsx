@@ -59,12 +59,7 @@ export const InvitationCard = React.memo(function InvitationCard({
   if (isLoading) {
     return (
       <div
-        className="flex items-center gap-2 mx-6 my-3 p-4 rounded-lg text-sm"
-        style={{
-          backgroundColor: "var(--color-bg-secondary)",
-          border: "1px solid var(--color-border-primary)",
-          color: "var(--color-text-secondary)",
-        }}
+        className="flex items-center gap-2 mx-6 my-3 p-4 rounded-lg text-sm bg-secondary border-primary text-secondary"
       >
         <Loader2 size={16} className="animate-spin" />
         {t("invitation.loadingInvitation")}
@@ -161,19 +156,11 @@ function RequestCard({
 
   return (
     <div
-      className="mx-6 my-3 rounded-lg overflow-hidden"
-      style={{
-        border: "1px solid var(--color-border-primary)",
-        backgroundColor: "var(--color-bg-primary)",
-      }}
+      className="mx-6 my-3 rounded-lg overflow-hidden border-primary bg-primary"
     >
       {/* Header */}
       <div
-        className="flex items-center gap-2 px-4 py-2.5"
-        style={{
-          backgroundColor: "var(--color-bg-accent)",
-          color: "var(--color-text-inverse)",
-        }}
+        className="flex items-center gap-2 px-4 py-2.5 bg-accent text-inverse"
       >
         <CalendarDays size={16} />
         <span className="text-sm font-medium">
@@ -185,8 +172,7 @@ function RequestCard({
       <div className="px-4 py-3 space-y-2">
         {/* Title */}
         <h3
-          className="text-base font-semibold"
-          style={{ color: "var(--color-text-primary)" }}
+          className="text-base font-semibold text-primary"
         >
           {event.summary || t("invitation.untitledEvent")}
         </h3>
@@ -195,12 +181,10 @@ function RequestCard({
         <div className="flex items-center gap-2">
           <CalendarDays
             size={14}
-            style={{ color: "var(--color-text-tertiary)" }}
-            className="shrink-0"
+            className="shrink-0 text-tertiary"
           />
           <span
-            className="text-sm"
-            style={{ color: "var(--color-text-secondary)" }}
+            className="text-sm text-secondary"
           >
             {dateTimeStr}
           </span>
@@ -211,12 +195,10 @@ function RequestCard({
           <div className="flex items-center gap-2">
             <MapPin
               size={14}
-              style={{ color: "var(--color-text-tertiary)" }}
-              className="shrink-0"
+              className="shrink-0 text-tertiary"
             />
             <span
-              className="text-sm"
-              style={{ color: "var(--color-text-secondary)" }}
+              className="text-sm text-secondary"
             >
               {event.location}
             </span>
@@ -228,12 +210,10 @@ function RequestCard({
           <div className="flex items-center gap-2">
             <User
               size={14}
-              style={{ color: "var(--color-text-tertiary)" }}
-              className="shrink-0"
+              className="shrink-0 text-tertiary"
             />
             <span
-              className="text-sm"
-              style={{ color: "var(--color-text-secondary)" }}
+              className="text-sm text-secondary"
             >
               {event.organizer.name
                 ? `${event.organizer.name} (${event.organizer.email})`
@@ -247,12 +227,10 @@ function RequestCard({
           <div className="flex items-start gap-2">
             <Users
               size={14}
-              style={{ color: "var(--color-text-tertiary)" }}
-              className="shrink-0 mt-0.5"
+              className="shrink-0 mt-0.5 text-tertiary"
             />
             <span
-              className="text-sm"
-              style={{ color: "var(--color-text-secondary)" }}
+              className="text-sm text-secondary"
             >
               {event.attendees
                 .map((a) => a.name ?? a.email)
@@ -264,8 +242,7 @@ function RequestCard({
         {/* Description */}
         {event.description && (
           <p
-            className="text-sm mt-1 whitespace-pre-wrap"
-            style={{ color: "var(--color-text-secondary)" }}
+            className="text-sm mt-1 whitespace-pre-wrap text-secondary"
           >
             {event.description.length > 200
               ? event.description.slice(0, 200) + "..."
@@ -277,30 +254,21 @@ function RequestCard({
       {/* Actions */}
       {respondedStatus ? (
         <div
-          className="flex items-center gap-2 px-4 py-2.5 text-sm"
-          style={{
-            borderTop: "1px solid var(--color-border-secondary)",
-            color: "var(--color-text-secondary)",
-          }}
+          className="flex items-center gap-2 px-4 py-2.5 text-sm border-t-secondary text-secondary"
         >
-          <Check size={14} style={{ color: "var(--color-text-accent)" }} />
+          <Check size={14} className="text-accent" />
           {respondedStatus === "accepted" && t("invitation.accepted")}
           {respondedStatus === "tentative" && t("invitation.tentativelyAccepted")}
           {respondedStatus === "declined" && t("invitation.declined")}
         </div>
       ) : (
         <div
-          className="flex items-center gap-2 px-4 py-2.5"
-          style={{ borderTop: "1px solid var(--color-border-secondary)" }}
+          className="flex items-center gap-2 px-4 py-2.5 border-t-secondary"
         >
           <button
             onClick={() => acceptMutation.mutate("accepted")}
             disabled={acceptMutation.isPending}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors"
-            style={{
-              backgroundColor: "var(--color-bg-accent)",
-              color: "var(--color-text-inverse)",
-            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-accent text-inverse"
           >
             <Check size={14} />
             {t("invitation.accept")}
@@ -308,12 +276,7 @@ function RequestCard({
           <button
             onClick={() => acceptMutation.mutate("tentative")}
             disabled={acceptMutation.isPending}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors"
-            style={{
-              backgroundColor: "var(--color-bg-tertiary)",
-              color: "var(--color-text-primary)",
-              border: "1px solid var(--color-border-primary)",
-            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-tertiary text-primary border-primary"
           >
             <HelpCircle size={14} />
             {t("invitation.tentative")}
@@ -321,12 +284,7 @@ function RequestCard({
           <button
             onClick={() => acceptMutation.mutate("declined")}
             disabled={acceptMutation.isPending}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors"
-            style={{
-              backgroundColor: "var(--color-bg-tertiary)",
-              color: "var(--color-text-primary)",
-              border: "1px solid var(--color-border-primary)",
-            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-tertiary text-primary border-primary"
           >
             <XCircle size={14} />
             {t("invitation.decline")}
@@ -334,8 +292,7 @@ function RequestCard({
           {acceptMutation.isPending && (
             <Loader2
               size={14}
-              className="animate-spin"
-              style={{ color: "var(--color-text-tertiary)" }}
+              className="animate-spin text-tertiary"
             />
           )}
         </div>
@@ -356,7 +313,7 @@ function ReplyCard({ event }: { event: ParsedVEvent }) {
   const status = respondent?.status ?? "unknown";
 
   const statusLabels: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-    accepted: { label: t("calendar.accepted"), color: "#22c55e", icon: <Check size={14} /> },
+    accepted: { label: t("calendar.accepted"), color: "var(--color-success)", icon: <Check size={14} /> },
     declined: { label: t("calendar.declined"), color: "#ef4444", icon: <XCircle size={14} /> },
     tentative: { label: t("calendar.tentative"), color: "#f59e0b", icon: <HelpCircle size={14} /> },
   };
@@ -365,21 +322,13 @@ function ReplyCard({ event }: { event: ParsedVEvent }) {
 
   return (
     <div
-      className="mx-6 my-3 rounded-lg overflow-hidden"
-      style={{
-        border: "1px solid var(--color-border-primary)",
-        backgroundColor: "var(--color-bg-primary)",
-      }}
+      className="mx-6 my-3 rounded-lg overflow-hidden border-primary bg-primary"
     >
       <div
-        className="flex items-center gap-2 px-4 py-2.5"
-        style={{
-          borderBottom: "1px solid var(--color-border-secondary)",
-          backgroundColor: "var(--color-bg-tertiary)",
-        }}
+        className="flex items-center gap-2 px-4 py-2.5 border-b-secondary bg-tertiary"
       >
-        <CalendarDays size={16} style={{ color: "var(--color-text-accent)" }} />
-        <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+        <CalendarDays size={16} className="text-accent" />
+        <span className="text-sm font-semibold text-primary">
           {t("invitation.calendarEvent")}
         </span>
         <span
@@ -392,20 +341,19 @@ function ReplyCard({ event }: { event: ParsedVEvent }) {
       </div>
 
       <div className="p-4 space-y-2">
-        <div className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+        <div className="text-sm font-semibold text-primary">
           {event.summary || t("invitation.untitledEvent")}
         </div>
-        <div className="flex items-center gap-2 text-xs" style={{ color: "var(--color-text-secondary)" }}>
+        <div className="flex items-center gap-2 text-xs text-secondary">
           <CalendarDays size={13} />
           {dateTimeStr}
         </div>
         <div
-          className="flex items-center gap-2 text-xs mt-2 pt-2"
-          style={{ color: "var(--color-text-secondary)", borderTop: "1px solid var(--color-border-secondary)" }}
+          className="flex items-center gap-2 text-xs mt-2 pt-2 text-secondary border-t-secondary"
         >
           <User size={13} />
           <span>
-            <strong style={{ color: "var(--color-text-primary)" }}>{respondentName}</strong>
+            <strong className="text-primary">{respondentName}</strong>
             {" "}{statusInfo.label.toLowerCase()} {t("invitation.calendarEvent").toLowerCase()}
           </span>
         </div>
@@ -426,17 +374,13 @@ function CancellationCard({ event }: { event: ParsedVEvent }) {
 
   return (
     <div
-      className="mx-6 my-3 rounded-lg overflow-hidden"
-      style={{
-        border: "1px solid var(--color-border-primary)",
-        backgroundColor: "var(--color-bg-primary)",
-      }}
+      className="mx-6 my-3 rounded-lg overflow-hidden border-primary bg-primary"
     >
       {/* Header - Cancellation */}
       <div
         className="flex items-center gap-2 px-4 py-2.5"
         style={{
-          backgroundColor: "#dc2626",
+          backgroundColor: "var(--color-danger-dark)",
           color: "white",
         }}
       >
@@ -447,11 +391,8 @@ function CancellationCard({ event }: { event: ParsedVEvent }) {
       {/* Body */}
       <div className="px-4 py-3 space-y-2">
         <h3
-          className="text-base font-semibold"
-          style={{
-            color: "var(--color-text-primary)",
-            textDecoration: "line-through",
-          }}
+          className="text-base font-semibold text-primary"
+          style={{ textDecoration: "line-through" }}
         >
           {event.summary || t("invitation.untitledEvent")}
         </h3>
@@ -459,14 +400,11 @@ function CancellationCard({ event }: { event: ParsedVEvent }) {
         <div className="flex items-center gap-2">
           <CalendarDays
             size={14}
-            style={{ color: "var(--color-text-tertiary)" }}
+            className="text-tertiary"
           />
           <span
-            className="text-sm"
-            style={{
-              color: "var(--color-text-secondary)",
-              textDecoration: "line-through",
-            }}
+            className="text-sm text-secondary"
+            style={{ textDecoration: "line-through" }}
           >
             {dateTimeStr}
           </span>
@@ -476,14 +414,11 @@ function CancellationCard({ event }: { event: ParsedVEvent }) {
           <div className="flex items-center gap-2">
             <MapPin
               size={14}
-              style={{ color: "var(--color-text-tertiary)" }}
+              className="text-tertiary"
             />
             <span
-              className="text-sm"
-              style={{
-                color: "var(--color-text-secondary)",
-                textDecoration: "line-through",
-              }}
+              className="text-sm text-secondary"
+              style={{ textDecoration: "line-through" }}
             >
               {event.location}
             </span>
@@ -494,11 +429,10 @@ function CancellationCard({ event }: { event: ParsedVEvent }) {
           <div className="flex items-center gap-2">
             <User
               size={14}
-              style={{ color: "var(--color-text-tertiary)" }}
+              className="text-tertiary"
             />
             <span
-              className="text-sm"
-              style={{ color: "var(--color-text-secondary)" }}
+              className="text-sm text-secondary"
             >
               {t("invitation.cancelledBy", { name: event.organizer.name ?? event.organizer.email })}
             </span>
@@ -507,7 +441,7 @@ function CancellationCard({ event }: { event: ParsedVEvent }) {
 
         <p
           className="text-sm font-medium mt-1"
-          style={{ color: "#dc2626" }}
+          style={{ color: "var(--color-danger-dark)" }}
         >
           {t("invitation.eventHasBeenCancelled")}
         </p>

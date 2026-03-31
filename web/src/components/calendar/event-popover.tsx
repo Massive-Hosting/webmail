@@ -20,20 +20,20 @@ function RsvpIcon({ status }: { status?: Participant["participationStatus"] }) {
   switch (status) {
     case "accepted":
       return (
-        <Check size={12} style={{ color: "#22c55e" }} />
+        <Check size={12} style={{ color: "var(--color-success)" }} />
       );
     case "declined":
       return (
-        <X size={12} style={{ color: "#ef4444" }} />
+        <X size={12} style={{ color: "var(--color-danger)" }} />
       );
     case "tentative":
       return (
-        <HelpCircle size={12} style={{ color: "#eab308" }} />
+        <HelpCircle size={12} style={{ color: "var(--color-warning)" }} />
       );
     case "needs-action":
     default:
       return (
-        <Clock size={12} style={{ color: "#9ca3af" }} />
+        <Clock size={12} style={{ color: "var(--color-text-tertiary)" }} />
       );
   }
 }
@@ -78,11 +78,7 @@ export const EventPopover = React.memo(function EventPopover({
       <Popover.Anchor virtualRef={{ current: anchor }} />
       <Popover.Portal>
         <Popover.Content
-          className="rounded-lg shadow-xl w-96 z-50 overflow-hidden"
-          style={{
-            backgroundColor: "var(--color-bg-elevated)",
-            border: "1px solid var(--color-border-primary)",
-          }}
+          className="rounded-lg shadow-xl w-96 z-50 overflow-hidden bg-elevated border-primary"
           sideOffset={8}
           align="start"
           onEscapeKeyDown={onClose}
@@ -94,31 +90,27 @@ export const EventPopover = React.memo(function EventPopover({
             {/* Title and actions */}
             <div className="flex items-start justify-between mb-3">
               <h3
-                className="text-sm font-semibold flex-1 pr-2"
-                style={{ color: "var(--color-text-primary)" }}
+                className="text-sm font-semibold flex-1 pr-2 text-primary"
               >
                 {event.title}
               </h3>
               <div className="flex items-center gap-1 shrink-0">
                 <button
-                  className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
-                  style={{ color: "var(--color-text-tertiary)" }}
+                  className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] text-tertiary"
                   onClick={() => onEdit(event)}
                   title={t("calendar.editEventBtn")}
                 >
                   <Edit2 size={14} />
                 </button>
                 <button
-                  className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
-                  style={{ color: "var(--color-text-error, #dc2626)" }}
+                  className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] text-danger"
                   onClick={() => onDelete(event.id)}
                   title={t("calendar.deleteEvent")}
                 >
                   <Trash2 size={14} />
                 </button>
                 <button
-                  className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
-                  style={{ color: "var(--color-text-tertiary)" }}
+                  className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] text-tertiary"
                   onClick={onClose}
                   title={t("calendar.close")}
                 >
@@ -130,7 +122,7 @@ export const EventPopover = React.memo(function EventPopover({
             {/* Wave Meeting badge */}
             {event.description?.includes("[wave-meeting]") && (
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium mb-3"
-                style={{ backgroundColor: "rgba(99,102,241,0.1)", color: "#6366f1", border: "1px solid rgba(99,102,241,0.15)" }}>
+                style={{ backgroundColor: "var(--color-indigo-bg)", color: "var(--color-indigo)", border: "1px solid rgba(99,102,241,0.15)" }}>
                 <Video size={12} />
                 {t("calendar.waveMeeting")}
               </div>
@@ -142,9 +134,9 @@ export const EventPopover = React.memo(function EventPopover({
               <div className="flex items-center gap-2">
                 <Clock
                   size={13}
-                  style={{ color: "var(--color-text-tertiary)" }}
+                  className="text-tertiary"
                 />
-                <span style={{ color: "var(--color-text-secondary)" }}>
+                <span className="text-secondary">
                   {format(startDate, "EEE, MMM d, yyyy")}
                   {!event.showWithoutTime && (
                     <>
@@ -160,9 +152,9 @@ export const EventPopover = React.memo(function EventPopover({
                 <div className="flex items-center gap-2">
                   <MapPin
                     size={13}
-                    style={{ color: "var(--color-text-tertiary)" }}
+                    className="text-tertiary"
                   />
-                  <span style={{ color: "var(--color-text-secondary)" }}>
+                  <span className="text-secondary">
                     {event.location}
                   </span>
                 </div>
@@ -173,9 +165,9 @@ export const EventPopover = React.memo(function EventPopover({
                 <div className="flex items-center gap-2">
                   <CalendarIcon
                     size={13}
-                    style={{ color: "var(--color-text-tertiary)" }}
+                    className="text-tertiary"
                   />
-                  <span style={{ color: "var(--color-text-secondary)" }}>
+                  <span className="text-secondary">
                     {calendar.name}
                   </span>
                 </div>
@@ -185,17 +177,7 @@ export const EventPopover = React.memo(function EventPopover({
               {event.status && event.status !== "confirmed" && (
                 <div className="flex items-center gap-2">
                   <span
-                    className="text-xs px-1.5 py-0.5 rounded"
-                    style={{
-                      backgroundColor:
-                        event.status === "tentative"
-                          ? "#f59e0b20"
-                          : "#ef444420",
-                      color:
-                        event.status === "tentative"
-                          ? "#f59e0b"
-                          : "#ef4444",
-                    }}
+                    className={`text-xs px-1.5 py-0.5 rounded ${event.status === "tentative" ? "pill--warning" : "pill--danger"}`}
                   >
                     {event.status}
                   </span>
@@ -205,8 +187,7 @@ export const EventPopover = React.memo(function EventPopover({
               {/* Recurrence */}
               {event.recurrenceRules && event.recurrenceRules.length > 0 && (
                 <div
-                  className="text-xs"
-                  style={{ color: "var(--color-text-tertiary)" }}
+                  className="text-xs text-tertiary"
                 >
                   {t("calendar.repeats", { frequency: event.recurrenceRules[0].frequency })}
                   {event.recurrenceRules[0].interval && event.recurrenceRules[0].interval > 1
@@ -220,29 +201,25 @@ export const EventPopover = React.memo(function EventPopover({
                 <div className="flex items-start gap-2 mt-1">
                   <Users
                     size={13}
-                    className="mt-0.5 shrink-0"
-                    style={{ color: "var(--color-text-tertiary)" }}
+                    className="mt-0.5 shrink-0 text-tertiary"
                   />
                   <div className="flex flex-col gap-1">
                     <span
-                      className="text-[10px] font-medium uppercase tracking-wide"
-                      style={{ color: "var(--color-text-tertiary)" }}
+                      className="text-[10px] font-medium uppercase tracking-wide text-tertiary"
                     >
                       {t("calendar.attendees")}
                     </span>
                     {participants.map((p, i) => (
                       <div
                         key={i}
-                        className="flex items-center gap-1.5 text-xs"
-                        style={{ color: "var(--color-text-secondary)" }}
+                        className="flex items-center gap-1.5 text-xs text-secondary"
                       >
                         <RsvpIcon status={p.participationStatus} />
                         <span className="truncate">
                           {p.name ?? p.email}
                         </span>
                         <span
-                          className="ml-auto shrink-0 text-[10px]"
-                          style={{ color: "var(--color-text-tertiary)" }}
+                          className="ml-auto shrink-0 text-[10px] text-tertiary"
                         >
                           {rsvpLabel(p.participationStatus, t)}
                         </span>
@@ -257,8 +234,7 @@ export const EventPopover = React.memo(function EventPopover({
                 const displayDescription = event.description.replace("[wave-meeting]", "").trim();
                 return displayDescription ? (
                   <div
-                    className="text-xs mt-1 whitespace-pre-wrap"
-                    style={{ color: "var(--color-text-tertiary)" }}
+                    className="text-xs mt-1 whitespace-pre-wrap text-tertiary"
                   >
                     {displayDescription.length > 200
                       ? displayDescription.substring(0, 200) + "..."

@@ -276,7 +276,7 @@ export const AICopilot = React.memo(function AICopilot({
 
   return (
     <div
-      className="ai-copilot-panel"
+      className="ai-copilot-panel bg-elevated"
       data-testid="ai-copilot-panel"
       style={{
         position: "relative",
@@ -287,7 +287,6 @@ export const AICopilot = React.memo(function AICopilot({
         display: "flex",
         flexDirection: "column",
         borderLeft: open ? "1px solid var(--color-border-primary)" : "none",
-        backgroundColor: "var(--color-bg-elevated)",
         boxShadow: open ? "var(--shadow-elevated, -4px 0 12px rgba(0,0,0,0.08))" : "none",
         transition: "width 250ms ease-out, min-width 250ms ease-out",
       }}
@@ -298,21 +297,15 @@ export const AICopilot = React.memo(function AICopilot({
         <>
           {/* Header */}
           <div
-            className="flex items-center justify-between px-4 shrink-0"
-            style={{
-              height: 48,
-              borderBottom: "1px solid var(--color-border-primary)",
-            }}
+            className="flex items-center justify-between px-4 shrink-0 border-b-primary"
+            style={{ height: 48 }}
           >
             <div className="flex items-center gap-2">
               <Sparkles
                 size={16}
-                style={{ color: "var(--color-text-accent)" }}
+                className="text-accent"
               />
-              <span
-                className="text-sm font-semibold"
-                style={{ color: "var(--color-text-primary)" }}
-              >
+              <span className="text-sm font-semibold text-primary">
                 {t("ai.copilotTitle")}
               </span>
             </div>
@@ -320,8 +313,7 @@ export const AICopilot = React.memo(function AICopilot({
               {hasMessages && (
                 <button
                   onClick={handleNewConversation}
-                  className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-[var(--color-bg-tertiary)]"
-                  style={{ color: "var(--color-text-secondary)" }}
+                  className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-[var(--color-bg-tertiary)] text-secondary"
                   aria-label={t("ai.newConversation")}
                   title={t("ai.newConversation")}
                 >
@@ -330,8 +322,7 @@ export const AICopilot = React.memo(function AICopilot({
               )}
               <button
                 onClick={onClose}
-                className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-[var(--color-bg-tertiary)]"
-                style={{ color: "var(--color-text-secondary)" }}
+                className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-[var(--color-bg-tertiary)] text-secondary"
                 aria-label={t("ai.closePanel")}
               >
                 <X size={16} />
@@ -341,13 +332,7 @@ export const AICopilot = React.memo(function AICopilot({
 
           {/* Context bar */}
           {email && (
-            <div
-              className="px-4 py-2 text-xs truncate shrink-0"
-              style={{
-                color: "var(--color-text-secondary)",
-                borderBottom: "1px solid var(--color-border-secondary)",
-              }}
-            >
+            <div className="px-4 py-2 text-xs truncate shrink-0 text-secondary border-b-secondary">
               {t("ai.copilotContext", { subject: email.subject })}
             </div>
           )}
@@ -363,19 +348,14 @@ export const AICopilot = React.memo(function AICopilot({
               <div className="flex flex-col items-center pt-6">
                 <Sparkles
                   size={32}
-                  style={{ color: "var(--color-text-accent)", opacity: 0.6 }}
+                  className="text-accent"
+                  style={{ opacity: 0.6 }}
                 />
-                <p
-                  className="text-sm font-medium mt-3 mb-1"
-                  style={{ color: "var(--color-text-primary)" }}
-                >
+                <p className="text-sm font-medium mt-3 mb-1 text-primary">
                   {t("ai.copilotWelcome")}
                 </p>
                 {senderName && (
-                  <p
-                    className="text-xs mb-4"
-                    style={{ color: "var(--color-text-secondary)" }}
-                  >
+                  <p className="text-xs mb-4 text-secondary">
                     {t("ai.copilotContext", { subject: email.subject })}
                   </p>
                 )}
@@ -385,12 +365,7 @@ export const AICopilot = React.memo(function AICopilot({
                       key={prompt.key}
                       onClick={() => handleChipClick(t(prompt.key))}
                       disabled={isGenerating}
-                      className="px-3 py-1.5 text-xs rounded-full transition-all duration-150"
-                      style={{
-                        color: "var(--color-text-primary)",
-                        border: "1px solid var(--color-border-primary)",
-                        backgroundColor: "var(--color-bg-primary)",
-                      }}
+                      className="px-3 py-1.5 text-xs rounded-full transition-all duration-150 text-primary border-primary bg-primary"
                       onMouseOver={(e) => {
                         e.currentTarget.style.borderColor = "var(--color-text-accent)";
                         e.currentTarget.style.color = "var(--color-text-accent)";
@@ -411,12 +386,10 @@ export const AICopilot = React.memo(function AICopilot({
               <div className="flex flex-col items-center pt-6">
                 <Sparkles
                   size={32}
-                  style={{ color: "var(--color-text-secondary)", opacity: 0.4 }}
+                  className="text-secondary"
+                  style={{ opacity: 0.4 }}
                 />
-                <p
-                  className="text-sm mt-3 text-center"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
+                <p className="text-sm mt-3 text-center text-secondary">
                   {t("readingPane.selectMessage")}
                 </p>
               </div>
@@ -430,20 +403,11 @@ export const AICopilot = React.memo(function AICopilot({
                     key={item.id}
                     className="flex items-center gap-2 my-4"
                   >
-                    <div
-                      className="flex-1 h-px"
-                      style={{ backgroundColor: "var(--color-border-secondary)" }}
-                    />
-                    <span
-                      className="text-[10px] shrink-0"
-                      style={{ color: "var(--color-text-secondary)" }}
-                    >
+                    <div className="flex-1 h-px bg-[var(--color-border-secondary)]" />
+                    <span className="text-[10px] shrink-0 text-secondary">
                       {t("ai.contextChanged")}
                     </span>
-                    <div
-                      className="flex-1 h-px"
-                      style={{ backgroundColor: "var(--color-border-secondary)" }}
-                    />
+                    <div className="flex-1 h-px bg-[var(--color-border-secondary)]" />
                   </div>
                 );
               }
@@ -458,17 +422,10 @@ export const AICopilot = React.memo(function AICopilot({
                   className={`flex mb-3 ${isUser ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className="rounded-xl px-3 py-2 max-w-[85%]"
+                    className={`rounded-xl px-3 py-2 max-w-[85%] ${isUser ? "bg-accent text-inverse" : "bg-tertiary text-primary border-primary"}`}
                     style={{
                       fontSize: 14,
                       lineHeight: 1.5,
-                      backgroundColor: isUser
-                        ? "var(--color-bg-accent)"
-                        : "var(--color-bg-tertiary)",
-                      color: isUser
-                        ? "#fff"
-                        : "var(--color-text-primary)",
-                      border: isUser ? "none" : "1px solid var(--color-border-primary)",
                       wordBreak: "break-word",
                     }}
                   >
@@ -483,12 +440,7 @@ export const AICopilot = React.memo(function AICopilot({
                     {showUseAsReply && !isGenerating && (
                       <button
                         onClick={() => handleUseAsReply(item.content)}
-                        className="mt-2 px-2.5 py-1 text-xs rounded-md transition-colors"
-                        style={{
-                          color: "var(--color-text-accent)",
-                          backgroundColor: "var(--color-bg-primary)",
-                          border: "1px solid var(--color-border-primary)",
-                        }}
+                        className="mt-2 px-2.5 py-1 text-xs rounded-md transition-colors text-accent bg-primary border-primary"
                       >
                         {t("ai.useAsReply")}
                       </button>
@@ -500,25 +452,13 @@ export const AICopilot = React.memo(function AICopilot({
           </div>
 
           {/* Input area */}
-          <div
-            className="shrink-0 px-3 py-3"
-            style={{
-              borderTop: "1px solid var(--color-border-primary)",
-            }}
-          >
-            <div
-              className="flex items-center gap-2 rounded-lg px-3 py-2"
-              style={{
-                backgroundColor: "var(--color-bg-secondary)",
-                border: "1px solid var(--color-border-primary)",
-              }}
-            >
+          <div className="shrink-0 px-3 py-3 border-t-primary">
+            <div className="flex items-center gap-2 rounded-lg px-3 py-2 bg-secondary border-primary">
               <input
                 ref={inputRef}
                 type="text"
-                className="flex-1 text-sm"
+                className="flex-1 text-sm text-primary"
                 style={{
-                  color: "var(--color-text-primary)",
                   backgroundColor: "transparent",
                   outline: "none",
                   border: "none",

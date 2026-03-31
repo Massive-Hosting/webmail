@@ -21,9 +21,9 @@ export const SecuritySettings = React.memo(function SecuritySettings() {
   return (
     <div className="p-6 space-y-8">
       <TOTPSection />
-      <div style={{ borderTop: "1px solid var(--color-border-secondary)" }} />
+      <div className="border-t-secondary" />
       <AppPasswordsSection />
-      <div style={{ borderTop: "1px solid var(--color-border-secondary)" }} />
+      <div className="border-t-secondary" />
       <PGPSettingsPanel />
     </div>
   );
@@ -96,32 +96,28 @@ function TOTPSection() {
   if (loading) {
     return (
       <div className="flex items-center gap-2 py-4">
-        <Loader2 size={14} className="animate-spin" style={{ color: "var(--color-text-tertiary)" }} />
-        <span className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>Loading...</span>
+        <Loader2 size={14} className="animate-spin text-tertiary" />
+        <span className="text-xs text-tertiary">Loading...</span>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <h3
-        className="text-sm font-semibold flex items-center gap-2"
-        style={{ color: "var(--color-text-primary)" }}
-      >
+      <h3 className="text-sm font-semibold flex items-center gap-2 text-primary">
         <Smartphone size={14} />
         {t("security.twoFactor")}
       </h3>
-      <p className="text-xs leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+      <p className="text-xs leading-relaxed text-secondary">
         {t("security.twoFactorDesc")}
       </p>
 
       {enabled && !setup && (
         <div className="space-y-3">
           <div
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-success"
             style={{
               backgroundColor: "rgba(34, 197, 94, 0.08)",
-              color: "var(--color-bg-success)",
               border: "1px solid rgba(34, 197, 94, 0.2)",
             }}
           >
@@ -131,11 +127,7 @@ function TOTPSection() {
           <button
             onClick={handleDisable}
             disabled={disabling}
-            className="text-xs font-medium px-3 py-1.5 rounded-md transition-colors"
-            style={{
-              color: "var(--color-text-danger)",
-              border: "1px solid var(--color-border-secondary)",
-            }}
+            className="text-xs font-medium px-3 py-1.5 rounded-md transition-colors text-danger border-secondary"
           >
             {disabling ? t("security.disabling") : t("security.disableTotp")}
           </button>
@@ -145,25 +137,15 @@ function TOTPSection() {
       {!enabled && !setup && (
         <button
           onClick={handleSetup}
-          className="text-xs font-medium px-4 py-2 rounded-md transition-colors"
-          style={{
-            backgroundColor: "var(--color-bg-accent)",
-            color: "white",
-          }}
+          className="text-xs font-medium px-4 py-2 rounded-md transition-colors bg-accent text-white"
         >
           {t("security.enableTotp")}
         </button>
       )}
 
       {setup && (
-        <div
-          className="space-y-4 p-4 rounded-lg"
-          style={{
-            backgroundColor: "var(--color-bg-secondary)",
-            border: "1px solid var(--color-border-secondary)",
-          }}
-        >
-          <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+        <div className="space-y-4 p-4 rounded-lg bg-secondary border-secondary">
+          <p className="text-xs text-secondary">
             {t("security.scanQR")}
           </p>
 
@@ -181,16 +163,12 @@ function TOTPSection() {
 
           {/* Manual secret */}
           <div className="space-y-1">
-            <label className="text-[11px] font-medium" style={{ color: "var(--color-text-tertiary)" }}>
+            <label className="text-[11px] font-medium text-tertiary">
               {t("security.manualEntry")}
             </label>
             <div
-              className="flex items-center gap-2 px-3 py-2 rounded-md font-mono text-xs select-all"
-              style={{
-                backgroundColor: "var(--color-bg-tertiary)",
-                color: "var(--color-text-primary)",
-                letterSpacing: "0.05em",
-              }}
+              className="flex items-center gap-2 px-3 py-2 rounded-md font-mono text-xs select-all bg-tertiary text-primary"
+              style={{ letterSpacing: "0.05em" }}
             >
               {setup.secret}
               <button
@@ -198,8 +176,7 @@ function TOTPSection() {
                   navigator.clipboard.writeText(setup.secret);
                   toast.success(t("pgp.copied"));
                 }}
-                className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] ml-auto shrink-0"
-                style={{ color: "var(--color-text-tertiary)" }}
+                className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] ml-auto shrink-0 text-tertiary"
               >
                 <Copy size={12} />
               </button>
@@ -208,7 +185,7 @@ function TOTPSection() {
 
           {/* Confirm code */}
           <div className="space-y-2">
-            <label className="text-[11px] font-medium" style={{ color: "var(--color-text-tertiary)" }}>
+            <label className="text-[11px] font-medium text-tertiary">
               {t("security.enterCode")}
             </label>
             <div className="flex gap-2">
@@ -221,21 +198,12 @@ function TOTPSection() {
                 onKeyDown={(e) => { if (e.key === "Enter") handleConfirm(); }}
                 placeholder="000000"
                 autoFocus
-                className="w-32 h-9 px-3 text-center font-mono text-sm tracking-[0.3em] rounded-md outline-none"
-                style={{
-                  backgroundColor: "var(--color-bg-elevated)",
-                  color: "var(--color-text-primary)",
-                  border: "1px solid var(--color-border-primary)",
-                }}
+                className="w-32 h-9 px-3 text-center font-mono text-sm tracking-[0.3em] rounded-md outline-none bg-elevated text-primary border-primary"
               />
               <button
                 onClick={handleConfirm}
                 disabled={confirmCode.length !== 6 || confirming}
-                className="h-9 px-4 text-xs font-medium rounded-md transition-colors disabled:opacity-40"
-                style={{
-                  backgroundColor: "var(--color-bg-accent)",
-                  color: "white",
-                }}
+                className="h-9 px-4 text-xs font-medium rounded-md transition-colors disabled:opacity-40 bg-accent text-white"
               >
                 {confirming ? <Loader2 size={13} className="animate-spin" /> : t("security.verify")}
               </button>
@@ -244,8 +212,7 @@ function TOTPSection() {
 
           <button
             onClick={() => setSetup(null)}
-            className="text-xs"
-            style={{ color: "var(--color-text-tertiary)" }}
+            className="text-xs text-tertiary"
           >
             {t("security.cancelSetup")}
           </button>
@@ -308,14 +275,11 @@ function AppPasswordsSection() {
 
   return (
     <div className="space-y-3">
-      <h3
-        className="text-sm font-semibold flex items-center gap-2"
-        style={{ color: "var(--color-text-primary)" }}
-      >
+      <h3 className="text-sm font-semibold flex items-center gap-2 text-primary">
         <Key size={14} />
         {t("security.appPasswords")}
       </h3>
-      <p className="text-xs leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+      <p className="text-xs leading-relaxed text-secondary">
         {t("security.appPasswordsDesc")}
       </p>
 
@@ -328,24 +292,19 @@ function AppPasswordsSection() {
             border: "1px solid rgba(59, 130, 246, 0.15)",
           }}
         >
-          <p className="text-xs font-medium" style={{ color: "var(--color-text-accent)" }}>
+          <p className="text-xs font-medium text-accent">
             {t("security.passwordCreated")}
           </p>
           <div className="flex items-center gap-2">
             <code
-              className="flex-1 text-sm font-mono px-3 py-2 rounded-md select-all"
-              style={{
-                backgroundColor: "var(--color-bg-elevated)",
-                color: "var(--color-text-primary)",
-                letterSpacing: "0.02em",
-              }}
+              className="flex-1 text-sm font-mono px-3 py-2 rounded-md select-all bg-elevated text-primary"
+              style={{ letterSpacing: "0.02em" }}
             >
               {showNewPassword ? newPassword : "••••-••••-••••-••••-••••-••••-••••-••••"}
             </code>
             <button
               onClick={() => setShowNewPassword(!showNewPassword)}
-              className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)]"
-              style={{ color: "var(--color-text-secondary)" }}
+              className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] text-secondary"
             >
               {showNewPassword ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
@@ -354,22 +313,17 @@ function AppPasswordsSection() {
                 navigator.clipboard.writeText(newPassword);
                 toast.success(t("pgp.copied"));
               }}
-              className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)]"
-              style={{ color: "var(--color-text-secondary)" }}
+              className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] text-secondary"
             >
               <Copy size={14} />
             </button>
           </div>
-          <p className="text-[11px]" style={{ color: "var(--color-text-tertiary)" }}>
+          <p className="text-[11px] text-tertiary">
             {t("security.passwordOnce")}
           </p>
           <button
             onClick={() => setNewPassword(null)}
-            className="text-xs font-medium px-3 py-1 rounded-md"
-            style={{
-              color: "var(--color-text-accent)",
-              border: "1px solid var(--color-border-secondary)",
-            }}
+            className="text-xs font-medium px-3 py-1 rounded-md text-accent border-secondary"
           >
             {t("security.done")}
           </button>
@@ -384,21 +338,12 @@ function AppPasswordsSection() {
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") handleCreate(); }}
           placeholder={t("security.appNamePlaceholder")}
-          className="flex-1 h-8 px-3 text-xs rounded-md outline-none"
-          style={{
-            backgroundColor: "var(--color-bg-tertiary)",
-            color: "var(--color-text-primary)",
-            border: "1px solid var(--color-border-secondary)",
-          }}
+          className="flex-1 h-8 px-3 text-xs rounded-md outline-none bg-tertiary text-primary border-secondary"
         />
         <button
           onClick={handleCreate}
           disabled={!newName.trim() || creating}
-          className="h-8 px-3 text-xs font-medium rounded-md transition-colors disabled:opacity-40 flex items-center gap-1.5"
-          style={{
-            backgroundColor: "var(--color-bg-accent)",
-            color: "white",
-          }}
+          className="h-8 px-3 text-xs font-medium rounded-md transition-colors disabled:opacity-40 flex items-center gap-1.5 bg-accent text-white"
         >
           <Plus size={13} />
           {creating ? <Loader2 size={13} className="animate-spin" /> : t("security.generate")}
@@ -407,9 +352,9 @@ function AppPasswordsSection() {
 
       {/* List */}
       {loading ? (
-        <div className="text-xs py-2" style={{ color: "var(--color-text-tertiary)" }}>Loading...</div>
+        <div className="text-xs py-2 text-tertiary">Loading...</div>
       ) : passwords.length === 0 ? (
-        <div className="text-xs py-3 text-center" style={{ color: "var(--color-text-tertiary)" }}>
+        <div className="text-xs py-3 text-center text-tertiary">
           {t("security.noAppPasswords")}
         </div>
       ) : (
@@ -417,25 +362,20 @@ function AppPasswordsSection() {
           {passwords.map((pw) => (
             <div
               key={pw.id}
-              className="flex items-center gap-3 px-3 py-2 rounded-md"
-              style={{
-                backgroundColor: "var(--color-bg-secondary)",
-                border: "1px solid var(--color-border-secondary)",
-              }}
+              className="flex items-center gap-3 px-3 py-2 rounded-md bg-secondary border-secondary"
             >
-              <Key size={13} style={{ color: "var(--color-text-tertiary)", flexShrink: 0 }} />
+              <Key size={13} className="text-tertiary shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium truncate" style={{ color: "var(--color-text-primary)" }}>
+                <div className="text-xs font-medium truncate text-primary">
                   {pw.name}
                 </div>
-                <div className="text-[11px]" style={{ color: "var(--color-text-tertiary)" }}>
+                <div className="text-[11px] text-tertiary">
                   {new Date(pw.createdAt).toLocaleDateString()}
                 </div>
               </div>
               <button
                 onClick={() => handleDelete(pw.id)}
-                className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                style={{ color: "var(--color-text-danger)" }}
+                className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors text-danger"
                 title={t("security.revoke")}
               >
                 <Trash2 size={13} />

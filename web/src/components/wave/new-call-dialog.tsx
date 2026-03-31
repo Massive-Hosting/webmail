@@ -143,15 +143,12 @@ export const NewCallDialog = React.memo(function NewCallDialog({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay
-          className="fixed inset-0 z-50 animate-fade-in"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          className="fixed inset-0 z-50 animate-fade-in dialog-overlay"
         />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full rounded-xl animate-scale-in overflow-hidden flex flex-col"
+          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full rounded-xl animate-scale-in overflow-hidden flex flex-col bg-elevated border-primary"
           style={{
-            backgroundColor: "var(--color-bg-elevated)",
-            border: "1px solid var(--color-border-primary)",
             boxShadow: "var(--shadow-xl)",
             maxWidth: 720,
             height: 640,
@@ -160,8 +157,7 @@ export const NewCallDialog = React.memo(function NewCallDialog({
         >
           {/* Header */}
           <div
-            className="flex items-center justify-between px-5 py-4"
-            style={{ borderBottom: "1px solid var(--color-border-secondary)" }}
+            className="flex items-center justify-between px-5 py-4 border-b-secondary"
           >
             <div className="flex items-center gap-2.5">
               <div
@@ -174,14 +170,12 @@ export const NewCallDialog = React.memo(function NewCallDialog({
               </div>
               <div>
                 <Dialog.Title
-                  className="text-base font-semibold"
-                  style={{ color: "var(--color-text-primary)" }}
+                  className="text-base font-semibold text-primary"
                 >
                   {t("wave.newCall")}
                 </Dialog.Title>
                 <p
-                  className="text-xs"
-                  style={{ color: "var(--color-text-secondary)" }}
+                  className="text-xs text-secondary"
                 >
                   {t("wave.newCallDescription")}
                 </p>
@@ -189,8 +183,7 @@ export const NewCallDialog = React.memo(function NewCallDialog({
             </div>
             <Dialog.Close asChild>
               <button
-                className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors hover:bg-[var(--color-bg-tertiary)]"
-                style={{ color: "var(--color-text-secondary)" }}
+                className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors hover:bg-[var(--color-bg-tertiary)] text-secondary"
               >
                 <X size={18} />
               </button>
@@ -200,13 +193,9 @@ export const NewCallDialog = React.memo(function NewCallDialog({
           {/* Search input */}
           <div className="px-5 pt-4 pb-2">
             <div
-              className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors focus-within:ring-2 focus-within:ring-[var(--color-border-focus)]/30 focus-within:border-[var(--color-border-focus)]"
-              style={{
-                backgroundColor: "var(--color-input-bg)",
-                border: "1px solid var(--color-border-primary)",
-              }}
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors focus-within:ring-2 focus-within:ring-[var(--color-border-focus)]/30 focus-within:border-[var(--color-border-focus)] bg-input border-primary"
             >
-              <Search size={16} style={{ color: "var(--color-text-secondary)", flexShrink: 0 }} />
+              <Search size={16} className="text-secondary shrink-0" />
               <input
                 ref={inputRef}
                 type="text"
@@ -214,8 +203,7 @@ export const NewCallDialog = React.memo(function NewCallDialog({
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={t("wave.searchPlaceholder")}
-                className="flex-1 bg-transparent text-sm outline-none"
-                style={{ color: "var(--color-text-primary)" }}
+                className="flex-1 bg-transparent text-sm outline-none text-primary"
                 autoComplete="off"
               />
               {searching && (
@@ -236,8 +224,7 @@ export const NewCallDialog = React.memo(function NewCallDialog({
           >
             {results.length === 0 && !showManualOption && query.length >= 2 && !searching && (
               <div
-                className="text-center py-8 text-sm"
-                style={{ color: "var(--color-text-secondary)" }}
+                className="text-center py-8 text-sm text-secondary"
               >
                 {t("wave.noResults")}
               </div>
@@ -256,23 +243,21 @@ export const NewCallDialog = React.memo(function NewCallDialog({
                 <Avatar address={{ name: r.name, email: r.email }} size={36} />
                 <div className="flex-1 min-w-0">
                   <div
-                    className="text-sm font-medium truncate"
-                    style={{ color: "var(--color-text-primary)" }}
+                    className="text-sm font-medium truncate text-primary"
                   >
                     {r.name}
                   </div>
                   <div
-                    className="text-xs truncate"
-                    style={{ color: "var(--color-text-secondary)" }}
+                    className="text-xs truncate text-secondary"
                   >
                     {r.email}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {r.source === "contact" ? (
-                    <BookUser size={14} style={{ color: "var(--color-text-secondary)" }} />
+                    <BookUser size={14} className="text-secondary" />
                   ) : (
-                    <Users size={14} style={{ color: "var(--color-text-secondary)" }} />
+                    <Users size={14} className="text-secondary" />
                   )}
                 </div>
               </button>
@@ -299,13 +284,12 @@ export const NewCallDialog = React.memo(function NewCallDialog({
                   >
                     {isExternal
                       ? <Send size={16} style={{ color: "#6366f1" }} />
-                      : <Phone size={16} style={{ color: "var(--color-text-accent)" }} />
+                      : <Phone size={16} className="text-accent" />
                     }
                   </div>
                   <div className="flex-1 min-w-0">
                     <div
-                      className="text-sm font-medium truncate"
-                      style={{ color: "var(--color-text-primary)" }}
+                      className="text-sm font-medium truncate text-primary"
                     >
                       {isExternal
                         ? t("wave.inviteExternal", { email: targetEmail })
@@ -313,8 +297,7 @@ export const NewCallDialog = React.memo(function NewCallDialog({
                       }
                     </div>
                     <div
-                      className="text-xs"
-                      style={{ color: "var(--color-text-secondary)" }}
+                      className="text-xs text-secondary"
                     >
                       {isExternal ? t("wave.sendInviteHint") : t("wave.directCall")}
                     </div>
@@ -326,19 +309,11 @@ export const NewCallDialog = React.memo(function NewCallDialog({
 
           {/* Footer hint */}
           <div
-            className="flex items-center justify-center gap-4 px-5 py-3 text-xs"
-            style={{
-              borderTop: "1px solid var(--color-border-secondary)",
-              color: "var(--color-text-secondary)",
-            }}
+            className="flex items-center justify-center gap-4 px-5 py-3 text-xs border-t-secondary text-secondary"
           >
             <span className="flex items-center gap-1">
               <kbd
-                className="px-1.5 py-0.5 rounded text-[10px] font-mono"
-                style={{
-                  backgroundColor: "var(--color-bg-tertiary)",
-                  border: "1px solid var(--color-border-primary)",
-                }}
+                className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-tertiary border-primary"
               >
                 ↑↓
               </kbd>
@@ -346,11 +321,7 @@ export const NewCallDialog = React.memo(function NewCallDialog({
             </span>
             <span className="flex items-center gap-1">
               <kbd
-                className="px-1.5 py-0.5 rounded text-[10px] font-mono"
-                style={{
-                  backgroundColor: "var(--color-bg-tertiary)",
-                  border: "1px solid var(--color-border-primary)",
-                }}
+                className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-tertiary border-primary"
               >
                 ↵
               </kbd>

@@ -213,8 +213,7 @@ export const SearchBar = React.memo(function SearchBar({
       <div className="relative">
         <Search
           size={15}
-          className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors duration-150"
-          style={{ color: isFocused ? "var(--color-text-accent)" : "var(--color-text-tertiary)" }}
+          className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors duration-150 ${isFocused ? "text-accent" : "text-tertiary"}`}
         />
         <input
           ref={inputRef}
@@ -228,10 +227,8 @@ export const SearchBar = React.memo(function SearchBar({
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder={t("search.placeholder")}
-          className="w-full h-8 pl-9 pr-20 text-sm outline-none"
+          className="w-full h-8 pl-9 pr-20 text-sm outline-none bg-elevated text-primary form-input"
           style={{
-            backgroundColor: isFocused ? "var(--color-bg-elevated)" : "var(--color-bg-elevated)",
-            color: "var(--color-text-primary)",
             border: isFocused ? "1px solid var(--color-border-focus)" : "1px solid var(--color-border-primary)",
             borderRadius: "var(--radius-md)",
             boxShadow: isFocused ? "0 0 0 2px rgba(59, 130, 246, 0.12)" : "none",
@@ -246,8 +243,7 @@ export const SearchBar = React.memo(function SearchBar({
               <button
                 type="button"
                 onClick={handleSaveSearch}
-                className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150"
-                style={{ color: "var(--color-text-tertiary)" }}
+                className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150 text-tertiary"
                 title={t("search.saveSearch")}
                 aria-label={t("search.saveSearch")}
               >
@@ -256,8 +252,7 @@ export const SearchBar = React.memo(function SearchBar({
               <button
                 type="button"
                 onClick={handleClear}
-                className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150"
-                style={{ color: "var(--color-text-tertiary)" }}
+                className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150 text-tertiary"
                 title={t("search.clearSearchEsc")}
                 aria-label={t("search.clearSearchEsc")}
               >
@@ -268,8 +263,7 @@ export const SearchBar = React.memo(function SearchBar({
           <button
             type="button"
             onClick={onAdvancedSearch}
-            className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150"
-            style={{ color: "var(--color-text-tertiary)" }}
+            className="p-1 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors duration-150 text-tertiary"
             title={t("search.advancedSearch")}
             aria-label={t("search.advancedSearch")}
           >
@@ -282,10 +276,8 @@ export const SearchBar = React.memo(function SearchBar({
       {showDropdownFinal && (
         <div
           ref={suggestionsRef}
-          className="absolute left-0 right-0 top-full mt-1.5 overflow-hidden z-50 animate-fade-in"
+          className="absolute left-0 right-0 top-full mt-1.5 overflow-hidden z-50 animate-fade-in bg-elevated border-primary"
           style={{
-            backgroundColor: "var(--color-bg-elevated)",
-            border: "1px solid var(--color-border-primary)",
             boxShadow: "var(--shadow-lg)",
             borderRadius: "var(--radius-lg, 12px)",
             maxHeight: 380,
@@ -298,10 +290,7 @@ export const SearchBar = React.memo(function SearchBar({
               {/* Recent searches */}
               {recentSearches.length > 0 && (
                 <div className="py-1.5">
-                  <div
-                    className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider"
-                    style={{ color: "var(--color-text-tertiary)" }}
-                  >
+                  <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-tertiary">
                     {t("search.recentSearches")}
                   </div>
                   {recentSearches.slice(0, 5).map((search) => (
@@ -309,13 +298,12 @@ export const SearchBar = React.memo(function SearchBar({
                       key={search}
                       className="flex items-center gap-2.5 w-full px-3 py-1.5 text-sm hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 group cursor-pointer"
                     >
-                      <Clock size={14} style={{ color: "var(--color-text-tertiary)" }} />
+                      <Clock size={14} className="text-tertiary" />
                       <button
                         type="button"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => handleSuggestionClick(search)}
-                        className="flex-1 text-left truncate"
-                        style={{ color: "var(--color-text-primary)" }}
+                        className="flex-1 text-left truncate text-primary"
                       >
                         {search}
                       </button>
@@ -323,8 +311,7 @@ export const SearchBar = React.memo(function SearchBar({
                         type="button"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => removeRecentSearch(search)}
-                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded-md hover:bg-[var(--color-bg-secondary)] transition-all duration-150"
-                        style={{ color: "var(--color-text-tertiary)" }}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded-md hover:bg-[var(--color-bg-secondary)] transition-all duration-150 text-tertiary"
                         title={t("search.remove")}
                       >
                         <X size={12} />
@@ -336,15 +323,9 @@ export const SearchBar = React.memo(function SearchBar({
 
               {/* Quick filters */}
               <div
-                className="px-3 py-2"
-                style={{
-                  borderTop: recentSearches.length > 0 ? "1px solid var(--color-border-primary)" : undefined,
-                }}
+                className={`px-3 py-2 ${recentSearches.length > 0 ? "border-t-primary" : ""}`}
               >
-                <div
-                  className="text-[11px] font-semibold uppercase tracking-wider mb-2"
-                  style={{ color: "var(--color-text-tertiary)" }}
-                >
+                <div className="text-[11px] font-semibold uppercase tracking-wider mb-2 text-tertiary">
                   {t("search.quickFilters")}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -356,12 +337,7 @@ export const SearchBar = React.memo(function SearchBar({
                         type="button"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => handleQuickFilterClick(filter)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-150 hover:scale-[1.03] active:scale-[0.97]"
-                        style={{
-                          color: "var(--color-text-secondary)",
-                          border: "1px solid var(--color-border-primary)",
-                          backgroundColor: "var(--color-bg-secondary)",
-                        }}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-150 hover:scale-[1.03] active:scale-[0.97] text-secondary border-primary bg-secondary"
                         onMouseEnter={(e) => {
                           e.currentTarget.style.backgroundColor = "var(--color-bg-tertiary)";
                           e.currentTarget.style.borderColor = "var(--color-border-focus)";
@@ -382,13 +358,9 @@ export const SearchBar = React.memo(function SearchBar({
               </div>
 
               {/* Scope to mailbox toggle */}
-              <div
-                className="px-3 py-2 flex items-center"
-                style={{ borderTop: "1px solid var(--color-border-primary)" }}
-              >
+              <div className="px-3 py-2 flex items-center border-t-primary">
                 <label
-                  className="flex items-center gap-1.5 text-xs cursor-pointer select-none"
-                  style={{ color: "var(--color-text-tertiary)" }}
+                  className="flex items-center gap-1.5 text-xs cursor-pointer select-none text-tertiary"
                   onMouseDown={(e) => e.preventDefault()}
                 >
                   <input
@@ -411,29 +383,22 @@ export const SearchBar = React.memo(function SearchBar({
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSuggestionClick(localQuery.trim())}
-                className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-left hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                style={{ color: "var(--color-text-primary)" }}
+                className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-left hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 text-primary"
               >
-                <Search size={14} style={{ color: "var(--color-text-accent)" }} />
+                <Search size={14} className="text-accent" />
                 <span>
                   {t("search.searchFor")}{" "}
-                  <span className="font-semibold" style={{ color: "var(--color-text-accent)" }}>
+                  <span className="font-semibold text-accent">
                     &ldquo;{localQuery.trim()}&rdquo;
                   </span>
                 </span>
-                <ArrowRight size={13} className="ml-auto" style={{ color: "var(--color-text-tertiary)" }} />
+                <ArrowRight size={13} className="ml-auto text-tertiary" />
               </button>
 
               {/* Narrow your search — only for plain text */}
               {isPlainText && (
-                <div
-                  className="px-3 py-2"
-                  style={{ borderTop: "1px solid var(--color-border-primary)" }}
-                >
-                  <div
-                    className="text-[11px] font-semibold uppercase tracking-wider mb-2"
-                    style={{ color: "var(--color-text-tertiary)" }}
-                  >
+                <div className="px-3 py-2 border-t-primary">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider mb-2 text-tertiary">
                     {t("search.narrowYourSearch")}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
@@ -445,12 +410,7 @@ export const SearchBar = React.memo(function SearchBar({
                           type="button"
                           onMouseDown={(e) => e.preventDefault()}
                           onClick={() => handleNarrowClick(opt.prefix)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-150 hover:scale-[1.03] active:scale-[0.97]"
-                          style={{
-                            color: "var(--color-text-secondary)",
-                            border: "1px solid var(--color-border-primary)",
-                            backgroundColor: "var(--color-bg-secondary)",
-                          }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-150 hover:scale-[1.03] active:scale-[0.97] text-secondary border-primary bg-secondary"
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = "var(--color-bg-tertiary)";
                             e.currentTarget.style.borderColor = "var(--color-border-focus)";
@@ -473,14 +433,8 @@ export const SearchBar = React.memo(function SearchBar({
 
               {/* Filtered recent searches */}
               {filteredRecent.length > 0 && (
-                <div
-                  className="py-1.5"
-                  style={{ borderTop: "1px solid var(--color-border-primary)" }}
-                >
-                  <div
-                    className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider"
-                    style={{ color: "var(--color-text-tertiary)" }}
-                  >
+                <div className="py-1.5 border-t-primary">
+                  <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-tertiary">
                     {t("search.recent")}
                   </div>
                   {filteredRecent.map((search) => (
@@ -488,13 +442,12 @@ export const SearchBar = React.memo(function SearchBar({
                       key={search}
                       className="flex items-center gap-2.5 w-full px-3 py-1.5 text-sm hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 group cursor-pointer"
                     >
-                      <Clock size={14} style={{ color: "var(--color-text-tertiary)" }} />
+                      <Clock size={14} className="text-tertiary" />
                       <button
                         type="button"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => handleSuggestionClick(search)}
-                        className="flex-1 text-left truncate"
-                        style={{ color: "var(--color-text-primary)" }}
+                        className="flex-1 text-left truncate text-primary"
                       >
                         {search}
                       </button>
@@ -502,8 +455,7 @@ export const SearchBar = React.memo(function SearchBar({
                         type="button"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => removeRecentSearch(search)}
-                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded-md hover:bg-[var(--color-bg-secondary)] transition-all duration-150"
-                        style={{ color: "var(--color-text-tertiary)" }}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded-md hover:bg-[var(--color-bg-secondary)] transition-all duration-150 text-tertiary"
                         title={t("search.remove")}
                       >
                         <X size={12} />
@@ -514,13 +466,9 @@ export const SearchBar = React.memo(function SearchBar({
               )}
 
               {/* Scope to mailbox toggle */}
-              <div
-                className="px-3 py-2 flex items-center"
-                style={{ borderTop: "1px solid var(--color-border-primary)" }}
-              >
+              <div className="px-3 py-2 flex items-center border-t-primary">
                 <label
-                  className="flex items-center gap-1.5 text-xs cursor-pointer select-none"
-                  style={{ color: "var(--color-text-tertiary)" }}
+                  className="flex items-center gap-1.5 text-xs cursor-pointer select-none text-tertiary"
                   onMouseDown={(e) => e.preventDefault()}
                 >
                   <input

@@ -53,34 +53,28 @@ export const EmailPropertiesDialog = React.memo(function EmailPropertiesDialog({
     <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay
-          className="fixed inset-0 z-50"
-          style={{ backgroundColor: "var(--color-bg-overlay)" }}
+          className="fixed inset-0 z-50 bg-overlay"
         />
         <Dialog.Content
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full rounded-lg flex flex-col"
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full rounded-lg flex flex-col bg-elevated border-primary"
           style={{
             maxWidth: 800,
             height: "80vh",
-            backgroundColor: "var(--color-bg-elevated)",
             boxShadow: "var(--shadow-elevated)",
-            border: "1px solid var(--color-border-primary)",
           }}
         >
           {/* Header */}
           <div
-            className="flex items-center justify-between px-6 py-4"
-            style={{ borderBottom: "1px solid var(--color-border-primary)" }}
+            className="flex items-center justify-between px-6 py-4 border-b-primary"
           >
             <Dialog.Title
-              className="text-lg font-semibold"
-              style={{ color: "var(--color-text-primary)" }}
+              className="text-lg font-semibold text-primary"
             >
               {t("properties.title")}
             </Dialog.Title>
             <Dialog.Close asChild>
               <button
-                className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                style={{ color: "var(--color-text-secondary)" }}
+                className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors text-secondary"
               >
                 <X size={18} />
               </button>
@@ -89,8 +83,7 @@ export const EmailPropertiesDialog = React.memo(function EmailPropertiesDialog({
 
           <Tabs.Root defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
             <Tabs.List
-              className="flex px-6 gap-1 shrink-0"
-              style={{ borderBottom: "1px solid var(--color-border-primary)" }}
+              className="flex px-6 gap-1 shrink-0 border-b-primary"
             >
               <TabTrigger value="overview">{t("properties.overview")}</TabTrigger>
               <TabTrigger value="raw">{t("properties.rawHeaders")}</TabTrigger>
@@ -99,8 +92,7 @@ export const EmailPropertiesDialog = React.memo(function EmailPropertiesDialog({
             <Tabs.Content value="overview" className="px-6 py-4 flex-1 overflow-y-auto">
               {isLoading ? (
                 <div
-                  className="py-8 text-center text-sm"
-                  style={{ color: "var(--color-text-secondary)" }}
+                  className="py-8 text-center text-sm text-secondary"
                 >
                   Loading...
                 </div>
@@ -112,8 +104,7 @@ export const EmailPropertiesDialog = React.memo(function EmailPropertiesDialog({
             <Tabs.Content value="raw" className="px-6 py-4 flex-1 overflow-y-auto">
               {isLoading ? (
                 <div
-                  className="py-8 text-center text-sm"
-                  style={{ color: "var(--color-text-secondary)" }}
+                  className="py-8 text-center text-sm text-secondary"
                 >
                   Loading...
                 </div>
@@ -136,8 +127,7 @@ function TabTrigger({ value, children }: { value: string; children: React.ReactN
   return (
     <Tabs.Trigger
       value={value}
-      className="px-4 py-2.5 text-sm font-medium transition-colors border-b-2 border-transparent data-[state=active]:border-[var(--color-accent)] data-[state=active]:text-[var(--color-accent)] hover:text-[var(--color-text-primary)]"
-      style={{ color: "var(--color-text-secondary)" }}
+      className="px-4 py-2.5 text-sm font-medium transition-colors border-b-2 border-transparent data-[state=active]:border-[var(--color-accent)] data-[state=active]:text-[var(--color-accent)] hover:text-[var(--color-text-primary)] text-secondary"
     >
       {children}
     </Tabs.Trigger>
@@ -254,16 +244,14 @@ function OverviewTab({ email, headersData }: OverviewTabProps) {
         <SecurityRow label="ARC" status={authResults.arc} />
         {authResults.tlsVersion && (
           <div className="flex items-center gap-2 py-1">
-            <Lock size={14} style={{ color: "var(--color-accent)" }} />
+            <Lock size={14} className="text-accent" />
             <span
-              className="text-sm font-medium"
-              style={{ color: "var(--color-text-primary)" }}
+              className="text-sm font-medium text-primary"
             >
               TLS
             </span>
             <span
-              className="text-sm"
-              style={{ color: "var(--color-text-secondary)" }}
+              className="text-sm text-secondary"
             >
               {authResults.tlsVersion}
             </span>
@@ -290,15 +278,10 @@ function OverviewTab({ email, headersData }: OverviewTabProps) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div
-      className="rounded-md p-4"
-      style={{
-        border: "1px solid var(--color-border-primary)",
-        backgroundColor: "var(--color-bg-secondary)",
-      }}
+      className="rounded-md p-4 border-primary bg-secondary"
     >
       <h3
-        className="text-xs font-semibold uppercase tracking-wider mb-3"
-        style={{ color: "var(--color-text-secondary)" }}
+        className="text-xs font-semibold uppercase tracking-wider mb-3 text-secondary"
       >
         {title}
       </h3>
@@ -324,14 +307,12 @@ function InfoRow({
   return (
     <div className="flex gap-3 py-0.5 text-sm">
       <span
-        className="shrink-0 w-24 text-right font-medium"
-        style={{ color: "var(--color-text-secondary)" }}
+        className="shrink-0 w-24 text-right font-medium text-secondary"
       >
         {label}
       </span>
       <span
-        className={`break-all ${mono ? "font-mono text-xs leading-5" : ""}`}
-        style={{ color: "var(--color-text-primary)" }}
+        className={`break-all text-primary ${mono ? "font-mono text-xs leading-5" : ""}`}
       >
         {value}
       </span>
@@ -353,8 +334,7 @@ function ParticipantRow({
   return (
     <div className="flex gap-3 py-1 text-sm">
       <span
-        className="shrink-0 w-24 text-right font-medium pt-1.5"
-        style={{ color: "var(--color-text-secondary)" }}
+        className="shrink-0 w-24 text-right font-medium pt-1.5 text-secondary"
       >
         {label}
       </span>
@@ -362,13 +342,12 @@ function ParticipantRow({
         {addresses.map((addr, i) => (
           <div key={i} className="flex items-center gap-2">
             <Avatar address={addr} size={24} />
-            <span style={{ color: "var(--color-text-primary)" }}>
+            <span className="text-primary">
               {formatAddress(addr)}
             </span>
             {addr.name && (
               <span
-                className="text-xs"
-                style={{ color: "var(--color-text-secondary)" }}
+                className="text-xs text-secondary"
               >
                 &lt;{addr.email}&gt;
               </span>
@@ -390,10 +369,7 @@ function DeliveryTimeline({ hops }: { hops: ReceivedHop[] }) {
       {/* Vertical line */}
       <div
         className="absolute left-[7px] top-3 bottom-3"
-        style={{
-          width: 2,
-          backgroundColor: "var(--color-border-primary)",
-        }}
+        style={{ width: 2, backgroundColor: "var(--color-border-primary)" }}
       />
 
       {/* Render hops in reverse order (newest = top = final destination) */}
@@ -418,8 +394,7 @@ function DeliveryTimeline({ hops }: { hops: ReceivedHop[] }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span
-                  className="text-sm font-medium"
-                  style={{ color: "var(--color-text-primary)" }}
+                  className="text-sm font-medium text-primary"
                 >
                   {isFirst
                     ? "Received by your server"
@@ -430,17 +405,13 @@ function DeliveryTimeline({ hops }: { hops: ReceivedHop[] }) {
                 {hop.tls && (
                   <Lock
                     size={12}
-                    style={{ color: "var(--color-accent)" }}
+                    className="text-accent"
                     aria-label="TLS encrypted"
                   />
                 )}
                 {hop.protocol && (
                   <span
-                    className="text-xs px-1.5 py-0.5 rounded font-mono"
-                    style={{
-                      backgroundColor: "var(--color-bg-tertiary)",
-                      color: "var(--color-text-secondary)",
-                    }}
+                    className="text-xs px-1.5 py-0.5 rounded font-mono bg-tertiary text-secondary"
                   >
                     {hop.protocol}
                   </span>
@@ -448,8 +419,7 @@ function DeliveryTimeline({ hops }: { hops: ReceivedHop[] }) {
               </div>
 
               <div
-                className="text-sm"
-                style={{ color: "var(--color-text-secondary)" }}
+                className="text-sm text-secondary"
               >
                 {hop.from || hop.by}
                 {hop.fromIp && (
@@ -461,8 +431,7 @@ function DeliveryTimeline({ hops }: { hops: ReceivedHop[] }) {
 
               {hop.timestamp && (
                 <div
-                  className="text-xs mt-0.5"
-                  style={{ color: "var(--color-text-tertiary)" }}
+                  className="text-xs mt-0.5 text-tertiary"
                 >
                   {formatFullDate(hop.timestamp)}
                 </div>
@@ -515,8 +484,7 @@ function SecurityRow({ label, status }: { label: string; status: AuthStatus }) {
     <div className="flex items-center gap-2 py-0.5">
       <span style={{ color }}>{icon}</span>
       <span
-        className="text-sm font-medium w-14"
-        style={{ color: "var(--color-text-primary)" }}
+        className="text-sm font-medium w-14 text-primary"
       >
         {label}
       </span>
@@ -531,8 +499,7 @@ function SecurityRow({ label, status }: { label: string; status: AuthStatus }) {
       </span>
       {status.detail && (
         <span
-          className="text-xs truncate"
-          style={{ color: "var(--color-text-secondary)" }}
+          className="text-xs truncate text-secondary"
         >
           {status.detail}
         </span>
@@ -589,29 +556,20 @@ function RawHeadersTab({
       {/* Toolbar */}
       <div className="flex items-center gap-2">
         <div
-          className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded-md text-sm"
-          style={{
-            border: "1px solid var(--color-border-primary)",
-            backgroundColor: "var(--color-bg-primary)",
-          }}
+          className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded-md text-sm border-primary bg-primary"
         >
-          <Search size={14} style={{ color: "var(--color-text-tertiary)" }} />
+          <Search size={14} className="text-tertiary" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={t("search.placeholder")}
-            className="flex-1 bg-transparent border-none outline-none text-sm"
-            style={{ color: "var(--color-text-primary)" }}
+            className="flex-1 bg-transparent border-none outline-none text-sm text-primary"
           />
         </div>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:bg-[var(--color-bg-tertiary)]"
-          style={{
-            border: "1px solid var(--color-border-primary)",
-            color: "var(--color-text-secondary)",
-          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:bg-[var(--color-bg-tertiary)] border-primary text-secondary"
         >
           {copied ? <Check size={14} /> : <Copy size={14} />}
           {t("properties.copyHeaders")}
@@ -620,15 +578,11 @@ function RawHeadersTab({
 
       {/* Raw headers display */}
       <div
-        className="rounded-md p-4 overflow-auto font-mono text-xs leading-relaxed"
-        style={{
-          backgroundColor: "var(--color-bg-tertiary)",
-          border: "1px solid var(--color-border-primary)",
-          maxHeight: "50vh",
-        }}
+        className="rounded-md p-4 overflow-auto font-mono text-xs leading-relaxed bg-tertiary border-primary"
+        style={{ maxHeight: "50vh" }}
       >
         {lines.length === 0 ? (
-          <span style={{ color: "var(--color-text-tertiary)" }}>
+          <span className="text-tertiary">
             No headers available
           </span>
         ) : (
@@ -641,14 +595,12 @@ function RawHeadersTab({
               }}
             >
               <span
-                className="font-semibold"
-                style={{ color: "var(--color-accent)" }}
+                className="font-semibold text-accent"
               >
                 {line.name}:
               </span>{" "}
               <span
-                style={{ color: "var(--color-text-primary)" }}
-                className="break-all whitespace-pre-wrap"
+                className="break-all whitespace-pre-wrap text-primary"
               >
                 {line.value}
               </span>

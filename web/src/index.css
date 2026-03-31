@@ -24,6 +24,17 @@
   --color-message-selected: var(--color-message-selected);
   --color-message-hover: var(--color-message-hover);
   --color-message-flagged: var(--color-message-flagged);
+  --color-success: var(--color-success);
+  --color-success-dark: var(--color-success-dark);
+  --color-danger: var(--color-danger);
+  --color-danger-dark: var(--color-danger-dark);
+  --color-warning: var(--color-warning);
+  --color-warning-dark: var(--color-warning-dark);
+  --color-info: var(--color-info);
+  --color-purple: var(--color-purple);
+  --color-indigo: var(--color-indigo);
+  --color-bg-overlay: var(--color-bg-overlay);
+  --color-input-bg: var(--color-input-bg);
 }
 
 :root {
@@ -66,6 +77,24 @@
   /* Glassmorphism */
   --color-bg-glass: rgba(250, 250, 249, 0.82);
   --color-bg-glass-border: rgba(214, 211, 209, 0.5);
+
+  /* Semantic status colors */
+  --color-success: #22C55E;
+  --color-success-dark: #15803D;
+  --color-success-bg: rgba(34, 197, 94, 0.15);
+  --color-danger: #EF4444;
+  --color-danger-dark: #DC2626;
+  --color-danger-bg: rgba(239, 68, 68, 0.15);
+  --color-warning: #F59E0B;
+  --color-warning-dark: #D97706;
+  --color-warning-bg: rgba(245, 158, 11, 0.15);
+  --color-info: #3B82F6;
+  --color-info-dark: #2563EB;
+  --color-info-bg: rgba(59, 130, 246, 0.15);
+  --color-purple: #8B5CF6;
+  --color-purple-bg: rgba(139, 92, 246, 0.10);
+  --color-indigo: #6366F1;
+  --color-indigo-bg: rgba(99, 102, 241, 0.10);
 
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -115,6 +144,24 @@
   /* Glassmorphism */
   --color-bg-glass: rgba(12, 10, 9, 0.78);
   --color-bg-glass-border: rgba(41, 37, 36, 0.6);
+
+  /* Semantic status colors (dark mode — same hues, adjusted opacity) */
+  --color-success: #22C55E;
+  --color-success-dark: #4ADE80;
+  --color-success-bg: rgba(34, 197, 94, 0.15);
+  --color-danger: #EF4444;
+  --color-danger-dark: #F87171;
+  --color-danger-bg: rgba(239, 68, 68, 0.15);
+  --color-warning: #F59E0B;
+  --color-warning-dark: #FBBF24;
+  --color-warning-bg: rgba(245, 158, 11, 0.15);
+  --color-info: #3B82F6;
+  --color-info-dark: #60A5FA;
+  --color-info-bg: rgba(59, 130, 246, 0.15);
+  --color-purple: #8B5CF6;
+  --color-purple-bg: rgba(139, 92, 246, 0.12);
+  --color-indigo: #6366F1;
+  --color-indigo-bg: rgba(99, 102, 241, 0.12);
 
   /* Dark mode glow */
   --glow-accent: 0 0 12px rgba(59, 130, 246, 0.15);

@@ -395,24 +395,18 @@ export const EventForm = React.memo(function EventForm({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
         <Dialog.Content
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-h-[85vh] rounded-lg shadow-xl z-50 flex flex-col"
-          style={{
-            maxWidth: 900,
-            backgroundColor: "var(--color-bg-elevated)",
-            border: "1px solid var(--color-border-primary)",
-          }}
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-h-[85vh] rounded-lg shadow-xl z-50 flex flex-col bg-elevated border-primary"
+          style={{ maxWidth: 900 }}
         >
           <div className="flex items-center justify-between px-6 pt-6 pb-2">
             <Dialog.Title
-              className="text-lg font-semibold"
-              style={{ color: "var(--color-text-primary)" }}
+              className="text-lg font-semibold text-primary"
             >
               {isEditing ? t("calendar.editEvent") : t("calendar.newEvent")}
             </Dialog.Title>
             <Dialog.Close asChild>
               <button
-                className="p-1 rounded hover:bg-[var(--color-bg-tertiary)]"
-                style={{ color: "var(--color-text-tertiary)" }}
+                className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] text-tertiary"
               >
                 <X size={18} />
               </button>
@@ -430,20 +424,14 @@ export const EventForm = React.memo(function EventForm({
                 placeholder={t("calendar.eventTitle")}
                 required
                 autoFocus
-                className="w-full px-3 py-2 text-sm rounded-md outline-none"
-                style={{
-                  backgroundColor: "var(--color-bg-elevated)",
-                  color: "var(--color-text-primary)",
-                  border: "1px solid var(--color-border-primary)",
-                }}
+                className="w-full px-3 py-2 text-sm rounded-md outline-none bg-elevated text-primary border-primary"
               />
 
               {/* Calendar selector */}
               {calendars.length > 1 && (
                 <div className="flex items-center gap-2">
                   <span
-                    className="text-xs shrink-0"
-                    style={{ color: "var(--color-text-tertiary)" }}
+                    className="text-xs shrink-0 text-tertiary"
                   >
                     {t("calendar.calendar")}
                   </span>
@@ -462,16 +450,12 @@ export const EventForm = React.memo(function EventForm({
               {/* Date & Time */}
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
-                  <Clock size={14} style={{ color: "var(--color-text-tertiary)" }} />
+                  <Clock size={14} className="text-tertiary" />
                   <input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="px-2 py-1 text-sm rounded outline-none"
-                    style={{
-                      color: "var(--color-text-primary)",
-                      border: "1px solid var(--color-border-secondary)",
-                    }}
+                    className="px-2 py-1 text-sm rounded outline-none text-primary border-secondary"
                   />
                   {!allDay && (
                     <>
@@ -479,27 +463,16 @@ export const EventForm = React.memo(function EventForm({
                         type="time"
                         value={startTime}
                         onChange={(e) => setStartTime(e.target.value)}
-                        className="px-2 py-1 text-sm rounded outline-none"
-                        style={{
-                          color: "var(--color-text-primary)",
-                          border: "1px solid var(--color-border-secondary)",
-                        }}
+                        className="px-2 py-1 text-sm rounded outline-none text-primary border-secondary"
                       />
-                      <span
-                        className="text-xs"
-                        style={{ color: "var(--color-text-tertiary)" }}
-                      >
+                      <span className="text-xs text-tertiary">
                         {t("calendar.to")}
                       </span>
                       <input
                         type="time"
                         value={endTime}
                         onChange={(e) => handleEndTimeChange(e.target.value)}
-                        className="px-2 py-1 text-sm rounded outline-none"
-                        style={{
-                          color: "var(--color-text-primary)",
-                          border: "1px solid var(--color-border-secondary)",
-                        }}
+                        className="px-2 py-1 text-sm rounded outline-none text-primary border-secondary"
                       />
                     </>
                   )}
@@ -511,7 +484,7 @@ export const EventForm = React.memo(function EventForm({
                     onChange={(e) => setAllDay(e.target.checked)}
                     className="rounded"
                   />
-                  <span style={{ color: "var(--color-text-secondary)" }}>
+                  <span className="text-secondary">
                     {t("calendar.allDay")}
                   </span>
                 </label>
@@ -521,25 +494,21 @@ export const EventForm = React.memo(function EventForm({
               <div className="flex items-center gap-2">
                 <MapPin
                   size={14}
-                  style={{ color: "var(--color-text-tertiary)" }}
+                  className="text-tertiary"
                 />
                 <input
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder={t("calendar.addLocation")}
-                  className="flex-1 px-2 py-1 text-sm rounded outline-none"
-                  style={{
-                    color: "var(--color-text-primary)",
-                    border: "1px solid var(--color-border-secondary)",
-                  }}
+                  className="flex-1 px-2 py-1 text-sm rounded outline-none text-primary border-secondary"
                 />
               </div>
 
               {/* Room picker */}
               {rooms.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <MapPin size={14} style={{ color: "var(--color-text-tertiary)" }} />
+                  <MapPin size={14} className="text-tertiary" />
                   <StyledSelect
                     value={selectedRoom}
                     onValueChange={handleSelectRoom}
@@ -559,7 +528,7 @@ export const EventForm = React.memo(function EventForm({
               <div className="flex items-center gap-2">
                 <Repeat
                   size={14}
-                  style={{ color: "var(--color-text-tertiary)" }}
+                  className="text-tertiary"
                 />
                 <StyledSelect
                   value={recurrence}
@@ -574,7 +543,7 @@ export const EventForm = React.memo(function EventForm({
                 <div className="flex items-center gap-2">
                   <Users
                     size={14}
-                    style={{ color: "var(--color-text-tertiary)" }}
+                    className="text-tertiary"
                   />
                   <div className="flex-1 relative">
                     <input
@@ -590,28 +559,19 @@ export const EventForm = React.memo(function EventForm({
                         }
                       }}
                       placeholder={t("calendar.addAttendees")}
-                      className="w-full px-2 py-1 text-sm rounded outline-none"
-                      style={{
-                        color: "var(--color-text-primary)",
-                        border: "1px solid var(--color-border-secondary)",
-                      }}
+                      className="w-full px-2 py-1 text-sm rounded outline-none text-primary border-secondary"
                     />
                     {/* Contact autocomplete */}
                     {contactResults.length > 0 && attendeeInput.length >= 1 && (
                       <div
-                        className="absolute top-full left-0 right-0 mt-1 py-1 rounded-md shadow-lg z-10 max-h-36 overflow-y-auto"
-                        style={{
-                          backgroundColor: "var(--color-bg-elevated)",
-                          border: "1px solid var(--color-border-primary)",
-                        }}
+                        className="absolute top-full left-0 right-0 mt-1 py-1 rounded-md shadow-lg z-10 max-h-36 overflow-y-auto bg-elevated border-primary"
                       >
                         {contactResults.map((contact) =>
                           contact.emails.map((email) => (
                             <button
                               key={`${contact.id}-${email.address}`}
                               type="button"
-                              className="w-full text-left px-3 py-1.5 text-sm hover:bg-[var(--color-bg-tertiary)]"
-                              style={{ color: "var(--color-text-primary)" }}
+                              className="w-full text-left px-3 py-1.5 text-sm hover:bg-[var(--color-bg-tertiary)] text-primary"
                               onClick={() => {
                                 const displayName =
                                   contact.name.full ??
@@ -621,8 +581,7 @@ export const EventForm = React.memo(function EventForm({
                             >
                               <div>{contact.name.full ?? contact.name.given ?? email.address}</div>
                               <div
-                                className="text-xs"
-                                style={{ color: "var(--color-text-tertiary)" }}
+                                className="text-xs text-tertiary"
                               >
                                 {email.address}
                               </div>
@@ -675,16 +634,7 @@ export const EventForm = React.memo(function EventForm({
                           {/* Free/busy indicator */}
                           {hasBusyData ? (
                             <span
-                              className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded"
-                              style={isBusy ? {
-                                backgroundColor: "rgba(239,68,68,0.1)",
-                                color: "#ef4444",
-                                border: "1px solid rgba(239,68,68,0.2)",
-                              } : {
-                                backgroundColor: "rgba(34,197,94,0.1)",
-                                color: "#22c55e",
-                                border: "1px solid rgba(34,197,94,0.2)",
-                              }}
+                              className={`shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded ${isBusy ? "pill--danger" : "pill--success"}`}
                             >
                               {isBusy ? t("calendar.busy") : t("calendar.free")}
                             </span>
@@ -695,22 +645,20 @@ export const EventForm = React.memo(function EventForm({
                                 : a.participationStatus === "tentative" ? t("calendar.tentative")
                                 : t("calendar.needsAction")
                             }>
-                              {a.participationStatus === "accepted" && <Check size={13} style={{ color: "#22c55e" }} />}
-                              {a.participationStatus === "declined" && <X size={13} style={{ color: "#ef4444" }} />}
-                              {a.participationStatus === "tentative" && <HelpCircle size={13} style={{ color: "#eab308" }} />}
-                              {a.participationStatus === "needs-action" && <Clock size={13} style={{ color: "#9ca3af" }} />}
+                              {a.participationStatus === "accepted" && <Check size={13} className="text-success" />}
+                              {a.participationStatus === "declined" && <X size={13} className="text-danger" />}
+                              {a.participationStatus === "tentative" && <HelpCircle size={13} className="text-warning" />}
+                              {a.participationStatus === "needs-action" && <Clock size={13} className="text-tertiary" />}
                             </span>
                           ) : null}
                           <span
-                            className="flex-1 truncate"
-                            style={{ color: "var(--color-text-secondary)" }}
+                            className="flex-1 truncate text-secondary"
                           >
                             {a.name ? `${a.name} <${a.email}>` : a.email}
                           </span>
                           <button
                             type="button"
-                            className="p-0.5 rounded hover:bg-[var(--color-bg-tertiary)]"
-                            style={{ color: "var(--color-text-tertiary)" }}
+                            className="p-0.5 rounded hover:bg-[var(--color-bg-tertiary)] text-tertiary"
                             onClick={() => removeAttendee(a.email)}
                           >
                             <X size={12} />
@@ -724,14 +672,14 @@ export const EventForm = React.memo(function EventForm({
 
               {/* Wave Meeting toggle */}
               <div className="flex items-center gap-2 px-1 py-2">
-                <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: "var(--color-text-secondary)" }}>
+                <label className="flex items-center gap-2 text-sm cursor-pointer text-secondary">
                   <input
                     type="checkbox"
                     checked={waveMeeting}
                     onChange={(e) => setWaveMeeting(e.target.checked)}
                     style={{ accentColor: "var(--color-bg-accent)" }}
                   />
-                  <Video size={14} style={{ color: waveMeeting ? "#6366f1" : "var(--color-text-tertiary)" }} />
+                  <Video size={14} className={waveMeeting ? undefined : "text-tertiary"} style={waveMeeting ? { color: "var(--color-indigo)" } : undefined} />
                   {t("calendar.waveMeeting")}
                 </label>
               </div>
@@ -740,7 +688,7 @@ export const EventForm = React.memo(function EventForm({
               <div className="flex items-center gap-2">
                 <Bell
                   size={14}
-                  style={{ color: "var(--color-text-tertiary)" }}
+                  className="text-tertiary"
                 />
                 <StyledSelect
                   value={reminder}
@@ -756,19 +704,14 @@ export const EventForm = React.memo(function EventForm({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder={t("calendar.addDescription")}
                 rows={3}
-                className="w-full px-3 py-2 text-sm rounded-md outline-none resize-none"
-                style={{
-                  backgroundColor: "var(--color-bg-elevated)",
-                  color: "var(--color-text-primary)",
-                  border: "1px solid var(--color-border-primary)",
-                }}
+                className="w-full px-3 py-2 text-sm rounded-md outline-none resize-none bg-elevated text-primary border-primary"
               />
 
               {/* Color */}
               <div className="flex items-center gap-2">
                 <Palette
                   size={14}
-                  style={{ color: "var(--color-text-tertiary)" }}
+                  className="text-tertiary"
                 />
                 <div className="flex gap-1.5">
                   {EVENT_COLORS.map((c) => (
@@ -799,8 +742,7 @@ export const EventForm = React.memo(function EventForm({
                   {isEditing && onDelete && (
                     <button
                       type="button"
-                      className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                      style={{ color: "var(--color-text-error, #dc2626)" }}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors text-danger"
                       onClick={handleDelete}
                     >
                       <Trash2 size={14} />
@@ -812,19 +754,15 @@ export const EventForm = React.memo(function EventForm({
                   <Dialog.Close asChild>
                     <button
                       type="button"
-                      className="px-4 py-1.5 text-sm rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                      style={{ color: "var(--color-text-secondary)" }}
+                      className="px-4 py-1.5 text-sm rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors text-secondary"
                     >
                       {t("calendar.close")}
                     </button>
                   </Dialog.Close>
                   <button
                     type="submit"
-                    className="px-4 py-1.5 text-sm font-medium rounded-md transition-colors"
-                    style={{
-                      backgroundColor: "var(--color-text-accent)",
-                      color: "#ffffff",
-                    }}
+                    className="px-4 py-1.5 text-sm font-medium rounded-md transition-colors text-inverse"
+                    style={{ backgroundColor: "var(--color-text-accent)" }}
                   >
                     {isEditing ? t("calendar.editEventBtn") : t("calendar.create")}
                   </button>
@@ -835,11 +773,10 @@ export const EventForm = React.memo(function EventForm({
             {/* Right column: day timeline */}
             {!allDay && (
               <div
-                className="shrink-0 overflow-y-auto"
+                className="shrink-0 overflow-y-auto bg-primary"
                 style={{
                   width: 280,
                   borderLeft: "1px solid var(--color-border-secondary)",
-                  backgroundColor: "var(--color-bg-primary)",
                 }}
               >
                 <DayTimeline
@@ -1007,16 +944,14 @@ function DayTimeline({
       {TIMELINE_HOURS.map((hour, i) => (
         <div
           key={hour}
-          className="absolute w-full flex items-start"
+          className="absolute w-full flex items-start border-b-secondary"
           style={{
             top: i * HOUR_HEIGHT,
             height: HOUR_HEIGHT,
-            borderBottom: "1px solid var(--color-border-secondary)",
           }}
         >
           <span
-            className="text-[10px] w-12 text-right pr-2 pt-0.5 shrink-0"
-            style={{ color: "var(--color-text-tertiary)" }}
+            className="text-[10px] w-12 text-right pr-2 pt-0.5 shrink-0 text-tertiary"
           >
             {formatHourLabel(hour)}
           </span>
@@ -1143,7 +1078,7 @@ function DayTimeline({
                 })()}
               </div>
               {hasConflict && (
-                <div className="text-[9px] mt-0.5 font-medium" style={{ color: "#ef4444" }}>
+                <div className="text-[9px] mt-0.5 font-medium text-danger">
                   Conflict
                 </div>
               )}

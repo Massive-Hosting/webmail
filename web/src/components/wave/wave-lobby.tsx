@@ -321,12 +321,11 @@ export const WaveLobby = React.memo(function WaveLobby({
             e.preventDefault();
           }}
           onEscapeKeyDown={(e) => e.preventDefault()}
-          className={`fixed z-[9999] rounded-2xl overflow-hidden flex flex-col animate-scale-in ${dragStyle.left == null ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" : ""}`}
+          className={`fixed z-[9999] rounded-2xl overflow-hidden flex flex-col animate-scale-in wave-surface ${dragStyle.left == null ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" : ""}`}
           style={{
             width: 860,
             maxWidth: "96vw",
             maxHeight: "92vh",
-            backgroundColor: "#1c1917",
             border: "1px solid rgba(255, 255, 255, 0.08)",
             ...dragStyle,
             boxShadow: "0 32px 80px rgba(0, 0, 0, 0.6)",
@@ -346,7 +345,7 @@ export const WaveLobby = React.memo(function WaveLobby({
               </div>
             </Dialog.Title>
             <Dialog.Close asChild>
-              <button className="p-1.5 rounded-lg hover:bg-white/10 transition-colors" style={{ color: "rgba(255,255,255,0.5)" }}>
+              <button className="p-1.5 rounded-lg hover:bg-white/10 transition-colors wave-text-secondary">
                 <X size={16} />
               </button>
             </Dialog.Close>
@@ -400,7 +399,7 @@ export const WaveLobby = React.memo(function WaveLobby({
             {/* Audio level indicator */}
             {audioEnabled && permissionState === "granted" && (
               <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                <Volume2 size={14} style={{ color: "rgba(255,255,255,0.5)" }} />
+                <Volume2 size={14} className="wave-text-secondary" />
                 <div className="flex items-end gap-0.5 h-4">
                   {Array.from({ length: 12 }).map((_, i) => (
                     <div
@@ -409,7 +408,7 @@ export const WaveLobby = React.memo(function WaveLobby({
                       style={{
                         height: Math.max(3, (audioLevel > i / 12 ? audioLevel * 16 : 3)),
                         backgroundColor: audioLevel > i / 12
-                          ? i < 8 ? "#22c55e" : i < 10 ? "#f59e0b" : "#ef4444"
+                          ? i < 8 ? "var(--color-success)" : i < 10 ? "#f59e0b" : "var(--color-danger)"
                           : "rgba(255,255,255,0.15)",
                       }}
                     />
@@ -455,8 +454,8 @@ export const WaveLobby = React.memo(function WaveLobby({
           {permissionState === "granted" && (audioDevices.length > 0 || videoDevices.length > 0) && (
             <div className="mx-6 mb-4 p-4 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
               <div className="flex items-center gap-1.5 mb-3">
-                <Settings2 size={13} style={{ color: "rgba(255,255,255,0.4)" }} />
-                <label className="text-[11px] font-medium text-white/40">{t("wave.deviceSettings")}</label>
+                <Settings2 size={13} className="wave-text-tertiary" />
+                <label className="text-[11px] font-medium wave-text-tertiary">{t("wave.deviceSettings")}</label>
               </div>
               <div className="grid grid-cols-4 gap-3">
                 {audioDevices.length > 0 && (
@@ -498,7 +497,7 @@ export const WaveLobby = React.memo(function WaveLobby({
               {/* Soft focus slider */}
               <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-[11px] font-medium text-white/40">{t("wave.softFocus")}</label>
+                  <label className="text-[11px] font-medium wave-text-tertiary">{t("wave.softFocus")}</label>
                   <span className="text-[10px] text-white/30">
                     {softFocus === 0 ? "Off" : `${softFocus.toFixed(1)}px`}
                   </span>
@@ -510,8 +509,8 @@ export const WaveLobby = React.memo(function WaveLobby({
                   step="0.5"
                   value={softFocus}
                   onChange={(e) => setSoftFocus(parseFloat(e.target.value))}
-                  className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                  style={{ backgroundColor: "rgba(255,255,255,0.1)", accentColor: "#6366f1" }}
+                  className="w-full h-1.5 rounded-full appearance-none cursor-pointer wave-surface-elevated"
+                  style={{ accentColor: "#6366f1" }}
                 />
               </div>
             </div>
@@ -520,9 +519,9 @@ export const WaveLobby = React.memo(function WaveLobby({
           {/* Background effects picker */}
           {showBackgrounds && (
             <div className="mx-6 mb-4 p-4 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <label className="text-[11px] font-medium text-white/40 block mb-2">{t("wave.background")}</label>
+              <label className="text-[11px] font-medium wave-text-tertiary block mb-2">{t("wave.background")}</label>
               {bgLoading && (
-                <div className="text-xs text-white/30 mb-2">{t("wave.loadingBackground")}</div>
+                <div className="text-xs wave-text-tertiary mb-2">{t("wave.loadingBackground")}</div>
               )}
               <div className="grid grid-cols-5 gap-2">
                 {/* None option */}
@@ -534,14 +533,13 @@ export const WaveLobby = React.memo(function WaveLobby({
                     // Restore original stream to video
                     if (videoRef.current && stream) videoRef.current.srcObject = stream;
                   }}
-                  className="relative aspect-square rounded-lg overflow-hidden transition-all hover:scale-105"
+                  className="relative aspect-square rounded-lg overflow-hidden transition-all hover:scale-105 wave-surface-elevated"
                   style={{
-                    backgroundColor: "rgba(255,255,255,0.08)",
                     border: bgEffect.mode === "none" ? "2px solid #6366f1" : "2px solid transparent",
                   }}
                 >
                   <div className="w-full h-full flex items-center justify-center">
-                    <Ban size={16} style={{ color: "rgba(255,255,255,0.4)" }} />
+                    <Ban size={16} className="wave-text-tertiary" />
                   </div>
                 </button>
 
@@ -602,7 +600,7 @@ export const WaveLobby = React.memo(function WaveLobby({
               disabled={permissionState === "denied"}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-150 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40"
               style={{
-                background: "linear-gradient(135deg, #22c55e, #16a34a)",
+                background: "linear-gradient(135deg, var(--color-success), #16a34a)",
                 color: "white",
                 boxShadow: "0 4px 16px rgba(34, 197, 94, 0.3)",
               }}
@@ -634,9 +632,9 @@ function LobbyToggle({
   onClick: () => void;
 }) {
   const bg = danger
-    ? "rgba(239, 68, 68, 0.15)"
+    ? "var(--color-danger-bg)"
     : accent
-      ? "rgba(59, 130, 246, 0.15)"
+      ? "var(--color-info-bg)"
       : "rgba(255, 255, 255, 0.06)";
   const border = danger
     ? "rgba(239, 68, 68, 0.25)"

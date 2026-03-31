@@ -93,34 +93,28 @@ export const SettingsDialog = React.memo(function SettingsDialog({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay
-          className="fixed inset-0 z-50"
-          style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
+          className="fixed inset-0 z-50 dialog-overlay"
         />
         <Dialog.Content
-          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg max-w-[900px] w-[90vw] h-[80vh] overflow-hidden flex flex-col animate-scale-in"
+          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg max-w-[900px] w-[90vw] h-[80vh] overflow-hidden flex flex-col animate-scale-in dialog-content border-primary"
           style={{
-            backgroundColor: "var(--color-bg-elevated)",
-            border: "1px solid var(--color-border-primary)",
             boxShadow: "var(--shadow-xl)",
           }}
           aria-labelledby="settings-title"
         >
           <div
-            className="flex items-center justify-between px-6 py-4 shrink-0"
-            style={{ borderBottom: "1px solid var(--color-border-primary)" }}
+            className="flex items-center justify-between px-6 py-4 shrink-0 dialog-header"
           >
             <Dialog.Title
               id="settings-title"
-              className="flex items-center gap-2 text-lg font-semibold"
-              style={{ color: "var(--color-text-primary)" }}
+              className="flex items-center gap-2 text-lg font-semibold text-primary"
             >
               <Settings size={20} />
               {t("settingsDialog.title")}
             </Dialog.Title>
             <Dialog.Close asChild>
               <button
-                className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                style={{ color: "var(--color-text-secondary)" }}
+                className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors text-secondary"
                 aria-label={t("settingsDialog.close")}
               >
                 <X size={18} />
@@ -138,12 +132,7 @@ export const SettingsDialog = React.memo(function SettingsDialog({
               aria-label={t("settingsDialog.sections")}
             >
               <div
-                className="flex items-center gap-1.5 px-2 py-1.5 mb-1 rounded-md text-sm"
-                style={{
-                  backgroundColor: "var(--color-bg-primary)",
-                  border: "1px solid var(--color-border-primary)",
-                  color: "var(--color-text-secondary)",
-                }}
+                className="flex items-center gap-1.5 px-2 py-1.5 mb-1 rounded-md text-sm bg-primary border-primary text-secondary"
               >
                 <Search size={14} style={{ flexShrink: 0 }} />
                 <input
@@ -151,14 +140,14 @@ export const SettingsDialog = React.memo(function SettingsDialog({
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder={t("settingsDialog.searchPlaceholder", { defaultValue: "Search settings..." })}
-                  className="border-none outline-none text-sm w-full"
-                  style={{ color: "var(--color-text-primary)", backgroundColor: "transparent", borderRadius: 0 }}
+                  className="border-none outline-none text-sm w-full text-primary"
+                  style={{ backgroundColor: "transparent", borderRadius: 0 }}
                 />
                 {searchTerm && (
                   <button
                     onClick={() => setSearchTerm("")}
-                    className="p-0.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                    style={{ color: "var(--color-text-tertiary)", flexShrink: 0 }}
+                    className="p-0.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors text-tertiary"
+                    style={{ flexShrink: 0 }}
                   >
                     <X size={14} />
                   </button>
@@ -284,10 +273,7 @@ function TabTrigger({
   return (
     <Tabs.Trigger
       value={value}
-      className="settings-tab flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap text-left w-full"
-      style={{
-        color: "var(--color-text-secondary)",
-      }}
+      className="settings-tab flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap text-left w-full text-secondary"
     >
       {children}
     </Tabs.Trigger>

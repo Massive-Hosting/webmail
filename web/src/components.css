@@ -3,6 +3,233 @@
    Message list, reading pane, thread view, compose, folder tree
    ================================================================ */
 
+/* ---- Shared utility classes ---- */
+
+/* Text colors — replace inline style={{ color: "var(--color-text-*)" }} */
+.text-primary { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-tertiary { color: var(--color-text-tertiary); }
+.text-inverse { color: var(--color-text-inverse); }
+.text-accent { color: var(--color-text-accent); }
+.text-danger { color: var(--color-text-danger); }
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+
+/* Background colors */
+.bg-primary { background-color: var(--color-bg-primary); }
+.bg-secondary { background-color: var(--color-bg-secondary); }
+.bg-tertiary { background-color: var(--color-bg-tertiary); }
+.bg-elevated { background-color: var(--color-bg-elevated); }
+.bg-accent { background-color: var(--color-bg-accent); }
+.bg-overlay { background-color: var(--color-bg-overlay); }
+.bg-input { background-color: var(--color-input-bg); }
+
+/* Borders */
+.border-primary { border: 1px solid var(--color-border-primary); }
+.border-secondary { border: 1px solid var(--color-border-secondary); }
+.border-t-primary { border-top: 1px solid var(--color-border-primary); }
+.border-t-secondary { border-top: 1px solid var(--color-border-secondary); }
+.border-b-primary { border-bottom: 1px solid var(--color-border-primary); }
+.border-b-secondary { border-bottom: 1px solid var(--color-border-secondary); }
+
+/* Status pills — pass/fail/warn badges */
+.pill { display: inline-flex; padding: 2px 6px; border-radius: 4px; font-weight: 500; font-size: 12px; }
+.pill--success { background-color: var(--color-success-bg); color: var(--color-success-dark); }
+.pill--danger { background-color: var(--color-danger-bg); color: var(--color-danger-dark); }
+.pill--warning { background-color: var(--color-warning-bg); color: var(--color-warning-dark); }
+.pill--info { background-color: var(--color-info-bg); color: var(--color-info-dark); }
+.pill--solid-success { background-color: var(--color-success); color: #fff; font-weight: 600; }
+.pill--solid-danger { background-color: var(--color-danger-dark); color: #fff; font-weight: 600; }
+
+/* Dialog overlay + content (shared across all dialogs) */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background-color: var(--color-bg-overlay);
+}
+
+.dialog-content {
+  position: fixed;
+  z-index: 50;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-primary);
+  box-shadow: var(--shadow-xl);
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--color-border-primary);
+  flex-shrink: 0;
+}
+
+.dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.dialog-close-btn {
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  transition: background-color 150ms ease;
+}
+
+.dialog-close-btn:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+/* Context menu shared styles */
+.ctx-menu {
+  min-width: 180px;
+  padding: 4px;
+  font-size: 14px;
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-primary);
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-md);
+  z-index: 50;
+}
+
+.ctx-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  outline: none;
+  color: var(--color-text-primary);
+  border-radius: var(--radius-sm);
+  transition: background-color 150ms ease;
+}
+
+.ctx-menu-item:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.ctx-menu-item--danger {
+  color: var(--color-text-danger);
+}
+
+.ctx-menu-separator {
+  margin: 4px 0;
+  border-top: 1px solid var(--color-border-primary);
+}
+
+/* Form input shared styles */
+.form-input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-input-bg);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-primary);
+  transition: border-color 150ms ease;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: var(--color-border-focus);
+}
+
+.form-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+/* Card container */
+.card {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--color-border-primary);
+  background-color: var(--color-bg-primary);
+}
+
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border-secondary);
+}
+
+.card-body {
+  padding: 16px 20px;
+}
+
+/* Wave component dark surface — shared for all Wave dialogs/views */
+.wave-surface {
+  background-color: #18181B;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.wave-surface-elevated {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.wave-surface-border {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.wave-text { color: rgba(255, 255, 255, 0.9); }
+.wave-text-secondary { color: rgba(255, 255, 255, 0.6); }
+.wave-text-tertiary { color: rgba(255, 255, 255, 0.4); }
+
+.wave-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.wave-btn:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.wave-btn--primary {
+  background-color: #3B82F6;
+  border-color: transparent;
+  color: #fff;
+}
+
+.wave-btn--primary:hover {
+  background-color: #2563EB;
+}
+
+.wave-btn--danger {
+  background-color: #EF4444;
+  border-color: transparent;
+  color: #fff;
+}
+
+.wave-btn--danger:hover {
+  background-color: #DC2626;
+}
+
 /* ---- Activity Bar (left icon rail) ---- */
 .activity-bar {
   display: flex;

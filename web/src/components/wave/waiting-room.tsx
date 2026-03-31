@@ -427,7 +427,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
                   </div>
                 ) : (
                   <>
-                    <div className="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <div className="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center wave-surface-border" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))", borderWidth: 1, borderStyle: "solid" }}>
                       <span className="text-3xl font-bold text-white/60">{(guestName || "G")[0].toUpperCase()}</span>
                     </div>
                     <p className="text-white/70 text-sm font-medium">{guestName || guestEmail}</p>
@@ -466,7 +466,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
             <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
             {!videoEnabled && (
               <div className="absolute inset-0 flex items-center justify-center bg-[#292524]">
-                <VideoOff size={18} style={{ color: "rgba(255,255,255,0.3)" }} />
+                <VideoOff size={18} className="wave-text-tertiary" />
               </div>
             )}
             {/* Resize handle */}
@@ -480,8 +480,8 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
         {/* Controls */}
         <div className="relative flex items-center justify-center gap-3 py-5" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4))" }}>
           {showCallDevices && (
-            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 p-4 rounded-xl w-80 space-y-3 animate-scale-in"
-              style={{ backgroundColor: "rgba(28,25,23,0.95)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", backdropFilter: "blur(12px)" }}>
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 p-4 rounded-xl w-80 space-y-3 animate-scale-in wave-surface-border"
+              style={{ backgroundColor: "rgba(28,25,23,0.95)", borderWidth: 1, borderStyle: "solid", boxShadow: "0 8px 32px rgba(0,0,0,0.5)", backdropFilter: "blur(12px)" }}>
               {audioDevices.length > 0 && (
                 <DarkSelect label="Microphone" value={selectedAudioDevice || audioDevices[0]?.deviceId || ""} options={audioDevices.map(d => ({ value: d.deviceId, label: d.label || `Mic ${d.deviceId.slice(0,4)}` }))} onChange={setSelectedAudioDevice} />
               )}
@@ -507,7 +507,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
             <CallBtn active={showReactions} onClick={() => setShowReactions(!showReactions)} icon={<Smile size={20} />} />
             {showReactions && (
               <div className="absolute bottom-14 left-1/2 -translate-x-1/2 flex gap-1 px-2 py-1.5 rounded-xl animate-scale-in"
-                style={{ backgroundColor: "#1c1917", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>
+                style={{ backgroundColor: "#1c1917", borderWidth: 1, borderStyle: "solid", borderColor: "rgba(255,255,255,0.12)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>
                 {["👍", "👏", "😂", "❤️", "🎉", "🤔", "👋", "🔥"].map((emoji) => (
                   <button
                     key={emoji}
@@ -571,7 +571,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
             } catch (e) { console.error("[Wave] Screen share failed:", e); }
           }} icon={<Monitor size={20} />} danger={isScreenSharing} />
           <CallBtn icon={<Settings2 size={20} />} active={showCallDevices} onClick={() => setShowCallDevices(!showCallDevices)} />
-          <button onClick={handleHangup} className="flex items-center justify-center w-14 h-14 rounded-full transition-transform hover:scale-105 active:scale-95" style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>
+          <button onClick={handleHangup} className="flex items-center justify-center w-14 h-14 rounded-full transition-transform hover:scale-105 active:scale-95" style={{ background: "linear-gradient(135deg, var(--color-danger), #dc2626)" }}>
             <PhoneOff size={22} className="text-white" />
           </button>
         </div>
@@ -589,8 +589,8 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
             style={{ backgroundColor: "rgba(28,25,23,0.95)", borderLeft: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }}>
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <span className="text-white/80 text-sm font-medium">Chat</span>
-              <button onClick={() => setChatOpen(false)} className="p-1 rounded hover:bg-white/10" style={{ color: "rgba(255,255,255,0.4)" }}>
+              <span className="wave-text text-sm font-medium">Chat</span>
+              <button onClick={() => setChatOpen(false)} className="p-1 rounded hover:bg-white/10 wave-text-tertiary">
                 <X size={14} />
               </button>
             </div>
@@ -620,7 +620,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
             </div>
             {/* Input */}
             <div className="px-3 pb-3 pt-1">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderStyle: "solid", borderColor: "rgba(255,255,255,0.08)" }}>
                 <input
                   ref={chatInputRef}
                   type="text"
@@ -654,8 +654,8 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
           {callDuration > 0 && <p className="text-white/40 text-sm">{formatTime(callDuration)}</p>}
           <button
             onClick={() => onOpenChange(false)}
-            className="mt-6 px-6 py-2 rounded-lg text-sm font-medium text-white/70 hover:text-white transition-colors"
-            style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}
+            className="mt-6 px-6 py-2 rounded-lg text-sm font-medium text-white/70 hover:text-white transition-colors wave-surface-elevated wave-surface-border"
+            style={{ borderWidth: 1, borderStyle: "solid" }}
           >
             {t("wave.close")}
           </button>
@@ -670,7 +670,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
       {/* Animated orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute w-96 h-96 rounded-full opacity-[0.07]" style={{ background: "radial-gradient(circle, #6366f1, transparent 70%)", top: "10%", left: "20%", animation: "float 20s ease-in-out infinite" }} />
-        <div className="absolute w-80 h-80 rounded-full opacity-[0.05]" style={{ background: "radial-gradient(circle, #22c55e, transparent 70%)", bottom: "10%", right: "15%", animation: "float 25s ease-in-out infinite reverse" }} />
+        <div className="absolute w-80 h-80 rounded-full opacity-[0.05]" style={{ background: "radial-gradient(circle, var(--color-success), transparent 70%)", bottom: "10%", right: "15%", animation: "float 25s ease-in-out infinite reverse" }} />
       </div>
 
       <div className="relative z-10 w-full max-w-lg mx-auto px-4">
@@ -712,12 +712,12 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
           {/* Audio level */}
           {audioEnabled && stream && (
             <div className="absolute bottom-3 left-3 flex items-center gap-2">
-              <Volume2 size={14} style={{ color: "rgba(255,255,255,0.4)" }} />
+              <Volume2 size={14} className="wave-text-tertiary" />
               <div className="flex items-end gap-0.5 h-4">
                 {Array.from({ length: 12 }).map((_, i) => (
                   <div key={i} className="w-1 rounded-full transition-all duration-75" style={{
                     height: Math.max(3, audioLevel > i / 12 ? audioLevel * 16 : 3),
-                    backgroundColor: audioLevel > i / 12 ? (i < 8 ? "#22c55e" : i < 10 ? "#f59e0b" : "#ef4444") : "rgba(255,255,255,0.1)",
+                    backgroundColor: audioLevel > i / 12 ? (i < 8 ? "var(--color-success)" : i < 10 ? "#f59e0b" : "var(--color-danger)") : "rgba(255,255,255,0.1)",
                   }} />
                 ))}
               </div>
@@ -733,10 +733,10 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
 
         {/* Device settings — always visible */}
         {(audioDevices.length > 0 || videoDevices.length > 0) && (
-          <div className="mb-5 p-4 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="mb-5 p-4 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)", borderWidth: 1, borderStyle: "solid", borderColor: "rgba(255,255,255,0.06)" }}>
             <div className="flex items-center gap-1.5 mb-3">
-              <Settings2 size={13} style={{ color: "rgba(255,255,255,0.4)" }} />
-              <label className="text-[11px] font-medium text-white/40">Device settings</label>
+              <Settings2 size={13} className="wave-text-tertiary" />
+              <label className="text-[11px] font-medium wave-text-tertiary">Device settings</label>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {audioDevices.length > 0 && (
@@ -753,14 +753,14 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
         )}
 
         {/* Share link */}
-        <div className="mb-5 p-3 rounded-xl flex items-center gap-2" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="mb-5 p-3 rounded-xl flex items-center gap-2" style={{ backgroundColor: "rgba(255,255,255,0.04)", borderWidth: 1, borderStyle: "solid", borderColor: "rgba(255,255,255,0.08)" }}>
           <span className="flex-1 text-xs text-white/50 truncate font-mono">{joinUrl}</span>
           <button
             onClick={handleCopyLink}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0"
             style={{
               backgroundColor: copied ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.08)",
-              color: copied ? "#22c55e" : "rgba(255,255,255,0.7)",
+              color: copied ? "var(--color-success)" : "rgba(255,255,255,0.7)",
               border: `1px solid ${copied ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.1)"}`,
             }}
           >
@@ -773,7 +773,7 @@ export const WaveWaitingRoom = React.memo(function WaveWaitingRoom({
         <button
           onClick={handleHangup}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-colors"
-          style={{ backgroundColor: "rgba(239,68,68,0.1)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)" }}
+          style={{ backgroundColor: "rgba(239,68,68,0.1)", color: "var(--color-danger)", border: "1px solid rgba(239,68,68,0.2)" }}
         >
           <PhoneOff size={18} />
           {t("wave.cancelCall")}
@@ -806,7 +806,7 @@ function LobbyBtn({ icon, active, danger, onClick }: { icon: React.ReactNode; ac
   return (
     <button onClick={onClick} className="flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-150 hover:scale-[1.05] active:scale-[0.95]" style={{
       backgroundColor: danger ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.06)",
-      color: danger ? "#f87171" : "rgba(255,255,255,0.75)",
+      color: danger ? "var(--color-danger)" : "rgba(255,255,255,0.75)",
       border: `1px solid ${danger ? "rgba(239,68,68,0.25)" : "rgba(255,255,255,0.08)"}`,
     }}>
       {icon}
@@ -816,10 +816,10 @@ function LobbyBtn({ icon, active, danger, onClick }: { icon: React.ReactNode; ac
 
 function CallBtn({ active, danger, onClick, icon }: { active: boolean; danger?: boolean; onClick: () => void; icon: React.ReactNode }) {
   return (
-    <button onClick={onClick} className="flex items-center justify-center w-12 h-12 rounded-full transition-all duration-150 hover:scale-105 active:scale-95" style={{
-      backgroundColor: danger ? "rgba(239,68,68,0.2)" : active ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.1)",
-      border: `1px solid ${danger ? "rgba(239,68,68,0.3)" : "rgba(255,255,255,0.1)"}`,
-      color: danger ? "#f87171" : "white",
+    <button onClick={onClick} className={`flex items-center justify-center w-12 h-12 rounded-full transition-all duration-150 hover:scale-105 active:scale-95 ${danger ? "" : "wave-surface-border"}`} style={{
+      backgroundColor: danger ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.1)",
+      ...(danger ? { border: "1px solid rgba(239,68,68,0.3)" } : { borderWidth: 1, borderStyle: "solid" }),
+      color: danger ? "var(--color-danger)" : "white",
     }}>
       {icon}
     </button>

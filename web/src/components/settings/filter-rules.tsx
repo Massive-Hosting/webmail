@@ -150,7 +150,7 @@ export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
   if (isLoading) {
     return (
       <div className="p-6">
-        <div className="text-sm" style={{ color: "var(--color-text-tertiary)" }}>
+        <div className="text-sm text-tertiary">
           {t("filterRules.loading")}
         </div>
       </div>
@@ -163,8 +163,7 @@ export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
         <div className="px-6 pt-4">
           <button
             onClick={() => setShowSieve(false)}
-            className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
-            style={{ color: "var(--color-text-accent)" }}
+            className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors text-accent"
           >
             <Filter size={14} />
             {t("filterRules.title")}
@@ -179,33 +178,22 @@ export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
     <div className="p-6 max-w-2xl">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Filter size={20} style={{ color: "var(--color-text-accent)" }} />
-          <h2
-            className="text-lg font-semibold"
-            style={{ color: "var(--color-text-primary)" }}
-          >
+          <Filter size={20} className="text-accent" />
+          <h2 className="text-lg font-semibold text-primary">
             {t("filterRules.title")}
           </h2>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowSieve(true)}
-            className="flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md transition-colors"
-            style={{
-              backgroundColor: "var(--color-bg-tertiary)",
-              color: "var(--color-text-secondary)",
-            }}
+            className="flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md transition-colors bg-tertiary text-secondary"
           >
             <Code2 size={14} />
             {t("sieve.advanced")}
           </button>
         <button
           onClick={handleAddRule}
-          className="flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md transition-colors"
-          style={{
-            backgroundColor: "var(--color-bg-accent)",
-            color: "var(--color-text-inverse)",
-          }}
+          className="flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md transition-colors bg-accent text-inverse"
         >
           <Plus size={16} />
           {t("filterRules.newRule")}
@@ -213,37 +201,24 @@ export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
         </div>
       </div>
 
-      <p
-        className="text-sm mb-4"
-        style={{ color: "var(--color-text-secondary)" }}
-      >
+      <p className="text-sm mb-4 text-secondary">
         {t("filterRules.description")}
       </p>
 
       {activeRules.length === 0 ? (
         <div
-          className="text-center py-12 rounded-lg"
-          style={{
-            backgroundColor: "var(--color-bg-secondary)",
-            border: "1px dashed var(--color-border-primary)",
-          }}
+          className="text-center py-12 rounded-lg bg-secondary"
+          style={{ border: "1px dashed var(--color-border-primary)" }}
         >
           <Filter
             size={48}
             strokeWidth={1.5}
-            className="mx-auto mb-3"
-            style={{ color: "var(--color-text-tertiary)" }}
+            className="mx-auto mb-3 text-tertiary"
           />
-          <p
-            className="text-sm font-medium"
-            style={{ color: "var(--color-text-secondary)" }}
-          >
+          <p className="text-sm font-medium text-secondary">
             {t("filterRules.noRules")}
           </p>
-          <p
-            className="text-xs mt-1"
-            style={{ color: "var(--color-text-tertiary)" }}
-          >
+          <p className="text-xs mt-1 text-tertiary">
             {t("filterRules.noRulesDesc")}
           </p>
         </div>
@@ -257,12 +232,7 @@ export const FilterRulesPanel = React.memo(function FilterRulesPanel() {
             items={activeRules.map((r) => r.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div
-              className="rounded-lg overflow-hidden"
-              style={{
-                border: "1px solid var(--color-border-primary)",
-              }}
-            >
+            <div className="rounded-lg overflow-hidden border-primary">
               {activeRules.map((rule, index) => (
                 <SortableRuleItem
                   key={rule.id}
@@ -336,16 +306,15 @@ function SortableRuleItem({
       ref={setNodeRef}
       style={{
         ...style,
-        backgroundColor: "var(--color-bg-primary)",
         borderBottom:
           index < 100 ? "1px solid var(--color-border-secondary)" : undefined,
       }}
-      className="flex items-center gap-2 px-3 py-2.5 group"
+      className="flex items-center gap-2 px-3 py-2.5 group bg-primary"
     >
       {/* Drag handle */}
       <button
-        className="p-1 rounded cursor-grab active:cursor-grabbing hover:bg-[var(--color-bg-tertiary)] transition-colors"
-        style={{ color: "var(--color-text-tertiary)", touchAction: "none" }}
+        className="p-1 rounded cursor-grab active:cursor-grabbing hover:bg-[var(--color-bg-tertiary)] transition-colors text-tertiary"
+        style={{ touchAction: "none" }}
         {...attributes}
         {...listeners}
       >
@@ -356,20 +325,12 @@ function SortableRuleItem({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span
-            className="text-sm font-medium truncate"
-            style={{
-              color: rule.enabled
-                ? "var(--color-text-primary)"
-                : "var(--color-text-tertiary)",
-            }}
+            className={`text-sm font-medium truncate ${rule.enabled ? "text-primary" : "text-tertiary"}`}
           >
             {index + 1}. {rule.name}
           </span>
         </div>
-        <p
-          className="text-xs truncate"
-          style={{ color: "var(--color-text-tertiary)" }}
-        >
+        <p className="text-xs truncate text-tertiary">
           {actionSummary}
         </p>
       </div>
@@ -397,8 +358,7 @@ function SortableRuleItem({
       {/* Edit */}
       <button
         onClick={() => onEdit(rule)}
-        className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all"
-        style={{ color: "var(--color-text-secondary)" }}
+        className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all text-secondary"
       >
         <Pencil size={14} />
       </button>
@@ -406,8 +366,7 @@ function SortableRuleItem({
       {/* Delete */}
       <button
         onClick={() => onDelete(rule.id)}
-        className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all"
-        style={{ color: "var(--color-text-secondary)" }}
+        className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all text-secondary"
       >
         <Trash2 size={14} />
       </button>
@@ -431,11 +390,7 @@ function RuleEditorDialog({
   const [localRule, setLocalRule] = useState<FilterRule>({ ...rule });
   const { sortedMailboxes } = useMailboxes();
 
-  const inputStyle = {
-    backgroundColor: "var(--color-bg-tertiary)",
-    color: "var(--color-text-primary)",
-    border: "1px solid var(--color-border-primary)",
-  };
+  const inputClasses = "bg-tertiary text-primary border-primary";
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -506,29 +461,18 @@ function RuleEditorDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay
-          className="fixed inset-0 z-50"
-          style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
-        />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay" />
         <Dialog.Content
-          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6"
-          style={{
-            backgroundColor: "var(--color-bg-elevated)",
-            border: "1px solid var(--color-border-primary)",
-            boxShadow: "var(--shadow-xl)",
-          }}
+          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6 bg-elevated border-primary"
+          style={{ boxShadow: "var(--shadow-xl)" }}
         >
           <div className="flex items-center justify-between mb-4">
-            <Dialog.Title
-              className="text-lg font-semibold"
-              style={{ color: "var(--color-text-primary)" }}
-            >
+            <Dialog.Title className="text-lg font-semibold text-primary">
               {rule.name === "New Rule" ? t("filterRules.createRule") : t("filterRules.editRule", { name: rule.name })}
             </Dialog.Title>
             <Dialog.Close asChild>
               <button
-                className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                style={{ color: "var(--color-text-secondary)" }}
+                className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors text-secondary"
               >
                 <X size={18} />
               </button>
@@ -538,10 +482,7 @@ function RuleEditorDialog({
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Rule name */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1"
-                style={{ color: "var(--color-text-secondary)" }}
-              >
+              <label className="block text-xs font-medium mb-1 text-secondary">
                 {t("filterRules.ruleName")}
               </label>
               <input
@@ -550,8 +491,7 @@ function RuleEditorDialog({
                 onChange={(e) =>
                   setLocalRule((prev) => ({ ...prev, name: e.target.value }))
                 }
-                className="w-full h-8 px-3 text-sm rounded-md outline-none"
-                style={inputStyle}
+                className={`w-full h-8 px-3 text-sm rounded-md outline-none ${inputClasses}`}
                 placeholder={t("filterRules.ruleNamePlaceholder")}
               />
             </div>
@@ -559,10 +499,7 @@ function RuleEditorDialog({
             {/* Conditions */}
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <span
-                  className="text-sm font-medium"
-                  style={{ color: "var(--color-text-primary)" }}
-                >
+                <span className="text-sm font-medium text-primary">
                   {t("filterRules.when")}
                 </span>
                 <StyledSelect
@@ -578,10 +515,7 @@ function RuleEditorDialog({
                     { value: "any", label: t("filterRules.any") },
                   ]}
                 />
-                <span
-                  className="text-sm"
-                  style={{ color: "var(--color-text-primary)" }}
-                >
+                <span className="text-sm text-primary">
                   {t("filterRules.conditionsMet")}
                 </span>
               </div>
@@ -619,15 +553,13 @@ function RuleEditorDialog({
                       onChange={(e) =>
                         updateCondition(index, { value: e.target.value })
                       }
-                      className="flex-1 h-8 px-3 text-sm rounded-md outline-none min-w-0"
-                      style={inputStyle}
+                      className={`flex-1 h-8 px-3 text-sm rounded-md outline-none min-w-0 ${inputClasses}`}
                       placeholder={t("filterRules.value")}
                     />
                     <button
                       type="button"
                       onClick={() => removeCondition(index)}
-                      className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors shrink-0"
-                      style={{ color: "var(--color-text-tertiary)" }}
+                      className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors shrink-0 text-tertiary"
                       disabled={localRule.conditions.length <= 1}
                     >
                       <X size={14} />
@@ -638,8 +570,7 @@ function RuleEditorDialog({
               <button
                 type="button"
                 onClick={addCondition}
-                className="flex items-center gap-1 mt-2 text-xs px-2 py-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                style={{ color: "var(--color-text-accent)" }}
+                className="flex items-center gap-1 mt-2 text-xs px-2 py-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors text-accent"
               >
                 <Plus size={12} />
                 {t("filterRules.addCondition")}
@@ -648,10 +579,7 @@ function RuleEditorDialog({
 
             {/* Actions */}
             <div>
-              <p
-                className="text-sm font-medium mb-2"
-                style={{ color: "var(--color-text-primary)" }}
-              >
+              <p className="text-sm font-medium mb-2 text-primary">
                 {t("filterRules.doTheFollowing")}
               </p>
 
@@ -699,8 +627,7 @@ function RuleEditorDialog({
                             onChange={(e) =>
                               updateAction(index, { value: e.target.value })
                             }
-                            className="flex-1 h-8 px-3 text-sm rounded-md outline-none min-w-0"
-                            style={inputStyle}
+                            className={`flex-1 h-8 px-3 text-sm rounded-md outline-none min-w-0 ${inputClasses}`}
                             placeholder={
                               action.type === "forward"
                                 ? t("filterRules.emailAddress")
@@ -714,8 +641,7 @@ function RuleEditorDialog({
                     <button
                       type="button"
                       onClick={() => removeAction(index)}
-                      className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors shrink-0"
-                      style={{ color: "var(--color-text-tertiary)" }}
+                      className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors shrink-0 text-tertiary"
                       disabled={localRule.actions.length <= 1}
                     >
                       <X size={14} />
@@ -726,8 +652,7 @@ function RuleEditorDialog({
               <button
                 type="button"
                 onClick={addAction}
-                className="flex items-center gap-1 mt-2 text-xs px-2 py-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                style={{ color: "var(--color-text-accent)" }}
+                className="flex items-center gap-1 mt-2 text-xs px-2 py-1 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors text-accent"
               >
                 <Plus size={12} />
                 {t("filterRules.addAction")}
@@ -736,25 +661,19 @@ function RuleEditorDialog({
 
             {/* Submit */}
             <div
-              className="flex items-center justify-end gap-2 pt-3"
-              style={{ borderTop: "1px solid var(--color-border-secondary)" }}
+              className="flex items-center justify-end gap-2 pt-3 border-t-secondary"
             >
               <Dialog.Close asChild>
                 <button
                   type="button"
-                  className="text-sm px-4 py-1.5 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                  style={{ color: "var(--color-text-secondary)" }}
+                  className="text-sm px-4 py-1.5 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors text-secondary"
                 >
                   {t("filterRules.cancel")}
                 </button>
               </Dialog.Close>
               <button
                 type="submit"
-                className="flex items-center gap-1.5 text-sm px-4 py-1.5 rounded-md transition-colors font-medium"
-                style={{
-                  backgroundColor: "var(--color-bg-accent)",
-                  color: "var(--color-text-inverse)",
-                }}
+                className="flex items-center gap-1.5 text-sm px-4 py-1.5 rounded-md transition-colors font-medium bg-accent text-inverse"
               >
                 <Save size={14} />
                 {t("filterRules.save")}
