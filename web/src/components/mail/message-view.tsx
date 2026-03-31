@@ -1,6 +1,6 @@
 /** Full message view in reading pane - premium design */
 
-import React, { useMemo, useState, useRef, useCallback } from "react";
+import React, { Suspense, useMemo, useState, useRef, useCallback } from "react";
 import { useMessage } from "@/hooks/use-message.ts";
 import { useCompose } from "@/components/mail/compose/use-compose.ts";
 import { fetchIdentities, sendReadReceipt } from "@/api/mail.ts";
@@ -69,6 +69,10 @@ import { parseSpamStatus } from "@/lib/spam.ts";
 import { useMailboxes } from "@/hooks/use-mailboxes.ts";
 import { trainSpam } from "@/api/spam.ts";
 import { toast } from "sonner";
+
+const DMARCReportCard = React.lazy(() =>
+  import("@/components/mail/dmarc-report-card.tsx").then(m => ({ default: m.DMARCReportCard }))
+);
 
 interface MessageViewProps {
   emailId: string;
@@ -479,6 +483,19 @@ function MessageContent({ email }: { email: Email }) {
           <InvitationCard key={att.blobId} blobId={att.blobId!} />
         ))}
 
+        {/* DMARC Report Cards */}
+        {(email.attachments ?? []).filter(att => isDMARCReport(att, email.subject)).map((att, i) => (
+          <div key={`dmarc-${i}`} className="message-view__attachments" style={{ padding: "0 16px 12px" }}>
+            <Suspense fallback={
+              <div className="flex items-center gap-2 p-4 rounded-lg" style={{ backgroundColor: "var(--color-bg-tertiary)" }}>
+                <span className="text-sm" style={{ color: "var(--color-text-secondary)" }}>Loading DMARC report...</span>
+              </div>
+            }>
+              <DMARCReportCard blobId={att.blobId!} filename={att.name ?? undefined} />
+            </Suspense>
+          </div>
+        ))}
+
         {/* PGP status bar */}
         {hasPGPContent && (
           <PGPStatusBar
@@ -832,6 +849,19 @@ function AddressContextMenu({
       </ContextMenu.Portal>
     </ContextMenu.Root>
   );
+}
+
+function isDMARCReport(att: EmailBodyPart, subject?: string): boolean {
+  const name = (att.name ?? "").toLowerCase();
+  const type = (att.type ?? "").toLowerCase();
+  // Check filename pattern: receiver!domain!begin!end[!id].ext
+  const hasDMARCFilename = name.includes("!") && (name.endsWith(".xml.gz") || name.endsWith(".zip") || name.endsWith(".xml"));
+  // Check subject
+  const hasDMARCSubject = (subject ?? "").toLowerCase().startsWith("report domain:");
+  // Check MIME type + subject combo
+  const isDMARCMime = ["application/gzip", "application/x-gzip", "application/zip", "application/x-zip-compressed"].includes(type);
+
+  return hasDMARCFilename || (hasDMARCSubject && (isDMARCMime || type === "application/xml" || type === "text/xml"));
 }
 
 function MessageViewSkeleton() {
