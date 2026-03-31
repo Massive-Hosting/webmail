@@ -47,3 +47,13 @@ Tag with `v*` to trigger the release workflow which builds multi-arch Docker ima
 - **Frontend state**: Zustand for global state, TanStack Query for server state.
 - **i18n**: All user-visible strings in `web/src/i18n/locales/{en,de,no}.json`.
 - **Settings tabs**: Add to `ALL_TABS` + `SETTINGS_SEARCH_INDEX` in `settings-dialog.tsx`.
+
+## CSS / Tailwind
+
+The frontend uses a hybrid approach: CSS custom properties for theming (`var(--color-text-primary)`, `var(--color-bg-elevated)`, etc.) and component classes (`.dialog-content`, `.ctx-menu`, `.pill`, etc.) in `components.css` / `index.css`, with Tailwind for one-off layout and spacing.
+
+**Rule: don't let them overlap on the same property.** If a component class (e.g. `.dialog-content`) sets `transform`, `position`, `display`, or `background-color`, do NOT also set those via Tailwind utility classes on the same element. The two systems will fight and the result depends on specificity and render order.
+
+- **Component classes** own: positioning, transforms, backgrounds, borders, shadows, animations — anything themed or reused.
+- **Tailwind utilities** own: one-off sizing (`w-[90vw]`, `h-[80vh]`, `max-w-[900px]`), spacing (`px-3`, `gap-2`), typography (`text-sm`, `font-medium`), and flex layout (`flex`, `items-center`) — as long as the component class doesn't already set it.
+- **CSS custom properties** (`var(--color-*)`) are the theming system. Use them in both component classes and inline `style={{}}` props. Don't use raw color values.
