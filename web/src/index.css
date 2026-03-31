@@ -52,9 +52,9 @@
   --color-border-secondary: #E7E5E4;
   --color-border-focus: #3B82F6;
 
-  --color-message-unread: #F0F6FF;
-  --color-message-selected: #EFF6FF;
-  --color-message-hover: #F7F7F6;
+  --color-message-unread: #EFF6FF;
+  --color-message-selected: #DBEAFE;
+  --color-message-hover: #F0EFED;
   --color-message-flagged: #FEF9EE;
 
   --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.04);
@@ -103,8 +103,8 @@
   --color-border-focus: #3B82F6;
 
   --color-message-unread: #0F172A;
-  --color-message-selected: #172554;
-  --color-message-hover: #1C1917;
+  --color-message-selected: #1E3A5F;
+  --color-message-hover: #292524;
   --color-message-flagged: #292524;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);

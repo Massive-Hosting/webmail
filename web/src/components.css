@@ -108,15 +108,16 @@
 
 .message-list-item:hover {
   background-color: var(--color-message-hover);
-  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.03);
 }
 
 .message-list-item[data-selected] {
   background-color: var(--color-message-selected);
+  box-shadow: inset 3px 0 0 0 var(--color-bg-accent);
 }
 
 .message-list-item[data-selected]:hover {
   background-color: var(--color-message-selected);
+  box-shadow: inset 3px 0 0 0 var(--color-bg-accent);
 }
 
 .message-list-item[data-unread]:not([data-selected]) {
@@ -124,7 +125,7 @@
 }
 
 .message-list-item[data-unread]:not([data-selected]):hover {
-  background-color: var(--color-message-unread);
+  background-color: var(--color-message-hover);
 }
 
 .message-list-item__indicator {
@@ -550,24 +551,30 @@
 .date-group-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 16px;
-  height: 28px;
+  gap: 10px;
+  padding: 6px 16px;
+  height: 32px;
+  background-color: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border-secondary);
+  border-top: 1px solid var(--color-border-secondary);
+  position: sticky;
+  top: 0;
+  z-index: 3;
 }
 
 .date-group-header__label {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--color-text-secondary);
   white-space: nowrap;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em;
 }
 
 .date-group-header__line {
   flex: 1;
   height: 1px;
-  background-color: var(--color-border-secondary);
+  background-color: var(--color-border-primary);
 }
 
 .message-list-skeleton {
@@ -2003,6 +2010,8 @@
 .folder-tree__item--active {
   background-color: var(--color-message-selected);
   color: var(--color-text-accent);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 0 var(--color-bg-accent);
 }
 
 .folder-tree__item--active:hover {
@@ -2022,6 +2031,7 @@
 
 .folder-tree__icon--active {
   color: var(--color-text-accent);
+  stroke-width: 2.5;
 }
 
 .folder-tree__name {
