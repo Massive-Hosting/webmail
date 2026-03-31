@@ -73,6 +73,7 @@ export function AppShell() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState("general");
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showNewCall, setShowNewCall] = useState(false);
   const [callTarget, setCallTarget] = useState<{ email: string; name: string } | null>(null);
@@ -199,6 +200,11 @@ export function AppShell() {
         document.getElementById("search-input")?.focus();
         break;
       case "settings":
+        setSettingsInitialTab("general");
+        setShowSettings(true);
+        break;
+      case "import":
+        setSettingsInitialTab("import");
         setShowSettings(true);
         break;
       case "theme": {
@@ -220,6 +226,17 @@ export function AppShell() {
     };
     window.addEventListener("wave:new-call", handler);
     return () => window.removeEventListener("wave:new-call", handler);
+  }, []);
+
+  // Listen for open-settings requests (e.g. folder tree "Import email" button)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { tab } = (e as CustomEvent).detail ?? {};
+      setSettingsInitialTab(tab ?? "general");
+      setShowSettings(true);
+    };
+    window.addEventListener("open-settings", handler);
+    return () => window.removeEventListener("open-settings", handler);
   }, []);
 
   // Online/offline detection
@@ -606,7 +623,7 @@ export function AppShell() {
       )}
       {showSettings && (
         <Suspense fallback={<div />}>
-          <SettingsDialog open={showSettings} onOpenChange={setShowSettings} />
+          <SettingsDialog open={showSettings} onOpenChange={setShowSettings} initialTab={settingsInitialTab} />
         </Suspense>
       )}
       {showCommandPalette && (

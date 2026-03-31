@@ -323,6 +323,15 @@ export const FolderTree = React.memo(function FolderTree() {
         </button>
       )}
 
+      {/* Import email */}
+      <button
+        onClick={() => window.dispatchEvent(new CustomEvent("open-settings", { detail: { tab: "import" } }))}
+        className="flex items-center gap-2.5 w-full px-3 py-1.5 text-sm transition-all duration-150 hover:bg-[var(--color-bg-tertiary)] text-tertiary hover:text-secondary"
+      >
+        <Download size={16} />
+        {t("import.title")}
+      </button>
+
       {/* Share folder dialog */}
       {shareMailbox && (
         <ShareMailboxDialog
