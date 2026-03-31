@@ -102,12 +102,31 @@ Webmail is a full-featured email, contacts, and calendar client that connects to
 | Security headers | CSP, HSTS, CORS, and X-Content-Type-Options enforced |
 | Rate limiting | Per-user request throttling with login-specific limits |
 
+### Wave Video Calls
+
+| Feature | Description |
+|---|---|
+| Peer-to-peer WebRTC | Direct encrypted video/audio calls, no media server needed |
+| Wave meetings | Calendar events with Wave meeting flag and join button |
+| External guest calls | Invite anyone via email — they join from a public link, no account needed |
+| Screen sharing | Share screen with stop/start toggle, preview in local PiP |
+| In-call chat | Real-time messaging during calls |
+| Emoji reactions | Floating emoji reactions (👍👏😂❤️🎉🤔👋🔥) |
+| Virtual backgrounds | MediaPipe-powered background blur and replacement |
+| Soft focus | Adjustable beauty filter on outgoing video |
+| Noise cancellation | RNNoise WASM-based noise suppression |
+| Device selection | Switch mic, camera, speaker, and video quality mid-call |
+| Draggable PiP | Resizable, draggable local camera preview |
+| Connect/disconnect sounds | Synthesized audio cues via Web Audio API |
+| Call history | Recent calls in sidebar with call-again button |
+| TURN relay | Time-limited HMAC credentials for NAT traversal |
+
 ### Collaboration
 
 | Feature | Description |
 |---|---|
 | Team availability view | Scheduling assistant grid showing all colleagues' free/busy for a week |
-| Free/busy overlay | Event form shows attendee busy blocks with conflict detection and suggested free slots |
+| Free/busy indicators | Event form shows attendee free/busy badges with self-event exclusion |
 | Company directory | Same-domain colleagues appear in compose and attendee autocomplete automatically |
 | Absence indicator | Amber banner warns when a recipient has vacation auto-reply enabled |
 | Meeting room booking | Room picker in event form with availability checking (Stalwart resource principals) |
@@ -297,23 +316,89 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## Configuration
 
+### Standalone Mode (recommended for most users)
+
+Set `STALWART_URL` and `STALWART_ADMIN_TOKEN` to connect directly to Stalwart without a hosting platform:
+
 | Variable | Default | Description |
 |---|---|---|
-| `WEBMAIL_LISTEN_ADDR` | `:8095` | Address and port for the Go API server |
+| `STALWART_URL` | — | Stalwart JMAP endpoint (e.g., `http://localhost:8081`) |
+| `STALWART_ADMIN_TOKEN` | — | Stalwart admin API token (for free/busy and directory lookups) |
+| `SECRET_ENCRYPTION_KEY` | — | 64-char hex key for AES-256-GCM session encryption. Generate with `openssl rand -hex 32` |
 | `WEBMAIL_DATABASE_URL` | — | PostgreSQL connection string |
-| `WEBMAIL_CORE_API_URL` | — | Hosting platform core API URL (for Stalwart resolution) |
-| `WEBMAIL_API_KEY` | — | Service-to-service API key for the core API |
-| `SECRET_ENCRYPTION_KEY` | — | 64-char hex key for AES-256-GCM session encryption |
-| `WEBMAIL_SESSION_MAX_AGE` | `86400` | Session cookie lifetime in seconds (default: 24h) |
-| `WEBMAIL_MAX_UPLOAD_SIZE` | `26214400` | Maximum attachment upload size in bytes (default: 25 MB) |
-| `WEBMAIL_RATE_LIMIT` | `1200` | Maximum requests per user per minute |
+| `VALKEY_URL` | `redis://127.0.0.1:6379/0` | Redis/Valkey URL for session storage |
+
+### Hosted Mode
+
+When running as part of a hosting platform, set `WEBMAIL_CORE_API_URL` and `WEBMAIL_API_KEY` instead of the Stalwart vars. The hosting platform's Core API resolves which Stalwart instance serves each email domain.
+
+### AI Assistant (optional)
+
+Works with any OpenAI-compatible API — OpenAI, Anthropic, Google Gemini, Ollama, vLLM, etc.
+
+| Variable | Default | Description |
+|---|---|---|
+| `AI_ENABLED` | `false` | Set to `true` to enable |
+| `AI_BASE_URL` | — | API base URL (e.g., `https://api.openai.com`) |
+| `AI_API_KEY` | — | API key |
+| `AI_MODEL` | — | Model name (e.g., `gpt-4o`, `claude-sonnet-4-20250514`, `gemini-2.0-flash`) |
+| `AI_MAX_TOKENS` | `1024` | Max response tokens |
+
+### Snooze & Scheduled Send — Temporal (optional)
+
+Without Temporal, everything works except snooze and scheduled send. To enable them, run a Temporal server:
+
+```bash
+docker run -d --name temporal -p 7233:7233 temporalio/auto-setup:latest
+```
+
+| Variable | Default | Description |
+|---|---|---|
+| `TEMPORAL_ADDRESS` | `localhost:7233` | Temporal frontend address |
+
+The webmail runs its own Temporal worker in-process — no separate worker deployment needed. Temporal also powers bulk email operations (mass move/delete/mark-read) with progress tracking.
+
+### Wave Video Calls — TURN Relay (optional)
+
+Wave calls work peer-to-peer without a TURN server when both parties can reach each other directly (same network, or both have public IPs). For calls across NATs (most real-world scenarios), you need a TURN relay server.
+
+**How TURN authentication works:** The webmail and TURN server share a secret. When a user starts a call, the webmail generates time-limited credentials (valid 24h) using HMAC-SHA1. The TURN server validates these credentials against the same secret. Random users cannot access the TURN server without valid credentials.
+
+**Setup with [coturn](https://github.com/coturn/coturn):**
+
+```bash
+# Install coturn
+sudo apt install coturn
+
+# /etc/turnserver.conf
+listening-port=3478
+realm=your-domain.com
+use-auth-secret
+static-auth-secret=your-secret-here    # same value as TURN_SECRET
+no-stun-backward-compatibility
+fingerprint
+```
+
+```bash
+sudo systemctl enable coturn && sudo systemctl start coturn
+```
+
+Then configure the webmail:
+
+| Variable | Description |
+|---|---|
+| `TURN_SECRET` | Shared secret (must match coturn's `static-auth-secret`) |
+| `TURN_SERVERS` | TURN URI (e.g., `turn:your-server.com:3478`) |
+
+### Other Settings
+
+| Variable | Default | Description |
+|---|---|---|
+| `WEBMAIL_LISTEN_ADDR` | `:8095` | HTTP listen address |
+| `WEBMAIL_SESSION_MAX_AGE` | `86400` | Session lifetime in seconds (24h) |
+| `WEBMAIL_MAX_UPLOAD_SIZE` | `26214400` | Max upload size (25MB) |
+| `WEBMAIL_RATE_LIMIT` | `1200` | Max requests per user per minute |
 | `WEBMAIL_ALLOWED_ORIGINS` | — | CORS allowed origins (comma-separated) |
-| `VALKEY_URL` | `redis://127.0.0.1:6379/0` | Valkey/Redis URL for sessions and progress relay |
-| `TEMPORAL_ADDRESS` | `localhost:7233` | Temporal cluster address for async workflows |
-| `AI_ENABLED` | `false` | Enable AI assistant features |
-| `AI_BASE_URL` | — | AI API endpoint URL |
-| `AI_API_KEY` | — | AI API key |
-| `AI_MODEL` | — | AI model identifier |
 
 ---
 
@@ -395,7 +480,7 @@ just docker-build
 docker run -p 8095:8095 --env-file .env webmail:latest
 ```
 
-For production, the webmail deploys into the hosting platform's Kubernetes cluster via its Helm chart. It runs as a stateless Deployment behind an Ingress, connecting to Stalwart over the internal network.
+For production, put a reverse proxy (nginx, Caddy, Traefik) in front to handle TLS termination and serve on port 443.
 
 ---
 
@@ -412,4 +497,4 @@ Please keep commits focused and write descriptive PR descriptions.
 
 ## License
 
-Private — not currently open source.
+MIT — see [LICENSE](LICENSE).
