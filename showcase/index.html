@@ -239,6 +239,16 @@ body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #
 .nav-link:hover::after,
 .nav-link.active::after { width: 100%; }
 .nav-link:hover { color: #fff; }
+
+/* Lightbox */
+.lightbox { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; cursor: zoom-out; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+.lightbox.active { opacity: 1; pointer-events: auto; }
+.lightbox img { max-width: 92vw; max-height: 90vh; border-radius: 8px; box-shadow: 0 16px 64px rgba(0,0,0,0.5); transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.22,1,0.36,1); }
+.lightbox.active img { transform: scale(1); }
+
+/* Clickable screenshots */
+.shot img, .browser-frame img { cursor: zoom-in; transition: transform 0.2s ease; }
+.shot img:hover, .browser-frame img:hover { transform: scale(1.02); }
 </style>
 </head>
 <body>
@@ -864,6 +874,74 @@ body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #
 </section>
 
 <!-- ============================================================ -->
+<!-- COLLABORATION -->
+<!-- ============================================================ -->
+<section id="collaboration" class="section-accent py-32 px-6">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-20 reveal">
+      <span class="feature-badge">Collaboration</span>
+      <h2 class="text-4xl md:text-5xl font-800 mt-6 mb-4 gradient-text">Work better together</h2>
+      <p class="text-lg text-white/50 max-w-2xl mx-auto">Free/busy scheduling, company directory, absence indicators, folder sharing, and meeting room booking — everything your team needs.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div class="glass-card p-6 reveal reveal-delay-1">
+        <h3 class="text-lg font-semibold mb-3">Command Palette</h3>
+        <p class="text-white/50 text-sm mb-4">Press Cmd+K to instantly navigate, compose, search, or change settings.</p>
+        <div class="shot">
+          <img src="screenshots/28-command-palette.png" alt="Command palette" loading="lazy">
+        </div>
+      </div>
+
+      <div class="glass-card p-6 reveal reveal-delay-2">
+        <h3 class="text-lg font-semibold mb-3">Quick Actions</h3>
+        <p class="text-white/50 text-sm mb-4">Archive, delete, or mark messages read with one click — action buttons appear on hover.</p>
+        <div class="shot">
+          <img src="screenshots/29-quick-actions.png" alt="Quick action buttons on hover" loading="lazy">
+        </div>
+      </div>
+
+      <div class="glass-card p-6 reveal reveal-delay-1">
+        <h3 class="text-lg font-semibold mb-3">Premium Attachments</h3>
+        <p class="text-white/50 text-sm mb-4">Color-coded file type icons, extension badges, and split download buttons.</p>
+        <div class="shot">
+          <img src="screenshots/30-attachment-cards.png" alt="Premium attachment cards" loading="lazy">
+        </div>
+      </div>
+
+      <div class="glass-card p-6 reveal reveal-delay-2">
+        <h3 class="text-lg font-semibold mb-3">Folder Sharing</h3>
+        <p class="text-white/50 text-sm mb-4">Share mailbox folders with colleagues — view or full edit permissions via JMAP.</p>
+        <div class="shot">
+          <img src="screenshots/33-folder-sharing.png" alt="Folder sharing dialog" loading="lazy">
+        </div>
+      </div>
+
+      <div class="glass-card p-6 reveal reveal-delay-1">
+        <h3 class="text-lg font-semibold mb-3">Spam Protection</h3>
+        <p class="text-white/50 text-sm mb-4">Spam score display, one-click "Not Spam" action, and Bayesian filter training.</p>
+        <div class="shot">
+          <img src="screenshots/31-spam-junk-view.png" alt="Spam protection in Junk folder" loading="lazy">
+        </div>
+      </div>
+
+      <div class="glass-card p-6 reveal reveal-delay-2">
+        <h3 class="text-lg font-semibold mb-3">Accounts & Organization</h3>
+        <p class="text-white/50 text-sm mb-4">Shared resources overview, free/busy toggle, and company directory settings.</p>
+        <div class="shot">
+          <img src="screenshots/34-settings-accounts.png" alt="Accounts settings with collaboration" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Lightbox for screenshot zoom -->
+<div id="lightbox" class="lightbox">
+  <img src="" alt="">
+</div>
+
+<!-- ============================================================ -->
 <!-- FOOTER -->
 <!-- ============================================================ -->
 <footer class="border-t border-white/5 py-16 px-6">
@@ -920,6 +998,20 @@ window.addEventListener('scroll', () => {
   }
   lastScrollY = currentScrollY;
 }, { passive: true });
+
+// Lightbox: click any screenshot to zoom
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = lightbox.querySelector('img');
+document.querySelectorAll('.shot img, .browser-frame img').forEach(img => {
+  img.addEventListener('click', (e) => {
+    e.stopPropagation();
+    lightboxImg.src = img.src;
+    lightboxImg.alt = img.alt;
+    lightbox.classList.add('active');
+  });
+});
+lightbox.addEventListener('click', () => lightbox.classList.remove('active'));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') lightbox.classList.remove('active'); });
 </script>
 
 </body>
