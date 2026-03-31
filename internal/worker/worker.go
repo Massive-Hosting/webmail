@@ -46,6 +46,7 @@ func Start(ctx context.Context, cfg *config.Config, pool *pgxpool.Pool, rdb *red
 	w.RegisterWorkflow(workflow.ImportMailboxWorkflow)
 	w.RegisterWorkflow(workflow.ScheduledSendWorkflow)
 	w.RegisterWorkflow(workflow.SnoozeEmailWorkflow)
+	w.RegisterWorkflow(workflow.IMAPImportWorkflow)
 
 	// Start worker in background.
 	if err := w.Start(); err != nil {

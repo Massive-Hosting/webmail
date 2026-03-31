@@ -162,6 +162,7 @@ Webmail is a full-featured email, contacts, and calendar client that connects to
 | Bulk mark read | Mark large selections as read/unread |
 | Mailbox export | Export folder as .mbox file with download link |
 | Mailbox import | Import .mbox file with batch progress |
+| IMAP import | Multi-step wizard to migrate email from external IMAP servers (Gmail, Outlook, Yahoo) with folder selection, auto-mapping, dedup, and real-time progress |
 | Scheduled send | Delayed email delivery via Temporal timer |
 | Snooze | Timed email resurfacing via Temporal timer |
 
@@ -179,6 +180,7 @@ Webmail is a full-featured email, contacts, and calendar client that connects to
 | Notifications | Desktop notifications and notification sound |
 | Storage | Storage quota display with quick actions |
 | Security | PGP key management, sign/encrypt defaults |
+| Import | IMAP import wizard — connect to external servers, select folders, auto-map to local mailboxes, track progress |
 | Accounts | Current account info, delegate access placeholder |
 
 ### Internationalization

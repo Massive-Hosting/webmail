@@ -18,6 +18,7 @@ import {
   Users,
   FileText,
   Search,
+  Download,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { FilterRulesPanel } from "./filter-rules.tsx";
@@ -31,6 +32,7 @@ import { StorageSettings } from "./storage-settings.tsx";
 import { VacationSettings } from "./vacation-settings.tsx";
 import { AccountsSettings } from "./accounts-settings.tsx";
 import { TemplateSettings } from "./template-settings.tsx";
+import { ImportSettings } from "./import-settings.tsx";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -50,11 +52,12 @@ const SETTINGS_SEARCH_INDEX: Record<string, string[]> = {
   storage: ["storage", "quota", "space", "trash", "junk"],
   security: ["security", "two-factor", "2fa", "totp", "app passwords"],
   accounts: ["accounts", "shared", "organization", "free busy", "directory"],
+  import: ["import", "imap", "migrate", "transfer", "gmail", "outlook", "yahoo"],
 };
 
 const ALL_TABS = [
   "general", "mail", "signatures", "templates", "vacation",
-  "filters", "shortcuts", "notifications", "storage", "security", "accounts",
+  "filters", "shortcuts", "notifications", "storage", "security", "accounts", "import",
 ];
 
 export const SettingsDialog = React.memo(function SettingsDialog({
@@ -221,6 +224,12 @@ export const SettingsDialog = React.memo(function SettingsDialog({
                   {t("settingsDialog.accounts")}
                 </TabTrigger>
               )}
+              {visibleTabs.includes("import") && (
+                <TabTrigger value="import">
+                  <Download size={14} />
+                  {t("settingsDialog.import")}
+                </TabTrigger>
+              )}
             </Tabs.List>
 
             <div className="flex-1 overflow-y-auto">
@@ -256,6 +265,9 @@ export const SettingsDialog = React.memo(function SettingsDialog({
               </Tabs.Content>
               <Tabs.Content value="accounts">
                 <AccountsSettings />
+              </Tabs.Content>
+              <Tabs.Content value="import">
+                <ImportSettings />
               </Tabs.Content>
             </div>
           </Tabs.Root>

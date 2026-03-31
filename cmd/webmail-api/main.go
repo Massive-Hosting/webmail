@@ -124,8 +124,10 @@ func main() {
 
 	// Task handler (only if Temporal connected).
 	var taskHandler *handler.TaskHandler
+	var importHandler *handler.ImportHandler
 	if temporalClient != nil {
 		taskHandler = handler.NewTaskHandler(temporalClient, cfg.SecretEncryptionKey, log)
+		importHandler = handler.NewImportHandler(temporalClient, cfg.SecretEncryptionKey, pool, rdb, log)
 	}
 
 	// AI handler (only if enabled).
@@ -257,6 +259,15 @@ func main() {
 				r.Post("/tasks/schedule-send", taskHandler.ScheduleSend)
 				r.Post("/tasks/snooze", taskHandler.Snooze)
 				r.Get("/tasks/{taskId}", taskHandler.GetTaskStatus)
+			}
+
+			// IMAP import endpoints.
+			if importHandler != nil {
+				r.Post("/import/test-connection", importHandler.TestConnection)
+				r.Post("/import/list-folders", importHandler.ListFolders)
+				r.Post("/import/start", importHandler.StartImport)
+				r.Get("/import/jobs", importHandler.ListJobs)
+				r.Get("/import/jobs/{id}", importHandler.GetJob)
 			}
 
 			// AI assistant — status endpoint always registered so frontend

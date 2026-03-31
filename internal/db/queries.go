@@ -282,6 +282,159 @@ func (q *Queries) DeleteEventParticipants(ctx context.Context, eventID, ownerEma
 	return err
 }
 
+// --- IMAP Import Jobs ---
+
+// IMAPImportJob represents an IMAP import job.
+type IMAPImportJob struct {
+	ID            string `json:"id"`
+	Email         string `json:"email"`
+	IMAPHost      string `json:"imapHost"`
+	IMAPPort      int    `json:"imapPort"`
+	IMAPUser      string `json:"imapUser"`
+	IMAPSSL       bool   `json:"imapSsl"`
+	Status        string `json:"status"`
+	FolderConfig  json.RawMessage `json:"folderConfig"`
+	TotalMessages int    `json:"totalMessages"`
+	ImportedCount int    `json:"importedCount"`
+	SkippedCount  int    `json:"skippedCount"`
+	FailedCount   int    `json:"failedCount"`
+	ErrorMessage  *string `json:"errorMessage,omitempty"`
+	StartedAt     string `json:"startedAt"`
+	CompletedAt   *string `json:"completedAt,omitempty"`
+	CreatedAt     string `json:"createdAt"`
+}
+
+// IMAPImportFailure represents a single import failure record.
+type IMAPImportFailure struct {
+	ID        int64  `json:"id"`
+	JobID     string `json:"jobId"`
+	Folder    string `json:"folder"`
+	MessageUID *int64 `json:"messageUid,omitempty"`
+	MessageID *string `json:"messageId,omitempty"`
+	Reason    string `json:"reason"`
+	Detail    *string `json:"detail,omitempty"`
+	CreatedAt string `json:"createdAt"`
+}
+
+// CreateIMAPImportJob inserts a new IMAP import job.
+func (q *Queries) CreateIMAPImportJob(ctx context.Context, job *IMAPImportJob) error {
+	_, err := q.pool.Exec(ctx,
+		`INSERT INTO imap_import_jobs (id, email, imap_host, imap_port, imap_user, imap_ssl, status, folder_config, total_messages)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		job.ID, job.Email, job.IMAPHost, job.IMAPPort, job.IMAPUser, job.IMAPSSL, job.Status, job.FolderConfig, job.TotalMessages,
+	)
+	return err
+}
+
+// GetIMAPImportJob retrieves a single import job by ID and email.
+func (q *Queries) GetIMAPImportJob(ctx context.Context, id, email string) (*IMAPImportJob, error) {
+	var job IMAPImportJob
+	err := q.pool.QueryRow(ctx,
+		`SELECT id, email, imap_host, imap_port, imap_user, imap_ssl, status, folder_config,
+		        total_messages, imported_count, skipped_count, failed_count, error_message,
+		        started_at, completed_at, created_at
+		 FROM imap_import_jobs WHERE id = $1 AND email = $2`,
+		id, email,
+	).Scan(&job.ID, &job.Email, &job.IMAPHost, &job.IMAPPort, &job.IMAPUser, &job.IMAPSSL,
+		&job.Status, &job.FolderConfig, &job.TotalMessages, &job.ImportedCount,
+		&job.SkippedCount, &job.FailedCount, &job.ErrorMessage,
+		&job.StartedAt, &job.CompletedAt, &job.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &job, nil
+}
+
+// ListIMAPImportJobs returns all import jobs for an email, newest first.
+func (q *Queries) ListIMAPImportJobs(ctx context.Context, email string) ([]IMAPImportJob, error) {
+	rows, err := q.pool.Query(ctx,
+		`SELECT id, email, imap_host, imap_port, imap_user, imap_ssl, status, folder_config,
+		        total_messages, imported_count, skipped_count, failed_count, error_message,
+		        started_at, completed_at, created_at
+		 FROM imap_import_jobs WHERE email = $1 ORDER BY created_at DESC`,
+		email,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []IMAPImportJob
+	for rows.Next() {
+		var job IMAPImportJob
+		if err := rows.Scan(&job.ID, &job.Email, &job.IMAPHost, &job.IMAPPort, &job.IMAPUser, &job.IMAPSSL,
+			&job.Status, &job.FolderConfig, &job.TotalMessages, &job.ImportedCount,
+			&job.SkippedCount, &job.FailedCount, &job.ErrorMessage,
+			&job.StartedAt, &job.CompletedAt, &job.CreatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, job)
+	}
+	if result == nil {
+		result = []IMAPImportJob{}
+	}
+	return result, rows.Err()
+}
+
+// UpdateIMAPImportProgress updates counters and folder_config for a running job.
+func (q *Queries) UpdateIMAPImportProgress(ctx context.Context, id string, totalMessages, imported, skipped, failed int, folderConfig json.RawMessage) error {
+	_, err := q.pool.Exec(ctx,
+		`UPDATE imap_import_jobs
+		 SET total_messages = $2, imported_count = $3, skipped_count = $4, failed_count = $5, folder_config = $6
+		 WHERE id = $1`,
+		id, totalMessages, imported, skipped, failed, folderConfig,
+	)
+	return err
+}
+
+// CompleteIMAPImportJob marks a job as completed or failed.
+func (q *Queries) CompleteIMAPImportJob(ctx context.Context, id, status string, errorMessage *string) error {
+	_, err := q.pool.Exec(ctx,
+		`UPDATE imap_import_jobs SET status = $2, error_message = $3, completed_at = now() WHERE id = $1`,
+		id, status, errorMessage,
+	)
+	return err
+}
+
+// CreateIMAPImportFailure records a single message import failure.
+func (q *Queries) CreateIMAPImportFailure(ctx context.Context, jobID, folder string, messageUID *int64, messageID *string, reason string, detail *string) error {
+	_, err := q.pool.Exec(ctx,
+		`INSERT INTO imap_import_failures (job_id, folder, message_uid, message_id, reason, detail)
+		 VALUES ($1, $2, $3, $4, $5, $6)`,
+		jobID, folder, messageUID, messageID, reason, detail,
+	)
+	return err
+}
+
+// ListIMAPImportFailures returns failures for a job.
+func (q *Queries) ListIMAPImportFailures(ctx context.Context, jobID string) ([]IMAPImportFailure, error) {
+	rows, err := q.pool.Query(ctx,
+		`SELECT id, job_id, folder, message_uid, message_id, reason, detail, created_at
+		 FROM imap_import_failures WHERE job_id = $1 ORDER BY created_at ASC`,
+		jobID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []IMAPImportFailure
+	for rows.Next() {
+		var f IMAPImportFailure
+		if err := rows.Scan(&f.ID, &f.JobID, &f.Folder, &f.MessageUID, &f.MessageID, &f.Reason, &f.Detail, &f.CreatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, f)
+	}
+	if result == nil {
+		result = []IMAPImportFailure{}
+	}
+	return result, rows.Err()
+}
+
 // --- Domain Settings ---
 
 // DomainSettings holds per-domain feature flags.
