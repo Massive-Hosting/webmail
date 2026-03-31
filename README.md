@@ -281,26 +281,61 @@ An embedded **Temporal worker** runs in-process for background operations: bulk 
 
 ### Prerequisites
 
-- **Go** 1.25+
-- **Node.js** 22+
-- **PostgreSQL** (any recent version)
-- **Stalwart Mail Server** with JMAP enabled
-- **Temporal Server** (optional — for bulk operations, scheduled send, snooze)
-- **Valkey/Redis** (for sessions and WebSocket progress relay)
-- **just** command runner ([installation](https://github.com/casey/just#installation))
+- [Stalwart Mail Server](https://stalw.art) with JMAP enabled (v0.9+ recommended)
+- Docker and Docker Compose (for the recommended install method)
 
-### Setup
+### Quick Start with Docker Compose
 
 ```bash
-# Clone the repository
-git clone <repo-url> && cd webmail
+# Download the compose file and env template
+curl -O https://raw.githubusercontent.com/Massive-Hosting/webmail/main/docker-compose.yml
+curl -O https://raw.githubusercontent.com/Massive-Hosting/webmail/main/.env.standalone
+
+# Edit the config — you need to set at minimum:
+#   STALWART_URL        → your Stalwart server's JMAP URL
+#   STALWART_ADMIN_TOKEN → your Stalwart admin token
+#   SECRET_ENCRYPTION_KEY → generate with: openssl rand -hex 32
+nano .env.standalone
+
+# Start everything
+docker compose up -d
+```
+
+Open [http://localhost:8095](http://localhost:8095) and log in with any email account from your Stalwart server. Database migrations run automatically on first start.
+
+> **Where to find your Stalwart admin token:** In your Stalwart configuration file, look for `authentication.fallback-admin.secret`. This is the token you need for `STALWART_ADMIN_TOKEN`. It's used server-side only for free/busy lookups and directory search — it's never exposed to browsers.
+
+### Binary Install
+
+Download the binary for your platform from [Releases](https://github.com/Massive-Hosting/webmail/releases), then:
+
+```bash
+tar xzf webmail-linux-amd64.tar.gz
+
+# You'll need PostgreSQL and Redis/Valkey running separately.
+# Run database migrations:
+goose -dir migrations postgres "postgres://user:pass@localhost:5432/webmail" up
+
+# Start the server:
+export STALWART_URL=http://your-stalwart:8081
+export STALWART_ADMIN_TOKEN=your-admin-token
+export SECRET_ENCRYPTION_KEY=$(openssl rand -hex 32)
+export WEBMAIL_DATABASE_URL=postgres://user:pass@localhost:5432/webmail
+export VALKEY_URL=redis://localhost:6379/0
+./webmail-linux-amd64
+```
+
+### Development Setup
+
+```bash
+git clone https://github.com/Massive-Hosting/webmail.git && cd webmail
 
 # Install frontend dependencies
 just install-ui
 
 # Copy and edit configuration
 cp .env.example .env
-# Edit .env with your database URL, Stalwart URL, and API keys
+# Edit .env with your Stalwart URL and admin token
 
 # Run database migrations
 just migrate
@@ -313,6 +348,8 @@ just dev-ui
 ```
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+Development requires Go 1.25+, Node.js 22+, PostgreSQL, Redis/Valkey, and [just](https://github.com/casey/just#installation).
 
 ---
 
@@ -472,17 +509,35 @@ webmail/
 
 ## Deployment
 
-The webmail ships as a **single container** — the Go binary serves both the API and the embedded React build (`embed.FS`). The Temporal worker runs in-process.
+The webmail ships as a **single container** — the Go binary serves both the API and the embedded React build (`embed.FS`). The Temporal worker runs in-process. Database migrations run automatically on startup.
 
-```bash
-# Build the Docker image
-just docker-build
+For production, put a reverse proxy (nginx, Caddy, Traefik) in front to handle TLS:
 
-# Run it
-docker run -p 8095:8095 --env-file .env webmail:latest
+```nginx
+# Example nginx config
+server {
+    listen 443 ssl;
+    server_name mail.example.com;
+
+    ssl_certificate     /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:8095;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+
+        # WebSocket support (required for real-time updates and Wave calls)
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 86400s;
+    }
+}
 ```
 
-For production, put a reverse proxy (nginx, Caddy, Traefik) in front to handle TLS termination and serve on port 443.
+> **Important:** The reverse proxy must support WebSocket upgrades. Without it, real-time email notifications, Wave video calls, and background task progress won't work.
 
 ---
 

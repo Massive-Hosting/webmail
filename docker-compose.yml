@@ -1,0 +1,48 @@
+# Webmail + dependencies — standalone mode (no hosting platform needed)
+#
+# Usage:
+#   1. Copy this file and .env.standalone to your server
+#   2. Edit .env.standalone with your Stalwart URL and admin token
+#   3. docker compose up -d
+#   4. Open http://localhost:8095 and log in with any Stalwart email account
+#
+# See README.md for full configuration reference.
+
+services:
+  webmail:
+    image: ghcr.io/massive-hosting/webmail:latest
+    ports: ["8095:8095"]
+    env_file: .env.standalone
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: webmail
+      POSTGRES_USER: webmail
+      POSTGRES_PASSWORD: webmail
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U webmail"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    restart: unless-stopped
+
+  # Optional: enables snooze and scheduled send
+  # Uncomment to enable:
+  # temporal:
+  #   image: temporalio/auto-setup:latest
+  #   restart: unless-stopped
+
+volumes:
+  pgdata:
