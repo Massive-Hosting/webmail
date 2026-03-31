@@ -831,6 +831,7 @@ function MessageContextMenu({
   onStar,
   onArchive,
   onDelete,
+  onProperties,
   onPrint,
 }: {
   email: EmailListItem;
@@ -844,6 +845,7 @@ function MessageContextMenu({
   onStar: (emailId: string, flagged: boolean) => void;
   onArchive?: (emailIds: string[]) => void;
   onDelete?: (emailIds: string[]) => void;
+  onProperties?: (email: EmailListItem) => void;
   onPrint?: (email: EmailListItem) => void;
 }) {
   const { t } = useTranslation();

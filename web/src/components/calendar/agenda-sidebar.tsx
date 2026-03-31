@@ -1,7 +1,7 @@
 /** Agenda sidebar showing today's events */
 
 import React, { useMemo, useCallback, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Calendar as CalendarIcon, MapPin } from "lucide-react";
 import type { CalendarEvent } from "@/types/calendar.ts";
 import {
   format,

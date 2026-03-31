@@ -403,7 +403,7 @@ export class WebSocketClient {
   }
 
   /** Attempt delta sync for Email changes; fall back to full invalidation */
-  private async handleEmailDeltaSync() {
+  private async handleEmailDeltaSync(_newState?: string) {
     const store = useJMAPStateStore.getState();
     const sinceState = store.emailState;
 
@@ -427,7 +427,7 @@ export class WebSocketClient {
   }
 
   /** Attempt delta sync for Mailbox changes; fall back to full invalidation */
-  private async handleMailboxDeltaSync() {
+  private async handleMailboxDeltaSync(_newState?: string) {
     const store = useJMAPStateStore.getState();
     const sinceState = store.mailboxState;
 
