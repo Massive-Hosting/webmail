@@ -162,9 +162,67 @@ jobs:
             webmail-linux-arm64.tar.gz
             webmail-darwin-arm64.tar.gz
           body: |
-            ## Installation
+            ## Quick Start
 
-            ### Docker (recommended)
+            ### Prerequisites
+            - [Stalwart Mail Server](https://stalw.art) with JMAP enabled
+            - PostgreSQL 14+
+            - Redis or [Valkey](https://valkey.io)
+
+            ### Docker Compose (easiest)
+
+            ```yaml
+            # docker-compose.yml
+            services:
+              webmail:
+                image: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+                ports: ["8095:8095"]
+                environment:
+                  STALWART_URL: http://stalwart:8081
+                  STALWART_ADMIN_TOKEN: your-stalwart-admin-token
+                  SECRET_ENCRYPTION_KEY: "$(openssl rand -hex 32)"  # generate once, keep stable
+                  WEBMAIL_DATABASE_URL: postgres://webmail:webmail@postgres:5432/webmail
+                  VALKEY_URL: redis://valkey:6379/0
+                  # Optional: AI assistant
+                  # AI_ENABLED: "true"
+                  # AI_BASE_URL: https://api.openai.com
+                  # AI_API_KEY: sk-...
+                  # AI_MODEL: gpt-4o
+                  # Optional: Temporal for snooze/scheduled send
+                  # TEMPORAL_ADDRESS: temporal:7233
+                  # Optional: TURN relay for Wave video calls behind NAT
+                  # TURN_SECRET: your-turn-secret
+                  # TURN_SERVERS: turn:your-server:3478
+                depends_on: [postgres, valkey]
+
+              postgres:
+                image: postgres:17-alpine
+                environment:
+                  POSTGRES_DB: webmail
+                  POSTGRES_USER: webmail
+                  POSTGRES_PASSWORD: webmail
+                volumes: ["pgdata:/var/lib/postgresql/data"]
+
+              valkey:
+                image: valkey/valkey:8-alpine
+
+              # Optional: enables snooze and scheduled send
+              # temporal:
+              #   image: temporalio/auto-setup:latest
+              #   ports: ["7233:7233"]
+
+            volumes:
+              pgdata:
+            ```
+
+            ```bash
+            docker compose up -d
+            ```
+
+            The webmail runs database migrations automatically on startup.
+            Open http://localhost:8095 and log in with any Stalwart email account.
+
+            ### Docker (single container)
             ```bash
             docker run -d \
               -e STALWART_URL=http://your-stalwart:8081 \
@@ -179,23 +237,72 @@ jobs:
             ### Binary
             ```bash
             tar xzf webmail-linux-amd64.tar.gz
-            # Run migrations first
-            goose -dir migrations postgres "postgres://..." up
-            # Start the server
-            STALWART_URL=http://your-stalwart:8081 \
-            STALWART_ADMIN_TOKEN=your-admin-token \
-            SECRET_ENCRYPTION_KEY=$(openssl rand -hex 32) \
-            WEBMAIL_DATABASE_URL=postgres://... \
-            VALKEY_URL=redis://... \
+            # Run migrations
+            goose -dir migrations postgres "postgres://user:pass@host:5432/webmail" up
+            # Start
+            export STALWART_URL=http://your-stalwart:8081
+            export STALWART_ADMIN_TOKEN=your-admin-token
+            export SECRET_ENCRYPTION_KEY=$(openssl rand -hex 32)
+            export WEBMAIL_DATABASE_URL=postgres://user:pass@host:5432/webmail
+            export VALKEY_URL=redis://host:6379/0
             ./webmail-linux-amd64
             ```
 
-            ### Requirements
-            - [Stalwart Mail Server](https://stalw.art) with JMAP enabled
-            - PostgreSQL database
-            - Redis/Valkey instance
+            ---
 
-            ### Optional
-            - `AI_ENABLED=true` + `AI_BASE_URL` + `AI_API_KEY` for AI assistant
-            - `TURN_SECRET` + `TURN_SERVERS` for Wave video call relay
-            - `TEMPORAL_ADDRESS` for scheduled send / snooze workflows
+            ## Configuration Reference
+
+            ### Required
+            | Variable | Description |
+            |----------|-------------|
+            | `STALWART_URL` | Stalwart JMAP endpoint (e.g., `http://localhost:8081`) |
+            | `STALWART_ADMIN_TOKEN` | Stalwart admin API token |
+            | `SECRET_ENCRYPTION_KEY` | 32-byte hex key for encrypting session credentials. Generate with `openssl rand -hex 32` |
+            | `WEBMAIL_DATABASE_URL` | PostgreSQL connection string |
+            | `VALKEY_URL` | Redis/Valkey URL for session storage |
+
+            ### Optional: AI Assistant
+            | Variable | Description |
+            |----------|-------------|
+            | `AI_ENABLED` | Set to `true` to enable |
+            | `AI_BASE_URL` | OpenAI-compatible API base URL |
+            | `AI_API_KEY` | API key |
+            | `AI_MODEL` | Model name (e.g., `gpt-4o`, `claude-sonnet-4-20250514`, `gemini-2.0-flash`) |
+
+            ### Optional: Snooze & Scheduled Send (Temporal)
+
+            Snooze and scheduled send require a [Temporal](https://temporal.io) server.
+            Without it, everything else works — these two features are simply unavailable.
+
+            ```bash
+            # Run Temporal (single container, includes all dependencies):
+            docker run -d --name temporal -p 7233:7233 temporalio/auto-setup:latest
+            ```
+
+            Then set:
+            | Variable | Description |
+            |----------|-------------|
+            | `TEMPORAL_ADDRESS` | Temporal frontend address (e.g., `localhost:7233`) |
+
+            The webmail registers its own Temporal worker internally — no additional
+            worker processes needed.
+
+            ### Optional: Wave Video Calls (TURN)
+
+            Wave calls work peer-to-peer without a TURN server when both parties
+            are on the same network. For calls across NATs, configure a TURN relay:
+
+            | Variable | Description |
+            |----------|-------------|
+            | `TURN_SECRET` | Shared secret for TURN credential generation |
+            | `TURN_SERVERS` | TURN server URI (e.g., `turn:your-server:3478`) |
+
+            You can use [coturn](https://github.com/coturn/coturn) as the TURN server.
+
+            ### Other
+            | Variable | Default | Description |
+            |----------|---------|-------------|
+            | `WEBMAIL_LISTEN_ADDR` | `:8095` | HTTP listen address |
+            | `WEBMAIL_SESSION_MAX_AGE` | `86400` | Session duration in seconds |
+            | `WEBMAIL_MAX_UPLOAD_SIZE` | `26214400` | Max upload size (25MB) |
+            | `WEBMAIL_ALLOWED_ORIGINS` | | CORS allowed origins (comma-separated) |
