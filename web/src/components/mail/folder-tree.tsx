@@ -688,11 +688,13 @@ const FolderItem = React.memo(function FolderItem({
                 ? "var(--color-message-selected)"
                 : "transparent",
             color: isActive ? "var(--color-text-accent)" : "var(--color-text-primary)",
+            fontWeight: isActive ? 600 : undefined,
             borderRadius: "var(--radius-sm)",
             marginLeft: "4px",
             marginRight: "4px",
             width: "calc(100% - 8px)",
             border: isDropTarget ? "2px solid var(--color-bg-accent)" : "2px solid transparent",
+            boxShadow: isActive ? "inset 3px 0 0 0 var(--color-bg-accent)" : undefined,
             cursor: isDropTarget ? "move" : undefined,
           }}
           onMouseOver={(e) => {
@@ -735,14 +737,14 @@ const FolderItem = React.memo(function FolderItem({
             />
           )}
           <span
-            className="shrink-0"
+            className={`shrink-0 ${isActive ? "folder-icon-active" : ""}`}
             style={{
               color: isActive ? "var(--color-text-accent)" : "var(--color-text-secondary)",
             }}
           >
             {icon}
           </span>
-          <span className={`truncate flex-1 text-left ${mailbox.unreadEmails > 0 ? "font-semibold" : "font-normal"}`}>
+          <span className={`truncate flex-1 text-left ${isActive || mailbox.unreadEmails > 0 ? "font-semibold" : "font-normal"}`}>
             {mailbox.name}
           </span>
           {mailbox.shareWith && Object.keys(mailbox.shareWith).length > 0 && (

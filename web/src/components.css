@@ -773,6 +773,7 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  background-color: var(--color-bg-primary);
 }
 
 .mail-list-pane__toolbar {
@@ -2031,7 +2032,10 @@
 
 .folder-tree__icon--active {
   color: var(--color-text-accent);
-  stroke-width: 2.5;
+}
+
+.folder-icon-active svg {
+  stroke-width: 2.5 !important;
 }
 
 .folder-tree__name {
