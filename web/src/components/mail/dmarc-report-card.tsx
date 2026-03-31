@@ -60,7 +60,6 @@ export const DMARCReportCard = React.memo(function DMARCReportCard({
   const complianceColor = report.complianceRate >= 90 ? "#22c55e" : report.complianceRate >= 70 ? "#f59e0b" : "#ef4444";
   const ComplianceIcon = report.complianceRate >= 90 ? ShieldCheck : report.complianceRate >= 70 ? ShieldAlert : ShieldX;
 
-  const policyColor = report.policy === "reject" ? "#22c55e" : report.policy === "quarantine" ? "#f59e0b" : "#9ca3af";
 
   const toggleRow = (idx: number) => {
     setExpandedRows(prev => {
@@ -113,11 +112,11 @@ export const DMARCReportCard = React.memo(function DMARCReportCard({
               <div className="text-tertiary">messages</div>
             </div>
             <div>
-              <div className="font-semibold" style={{ color: "#22c55e" }}>{report.passCount.toLocaleString()}</div>
+              <div className="font-semibold text-success">{report.passCount.toLocaleString()}</div>
               <div className="text-tertiary">passed</div>
             </div>
             <div>
-              <div className="font-semibold" style={{ color: "#ef4444" }}>{report.failCount.toLocaleString()}</div>
+              <div className="font-semibold text-danger">{report.failCount.toLocaleString()}</div>
               <div className="text-tertiary">failed</div>
             </div>
           </div>
@@ -126,9 +125,9 @@ export const DMARCReportCard = React.memo(function DMARCReportCard({
 
           {/* Policy badge */}
           <div className="flex items-center gap-1.5">
-            <div className="px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: policyColor + "18", color: policyColor, border: `1px solid ${policyColor}30` }}>
+            <span className={`pill ${report.policy === "reject" ? "pill--success" : report.policy === "quarantine" ? "pill--warning" : "pill--info"}`}>
               p={report.policy}
-            </div>
+            </span>
             {report.subdomainPolicy && (
               <div className="px-2 py-0.5 rounded text-xs font-medium bg-tertiary text-secondary">
                 sp={report.subdomainPolicy}
