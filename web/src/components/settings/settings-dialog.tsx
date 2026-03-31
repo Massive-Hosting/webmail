@@ -101,10 +101,7 @@ export const SettingsDialog = React.memo(function SettingsDialog({
           className="fixed inset-0 z-50 dialog-overlay"
         />
         <Dialog.Content
-          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg max-w-[900px] w-[90vw] h-[80vh] overflow-hidden flex flex-col animate-scale-in dialog-content border-primary"
-          style={{
-            boxShadow: "var(--shadow-xl)",
-          }}
+          className="max-w-[900px] w-[90vw] h-[80vh] dialog-content border-primary"
           aria-labelledby="settings-title"
         >
           <div
