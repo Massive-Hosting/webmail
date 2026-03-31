@@ -49,26 +49,16 @@ function ToolbarIconButton({
       <Tooltip.Trigger asChild>
         <button
           onClick={onClick}
-          className="flex items-center justify-center w-8 h-8 rounded-md transition-all duration-150 hover:bg-[var(--color-bg-tertiary)]"
-          style={{ color: "var(--color-text-secondary)" }}
+          className="flex items-center justify-center w-8 h-8 rounded-md transition-all duration-150 hover:bg-[var(--color-bg-tertiary)] text-secondary hover:text-primary"
           aria-label={label}
-          onMouseOver={(e) => {
-            e.currentTarget.style.color = "var(--color-text-primary)";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.color = "var(--color-text-secondary)";
-          }}
         >
           {icon}
         </button>
       </Tooltip.Trigger>
       <Tooltip.Content
-        className="text-xs px-2.5 py-1.5 animate-scale-in"
+        className="text-xs px-2.5 py-1.5 animate-scale-in bg-elevated text-primary border-primary"
         style={{
-          backgroundColor: "var(--color-bg-elevated)",
-          color: "var(--color-text-primary)",
           boxShadow: "var(--shadow-md)",
-          border: "1px solid var(--color-border-primary)",
           borderRadius: "var(--radius-sm)",
           fontWeight: 500,
           zIndex: 100,
@@ -121,11 +111,9 @@ export const Toolbar = React.memo(function Toolbar({
   return (
     <Tooltip.Provider delayDuration={400}>
       <div
-        className="flex items-center gap-3 px-3 shrink-0"
+        className="flex items-center gap-3 px-3 shrink-0 bg-secondary border-b-primary"
         style={{
           height: "var(--density-toolbar)",
-          backgroundColor: "var(--color-bg-secondary)",
-          borderBottom: "1px solid var(--color-border-primary)",
         }}
       >
         {/* Logo */}
@@ -184,8 +172,7 @@ export const Toolbar = React.memo(function Toolbar({
 
           {/* Separator */}
           <div
-            className="h-5 w-px shrink-0 mx-1"
-            style={{ backgroundColor: "var(--color-border-primary)" }}
+            className="h-5 w-px shrink-0 mx-1 bg-[var(--color-border-primary)]"
           />
 
           {/* User avatar dropdown */}
@@ -201,7 +188,7 @@ export const Toolbar = React.memo(function Toolbar({
                     width: 28,
                     height: 28,
                     backgroundColor: avatarColor,
-                    color: "#fff",
+                    color: "var(--color-text-inverse)",
                     fontSize: 11,
                     fontWeight: 700,
                     letterSpacing: "0.02em",
@@ -212,17 +199,15 @@ export const Toolbar = React.memo(function Toolbar({
                 </div>
                 <ChevronDown
                   size={14}
-                  style={{ color: "var(--color-text-secondary)" }}
+                  className="text-secondary"
                 />
               </button>
             </DropdownMenu.Trigger>
 
             <DropdownMenu.Portal>
               <DropdownMenu.Content
-                className="min-w-[220px] rounded-lg py-1 animate-scale-in"
+                className="min-w-[220px] rounded-lg py-1 animate-scale-in bg-elevated border-primary"
                 style={{
-                  backgroundColor: "var(--color-bg-elevated)",
-                  border: "1px solid var(--color-border-primary)",
                   boxShadow: "var(--shadow-lg)",
                   zIndex: 100,
                 }}
@@ -231,8 +216,7 @@ export const Toolbar = React.memo(function Toolbar({
               >
                 {/* User info header */}
                 <div
-                  className="flex items-center gap-3 px-3 py-2.5"
-                  style={{ borderBottom: "1px solid var(--color-border-secondary)" }}
+                  className="flex items-center gap-3 px-3 py-2.5 border-b-secondary"
                 >
                   <div
                     className="flex items-center justify-center rounded-full shrink-0"
@@ -240,7 +224,7 @@ export const Toolbar = React.memo(function Toolbar({
                       width: 36,
                       height: 36,
                       backgroundColor: avatarColor,
-                      color: "#fff",
+                      color: "var(--color-text-inverse)",
                       fontSize: 13,
                       fontWeight: 700,
                       letterSpacing: "0.02em",
@@ -250,14 +234,12 @@ export const Toolbar = React.memo(function Toolbar({
                   </div>
                   <div className="flex flex-col min-w-0">
                     <span
-                      className="text-sm font-semibold truncate"
-                      style={{ color: "var(--color-text-primary)" }}
+                      className="text-sm font-semibold truncate text-primary"
                     >
                       {shownName}
                     </span>
                     <span
-                      className="text-xs truncate"
-                      style={{ color: "var(--color-text-secondary)" }}
+                      className="text-xs truncate text-secondary"
                     >
                       {email}
                     </span>
@@ -266,27 +248,24 @@ export const Toolbar = React.memo(function Toolbar({
 
                 {/* Settings */}
                 <DropdownMenu.Item
-                  className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer outline-none transition-colors data-[highlighted]:bg-[var(--color-bg-tertiary)]"
-                  style={{ color: "var(--color-text-primary)" }}
+                  className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer outline-none transition-colors data-[highlighted]:bg-[var(--color-bg-tertiary)] text-primary"
                   onSelect={() => onSettings?.()}
                 >
-                  <Settings size={15} style={{ color: "var(--color-text-secondary)" }} />
+                  <Settings size={15} className="text-secondary" />
                   {t("toolbar.settings")}
                 </DropdownMenu.Item>
 
                 {/* Language sub-menu */}
                 <DropdownMenu.Sub>
                   <DropdownMenu.SubTrigger
-                    className="flex items-center justify-between px-3 py-2 text-sm cursor-pointer outline-none transition-colors data-[highlighted]:bg-[var(--color-bg-tertiary)]"
-                    style={{ color: "var(--color-text-primary)" }}
+                    className="flex items-center justify-between px-3 py-2 text-sm cursor-pointer outline-none transition-colors data-[highlighted]:bg-[var(--color-bg-tertiary)] text-primary"
                   >
                     <span className="flex items-center gap-2">
-                      <Globe size={15} style={{ color: "var(--color-text-secondary)" }} />
+                      <Globe size={15} className="text-secondary" />
                       {t("settings.language")}
                     </span>
                     <span
-                      className="text-xs"
-                      style={{ color: "var(--color-text-secondary)" }}
+                      className="text-xs text-secondary"
                     >
                       {LANGUAGES.find((l) => l.code === i18n.language)?.label ??
                         i18n.language}
@@ -294,10 +273,8 @@ export const Toolbar = React.memo(function Toolbar({
                   </DropdownMenu.SubTrigger>
                   <DropdownMenu.Portal>
                     <DropdownMenu.SubContent
-                      className="z-50 min-w-[140px] rounded-lg py-1 animate-scale-in"
+                      className="z-50 min-w-[140px] rounded-lg py-1 animate-scale-in bg-elevated border-primary"
                       style={{
-                        backgroundColor: "var(--color-bg-elevated)",
-                        border: "1px solid var(--color-border-primary)",
                         boxShadow: "var(--shadow-lg)",
                       }}
                       sideOffset={4}
@@ -323,17 +300,15 @@ export const Toolbar = React.memo(function Toolbar({
                 </DropdownMenu.Sub>
 
                 <DropdownMenu.Separator
-                  className="h-px my-1"
-                  style={{ backgroundColor: "var(--color-border-secondary)" }}
+                  className="h-px my-1 bg-[var(--color-border-secondary)]"
                 />
 
                 {/* Sign out */}
                 <DropdownMenu.Item
-                  className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer outline-none transition-colors data-[highlighted]:bg-[var(--color-bg-tertiary)]"
-                  style={{ color: "var(--color-text-primary)" }}
+                  className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer outline-none transition-colors data-[highlighted]:bg-[var(--color-bg-tertiary)] text-primary"
                   onSelect={handleLogout}
                 >
-                  <LogOut size={15} style={{ color: "var(--color-text-secondary)" }} />
+                  <LogOut size={15} className="text-secondary" />
                   {t("toolbar.logOut")}
                 </DropdownMenu.Item>
               </DropdownMenu.Content>

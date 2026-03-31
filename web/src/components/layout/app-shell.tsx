@@ -661,7 +661,7 @@ export function AppShell() {
   // Mobile layout
   if (isMobile) {
     return (
-      <div className="flex flex-col h-dvh" style={{ backgroundColor: "var(--color-bg-primary)" }}>
+      <div className="flex flex-col h-dvh bg-primary">
         {offlineBanner}
         <a href="#main-content" className="skip-nav">
           {t("nav.skipToContent")}
@@ -698,11 +698,7 @@ export function AppShell() {
             <div className="flex flex-col h-full">
               <button
                 onClick={() => setMobileView("list")}
-                className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors duration-150 hover:bg-[var(--color-bg-tertiary)]"
-                style={{
-                  color: "var(--color-text-accent)",
-                  borderBottom: "1px solid var(--color-border-primary)",
-                }}
+                className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors duration-150 hover:bg-[var(--color-bg-tertiary)] text-accent border-b-primary"
               >
                 <ArrowLeft size={15} />
                 {t("nav.backToList")}
@@ -723,7 +719,7 @@ export function AppShell() {
 
   // Desktop layout with activity bar
   return (
-    <div className="flex flex-col h-dvh" style={{ backgroundColor: "var(--color-bg-primary)" }}>
+    <div className="flex flex-col h-dvh bg-primary">
       {offlineBanner}
       <a href="#main-content" className="skip-nav">
         {t("nav.skipToContent")}
@@ -836,10 +832,9 @@ export function AppShell() {
               {/* Reading pane */}
               {readingPaneVisible && (
                 <aside
-                  className="flex-1 overflow-hidden"
+                  className="flex-1 overflow-hidden bg-primary"
                   role="complementary"
                   aria-label={t("readingPane.messagePreview")}
-                  style={{ backgroundColor: "var(--color-bg-primary)" }}
                 >
                   <ReadingPane />
                 </aside>

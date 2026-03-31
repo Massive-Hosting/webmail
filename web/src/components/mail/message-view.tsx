@@ -273,12 +273,12 @@ function MessageContent({ email }: { email: Email }) {
             <div className="message-view__sender-info">
               <div className="message-view__sender-name-line">
                 <AddressContextMenu address={sender}>
-                  <span className="message-view__sender-name" style={{ cursor: "context-menu" }}>
+                  <span className="message-view__sender-name cursor-context-menu">
                     {formatAddress(sender)}
                   </span>
                 </AddressContextMenu>
                 <AddressContextMenu address={sender}>
-                  <span className="message-view__sender-email" style={{ cursor: "context-menu" }}>
+                  <span className="message-view__sender-email cursor-context-menu">
                     &lt;{sender.email}&gt;
                   </span>
                 </AddressContextMenu>
@@ -289,7 +289,7 @@ function MessageContent({ email }: { email: Email }) {
                 <span className="message-view__recipients-label">{t("messageView.to")}</span>
                 {visibleRecipients.map((a, i) => (
                   <AddressContextMenu key={i} address={a}>
-                    <span className="message-view__recipient-chip" style={{ cursor: "context-menu" }}>
+                    <span className="message-view__recipient-chip cursor-context-menu">
                       {formatAddress(a)}
                     </span>
                   </AddressContextMenu>
@@ -356,7 +356,7 @@ function MessageContent({ email }: { email: Email }) {
 
         {/* Spam banner — shown when email is in Junk folder with spam status */}
         {isInJunk && spamStatus && (
-          <div className="message-view__images-bar" style={{ backgroundColor: "var(--color-bg-warning, #fef3cd)", borderColor: "var(--color-border-warning, #ffc107)" }}>
+          <div className="message-view__images-bar bg-warning border-warning">
             <AlertTriangle size={14} />
             <span>{t("spam.flaggedBanner", { score: spamStatus.score.toFixed(1) })}</span>
             <button onClick={handleNotSpamBanner} className="message-view__images-bar-action">
@@ -367,7 +367,7 @@ function MessageContent({ email }: { email: Email }) {
 
         {/* Spam score badge — shown when not in junk but has spam data */}
         {!isInJunk && spamStatus && (
-          <div style={{ padding: "2px 8px", fontSize: "11px", color: "var(--color-text-tertiary)" }}>
+          <div className="message-view__spam-score text-tertiary">
             {t("spam.score", { score: spamStatus.score.toFixed(1) })}
           </div>
         )}
@@ -385,7 +385,7 @@ function MessageContent({ email }: { email: Email }) {
 
         {/* Read receipt banner */}
         {readReceiptTo && !readReceiptDismissed && !email.keywords["$mdnsent"] && (
-          <div className="message-view__images-bar" style={{ backgroundColor: "var(--color-bg-tertiary)" }}>
+          <div className="message-view__images-bar bg-tertiary">
             <MailCheck size={14} />
             <span>{t("readReceipt.requested")}</span>
             <button
@@ -404,8 +404,7 @@ function MessageContent({ email }: { email: Email }) {
             </button>
             <button
               onClick={() => setReadReceiptDismissed(true)}
-              className="message-view__images-bar-action"
-              style={{ opacity: 0.7 }}
+              className="message-view__images-bar-action opacity-70"
             >
               {t("readReceipt.ignore")}
             </button>
@@ -485,10 +484,10 @@ function MessageContent({ email }: { email: Email }) {
 
         {/* DMARC Report Cards */}
         {(email.attachments ?? []).filter(att => isDMARCReport(att, email.subject)).map((att, i) => (
-          <div key={`dmarc-${i}`} className="message-view__attachments" style={{ padding: "16px 16px 12px" }}>
+          <div key={`dmarc-${i}`} className="message-view__attachments px-4 pt-4 pb-3">
             <Suspense fallback={
-              <div className="flex items-center gap-2 p-4 rounded-lg" style={{ backgroundColor: "var(--color-bg-tertiary)" }}>
-                <span className="text-sm" style={{ color: "var(--color-text-secondary)" }}>Loading DMARC report...</span>
+              <div className="flex items-center gap-2 p-4 rounded-lg bg-tertiary">
+                <span className="text-sm text-secondary">Loading DMARC report...</span>
               </div>
             }>
               <DMARCReportCard blobId={att.blobId!} filename={att.name ?? undefined} />
@@ -799,27 +798,17 @@ function AddressContextMenu({
   }, [address, openCompose]);
 
   const itemClassName =
-    "flex items-center gap-2 px-2.5 py-1.5 text-xs cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150";
-  const itemStyle = {
-    color: "var(--color-text-primary)",
-    borderRadius: "var(--radius-sm)",
-  };
+    "flex items-center gap-2 px-2.5 py-1.5 text-xs cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 text-primary rounded-sm";
 
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
       <ContextMenu.Portal>
         <ContextMenu.Content
-          className="z-50 min-w-[180px] rounded-lg py-1"
-          style={{
-            backgroundColor: "var(--color-bg-elevated)",
-            border: "1px solid var(--color-border-primary)",
-            boxShadow: "var(--shadow-lg)",
-          }}
+          className="z-50 min-w-[180px] rounded-lg py-1 bg-elevated border-primary shadow-lg"
         >
           <ContextMenu.Item
             className={itemClassName}
-            style={itemStyle}
             onSelect={handleAddToContacts}
           >
             <UserPlus size={14} />
@@ -827,19 +816,16 @@ function AddressContextMenu({
           </ContextMenu.Item>
           <ContextMenu.Item
             className={itemClassName}
-            style={itemStyle}
             onSelect={handleCompose}
           >
             <Mail size={14} />
             {t("contextMenu.composeEmail", { defaultValue: "Send email" })}
           </ContextMenu.Item>
           <ContextMenu.Separator
-            className="my-1"
-            style={{ borderTop: "1px solid var(--color-border-secondary)" }}
+            className="my-1 border-t-secondary"
           />
           <ContextMenu.Item
             className={itemClassName}
-            style={itemStyle}
             onSelect={handleCopyEmail}
           >
             <Copy size={14} />

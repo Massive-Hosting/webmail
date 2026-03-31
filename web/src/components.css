@@ -32,6 +32,20 @@
 .border-b-primary { border-bottom: 1px solid var(--color-border-primary); }
 .border-b-secondary { border-bottom: 1px solid var(--color-border-secondary); }
 
+/* Warning-specific colors */
+.bg-warning { background-color: var(--color-bg-warning); }
+.border-warning { border-color: var(--color-warning); }
+
+/* Spam score badge in message view */
+.message-view__spam-score { padding: 2px 8px; font-size: 11px; }
+
+/* Absence banner in compose */
+.absence-banner {
+  background-color: rgba(245, 158, 11, 0.08);
+  color: var(--color-warning);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+}
+
 /* Status pills — pass/fail/warn badges */
 .pill { display: inline-flex; padding: 2px 6px; border-radius: 4px; font-weight: 500; font-size: 12px; }
 .pill--success { background-color: var(--color-success-bg); color: var(--color-success-dark); }

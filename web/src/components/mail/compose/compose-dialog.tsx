@@ -804,7 +804,7 @@ export const ComposePanel = React.memo(function ComposePanel({
               onClick={handleInsertSignature}
               className="compose-dialog__window-btn"
               title={t("compose.insertSignature")}
-              style={{ marginLeft: 4 }}
+              className="compose-dialog__window-btn ml-1"
             >
               <FileSignature size={14} />
             </button>
@@ -942,8 +942,7 @@ export const ComposePanel = React.memo(function ComposePanel({
                     align="start"
                   >
                     <DropdownMenu.Label
-                      className="px-2.5 py-1.5 text-xs font-semibold"
-                      style={{ color: "var(--color-text-secondary)" }}
+                      className="px-2.5 py-1.5 text-xs font-semibold text-secondary"
                     >
                       <div className="flex items-center gap-1.5">
                         <CalendarClock size={13} />
@@ -981,8 +980,7 @@ export const ComposePanel = React.memo(function ComposePanel({
                       {t("action.mondayMorning")}
                     </DropdownMenu.Item>
                     <DropdownMenu.Separator
-                      className="my-1"
-                      style={{ borderTop: "1px solid var(--color-border-primary)" }}
+                      className="my-1 border-t-primary"
                     />
                     <DropdownMenu.Item
                       className="action-bar__dropdown-item"
@@ -990,7 +988,7 @@ export const ComposePanel = React.memo(function ComposePanel({
                         setTimeout(() => setShowSchedulePicker(true), 100);
                       }}
                     >
-                      <Clock size={13} style={{ marginRight: 4 }} />
+                      <Clock size={13} className="mr-1" />
                       {t("action.pickDateTime")}
                     </DropdownMenu.Item>
                   </DropdownMenu.Content>
@@ -1037,8 +1035,7 @@ export const ComposePanel = React.memo(function ComposePanel({
                   align="start"
                 >
                   <DropdownMenu.Label
-                    className="px-2.5 py-1.5 text-xs font-semibold"
-                    style={{ color: "var(--color-text-secondary)" }}
+                    className="px-2.5 py-1.5 text-xs font-semibold text-secondary"
                   >
                     {t("templates.templates")}
                   </DropdownMenu.Label>
@@ -1047,7 +1044,7 @@ export const ComposePanel = React.memo(function ComposePanel({
                       className="action-bar__dropdown-item"
                       disabled
                     >
-                      <span style={{ color: "var(--color-text-tertiary)", fontSize: "12px" }}>
+                      <span className="text-tertiary text-xs">
                         {t("templates.noTemplatesCompose")}
                       </span>
                     </DropdownMenu.Item>
@@ -1063,14 +1060,13 @@ export const ComposePanel = React.memo(function ComposePanel({
                     ))
                   )}
                   <DropdownMenu.Separator
-                    className="my-1"
-                    style={{ borderTop: "1px solid var(--color-border-primary)" }}
+                    className="my-1 border-t-primary"
                   />
                   <DropdownMenu.Item
                     className="action-bar__dropdown-item"
                     onSelect={handleSaveAsTemplate}
                   >
-                    <BookmarkPlus size={13} style={{ marginRight: 4 }} />
+                    <BookmarkPlus size={13} className="mr-1" />
                     {t("templates.saveAsCurrent")}
                   </DropdownMenu.Item>
                 </DropdownMenu.Content>
@@ -1142,7 +1138,7 @@ export const ComposePanel = React.memo(function ComposePanel({
         <div className="compose-dialog__overlay">
           <div className="compose-dialog__pgp-dialog">
             <h3 className="compose-dialog__pgp-dialog-title">
-              <AlertTriangle size={16} style={{ color: "#eab308" }} />
+              <AlertTriangle size={16} className="text-warning" />
               {t("compose.cannotEncrypt")}
             </h3>
             <p className="compose-dialog__pgp-dialog-desc">
@@ -1151,7 +1147,7 @@ export const ComposePanel = React.memo(function ComposePanel({
             <ul className="compose-dialog__pgp-dialog-list">
               {missingKeyRecipients.map((email) => (
                 <li key={email} className="compose-dialog__pgp-dialog-item">
-                  <AlertTriangle size={12} style={{ color: "#eab308" }} />
+                  <AlertTriangle size={12} className="text-warning" />
                   {email}
                 </li>
               ))}
@@ -1375,14 +1371,9 @@ function AbsenceBanners({ recipients }: { recipients: Array<{ email: string; isV
       {entries.map(([email, info]) => (
         <div
           key={email}
-          className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-md"
-          style={{
-            backgroundColor: "rgba(245, 158, 11, 0.08)",
-            color: "var(--color-bg-warning)",
-            border: "1px solid rgba(245, 158, 11, 0.15)",
-          }}
+          className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-md absence-banner"
         >
-          <Palmtree size={13} style={{ flexShrink: 0 }} />
+          <Palmtree size={13} className="shrink-0" />
           <span>
             <strong>{email.split("@")[0]}</strong>
             {" is out of office"}

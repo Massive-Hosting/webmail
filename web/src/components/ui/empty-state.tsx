@@ -25,34 +25,21 @@ export const EmptyState = React.memo(function EmptyState({
     <div
       className={`flex flex-col items-center justify-center p-8 text-center animate-fade-in ${className}`}
     >
-      <div
-        className="mb-4"
-        style={{ color: "var(--color-text-tertiary)" }}
-      >
+      <div className="mb-4 text-tertiary">
         {icon ?? <Inbox size={48} strokeWidth={1.5} />}
       </div>
-      <h3
-        className="text-lg font-medium mb-1"
-        style={{ color: "var(--color-text-secondary)" }}
-      >
+      <h3 className="text-lg font-medium mb-1 text-secondary">
         {title}
       </h3>
       {description && (
-        <p
-          className="text-sm max-w-sm mb-3"
-          style={{ color: "var(--color-text-tertiary)" }}
-        >
+        <p className="text-sm max-w-sm mb-3 text-tertiary">
           {description}
         </p>
       )}
       {action && (
         <button
           onClick={action.onClick}
-          className="px-4 py-2 text-sm font-medium rounded-md transition-colors"
-          style={{
-            backgroundColor: "var(--color-bg-accent)",
-            color: "var(--color-text-inverse)",
-          }}
+          className="px-4 py-2 text-sm font-medium rounded-md transition-colors bg-accent text-inverse"
         >
           {action.label}
         </button>

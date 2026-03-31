@@ -603,14 +603,10 @@ export const ComposeEditor = React.memo(function ComposeEditor({
   }
 
   return (
-    <div className="flex flex-col" style={{ borderTop: "1px solid var(--color-border-secondary)" }}>
+    <div className="flex flex-col border-t-secondary">
       {/* Formatting Toolbar */}
       <div
-        className="flex items-center gap-0.5 px-2 py-1 flex-wrap"
-        style={{
-          borderBottom: "1px solid var(--color-border-secondary)",
-          backgroundColor: "var(--color-bg-secondary)",
-        }}
+        className="flex items-center gap-0.5 px-2 py-1 flex-wrap border-b-secondary bg-secondary"
       >
         <ToolbarButton
           icon={<Undo size={15} />}
@@ -751,13 +747,8 @@ export const ComposeEditor = React.memo(function ComposeEditor({
             }
           }}
           onMouseDown={(e) => e.stopPropagation()}
-          className="text-xs px-1 py-1 rounded outline-none cursor-pointer"
-          style={{
-            backgroundColor: "transparent",
-            color: "var(--color-text-secondary)",
-            border: "1px solid var(--color-border-secondary)",
-            height: 28,
-          }}
+          className="text-xs px-1 py-1 rounded outline-none cursor-pointer text-secondary border-secondary"
+          style={{ backgroundColor: "transparent", height: 28 }}
           title={t("editor.fontSize")}
         >
           <option value="">{t("editor.fontSizeDefault")}</option>
@@ -788,11 +779,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       {/* Link input popup */}
       {showLinkInput && (
         <div
-          className="flex items-center gap-2 px-3 py-2"
-          style={{
-            backgroundColor: "var(--color-bg-tertiary)",
-            borderBottom: "1px solid var(--color-border-secondary)",
-          }}
+          className="flex items-center gap-2 px-3 py-2 bg-tertiary border-b-secondary"
         >
           <input
             ref={linkInputRef}
@@ -810,20 +797,11 @@ export const ComposeEditor = React.memo(function ComposeEditor({
               }
             }}
             placeholder="https://example.com"
-            className="flex-1 text-sm px-2 py-1 rounded outline-none"
-            style={{
-              backgroundColor: "var(--color-bg-primary)",
-              color: "var(--color-text-primary)",
-              border: "1px solid var(--color-border-primary)",
-            }}
+            className="flex-1 text-sm px-2 py-1 rounded outline-none bg-primary text-primary border-primary"
           />
           <button
             onClick={handleLinkSubmit}
-            className="text-xs px-2 py-1 rounded font-medium"
-            style={{
-              backgroundColor: "var(--color-bg-accent)",
-              color: "white",
-            }}
+            className="text-xs px-2 py-1 rounded font-medium bg-accent text-inverse"
           >
             {t("compose.apply")}
           </button>
@@ -832,8 +810,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
               setShowLinkInput(false);
               setLinkUrl("");
             }}
-            className="text-xs px-2 py-1"
-            style={{ color: "var(--color-text-secondary)" }}
+            className="text-xs px-2 py-1 text-secondary"
           >
             {t("compose.cancel")}
           </button>
@@ -843,22 +820,18 @@ export const ComposeEditor = React.memo(function ComposeEditor({
       {/* AI Edit popover */}
       {aiEditOpen && (
         <div
-          className="flex flex-col gap-2 px-4 py-3"
-          style={{
-            backgroundColor: "var(--color-bg-tertiary)",
-            borderBottom: "1px solid var(--color-border-secondary)",
-          }}
+          className="flex flex-col gap-2 px-4 py-3 bg-tertiary border-b-secondary"
           onMouseDown={(e) => e.preventDefault()}
         >
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0">
-              <Sparkles size={14} style={{ color: "var(--color-text-accent)", flexShrink: 0 }} />
-              <span className="text-xs font-medium" style={{ color: "var(--color-text-primary)" }}>
+              <Sparkles size={14} className="text-accent shrink-0" />
+              <span className="text-xs font-medium text-primary">
                 {aiSelectedText ? t("editor.aiEditTitle") : t("editor.aiComposeTitle")}
               </span>
               {aiSelectedText && (
-                <span className="text-xs truncate" style={{ color: "var(--color-text-tertiary)" }}>
+                <span className="text-xs truncate text-tertiary">
                   — {aiSelectedText.length > 80 ? aiSelectedText.slice(0, 80) + '...' : aiSelectedText}
                 </span>
               )}
@@ -866,8 +839,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
             <button
               type="button"
               onClick={handleAiCancel}
-              className="p-1 rounded hover:bg-[var(--color-bg-secondary)]"
-              style={{ color: "var(--color-text-tertiary)" }}
+              className="p-1 rounded hover:bg-[var(--color-bg-secondary)] text-tertiary"
               onMouseDown={(e) => e.preventDefault()}
             >
               <X size={14} />
@@ -887,11 +859,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
                 key={preset}
                 type="button"
                 onClick={() => handleAiPreset(preset)}
-                className="px-2 py-1 text-xs rounded-md transition-colors hover:bg-[var(--color-bg-secondary)]"
-                style={{
-                  color: "var(--color-text-secondary)",
-                  border: "1px solid var(--color-border-secondary)",
-                }}
+                className="px-2 py-1 text-xs rounded-md transition-colors hover:bg-[var(--color-bg-secondary)] text-secondary border-secondary"
                 disabled={aiStreaming}
                 onMouseDown={(e) => e.preventDefault()}
               >
@@ -917,23 +885,14 @@ export const ComposeEditor = React.memo(function ComposeEditor({
                 }
               }}
               placeholder={aiSelectedText ? t("editor.aiEditPlaceholder") : t("editor.aiComposePlaceholder")}
-              className="flex-1 text-sm px-3 py-2 rounded-md outline-none"
-              style={{
-                backgroundColor: "var(--color-bg-primary)",
-                color: "var(--color-text-primary)",
-                border: "1px solid var(--color-border-primary)",
-              }}
+              className="flex-1 text-sm px-3 py-2 rounded-md outline-none bg-primary text-primary border-primary"
               disabled={aiStreaming}
             />
             <button
               type="button"
               onClick={handleAiRewrite}
               disabled={!aiInstruction.trim() || aiStreaming}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md transition-colors disabled:opacity-40"
-              style={{
-                backgroundColor: "var(--color-bg-accent)",
-                color: "white",
-              }}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md transition-colors disabled:opacity-40 bg-accent text-inverse"
               onMouseDown={(e) => e.preventDefault()}
             >
               {aiStreaming ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
@@ -943,16 +902,15 @@ export const ComposeEditor = React.memo(function ComposeEditor({
 
           {/* Result preview */}
           {aiResult && (
-            <div className="rounded-md p-3" style={{ backgroundColor: "var(--color-bg-primary)", border: "1px solid var(--color-border-secondary)" }}>
-              <pre className="text-sm whitespace-pre-wrap" style={{ color: "var(--color-text-primary)", fontFamily: "inherit", margin: 0 }}>
+            <div className="rounded-md p-3 bg-primary border-secondary">
+              <pre className="text-sm whitespace-pre-wrap text-primary" style={{ fontFamily: "inherit", margin: 0 }}>
                 {aiResult}
               </pre>
-              <div className="flex items-center gap-2 mt-2 pt-2" style={{ borderTop: "1px solid var(--color-border-secondary)" }}>
+              <div className="flex items-center gap-2 mt-2 pt-2 border-t-secondary">
                 <button
                   type="button"
                   onClick={handleAiAccept}
-                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors"
-                  style={{ backgroundColor: "var(--color-bg-accent)", color: "white" }}
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors bg-accent text-inverse"
                   onMouseDown={(e) => e.preventDefault()}
                 >
                   <Check size={12} />
@@ -961,8 +919,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
                 <button
                   type="button"
                   onClick={() => { setAiResult(""); setAiInstruction(""); setTimeout(() => aiInputRef.current?.focus(), 50); }}
-                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors hover:bg-[var(--color-bg-secondary)]"
-                  style={{ color: "var(--color-text-secondary)", border: "1px solid var(--color-border-secondary)" }}
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors hover:bg-[var(--color-bg-secondary)] text-secondary border-secondary"
                   onMouseDown={(e) => e.preventDefault()}
                 >
                   <RefreshCw size={12} />
@@ -971,8 +928,7 @@ export const ComposeEditor = React.memo(function ComposeEditor({
                 <button
                   type="button"
                   onClick={handleAiCancel}
-                  className="px-2.5 py-1 text-xs rounded transition-colors hover:bg-[var(--color-bg-secondary)]"
-                  style={{ color: "var(--color-text-tertiary)" }}
+                  className="px-2.5 py-1 text-xs rounded transition-colors hover:bg-[var(--color-bg-secondary)] text-tertiary"
                   onMouseDown={(e) => e.preventDefault()}
                 >
                   {t("editor.aiCancel")}
@@ -1023,19 +979,14 @@ function ImageResizeToolbar({ editor }: { editor: ReturnType<typeof useEditor> &
 
   return (
     <div
-      className="flex items-center gap-0.5 px-1.5 py-1 rounded-md shadow-lg text-xs"
-      style={{
-        backgroundColor: "var(--color-bg-elevated)",
-        border: "1px solid var(--color-border-primary)",
-      }}
+      className="flex items-center gap-0.5 px-1.5 py-1 rounded-md shadow-lg text-xs bg-elevated border-primary"
       onMouseDown={(e) => e.preventDefault()}
     >
       {sizes.map((s) => (
         <button
           key={s.value}
           type="button"
-          className="px-2 py-0.5 rounded transition-colors hover:bg-[var(--color-bg-tertiary)]"
-          style={{ color: "var(--color-text-secondary)" }}
+          className="px-2 py-0.5 rounded transition-colors hover:bg-[var(--color-bg-tertiary)] text-secondary"
           onClick={() => setImageWidth(s.value)}
         >
           {s.label}
@@ -1064,12 +1015,7 @@ function ImageResizeToolbar({ editor }: { editor: ReturnType<typeof useEditor> &
             value={customWidth}
             onChange={(e) => setCustomWidth(e.target.value)}
             placeholder="e.g. 300px"
-            className="w-20 px-1.5 py-0.5 text-xs rounded outline-none"
-            style={{
-              backgroundColor: "var(--color-bg-tertiary)",
-              color: "var(--color-text-primary)",
-              border: "1px solid var(--color-border-secondary)",
-            }}
+            className="w-20 px-1.5 py-0.5 text-xs rounded outline-none bg-tertiary text-primary border-secondary"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === "Escape") {
@@ -1080,8 +1026,7 @@ function ImageResizeToolbar({ editor }: { editor: ReturnType<typeof useEditor> &
           />
           <button
             type="submit"
-            className="px-1.5 py-0.5 rounded text-xs font-medium"
-            style={{ backgroundColor: "var(--color-bg-accent, #3b82f6)", color: "#fff" }}
+            className="px-1.5 py-0.5 rounded text-xs font-medium bg-accent text-inverse"
           >
             OK
           </button>
@@ -1089,8 +1034,7 @@ function ImageResizeToolbar({ editor }: { editor: ReturnType<typeof useEditor> &
       ) : (
         <button
           type="button"
-          className="px-2 py-0.5 rounded transition-colors hover:bg-[var(--color-bg-tertiary)]"
-          style={{ color: "var(--color-text-secondary)" }}
+          className="px-2 py-0.5 rounded transition-colors hover:bg-[var(--color-bg-tertiary)] text-secondary"
           onClick={() => {
             setShowCustom(true);
           }}

@@ -166,14 +166,14 @@ function ComposeSkeleton() {
         </div>
       </div>
       {/* To field skeleton */}
-      <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--color-border-secondary)" }}>
+      <div className="border-b-secondary" style={{ padding: "10px 12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Skeleton width={24} height={14} />
           <Skeleton width="40%" height={14} />
         </div>
       </div>
       {/* Subject skeleton */}
-      <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--color-border-secondary)" }}>
+      <div className="border-b-secondary" style={{ padding: "10px 12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Skeleton width={50} height={14} />
           <Skeleton width="60%" height={14} />
@@ -186,7 +186,7 @@ function ComposeSkeleton() {
         <Skeleton width="70%" height={14} />
       </div>
       {/* Toolbar skeleton */}
-      <div style={{ padding: "8px 12px", borderTop: "1px solid var(--color-border-secondary)" }}>
+      <div className="border-t-secondary" style={{ padding: "8px 12px" }}>
         <Skeleton width={80} height={32} />
       </div>
     </div>

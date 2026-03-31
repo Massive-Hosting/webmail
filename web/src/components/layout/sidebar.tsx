@@ -37,10 +37,9 @@ export const Sidebar = React.memo(function Sidebar() {
   return (
     <nav
       aria-label="Mailbox folders"
-      className="flex flex-col shrink-0 h-full overflow-hidden"
+      className="flex flex-col shrink-0 h-full overflow-hidden bg-secondary"
       style={{
         width,
-        backgroundColor: "var(--color-bg-secondary)",
         borderRight: sidebarCollapsed ? "none" : "1px solid var(--color-border-primary)",
         transition: "width 200ms cubic-bezier(0.4, 0, 0.2, 1)",
       }}
@@ -52,10 +51,7 @@ export const Sidebar = React.memo(function Sidebar() {
             <FolderTree />
             <SavedSearchesList />
             <RecentCalls />
-            <div
-              className="mx-3 my-1"
-              style={{ borderTop: "1px solid var(--color-border-primary)" }}
-            />
+            <div className="mx-3 my-1 border-t-primary" />
             <Suspense fallback={<div />}>
               <AgendaSidebar
                 onNavigateToEvent={() => setActiveView("calendar")}
@@ -81,10 +77,7 @@ function RecentCalls() {
 
   return (
     <div className="px-3 py-2">
-      <div
-        className="text-xs font-semibold uppercase tracking-wide mb-1.5 px-1"
-        style={{ color: "var(--color-text-tertiary)" }}
-      >
+      <div className="text-xs font-semibold uppercase tracking-wide mb-1.5 px-1 text-tertiary">
         {t("sidebar.recentCalls", { defaultValue: "Recent Calls" })}
       </div>
       <div className="flex flex-col gap-0.5">
@@ -110,27 +103,20 @@ function RecentCallItem({
     <div
       className="group flex items-center gap-2 px-1.5 py-1 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors cursor-default"
     >
-      <div style={{ color: "var(--color-text-tertiary)", flexShrink: 0 }}>
+      <div className="text-tertiary" style={{ flexShrink: 0 }}>
         {entry.video ? <Video size={14} /> : <Phone size={14} />}
       </div>
       <div className="flex-1 min-w-0">
-        <div
-          className="text-xs font-medium truncate"
-          style={{ color: "var(--color-text-primary)" }}
-        >
+        <div className="text-xs font-medium truncate text-primary">
           {displayName}
         </div>
-        <div
-          className="text-[10px] truncate"
-          style={{ color: "var(--color-text-tertiary)" }}
-        >
+        <div className="text-[10px] truncate text-tertiary">
           {timeAgo}
         </div>
       </div>
       <button
         onClick={() => onCallAgain(entry.peerEmail, entry.video)}
-        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--color-bg-secondary)] transition-all"
-        style={{ color: "var(--color-text-secondary)" }}
+        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--color-bg-secondary)] transition-all text-secondary"
         title="Call again"
       >
         <PhoneCall size={13} />

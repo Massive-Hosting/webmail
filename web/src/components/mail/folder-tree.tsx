@@ -262,8 +262,7 @@ export const FolderTree = React.memo(function FolderTree() {
       {/* Separator */}
       {customFolders.length > 0 && (
         <div
-          className="mx-3 my-1.5"
-          style={{ borderTop: "1px solid var(--color-border-primary)" }}
+          className="mx-3 my-1.5 border-t-primary"
         />
       )}
 
@@ -304,11 +303,9 @@ export const FolderTree = React.memo(function FolderTree() {
               if (!newFolderName.trim()) setCreatingFolder(false);
             }}
             autoFocus
-            className="w-full h-7 px-2 text-sm outline-none"
+            className="form-input h-7 px-2 text-sm"
             style={{
-              backgroundColor: "var(--color-bg-tertiary)",
-              color: "var(--color-text-primary)",
-              border: "1px solid var(--color-border-focus)",
+              borderColor: "var(--color-border-focus)",
               borderRadius: "var(--radius-sm)",
               boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.08)",
             }}
@@ -318,14 +315,7 @@ export const FolderTree = React.memo(function FolderTree() {
       ) : (
         <button
           onClick={() => setCreatingFolder(true)}
-          className="flex items-center gap-2.5 w-full px-3 py-1.5 text-sm transition-all duration-150 hover:bg-[var(--color-bg-tertiary)]"
-          style={{ color: "var(--color-text-tertiary)" }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.color = "var(--color-text-secondary)";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.color = "var(--color-text-tertiary)";
-          }}
+          className="flex items-center gap-2.5 w-full px-3 py-1.5 text-sm transition-all duration-150 hover:bg-[var(--color-bg-tertiary)] text-tertiary hover:text-secondary"
         >
           <FolderPlus size={16} />
           {t("folder.newFolder")}
@@ -455,31 +445,17 @@ const FolderItem = React.memo(function FolderItem({
 
   const contextMenuContent = (
     <ContextMenu.Content
-      className="min-w-[160px] p-1 text-sm animate-scale-in"
-      style={{
-        backgroundColor: "var(--color-bg-elevated)",
-        border: "1px solid var(--color-border-primary)",
-        boxShadow: "var(--shadow-lg)",
-        borderRadius: "var(--radius-md)",
-      }}
+      className="ctx-menu animate-scale-in"
     >
       <ContextMenu.Item
-        className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-        style={{
-          color: "var(--color-text-primary)",
-          borderRadius: "var(--radius-sm)",
-        }}
+        className="ctx-menu-item"
         onSelect={() => onMarkAllRead(mailbox.id)}
       >
         {t("folder.markAllAsRead")}
       </ContextMenu.Item>
       <ContextMenu.Sub>
         <ContextMenu.SubTrigger
-          className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-          style={{
-            color: "var(--color-text-primary)",
-            borderRadius: "var(--radius-sm)",
-          }}
+          className="ctx-menu-item"
         >
           <span className="flex-1">{t("folder.color")}</span>
           {folderColor && (
@@ -491,14 +467,7 @@ const FolderItem = React.memo(function FolderItem({
         </ContextMenu.SubTrigger>
         <ContextMenu.Portal>
           <ContextMenu.SubContent
-            className="p-2 animate-scale-in"
-            style={{
-              backgroundColor: "var(--color-bg-elevated)",
-              border: "1px solid var(--color-border-primary)",
-              boxShadow: "var(--shadow-lg)",
-              borderRadius: "var(--radius-md)",
-              zIndex: 50,
-            }}
+            className="ctx-menu p-2 animate-scale-in"
           >
             <div className="grid grid-cols-4 gap-1.5">
               {FOLDER_COLORS.map((c) => (
@@ -519,15 +488,10 @@ const FolderItem = React.memo(function FolderItem({
             {folderColor && (
               <>
                 <div
-                  className="my-1.5"
-                  style={{ borderTop: "1px solid var(--color-border-primary)" }}
+                  className="my-1.5 border-t-primary"
                 />
                 <ContextMenu.Item
-                  className="flex items-center justify-center px-2.5 py-1 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 text-xs"
-                  style={{
-                    color: "var(--color-text-secondary)",
-                    borderRadius: "var(--radius-sm)",
-                  }}
+                  className="ctx-menu-item justify-center text-xs text-secondary"
                   onSelect={() => setFolderColor(mailbox.id, null)}
                 >
                   {t("folder.noColor")}
@@ -541,11 +505,7 @@ const FolderItem = React.memo(function FolderItem({
         <>
           {onShare && mailbox.myRights.mayRename && (
             <ContextMenu.Item
-              className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-              style={{
-                color: "var(--color-text-primary)",
-                borderRadius: "var(--radius-sm)",
-              }}
+              className="ctx-menu-item"
               onSelect={() => onShare(mailbox)}
             >
               <Users size={14} />
@@ -554,11 +514,7 @@ const FolderItem = React.memo(function FolderItem({
           )}
           {mailbox.myRights.mayRename && (
             <ContextMenu.Item
-              className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-              style={{
-                color: "var(--color-text-primary)",
-                borderRadius: "var(--radius-sm)",
-              }}
+              className="ctx-menu-item"
               onSelect={() => {
                 setRenameValue(mailbox.name);
                 setIsRenaming(true);
@@ -570,15 +526,10 @@ const FolderItem = React.memo(function FolderItem({
           {mailbox.myRights.mayDelete && (
             <>
               <ContextMenu.Separator
-                className="my-1"
-                style={{ borderTop: "1px solid var(--color-border-primary)" }}
+                className="ctx-menu-separator"
               />
               <ContextMenu.Item
-                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                style={{
-                  color: "var(--color-text-danger)",
-                  borderRadius: "var(--radius-sm)",
-                }}
+                className="ctx-menu-item ctx-menu-item--danger"
                 onSelect={() => onDelete(mailbox.id)}
               >
                 {t("folder.deleteFolder")}
@@ -589,37 +540,24 @@ const FolderItem = React.memo(function FolderItem({
       )}
       {(mailbox.role === "trash" || mailbox.role === "junk") && (
         <ContextMenu.Item
-          className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-          style={{
-            color: "var(--color-text-danger)",
-            borderRadius: "var(--radius-sm)",
-          }}
+          className="ctx-menu-item ctx-menu-item--danger"
           onSelect={() => onEmptyFolder(mailbox.id, mailbox.name)}
         >
           {t("folder.empty", { name: mailbox.name })}
         </ContextMenu.Item>
       )}
       <ContextMenu.Separator
-        className="my-1"
-        style={{ borderTop: "1px solid var(--color-border-primary)" }}
+        className="ctx-menu-separator"
       />
       <ContextMenu.Item
-        className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-        style={{
-          color: "var(--color-text-primary)",
-          borderRadius: "var(--radius-sm)",
-        }}
+        className="ctx-menu-item"
         onSelect={() => onExportFolder?.(mailbox.id)}
       >
         <Download size={14} />
         {t("tasks.exportFolder")}
       </ContextMenu.Item>
       <ContextMenu.Item
-        className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-        style={{
-          color: "var(--color-text-primary)",
-          borderRadius: "var(--radius-sm)",
-        }}
+        className="ctx-menu-item"
         onSelect={() => onImportToFolder?.(mailbox.id)}
       >
         <Upload size={14} />
@@ -641,8 +579,7 @@ const FolderItem = React.memo(function FolderItem({
         }}
       >
         <span
-          className="shrink-0"
-          style={{ color: "var(--color-text-secondary)" }}
+          className="shrink-0 text-secondary"
         >
           {icon}
         </span>
@@ -656,11 +593,9 @@ const FolderItem = React.memo(function FolderItem({
             if (e.key === "Escape") setIsRenaming(false);
           }}
           onBlur={handleRenameSubmit}
-          className="flex-1 h-6 px-1.5 text-sm outline-none"
+          className="form-input flex-1 h-6 px-1.5 text-sm"
           style={{
-            backgroundColor: "var(--color-bg-tertiary)",
-            color: "var(--color-text-primary)",
-            border: "1px solid var(--color-border-focus)",
+            borderColor: "var(--color-border-focus)",
             borderRadius: "var(--radius-sm)",
             boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.08)",
           }}
@@ -715,14 +650,11 @@ const FolderItem = React.memo(function FolderItem({
                 onToggleExpand?.();
               }}
               className="shrink-0 transition-transform duration-150"
-              style={{
-                transform: isExpanded ? "rotate(0deg)" : "rotate(0deg)",
-              }}
             >
               {isExpanded ? (
-                <ChevronDown size={13} style={{ color: "var(--color-text-tertiary)" }} />
+                <ChevronDown size={13} className="text-tertiary" />
               ) : (
-                <ChevronRight size={13} style={{ color: "var(--color-text-tertiary)" }} />
+                <ChevronRight size={13} className="text-tertiary" />
               )}
             </span>
           )}
@@ -748,7 +680,7 @@ const FolderItem = React.memo(function FolderItem({
             {mailbox.name}
           </span>
           {mailbox.shareWith && Object.keys(mailbox.shareWith).length > 0 && (
-            <Users size={12} style={{ color: "var(--color-text-tertiary)", flexShrink: 0 }} />
+            <Users size={12} className="text-tertiary shrink-0" />
           )}
           {mailbox.unreadEmails > 0 && (
             <Badge count={mailbox.unreadEmails} />

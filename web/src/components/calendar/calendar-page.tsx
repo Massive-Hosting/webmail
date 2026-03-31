@@ -348,16 +348,14 @@ export const CalendarPage = React.memo(function CalendarPage() {
     <div className="flex h-full overflow-hidden">
       {/* Calendar sidebar - calendar list */}
       <div
-        className="shrink-0 flex flex-col overflow-y-auto overflow-x-hidden"
+        className="shrink-0 flex flex-col overflow-y-auto overflow-x-hidden bg-secondary"
         style={{
           width: sidebarWidth,
-          backgroundColor: "var(--color-bg-secondary)",
           borderRight: "1px solid var(--color-border-primary)",
         }}
       >
         <div
-          className="flex items-center gap-1 px-3 py-2"
-          style={{ borderBottom: "1px solid var(--color-border-secondary)" }}
+          className="flex items-center gap-1 px-3 py-2 border-b-secondary"
         >
           <button
             onClick={handleNewEvent}
@@ -371,8 +369,7 @@ export const CalendarPage = React.memo(function CalendarPage() {
               <Tooltip.Trigger asChild>
                 <button
                   onClick={handleImportICS}
-                  className="flex items-center justify-center w-7 h-7 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                  style={{ color: "var(--color-text-tertiary)" }}
+                  className="flex items-center justify-center w-7 h-7 rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors text-tertiary"
                 >
                   <Upload size={14} />
                 </button>
@@ -387,15 +384,13 @@ export const CalendarPage = React.memo(function CalendarPage() {
         <div className="flex flex-col gap-0.5 p-2">
           <div className="flex items-center justify-between px-2 py-1">
             <div
-              className="text-[10px] font-medium uppercase tracking-wide"
-              style={{ color: "var(--color-text-tertiary)" }}
+              className="text-[10px] font-medium uppercase tracking-wide text-tertiary"
             >
               {t("calendar.calendars")}
             </div>
             <button
               onClick={handleAddCalendar}
-              className="p-0.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
-              style={{ color: "var(--color-text-tertiary)" }}
+              className="p-0.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors text-tertiary"
               title={t("calendar.addCalendar")}
             >
               <Plus size={12} />
@@ -430,52 +425,40 @@ export const CalendarPage = React.memo(function CalendarPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Toolbar */}
         <div
-          className="flex items-center gap-2 px-4 py-2 shrink-0"
-          style={{
-            borderBottom: "1px solid var(--color-border-primary)",
-            backgroundColor: "var(--color-bg-primary)",
-          }}
+          className="flex items-center gap-2 px-4 py-2 shrink-0 border-b-primary bg-primary"
         >
           {/* Navigation */}
           <button
             onClick={goPrev}
-            className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
-            style={{ color: "var(--color-text-secondary)" }}
+            className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors text-secondary"
             title={t("calendar.previous")}
           >
             <ChevronLeft size={18} />
           </button>
           <button
             onClick={goNext}
-            className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors"
-            style={{ color: "var(--color-text-secondary)" }}
+            className="p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-colors text-secondary"
             title={t("calendar.next")}
           >
             <ChevronRight size={18} />
           </button>
           <button
             onClick={goToToday}
-            className="px-3 py-1 text-xs font-medium rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors"
-            style={{
-              color: "var(--color-text-secondary)",
-              border: "1px solid var(--color-border-secondary)",
-            }}
+            className="px-3 py-1 text-xs font-medium rounded-md hover:bg-[var(--color-bg-tertiary)] transition-colors text-secondary border-secondary"
           >
             {t("calendar.today")}
           </button>
 
           {/* Title */}
           <h2
-            className="text-sm font-semibold flex-1"
-            style={{ color: "var(--color-text-primary)" }}
+            className="text-sm font-semibold flex-1 text-primary"
           >
             {title}
           </h2>
 
           {/* View switcher */}
           <div
-            className="flex rounded-md overflow-hidden"
-            style={{ border: "1px solid var(--color-border-secondary)" }}
+            className="flex rounded-md overflow-hidden border-secondary"
           >
             {viewButtons.map(({ mode, label }) => (
               <button
@@ -663,10 +646,8 @@ function CalendarSidebarItem({
             if (e.key === "Escape") setIsRenaming(false);
           }}
           onBlur={handleRenameSubmit}
-          className="flex-1 min-w-0 h-5 px-1 text-xs outline-none"
+          className="flex-1 min-w-0 h-5 px-1 text-xs outline-none bg-tertiary text-primary"
           style={{
-            backgroundColor: "var(--color-bg-tertiary)",
-            color: "var(--color-text-primary)",
             border: "1px solid var(--color-border-focus)",
             borderRadius: "var(--radius-sm)",
             boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.08)",
@@ -713,8 +694,7 @@ function CalendarSidebarItem({
             <span title={t("calendar.shared")}>
               <Users
                 size={10}
-                className="shrink-0 ml-auto"
-                style={{ color: "var(--color-text-tertiary)" }}
+                className="shrink-0 ml-auto text-tertiary"
               />
             </span>
           )}
@@ -723,21 +703,16 @@ function CalendarSidebarItem({
 
       <ContextMenu.Portal>
         <ContextMenu.Content
-          className="min-w-[140px] p-1 text-sm animate-scale-in"
+          className="min-w-[140px] p-1 text-sm animate-scale-in bg-elevated border-primary"
           style={{
-            backgroundColor: "var(--color-bg-elevated)",
-            border: "1px solid var(--color-border-primary)",
             boxShadow: "var(--shadow-lg)",
             borderRadius: "var(--radius-md)",
             zIndex: 50,
           }}
         >
           <ContextMenu.Item
-            className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-            style={{
-              color: "var(--color-text-primary)",
-              borderRadius: "var(--radius-sm)",
-            }}
+            className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 text-primary"
+            style={{ borderRadius: "var(--radius-sm)" }}
             onSelect={() => {
               setRenameValue(calendar.name);
               setIsRenaming(true);
@@ -746,11 +721,8 @@ function CalendarSidebarItem({
             {t("calendar.rename")}
           </ContextMenu.Item>
           <ContextMenu.Item
-            className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-            style={{
-              color: "var(--color-text-primary)",
-              borderRadius: "var(--radius-sm)",
-            }}
+            className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 text-primary"
+            style={{ borderRadius: "var(--radius-sm)" }}
             onSelect={onShare}
           >
             <Users size={13} />
@@ -758,11 +730,8 @@ function CalendarSidebarItem({
           </ContextMenu.Item>
           <ContextMenu.Sub>
             <ContextMenu.SubTrigger
-              className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-              style={{
-                color: "var(--color-text-primary)",
-                borderRadius: "var(--radius-sm)",
-              }}
+              className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 text-primary"
+              style={{ borderRadius: "var(--radius-sm)" }}
             >
               <span className="flex-1">{t("calendar.color")}</span>
               <div
@@ -772,10 +741,8 @@ function CalendarSidebarItem({
             </ContextMenu.SubTrigger>
             <ContextMenu.Portal>
               <ContextMenu.SubContent
-                className="p-2 animate-scale-in"
+                className="p-2 animate-scale-in bg-elevated border-primary"
                 style={{
-                  backgroundColor: "var(--color-bg-elevated)",
-                  border: "1px solid var(--color-border-primary)",
                   boxShadow: "var(--shadow-lg)",
                   borderRadius: "var(--radius-md)",
                   zIndex: 50,
@@ -803,15 +770,11 @@ function CalendarSidebarItem({
           {!calendar.isDefault && (
             <>
               <ContextMenu.Separator
-                className="my-1"
-                style={{ borderTop: "1px solid var(--color-border-primary)" }}
+                className="my-1 border-t-primary"
               />
               <ContextMenu.Item
-                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150"
-                style={{
-                  color: "var(--color-text-danger)",
-                  borderRadius: "var(--radius-sm)",
-                }}
+                className="flex items-center px-2.5 py-1.5 cursor-pointer outline-none hover:bg-[var(--color-bg-tertiary)] transition-colors duration-150 text-danger"
+                style={{ borderRadius: "var(--radius-sm)" }}
                 onSelect={onDelete}
               >
                 {t("calendar.deleteCalendar")}
