@@ -227,7 +227,7 @@ export const SearchBar = React.memo(function SearchBar({
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder={t("search.placeholder")}
-          className="w-full h-8 pl-9 pr-20 text-sm outline-none bg-elevated text-primary form-input"
+          className="w-full h-8 pl-9 pr-20 text-sm outline-none bg-elevated text-primary"
           style={{
             border: isFocused ? "1px solid var(--color-border-focus)" : "1px solid var(--color-border-primary)",
             borderRadius: "var(--radius-md)",
