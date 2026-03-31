@@ -98,6 +98,7 @@ Webmail is a full-featured email, contacts, and calendar client that connects to
 | Spam filter training | Mark as spam/not spam trains Stalwart's Bayesian classifier |
 | Spam score display | X-Spam-Status header shown in Junk folder with "Not spam" action |
 | SPF/DKIM/DMARC/ARC display | Email authentication results in message properties |
+| DMARC report viewer | Inline visualization of DMARC aggregate reports — compliance rate, policy, per-source-IP breakdown with DKIM/SPF details. Parses gzip/zip/XML attachments client-side. |
 | HTML sanitization | DOMPurify strips dangerous content from email bodies |
 | External image blocking | Tracking pixel protection with one-click load |
 | Encrypted sessions | AES-256-GCM encrypted secrets in Valkey with user-agent binding |
