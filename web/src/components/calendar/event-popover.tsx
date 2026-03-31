@@ -78,7 +78,7 @@ export const EventPopover = React.memo(function EventPopover({
       <Popover.Anchor virtualRef={{ current: anchor }} />
       <Popover.Portal>
         <Popover.Content
-          className="rounded-lg shadow-xl w-72 z-50 overflow-hidden"
+          className="rounded-lg shadow-xl w-96 z-50 overflow-hidden"
           style={{
             backgroundColor: "var(--color-bg-elevated)",
             border: "1px solid var(--color-border-primary)",

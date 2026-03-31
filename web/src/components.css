@@ -223,6 +223,8 @@
   align-items: center;
   gap: 2px;
   flex-shrink: 0;
+  min-width: 24px;
+  justify-content: flex-end;
 }
 
 .message-list-item__attachment-icon {
