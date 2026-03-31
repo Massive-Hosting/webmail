@@ -36,6 +36,8 @@ interface UIState extends PanelLayout {
   copilotOpen: boolean;
   /** Last clicked message ID (anchor for Shift+Click range selection) */
   lastClickedEmailId: string | null;
+  /** Where the selection originated: 'header' for thread header, 'child' for thread child, null for standalone */
+  selectionSource: "header" | "child" | null;
   /** Keyboard shortcut chord state */
   chordPrefix: string | null;
   /** Chord timeout ID */
@@ -63,6 +65,7 @@ interface UIState extends PanelLayout {
   setCopilotOpen: (open: boolean) => void;
   toggleCopilot: () => void;
   setChordPrefix: (prefix: string | null) => void;
+  setSelectionSource: (source: "header" | "child" | null) => void;
   setVirtualFolder: (folder: VirtualFolder) => void;
   resetLayout: () => void;
 }
@@ -130,6 +133,7 @@ export const useUIStore = create<UIState>((set, get) => {
     expandedThreads: new Set(),
     copilotOpen: false,
     lastClickedEmailId: null,
+    selectionSource: null,
     sortNewestFirst: true,
     isMobile: false,
     mobileView: "list",
@@ -220,6 +224,7 @@ export const useUIStore = create<UIState>((set, get) => {
         selectedThreadId: threadId ?? null,
         selectedEmailIds: id ? new Set([id]) : new Set(),
         lastClickedEmailId: id,
+        selectionSource: null,
       });
       if (get().isMobile && id) {
         set({ mobileView: "message" });
@@ -297,6 +302,8 @@ export const useUIStore = create<UIState>((set, get) => {
         set({ chordPrefix: null, chordTimeout: null });
       }
     },
+
+    setSelectionSource: (source) => set({ selectionSource: source }),
 
     setVirtualFolder: (folder) => {
       useComposeStore.getState().minimizeAllInlineDrafts();

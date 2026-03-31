@@ -485,7 +485,7 @@ function MessageContent({ email }: { email: Email }) {
 
         {/* DMARC Report Cards */}
         {(email.attachments ?? []).filter(att => isDMARCReport(att, email.subject)).map((att, i) => (
-          <div key={`dmarc-${i}`} className="message-view__attachments" style={{ padding: "0 16px 12px" }}>
+          <div key={`dmarc-${i}`} className="message-view__attachments" style={{ padding: "16px 16px 12px" }}>
             <Suspense fallback={
               <div className="flex items-center gap-2 p-4 rounded-lg" style={{ backgroundColor: "var(--color-bg-tertiary)" }}>
                 <span className="text-sm" style={{ color: "var(--color-text-secondary)" }}>Loading DMARC report...</span>

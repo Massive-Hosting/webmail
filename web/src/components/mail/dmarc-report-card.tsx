@@ -77,7 +77,7 @@ export const DMARCReportCard = React.memo(function DMARCReportCard({
   return (
     <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--color-border-primary)", backgroundColor: "var(--color-bg-primary)" }}>
       {/* Header */}
-      <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--color-border-secondary)", backgroundColor: "var(--color-bg-secondary)" }}>
+      <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--color-border-secondary)" }}>
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2 rounded-lg" style={{ backgroundColor: complianceColor + "15" }}>
             <ComplianceIcon size={20} style={{ color: complianceColor }} />
@@ -145,10 +145,11 @@ export const DMARCReportCard = React.memo(function DMARCReportCard({
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr style={{ backgroundColor: "var(--color-bg-secondary)", borderBottom: "1px solid var(--color-border-secondary)" }}>
+            <tr style={{ borderBottom: "1px solid var(--color-border-secondary)" }}>
               <th className="text-left px-4 py-2 font-medium" style={{ color: "var(--color-text-tertiary)" }}></th>
               <th className="text-left px-4 py-2 font-medium" style={{ color: "var(--color-text-tertiary)" }}>Source IP</th>
               <th className="text-right px-4 py-2 font-medium" style={{ color: "var(--color-text-tertiary)" }}>Count</th>
+              <th className="text-center px-4 py-2 font-medium" style={{ color: "var(--color-text-tertiary)" }}>DMARC</th>
               <th className="text-center px-4 py-2 font-medium" style={{ color: "var(--color-text-tertiary)" }}>DKIM</th>
               <th className="text-center px-4 py-2 font-medium" style={{ color: "var(--color-text-tertiary)" }}>SPF</th>
               <th className="text-center px-4 py-2 font-medium" style={{ color: "var(--color-text-tertiary)" }}>Action</th>
@@ -160,6 +161,7 @@ export const DMARCReportCard = React.memo(function DMARCReportCard({
               const isExpanded = expandedRows.has(idx);
               const dkimOk = rec.dmarcDkim === "pass";
               const spfOk = rec.dmarcSpf === "pass";
+              const dmarcOk = dkimOk || spfOk;
               const dispColor = rec.disposition === "none" ? "#22c55e" : rec.disposition === "quarantine" ? "#f59e0b" : "#ef4444";
 
               return (
@@ -175,17 +177,22 @@ export const DMARCReportCard = React.memo(function DMARCReportCard({
                     <td className="px-4 py-2 font-mono" style={{ color: "var(--color-text-primary)" }}>{rec.sourceIP}</td>
                     <td className="px-4 py-2 text-right font-medium" style={{ color: "var(--color-text-primary)" }}>{rec.count.toLocaleString()}</td>
                     <td className="px-4 py-2 text-center">
-                      <span className="px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: (dkimOk ? "#22c55e" : "#ef4444") + "18", color: dkimOk ? "#22c55e" : "#ef4444" }}>
+                      <span className="px-1.5 py-0.5 rounded font-semibold" style={{ backgroundColor: dmarcOk ? "#16a34a" : "#dc2626", color: "#fff" }}>
+                        {dmarcOk ? "pass" : "fail"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 text-center">
+                      <span className="px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: (dkimOk ? "#22c55e" : "#ef4444") + "25", color: dkimOk ? "#15803d" : "#dc2626" }}>
                         {rec.dmarcDkim}
                       </span>
                     </td>
                     <td className="px-4 py-2 text-center">
-                      <span className="px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: (spfOk ? "#22c55e" : "#ef4444") + "18", color: spfOk ? "#22c55e" : "#ef4444" }}>
+                      <span className="px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: (spfOk ? "#22c55e" : "#ef4444") + "25", color: spfOk ? "#15803d" : "#dc2626" }}>
                         {rec.dmarcSpf}
                       </span>
                     </td>
                     <td className="px-4 py-2 text-center">
-                      <span className="px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: dispColor + "18", color: dispColor }}>
+                      <span className="px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: dispColor + "25", color: dispColor }}>
                         {rec.disposition}
                       </span>
                     </td>
@@ -193,7 +200,7 @@ export const DMARCReportCard = React.memo(function DMARCReportCard({
                   </tr>
                   {isExpanded && (
                     <tr>
-                      <td colSpan={7} className="px-8 py-3" style={{ backgroundColor: "var(--color-bg-tertiary)" }}>
+                      <td colSpan={8} className="px-8 py-3" style={{ backgroundColor: "var(--color-bg-tertiary)" }}>
                         <div className="grid grid-cols-2 gap-4 text-xs">
                           {/* DKIM details */}
                           <div>
@@ -203,7 +210,7 @@ export const DMARCReportCard = React.memo(function DMARCReportCard({
                             ) : (
                               rec.dkimResults.map((d, i) => (
                                 <div key={i} className="flex items-center gap-2 mb-0.5">
-                                  <span className="px-1 py-0.5 rounded" style={{ backgroundColor: (d.result === "pass" ? "#22c55e" : "#ef4444") + "18", color: d.result === "pass" ? "#22c55e" : "#ef4444" }}>
+                                  <span className="px-1 py-0.5 rounded" style={{ backgroundColor: (d.result === "pass" ? "#22c55e" : "#ef4444") + "25", color: d.result === "pass" ? "#15803d" : "#dc2626" }}>
                                     {d.result}
                                   </span>
                                   <span style={{ color: "var(--color-text-primary)" }}>{d.domain}</span>
@@ -220,7 +227,7 @@ export const DMARCReportCard = React.memo(function DMARCReportCard({
                             ) : (
                               rec.spfResults.map((s, i) => (
                                 <div key={i} className="flex items-center gap-2 mb-0.5">
-                                  <span className="px-1 py-0.5 rounded" style={{ backgroundColor: (s.result === "pass" ? "#22c55e" : "#ef4444") + "18", color: s.result === "pass" ? "#22c55e" : "#ef4444" }}>
+                                  <span className="px-1 py-0.5 rounded" style={{ backgroundColor: (s.result === "pass" ? "#22c55e" : "#ef4444") + "25", color: s.result === "pass" ? "#15803d" : "#dc2626" }}>
                                     {s.result}
                                   </span>
                                   <span style={{ color: "var(--color-text-primary)" }}>{s.domain}</span>

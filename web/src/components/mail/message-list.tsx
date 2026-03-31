@@ -63,6 +63,7 @@ function ExpandedThreadChildren({
   onProperties,
   onPrint,
   currentMailboxId,
+  selectionSource,
 }: {
   threadId: string;
   parentEmail: EmailListItem;
@@ -81,6 +82,7 @@ function ExpandedThreadChildren({
   onProperties?: (email: EmailListItem) => void;
   onPrint?: (email: EmailListItem) => void;
   currentMailboxId?: string | null;
+  selectionSource?: "header" | "child" | null;
 }) {
   const { emails, isLoading } = useThreadMessages(threadId);
 
@@ -110,6 +112,7 @@ function ExpandedThreadChildren({
           key={email.id}
           email={email}
           isSelected={email.id === selectedEmailId}
+          isFocused={email.id === selectedEmailId && selectionSource !== "header"}
           isMultiSelected={selectedEmailIds.has(email.id)}
           isFirst={index === 0}
           isLast={index === emails.length - 1}
@@ -160,6 +163,8 @@ export const MessageList = React.memo(function MessageList({
   const toggleEmailSelection = useUIStore((s) => s.toggleEmailSelection);
   const selectEmailRange = useUIStore((s) => s.selectEmailRange);
   const toggleThread = useUIStore((s) => s.toggleThread);
+  const setSelectionSource = useUIStore((s) => s.setSelectionSource);
+  const selectionSource = useUIStore((s) => s.selectionSource);
   const prefetchMessage = usePrefetchMessage();
 
   const rowHeight = getDensityRowHeight();
@@ -266,9 +271,11 @@ export const MessageList = React.memo(function MessageList({
         // Collapsed → expand and select the header (latest message auto-selected after load)
         toggleThread(threadId);
         setSelectedEmail(email.id, threadId);
+        setSelectionSource("header");
       } else if (selectedEmailId !== email.id) {
         // Expanded AND a child (or something else) is selected → select the parent, do NOT collapse
         setSelectedEmail(email.id, threadId);
+        setSelectionSource("header");
       } else {
         // Expanded AND parent is already selected → collapse
         toggleThread(threadId);
@@ -284,8 +291,9 @@ export const MessageList = React.memo(function MessageList({
         return;
       }
       setSelectedEmail(email.id, email.threadId);
+      setSelectionSource("child");
     },
-    [setSelectedEmail, handleItemClick],
+    [setSelectedEmail, setSelectionSource, handleItemClick],
   );
 
   const handleMouseEnter = useCallback(
@@ -381,6 +389,7 @@ export const MessageList = React.memo(function MessageList({
                   messageCount={row.messageCount}
                   isExpanded={row.isExpanded}
                   isSelected={row.email.id === selectedEmailId}
+                  isFocused={row.email.id === selectedEmailId && selectionSource !== "child"}
                   onClick={(e?: React.MouseEvent) => handleThreadHeaderClick(row.email, row.threadId, e)}
                   onStar={onStarEmail}
                   onMouseEnter={handleMouseEnter}
@@ -415,6 +424,7 @@ export const MessageList = React.memo(function MessageList({
                   onProperties={onProperties}
                   onPrint={onPrint}
                   currentMailboxId={selectedMailboxId}
+                  selectionSource={selectionSource}
                 />
               )}
             </div>

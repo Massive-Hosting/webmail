@@ -161,6 +161,7 @@ export const MessageListItem = React.memo(
           <div
             className="message-list-item group"
             data-selected={active || undefined}
+            data-focused={active || undefined}
             data-unread={unread || undefined}
             data-dragging={isDragging || undefined}
             role="option"
@@ -359,6 +360,7 @@ interface ThreadHeaderItemProps {
   messageCount: number;
   isExpanded: boolean;
   isSelected: boolean;
+  isFocused?: boolean;
   onClick: (event?: React.MouseEvent) => void;
   onStar: (emailId: string, flagged: boolean) => void;
   onMouseEnter?: (emailId: string) => void;
@@ -380,6 +382,7 @@ export const ThreadHeaderItem = React.memo(
     messageCount,
     isExpanded,
     isSelected,
+    isFocused,
     onClick,
     onStar,
     onMouseEnter,
@@ -434,6 +437,7 @@ export const ThreadHeaderItem = React.memo(
       <div
         className={`message-list-item message-list-item--thread-header group ${isExpanded ? "message-list-item--thread-expanded" : ""}`}
         data-selected={isSelected || undefined}
+        data-focused={isFocused || undefined}
         data-unread={unread || undefined}
         data-dragging={isDragging || undefined}
         role="option"
@@ -568,6 +572,7 @@ export const ThreadHeaderItem = React.memo(
   (prev, next) =>
     prev.email.id === next.email.id &&
     prev.isSelected === next.isSelected &&
+    prev.isFocused === next.isFocused &&
     prev.isExpanded === next.isExpanded &&
     prev.messageCount === next.messageCount &&
     prev.email.keywords === next.email.keywords &&
@@ -582,6 +587,7 @@ export const ThreadHeaderItem = React.memo(
 interface ThreadChildItemProps {
   email: EmailListItem;
   isSelected: boolean;
+  isFocused?: boolean;
   isMultiSelected: boolean;
   isFirst: boolean;
   isLast: boolean;
@@ -604,6 +610,7 @@ export const ThreadChildItem = React.memo(
   function ThreadChildItem({
     email,
     isSelected,
+    isFocused,
     isMultiSelected,
     isFirst,
     isLast,
@@ -663,6 +670,7 @@ export const ThreadChildItem = React.memo(
           <div
             className={`message-list-item message-list-item--thread-child group ${isLast ? "message-list-item--thread-child-last" : ""}`}
             data-selected={active || undefined}
+            data-focused={isFocused || undefined}
             data-unread={unread || undefined}
             data-dragging={isDragging || undefined}
             role="option"
@@ -795,6 +803,7 @@ export const ThreadChildItem = React.memo(
   (prev, next) =>
     prev.email.id === next.email.id &&
     prev.isSelected === next.isSelected &&
+    prev.isFocused === next.isFocused &&
     prev.isMultiSelected === next.isMultiSelected &&
     prev.isFirst === next.isFirst &&
     prev.isLast === next.isLast &&
