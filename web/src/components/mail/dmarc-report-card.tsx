@@ -202,9 +202,32 @@ export const DMARCReportCard = React.memo(function DMARCReportCard({
                     <tr>
                       <td colSpan={8} className="px-8 py-3" style={{ backgroundColor: "var(--color-bg-tertiary)" }}>
                         <div className="grid grid-cols-2 gap-4 text-xs">
-                          {/* DKIM details */}
+                          {/* DMARC Alignment */}
+                          <div className="col-span-2 mb-1">
+                            <div className="font-medium mb-1" style={{ color: "var(--color-text-secondary)" }}>DMARC Alignment</div>
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-1.5">
+                                <span>DKIM:</span>
+                                <span className="px-1 py-0.5 rounded font-medium" style={{ backgroundColor: (dkimOk ? "#22c55e" : "#ef4444") + "25", color: dkimOk ? "#15803d" : "#dc2626" }}>
+                                  {rec.dmarcDkim}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span>SPF:</span>
+                                <span className="px-1 py-0.5 rounded font-medium" style={{ backgroundColor: (spfOk ? "#22c55e" : "#ef4444") + "25", color: spfOk ? "#15803d" : "#dc2626" }}>
+                                  {rec.dmarcSpf}
+                                </span>
+                                {!spfOk && rec.envelopeFrom && rec.headerFrom && rec.envelopeFrom !== rec.headerFrom && (
+                                  <span style={{ color: "var(--color-text-tertiary)" }}>
+                                    (envelope from {rec.envelopeFrom} ≠ header from {rec.headerFrom})
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          {/* DKIM raw auth results */}
                           <div>
-                            <div className="font-medium mb-1" style={{ color: "var(--color-text-secondary)" }}>DKIM Authentication</div>
+                            <div className="font-medium mb-1" style={{ color: "var(--color-text-secondary)" }}>DKIM Auth Results</div>
                             {rec.dkimResults.length === 0 ? (
                               <div style={{ color: "var(--color-text-tertiary)" }}>No DKIM results</div>
                             ) : (
@@ -219,9 +242,9 @@ export const DMARCReportCard = React.memo(function DMARCReportCard({
                               ))
                             )}
                           </div>
-                          {/* SPF details */}
+                          {/* SPF raw auth results */}
                           <div>
-                            <div className="font-medium mb-1" style={{ color: "var(--color-text-secondary)" }}>SPF Authentication</div>
+                            <div className="font-medium mb-1" style={{ color: "var(--color-text-secondary)" }}>SPF Auth Results</div>
                             {rec.spfResults.length === 0 ? (
                               <div style={{ color: "var(--color-text-tertiary)" }}>No SPF results</div>
                             ) : (
@@ -231,7 +254,7 @@ export const DMARCReportCard = React.memo(function DMARCReportCard({
                                     {s.result}
                                   </span>
                                   <span style={{ color: "var(--color-text-primary)" }}>{s.domain}</span>
-                                  <span style={{ color: "var(--color-text-tertiary)" }}>({s.scope})</span>
+                                  {s.scope && <span style={{ color: "var(--color-text-tertiary)" }}>({s.scope === "mfrom" ? "envelope from" : s.scope})</span>}
                                 </div>
                               ))
                             )}
