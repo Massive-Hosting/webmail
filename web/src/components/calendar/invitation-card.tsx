@@ -153,6 +153,12 @@ function RequestCard({
 
   const dateTimeStr = formatEventDateTime(event);
 
+  // Don't show RSVP buttons if the current user is the organizer
+  const isOrganizer = useMemo(() => {
+    if (!email || !event.organizer?.email) return false;
+    return event.organizer.email.toLowerCase() === email.toLowerCase();
+  }, [email, event.organizer]);
+
   return (
     <div
       className="mx-6 my-3 rounded-lg overflow-hidden border-primary bg-primary"
@@ -250,51 +256,77 @@ function RequestCard({
         )}
       </div>
 
-      {/* Actions */}
-      {respondedStatus ? (
-        <div
-          className="flex items-center gap-2 px-4 py-2.5 text-sm border-t-secondary text-secondary"
-        >
-          <Check size={14} className="text-accent" />
-          {respondedStatus === "accepted" && t("invitation.accepted")}
-          {respondedStatus === "tentative" && t("invitation.tentativelyAccepted")}
-          {respondedStatus === "declined" && t("invitation.declined")}
+      {/* Organizer view: show attendee RSVP statuses */}
+      {isOrganizer && event.attendees.length > 0 && (
+        <div className="px-4 py-2.5 space-y-1.5 border-t-secondary">
+          <div className="text-xs font-medium text-tertiary uppercase">{t("calendar.attendees")}</div>
+          {event.attendees.map((att) => {
+            const status = att.status ?? "needs-action";
+            const statusConfig: Record<string, { label: string; color: string }> = {
+              accepted: { label: t("calendar.accepted"), color: "var(--color-success)" },
+              declined: { label: t("calendar.declined"), color: "#ef4444" },
+              tentative: { label: t("calendar.tentative"), color: "#f59e0b" },
+              "needs-action": { label: t("calendar.needsAction"), color: "var(--color-text-tertiary)" },
+            };
+            const info = statusConfig[status] ?? statusConfig["needs-action"];
+            return (
+              <div key={att.email} className="flex items-center gap-2 text-sm">
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: info.color }} />
+                <span className="text-primary truncate">{att.name ?? att.email}</span>
+                <span className="text-xs ml-auto shrink-0" style={{ color: info.color }}>{info.label}</span>
+              </div>
+            );
+          })}
         </div>
-      ) : (
-        <div
-          className="flex items-center gap-2 px-4 py-2.5 border-t-secondary"
-        >
-          <button
-            onClick={() => acceptMutation.mutate("accepted")}
-            disabled={acceptMutation.isPending}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-accent text-inverse"
+      )}
+
+      {/* Attendee view: RSVP buttons */}
+      {!isOrganizer && (
+        respondedStatus ? (
+          <div
+            className="flex items-center gap-2 px-4 py-2.5 text-sm border-t-secondary text-secondary"
           >
-            <Check size={14} />
-            {t("invitation.accept")}
-          </button>
-          <button
-            onClick={() => acceptMutation.mutate("tentative")}
-            disabled={acceptMutation.isPending}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-tertiary text-primary border-primary"
+            <Check size={14} className="text-accent" />
+            {respondedStatus === "accepted" && t("invitation.accepted")}
+            {respondedStatus === "tentative" && t("invitation.tentativelyAccepted")}
+            {respondedStatus === "declined" && t("invitation.declined")}
+          </div>
+        ) : (
+          <div
+            className="flex items-center gap-2 px-4 py-2.5 border-t-secondary"
           >
-            <HelpCircle size={14} />
-            {t("invitation.tentative")}
-          </button>
-          <button
-            onClick={() => acceptMutation.mutate("declined")}
-            disabled={acceptMutation.isPending}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-tertiary text-primary border-primary"
-          >
-            <XCircle size={14} />
-            {t("invitation.decline")}
-          </button>
-          {acceptMutation.isPending && (
-            <Loader2
-              size={14}
-              className="animate-spin text-tertiary"
-            />
-          )}
-        </div>
+            <button
+              onClick={() => acceptMutation.mutate("accepted")}
+              disabled={acceptMutation.isPending}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-accent text-inverse"
+            >
+              <Check size={14} />
+              {t("invitation.accept")}
+            </button>
+            <button
+              onClick={() => acceptMutation.mutate("tentative")}
+              disabled={acceptMutation.isPending}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-tertiary text-primary border-primary"
+            >
+              <HelpCircle size={14} />
+              {t("invitation.tentative")}
+            </button>
+            <button
+              onClick={() => acceptMutation.mutate("declined")}
+              disabled={acceptMutation.isPending}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-tertiary text-primary border-primary"
+            >
+              <XCircle size={14} />
+              {t("invitation.decline")}
+            </button>
+            {acceptMutation.isPending && (
+              <Loader2
+                size={14}
+                className="animate-spin text-tertiary"
+              />
+            )}
+          </div>
+        )
       )}
     </div>
   );
