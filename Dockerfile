@@ -12,7 +12,10 @@ RUN mkdir -p public/mediapipe/wasm public/mediapipe/models public/rnnoise \
 RUN npm run build
 
 # Stage 2: Backend build
-FROM golang:1.25-alpine AS backend
+# 1.26 to match the hosting platform's images, and because `goose@latest`
+# (v3.28.0) requires it — on 1.25 the install step fails and takes the
+# whole control plane deploy with it.
+FROM golang:1.26-alpine AS backend
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
